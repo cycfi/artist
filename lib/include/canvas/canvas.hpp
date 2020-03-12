@@ -214,5 +214,5 @@ namespace cycfi::elements
    };
 }
 
-// #include <canvas/support/detail/canvas_impl.hpp>
+#include <canvas/detail/canvas_impl.hpp>
 #endif

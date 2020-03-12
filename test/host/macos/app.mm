@@ -20,8 +20,8 @@
 {
    [super drawRect : dirty];
 
-   auto ctx = (host_context*) [[NSGraphicsContext currentContext] graphicsPort];
-   auto cnv = canvas{ ctx };
+   auto ctx = NSGraphicsContext.currentContext.CGContext;
+   auto cnv = canvas{ (host_context*) ctx };
    draw(cnv);
 }
 
