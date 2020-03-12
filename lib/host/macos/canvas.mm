@@ -11,8 +11,6 @@ struct canvas_impl;
 
 namespace cycfi::elements
 {
-   char const* default_font = "Helvetica Neue";
-
    canvas::canvas(struct host_context* context_)
     : _context(context_)
    {
@@ -20,9 +18,6 @@ namespace cycfi::elements
       auto ctx = CGContextRef(_context);
       CGAffineTransform trans = CGAffineTransformMakeScale(1, -1);
       CGContextSetTextMatrix(ctx, trans);
-
-      // Set the default font $$$ TODO $$$
-      // font(default_font);
    }
 
    canvas::~canvas()
@@ -90,10 +85,16 @@ namespace cycfi::elements
       CGContextAddPath(CGContextRef(_context), save);
    }
 
-
    void canvas::stroke()
    {
       CGContextStrokePath(CGContextRef(_context));
+   }
+
+   void canvas::stroke_preserve()
+   {
+      auto save = CGContextCopyPath(CGContextRef(_context));
+      stroke();
+      CGContextAddPath(CGContextRef(_context), save);
    }
 
    void canvas::clip()
@@ -162,7 +163,10 @@ namespace cycfi::elements
 
    void canvas::round_rect(struct rect r, float radius)
    {
-      detail::round_rect(*this, r, radius);
+      if (radius > 0.0f)
+         detail::round_rect(*this, r, radius);
+      else
+         rect(r);
    }
 
    void canvas::fill_style(color c)
