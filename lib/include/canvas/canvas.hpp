@@ -59,7 +59,7 @@ namespace cycfi::elements
       void              stroke_preserve();
       void              clip();
       bool              hit_test(point p) const;
-      struct rect    fill_extent() const;
+      struct rect       fill_extent() const;
 
       void              move_to(point p);
       void              line_to(point p);

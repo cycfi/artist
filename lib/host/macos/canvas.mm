@@ -24,6 +24,21 @@ namespace cycfi::elements
    {
    }
 
+   void canvas::translate(point p)
+   {
+      CGContextTranslateCTM(CGContextRef(_context), p.x, p.y);
+   }
+
+   void canvas::rotate(float rad)
+   {
+      CGContextRotateCTM(CGContextRef(_context), rad);
+   }
+
+   void canvas::scale(point p)
+   {
+      CGContextScaleCTM(CGContextRef(_context), p.x, p.y);
+   }
+
    void canvas::save()
    {
       CGContextSaveGState(CGContextRef(_context));
