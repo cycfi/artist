@@ -15,6 +15,21 @@
 @end
 
 @implementation CocoaView
+
+- (void) drawRect : (NSRect) dirty
+{
+   [super drawRect : dirty];
+
+   auto ctx = (host_context*) [[NSGraphicsContext currentContext] graphicsPort];
+   auto cnv = canvas{ ctx };
+   draw(cnv);
+}
+
+-(BOOL) isFlipped
+{
+   return YES;
+}
+
 @end
 
 //=======================================================================
@@ -32,13 +47,15 @@ public:
                NSWindowStyleMaskClosable |
                NSWindowStyleMaskMiniaturizable |
                NSWindowStyleMaskResizable
-            backing : NSBackingStoreBuffered defer:NO
+            backing : NSBackingStoreBuffered
+            defer : NO
          ];
 
       _content = [[CocoaView alloc] init];
       [_window setContentView : _content];
       [_window cascadeTopLeftFromPoint : NSMakePoint(20, 20)];
       [_window makeKeyAndOrderFront : nil];
+      [_window setAppearance : [NSAppearance appearanceNamed : NSAppearanceNameVibrantDark]];
    }
 
 private:

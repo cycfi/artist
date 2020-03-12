@@ -24,19 +24,22 @@
 //    typedef struct _cairo cairo_t;
 // }
 
+
 namespace cycfi::elements
 {
+   struct host_context;
+
    class canvas
    {
    public:
 
-      // explicit          canvas(cairo_t& context_);
+      explicit          canvas(host_context* context_);
                         canvas(canvas&& rhs);
                         ~canvas();
 
                         canvas(canvas const& rhs) = delete;
       canvas&           operator=(canvas const& rhs) = delete;
-//      cairo_t&          cairo_context() const;
+      host_context*     host_context() const;
 
       ///////////////////////////////////////////////////////////////////////////////////
       // Transforms
@@ -205,9 +208,9 @@ namespace cycfi::elements
 
       // using state_stack = std::stack<canvas_state>;
 
-      // cairo_t&          _context;
-      // canvas_state      _state;
-      // state_stack       _state_stack;
+         struct host_context* _context;
+      // canvas_state         _state;
+      // state_stack          _state_stack;
    };
 }
 

@@ -4,175 +4,186 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
 #include <canvas/canvas.hpp>
-// #include <photon/view.hpp>
-// #include <Quartz/Quartz.h>
+#include <Quartz/Quartz.h>
 // #include "osx_view_state.hpp"
 
 struct canvas_impl;
 
-// namespace photon
-// {
-//    char const* default_font = "Helvetica Neue";
+namespace cycfi::elements
+{
+   char const* default_font = "Helvetica Neue";
 
-//    canvas::canvas(canvas_impl* impl, view& view_)
-//     : _impl(impl)
-//     , _view(view_)
-//    {
-//       // Flip the text drawing vertically
-//       auto ctx = CGContextRef(_impl);
-//       CGAffineTransform trans = CGAffineTransformMakeScale(1, -1);
-//       CGContextSetTextMatrix(ctx, trans);
+   canvas::canvas(struct host_context* context_)
+    : _context(context_)
+   {
+      // Flip the text drawing vertically
+      auto ctx = CGContextRef(_context);
+      CGAffineTransform trans = CGAffineTransformMakeScale(1, -1);
+      CGContextSetTextMatrix(ctx, trans);
 
-//       // Set the default font
-//       font(default_font);
-//    }
+      // Set the default font $$$ TODO $$$
+      // font(default_font);
+   }
 
-//    void canvas::save()
-//    {
-//       CGContextSaveGState(CGContextRef(_impl));
-//       _view._state = std::make_shared<view_state>(_view._state);
-//    }
+   canvas::~canvas()
+   {
+   }
 
-//    void canvas::restore()
-//    {
-//       _view._state = _view._state->saved;
-//       CGContextRestoreGState(CGContextRef(_impl));
-//    }
+   void canvas::save()
+   {
+      CGContextSaveGState(CGContextRef(_context));
+      // _view._state = std::make_shared<view_state>(_view._state); $$$ TODO $$$
+   }
 
-//    void canvas::begin_path()
-//    {
-//       CGContextBeginPath(CGContextRef(_impl));
-//    }
+   void canvas::restore()
+   {
+      // _view._state = _view._state->saved; $$$ TODO $$$
+      CGContextRestoreGState(CGContextRef(_context));
+   }
 
-//    void canvas::close_path()
-//    {
-//       CGContextClosePath(CGContextRef(_impl));
-//    }
+   void canvas::begin_path()
+   {
+      CGContextBeginPath(CGContextRef(_context));
+   }
 
-//    void canvas::fill()
-//    {
-//       if (_view._state->gradient && !(_view._state->paint ==  view_state::default_))
-//       {
-//          auto  state = new_state();
-//          clip();  // Set to clip current path
-//          if (_view._state->paint == view_state::linear)
-//          {
-//             auto& gr = _view._state->linear_gradient;
-//             CGContextDrawLinearGradient(
-//                CGContextRef(_impl), _view._state->gradient,
-//                CGPoint{ gr.start.x, gr.start.y },
-//                CGPoint{ gr.end.x, gr.end.y },
-//                kCGGradientDrawsAfterEndLocation);
-//          }
-//          else
-//          {
-//             auto& gr = _view._state->radial_gradient;
-//             CGContextDrawRadialGradient(
-//                CGContextRef(_impl), _view._state->gradient,
-//                CGPoint{ gr.start.x, gr.start.y }, gr.start_radius,
-//                CGPoint{ gr.end.x, gr.end.y }, gr.end_radius,
-//                kCGGradientDrawsAfterEndLocation);
+   void canvas::close_path()
+   {
+      CGContextClosePath(CGContextRef(_context));
+   }
 
-//          }
-//       }
-//       else
-//       {
-//          CGContextFillPath(CGContextRef(_impl));
-//       }
-//    }
+   void canvas::fill()
+   {
+      // if (_view._state->gradient && !(_view._state->paint ==  view_state::default_))
+      // {
+      //    auto  state = new_state();
+      //    clip();  // Set to clip current path
+      //    if (_view._state->paint == view_state::linear)
+      //    {
+      //       auto& gr = _view._state->linear_gradient;
+      //       CGContextDrawLinearGradient(
+      //          CGContextRef(_context), _view._state->gradient,
+      //          CGPoint{ gr.start.x, gr.start.y },
+      //          CGPoint{ gr.end.x, gr.end.y },
+      //          kCGGradientDrawsAfterEndLocation);
+      //    }
+      //    else
+      //    {
+      //       auto& gr = _view._state->radial_gradient;
+      //       CGContextDrawRadialGradient(
+      //          CGContextRef(_context), _view._state->gradient,
+      //          CGPoint{ gr.start.x, gr.start.y }, gr.start_radius,
+      //          CGPoint{ gr.end.x, gr.end.y }, gr.end_radius,
+      //          kCGGradientDrawsAfterEndLocation);
 
-//    void canvas::stroke()
-//    {
-//       CGContextStrokePath(CGContextRef(_impl));
-//    }
+      //    }
+      // }
+      // else
+      // {
+         CGContextFillPath(CGContextRef(_context));
+      // }
+   }
 
-//    void canvas::clip()
-//    {
-//       CGContextClip(CGContextRef(_impl));
-//       //CGContextEOClip(CGContextRef(_impl));
-//    }
+   void canvas::fill_preserve()
+   {
+      auto save = CGContextCopyPath(CGContextRef(_context));
+      fill();
+      CGContextAddPath(CGContextRef(_context), save);
+   }
 
-//    void canvas::move_to(point p)
-//    {
-//       CGContextMoveToPoint(CGContextRef(_impl), p.x, p.y);
-//    }
 
-//    void canvas::line_to(point p)
-//    {
-//       CGContextAddLineToPoint(CGContextRef(_impl), p.x, p.y);
-//    }
+   void canvas::stroke()
+   {
+      CGContextStrokePath(CGContextRef(_context));
+   }
 
-//    void canvas::arc_to(point p1, point p2, float radius)
-//    {
-//       CGContextAddArcToPoint(
-//          CGContextRef(_impl),
-//          p1.x, p1.y, p2.x, p2.y, radius
-//       );
-//    }
+   void canvas::clip()
+   {
+      CGContextClip(CGContextRef(_context));
+      //CGContextEOClip(CGContextRef(_context));
+   }
 
-//    void canvas::arc(
-//       point p, float radius,
-//       float start_angle, float end_angle,
-//       bool ccw
-//    )
-//    {
-//       CGContextAddArc(
-//          CGContextRef(_impl),
-//          p.x, p.y, radius, start_angle, end_angle, !ccw
-//       );
-//    }
+   void canvas::move_to(point p)
+   {
+      CGContextMoveToPoint(CGContextRef(_context), p.x, p.y);
+   }
 
-//    namespace detail
-//    {
-//       void round_rect(canvas& c, rect bounds, float radius)
-//       {
-//          auto x = bounds.left;
-//          auto y = bounds.top;
-//          auto r = bounds.right;
-//          auto b = bounds.bottom;
+   void canvas::line_to(point p)
+   {
+      CGContextAddLineToPoint(CGContextRef(_context), p.x, p.y);
+   }
 
-//          c.begin_path();
-//          c.move_to(point{ x, y + radius });
-//          c.line_to(point{ x, b - radius });
-//          c.arc_to(point{ x, b }, point{ x + radius, b }, radius);
-//          c.line_to(point{ r - radius, b });
-//          c.arc_to(point{ r, b }, point{ r, b - radius }, radius);
-//          c.line_to(point{ r, y + radius });
-//          c.arc_to(point{ r, y }, point{ r - radius, y }, radius);
-//          c.line_to(point{ x + radius, y });
-//          c.arc_to(point{ x, y }, point{ x, y + radius }, radius);
-//       }
-//    }
+   void canvas::arc_to(point p1, point p2, float radius)
+   {
+      CGContextAddArcToPoint(
+         CGContextRef(_context),
+         p1.x, p1.y, p2.x, p2.y, radius
+      );
+   }
 
-//    void canvas::rect(struct rect r)
-//    {
-//       CGContextAddRect(CGContextRef(_impl), CGRectMake(r.left, r.top, r.width(), r.height()));
-//    }
+   void canvas::arc(
+      point p, float radius,
+      float start_angle, float end_angle,
+      bool ccw
+   )
+   {
+      CGContextAddArc(
+         CGContextRef(_context),
+         p.x, p.y, radius, start_angle, end_angle, !ccw
+      );
+   }
 
-//    void canvas::round_rect(struct rect r, float radius)
-//    {
-//       detail::round_rect(*this, r, radius);
-//    }
+   namespace detail
+   {
+      void round_rect(canvas& c, rect bounds, float radius)
+      {
+         auto x = bounds.left;
+         auto y = bounds.top;
+         auto r = bounds.right;
+         auto b = bounds.bottom;
 
-//    void canvas::fill_style(color c)
-//    {
-//       CGContextSetRGBFillColor(CGContextRef(_impl), c.red, c.green, c.blue, c.alpha);
-//    }
+         radius = std::min(radius, std::min(bounds.width(), bounds.height()));
+         c.begin_path();
+         c.move_to(point{ x, y + radius });
+         c.line_to(point{ x, b - radius });
+         c.arc_to(point{ x, b }, point{ x + radius, b }, radius);
+         c.line_to(point{ r - radius, b });
+         c.arc_to(point{ r, b }, point{ r, b - radius }, radius);
+         c.line_to(point{ r, y + radius });
+         c.arc_to(point{ r, y }, point{ r - radius, y }, radius);
+         c.line_to(point{ x + radius, y });
+         c.arc_to(point{ x, y }, point{ x, y + radius }, radius);
+      }
+   }
 
-//    void canvas::stroke_style(color c)
-//    {
-//       CGContextSetRGBStrokeColor(CGContextRef(_impl), c.red, c.green, c.blue, c.alpha);
-//    }
+   void canvas::rect(struct rect r)
+   {
+      CGContextAddRect(CGContextRef(_context), CGRectMake(r.left, r.top, r.width(), r.height()));
+   }
 
-//    void canvas::line_width(float w)
-//    {
-//       CGContextSetLineWidth(CGContextRef(_impl), w);
-//    }
+   void canvas::round_rect(struct rect r, float radius)
+   {
+      detail::round_rect(*this, r, radius);
+   }
+
+   void canvas::fill_style(color c)
+   {
+      CGContextSetRGBFillColor(CGContextRef(_context), c.red, c.green, c.blue, c.alpha);
+   }
+
+   void canvas::stroke_style(color c)
+   {
+      CGContextSetRGBStrokeColor(CGContextRef(_context), c.red, c.green, c.blue, c.alpha);
+   }
+
+   void canvas::line_width(float w)
+   {
+      CGContextSetLineWidth(CGContextRef(_context), w);
+   }
 
 //    void canvas::shadow_style(point p, float blur, color c)
 //    {
 //       CGContextSetShadowWithColor(
-//          CGContextRef(_impl), CGSizeMake(p.x, -p.y), blur,
+//          CGContextRef(_context), CGSizeMake(p.x, -p.y), blur,
 //          [
 //             [NSColor
 //                colorWithRed : c.red
@@ -329,7 +340,7 @@ struct canvas_impl;
 
 //    void canvas::fill_text(point p, char const* f, char const* l)
 //    {
-//       auto ctx = CGContextRef(_impl);
+//       auto ctx = CGContextRef(_context);
 //       auto line = detail::prepare_text(ctx, _view._state.get(), p, f, l);
 //       CGContextSetTextPosition(ctx, p.x, p.y);
 //       CGContextSetTextDrawingMode(ctx, kCGTextFill);
@@ -339,7 +350,7 @@ struct canvas_impl;
 
 //    void canvas::stroke_text(point p, char const* f, char const* l)
 //    {
-//       auto ctx = CGContextRef(_impl);
+//       auto ctx = CGContextRef(_context);
 //       auto line = detail::prepare_text(ctx, _view._state.get(), p, f, l);
 //       CGContextSetTextPosition(ctx, p.x, p.y);
 //       CGContextSetTextDrawingMode(ctx, kCGTextStroke);
@@ -349,7 +360,7 @@ struct canvas_impl;
 
 //    canvas::text_metrics canvas::measure_text(char const* f, char const* l)
 //    {
-//       auto ctx = CGContextRef(_impl);
+//       auto ctx = CGContextRef(_context);
 //       CGFloat ascent, descent, leading, width;
 
 //       auto line = detail::measure_text(
@@ -410,4 +421,4 @@ struct canvas_impl;
 //          hints          :  nil
 //       ];
 //    }
-// }
+}
