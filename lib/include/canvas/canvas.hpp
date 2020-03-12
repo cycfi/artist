@@ -28,18 +28,19 @@
 namespace cycfi::elements
 {
    struct host_context;
+   using host_context_ptr = host_context*;
 
    class canvas
    {
    public:
 
-      explicit          canvas(host_context* context_);
+      explicit          canvas(host_context_ptr context_);
                         canvas(canvas&& rhs);
                         ~canvas();
 
                         canvas(canvas const& rhs) = delete;
       canvas&           operator=(canvas const& rhs) = delete;
-      host_context*     host_context() const;
+      host_context_ptr  host_context() const;
 
       ///////////////////////////////////////////////////////////////////////////////////
       // Transforms
@@ -167,25 +168,6 @@ namespace cycfi::elements
 //      void              draw(pixmap const& pm, struct rect dest);
 //      void              draw(pixmap const& pm, point pos);
 
-      ///////////////////////////////////////////////////////////////////////////////////
-      // States
-      class state
-      {
-      public:
-                        state(canvas& cnv_);
-                        state(state&& rhs) noexcept;
-                        state(state const&) = delete;
-                        ~state();
-
-         state&         operator=(state const&) = delete;
-         state&         operator=(state&& rhs) noexcept;
-
-      private:
-
-         canvas* cnv;
-      };
-
-      state             new_state()   { return state{ *this }; }
       void              save();
       void              restore();
 
@@ -193,24 +175,7 @@ namespace cycfi::elements
 
       // friend class glyphs;
 
-      // void              apply_fill_style();
-      // void              apply_stroke_style();
-
-      // struct canvas_state
-      // {
-      //    std::function<void()>   stroke_style;
-      //    std::function<void()>   fill_style;
-      //    int                     align          = 0;
-
-      //    enum pattern_state { none_set, stroke_set, fill_set };
-      //    pattern_state           pattern_set = none_set;
-      // };
-
-      // using state_stack = std::stack<canvas_state>;
-
-         struct host_context* _context;
-      // canvas_state         _state;
-      // state_stack          _state_stack;
+      host_context_ptr  _context;
    };
 }
 
