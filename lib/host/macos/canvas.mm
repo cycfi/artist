@@ -11,7 +11,7 @@ struct canvas_impl;
 
 namespace cycfi::elements
 {
-   canvas::canvas(struct host_context* context_)
+   canvas::canvas(host_context_ptr context_)
     : _context(context_)
    {
       // Flip the text drawing vertically
@@ -42,12 +42,10 @@ namespace cycfi::elements
    void canvas::save()
    {
       CGContextSaveGState(CGContextRef(_context));
-      // _view._state = std::make_shared<view_state>(_view._state); $$$ TODO $$$
    }
 
    void canvas::restore()
    {
-      // _view._state = _view._state->saved; $$$ TODO $$$
       CGContextRestoreGState(CGContextRef(_context));
    }
 
