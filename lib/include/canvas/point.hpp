@@ -6,7 +6,7 @@
 #if !defined(CANVAS_POINT_APRIL_10_2016)
 #define CANVAS_POINT_APRIL_10_2016
 
-namespace cycfi
+namespace cycfi::elements
 {
    ////////////////////////////////////////////////////////////////////////////
    // Points
@@ -35,12 +35,12 @@ namespace cycfi
    {
       using point::point;
 
-                  extent(point p)
-                   : point(p)
-                  {}
+                        extent(point p)
+                         : point(p)
+                        {}
 
-      point       move(float dx, float dy) const = delete;
-      point       move_to(float x, float y) const = delete;
+      point             move(float dx, float dy) const = delete;
+      point             move_to(float x, float y) const = delete;
    };
 
    ////////////////////////////////////////////////////////////////////////////
