@@ -24,7 +24,7 @@
 //    typedef struct _cairo cairo_t;
 // }
 
-namespace cycfi
+namespace cycfi::elements
 {
    class canvas
    {

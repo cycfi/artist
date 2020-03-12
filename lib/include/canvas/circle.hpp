@@ -9,7 +9,7 @@
 #include <canvas/rect.hpp>
 #include <algorithm>
 
-namespace cycfi
+namespace cycfi::elements
 {
    ////////////////////////////////////////////////////////////////////////////
    // Circles

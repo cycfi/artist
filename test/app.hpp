@@ -3,10 +3,9 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#include "app.hpp"
+#if !defined(CANVAS_TEST_APP_MARCH_12_2020)
+#define CANVAS_TEST_APP_MARCH_12_2020
 
-int main(int argc, const char* argv[])
-{
-    return run_app(argc, argv);
-}
+int run_app(int argc, const char* argv[]);
 
+#endif
