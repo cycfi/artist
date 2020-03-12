@@ -6,6 +6,11 @@
 #if !defined(CANVAS_TEST_APP_MARCH_12_2020)
 #define CANVAS_TEST_APP_MARCH_12_2020
 
-int run_app(int argc, const char* argv[]);
+#include <canvas/canvas.hpp>
+
+using namespace cycfi::elements;
+
+int   run_app(int argc, const char* argv[]);
+void  draw(canvas& cnv);
 
 #endif
