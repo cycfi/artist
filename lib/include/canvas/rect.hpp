@@ -3,8 +3,8 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#if !defined(CANVAS_RECT_APRIL_10_2016)
-#define CANVAS_RECT_APRIL_10_2016
+#if !defined(ELEMENTS_RECT_APRIL_10_2016)
+#define ELEMENTS_RECT_APRIL_10_2016
 
 #include <canvas/point.hpp>
 

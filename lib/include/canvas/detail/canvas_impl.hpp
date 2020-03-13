@@ -3,8 +3,8 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#if !defined(CANVAS_DETAIL_CANVAS_IMPL_MAY_3_2016)
-#define CANVAS_DETAIL_CANVAS_IMPL_MAY_3_2016
+#if !defined(ELEMENTS_DETAIL_CANVAS_IMPL_MAY_3_2016)
+#define ELEMENTS_DETAIL_CANVAS_IMPL_MAY_3_2016
 
 #ifndef M_PI
 # define M_PI 3.14159265358979323846
@@ -64,15 +64,22 @@ namespace cycfi::elements
    //    _state.align = align;
    // }
 
-   // inline void canvas::draw(pixmap const& pm, elements::rect dest)
-   // {
-   //    draw(pm, { 0, 0, pm.size() }, dest);
-   // }
+   inline void canvas::draw(pixmap const& pm, struct rect dest)
+   {
+      draw(pm, { 0, 0, pm.size() }, dest);
+   }
 
-   // inline void canvas::draw(pixmap const& pm, point pos)
-   // {
-   //    draw(pm, { 0, 0, pm.size() }, { pos, pm.size() });
-   // }
+   inline void canvas::draw(pixmap const& pm, point pos)
+   {
+      draw(pm, { 0, 0, pm.size() }, { pos, pm.size() });
+   }
+
+   inline void canvas::draw(pixmap const& pm, point pos, float scale)
+   {
+      auto size = pm.size();
+      auto scaled = extent{ size.x*scale, size.y*scale };
+      draw(pm, { 0, 0, size }, { pos, scaled });
+   }
 
    inline canvas::state::state(canvas& cnv_)
      : cnv(&cnv_)

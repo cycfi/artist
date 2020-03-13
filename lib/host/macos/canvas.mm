@@ -526,24 +526,24 @@ namespace cycfi::elements
 //        return { float(size_.width), float(size_.height) };
 //    }
 
-//    void canvas::draw(image const& img, photon::rect src, photon::rect dest)
-//    {
-//       // Sigh, Cocoa... everyone else is using top-left as x=0, y=0. You chose
-//       // to do it the other way. Layout is so awkward using plain cartesian coordinates.
-//       // It's not about purity. It's about practicality. Now we have to flip the
-//       // coordinates for our images.
+   void canvas::draw(pixmap const& pm, struct rect src, struct rect dest)
+   {
+      // Sigh, Cocoa... everyone else is using top-left as x=0, y=0. You chose
+      // to do it the other way. Layout is so awkward using plain cartesian coordinates.
+      // It's not about purity. It's about practicality. Now we have to flip the
+      // coordinates for our images.
 
-//       auto  img_ = (__bridge NSImage*) img._rep;
-//       auto  src_ = NSRect{ src.left, [img_ size].height - src.bottom, src.width(), src.height() };
-//       auto  dest_ = NSRect{ dest.left, dest.top, dest.width(), dest.height() };
+      auto  pm_ = (__bridge NSImage*) pm.host_pixmap();
+      auto  src_ = NSRect{ src.left, [pm_ size].height - src.bottom, src.width(), src.height() };
+      auto  dest_ = NSRect{ dest.left, dest.top, dest.width(), dest.height() };
 
-//       [img_
-//          drawInRect     :  dest_
-//          fromRect       :  src_
-//          operation      :  NSCompositeSourceAtop
-//          fraction       :  1.0
-//          respectFlipped :  YES
-//          hints          :  nil
-//       ];
-//    }
+      [pm_
+         drawInRect     :  dest_
+         fromRect       :  src_
+         operation      :  NSCompositingOperationSourceOver
+         fraction       :  1.0
+         respectFlipped :  YES
+         hints          :  nil
+      ];
+   }
 }
