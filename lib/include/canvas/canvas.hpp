@@ -112,9 +112,15 @@ namespace cycfi::elements
          std::vector<color_stop> space = {};
       };
 
-     void              fill_style(linear_gradient const& gr);
-     void              fill_style(radial_gradient const& gr);
+      ///////////////////////////////////////////////////////////////////////////////////
+      // More Styles
+      void              fill_style(linear_gradient const& gr);
+      void              fill_style(radial_gradient const& gr);
+      void              stroke_style(linear_gradient const& gr);
+      void              stroke_style(radial_gradient const& gr);
 
+      ///////////////////////////////////////////////////////////////////////////////////
+      // Fill Rule
       enum fill_rule_enum
       {
          fill_winding,
