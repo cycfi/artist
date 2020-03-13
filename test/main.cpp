@@ -35,6 +35,8 @@ void heart(canvas& cnv)
 
 void basics(canvas& cnv)
 {
+    auto state = cnv.new_state();
+
     cnv.rect({ 20, 20, 100, 60 });
     cnv.fill_style(colors::navy_blue);
     cnv.fill_preserve();
@@ -73,14 +75,58 @@ void basics(canvas& cnv)
     cnv.fill();
 }
 
+void transformed(canvas& cnv)
+{
+    auto state = cnv.new_state();
+    cnv.scale({ 1.5, 1.5 });
+    cnv.translate({ 150, 80 });
+    cnv.rotate(0.8);
+    basics(cnv);
+}
+
+template <typename Gradient>
+void rainbow(Gradient& gr)
+{
+    gr.add_color_stop({ 0.0/6, colors::red });
+    gr.add_color_stop({ 1.0/6, colors::orange });
+    gr.add_color_stop({ 2.0/6, colors::yellow });
+    gr.add_color_stop({ 3.0/6, colors::green });
+    gr.add_color_stop({ 4.0/6, colors::blue });
+    gr.add_color_stop({ 5.0/6, rgb(0x4B, 0x00, 0x82) });
+    gr.add_color_stop({ 6.0/6, colors::violet });
+}
+
+void linear_gradient(canvas& cnv)
+{
+    auto x = 300.0f;
+    auto y = 20.0f;
+    auto gr = canvas::linear_gradient{ { x, y }, { x+150, y } };
+    rainbow(gr);
+
+    cnv.round_rect({ x, y, x+150, y+80 }, 5);
+    cnv.fill_style(gr);
+    cnv.fill();
+}
+
+void radial_gradient(canvas& cnv)
+{
+    auto center = point{ 475, 90 };
+    auto radius = 75.0f;
+    auto gr = canvas::radial_gradient{ center, 5, center.move(15, 10), radius };
+    gr.add_color_stop({ 0.0, colors::red });
+    gr.add_color_stop({ 1.0, colors::black });
+
+    cnv.circle({ center.move(15, 10), radius-10 });
+    cnv.fill_style(gr);
+    cnv.fill();
+}
+
 void draw(canvas& cnv)
 {
     basics(cnv);
-
-    cnv.scale({ 1.5, 1.5 });
-    cnv.translate({ 150, 0 });
-    cnv.rotate(0.8);
-    basics(cnv);
+    transformed(cnv);
+    linear_gradient(cnv);
+    radial_gradient(cnv);
 }
 
 int main(int argc, const char* argv[])

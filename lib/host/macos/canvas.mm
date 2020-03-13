@@ -5,15 +5,12 @@
 =============================================================================*/
 #include <canvas/canvas.hpp>
 #include <Quartz/Quartz.h>
-// #include "osx_view_state.hpp"
 #include <stack>
 #include <variant>
 
-struct canvas_impl;
-
 namespace cycfi::elements
 {
-   struct canvas::state
+   struct canvas::canvas_state
    {
       using style = std::variant<
          color
@@ -24,13 +21,15 @@ namespace cycfi::elements
       using style_stack = std::stack<std::pair<style, style>>;
 
       style          _fill_style;
+      CGGradientRef  _fill_gradient;
       style          _stroke_style;
+      CGGradientRef  _stroke_gradient;
       style_stack    _style_stack;
    };
 
    canvas::canvas(host_context_ptr context_)
     : _context{ context_ }
-    , _state{ std::make_unique<state>() }
+    , _state{ std::make_unique<canvas_state>() }
    {
       // Flip the text drawing vertically
       auto ctx = CGContextRef(_context);
@@ -86,7 +85,7 @@ namespace cycfi::elements
 
    void canvas::fill()
    {
-      auto apply = [this](auto const& style)
+      auto apply_fill = [this](auto const& style)
       {
          using T = std::decay_t<decltype(style)>;
          if constexpr (std::is_same<T, color>::value)
@@ -95,15 +94,30 @@ namespace cycfi::elements
             CGContextSetRGBFillColor(ctx, style.red, style.green, style.blue, style.alpha);
             CGContextFillPath(ctx);
          }
-         else if constexpr (std::is_same<T, radial_gradient>::value)
-         {
-         }
          else if constexpr (std::is_same<T, linear_gradient>::value)
          {
+            auto  state = new_state();
+            clip();  // Set to clip current path
+            CGContextDrawLinearGradient(
+               CGContextRef(_context), _state->_fill_gradient,
+               CGPoint{ style.start.x, style.start.y },
+               CGPoint{ style.end.x, style.end.y },
+               kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
+            );
+         }
+         else if constexpr (std::is_same<T, radial_gradient>::value)
+         {
+            auto  state = new_state();
+            clip();  // Set to clip current path
+            CGContextDrawRadialGradient(
+               CGContextRef(_context), _state->_fill_gradient,
+               CGPoint{ style.c1.x, style.c1.y }, style.c1_radius,
+               CGPoint{ style.c2.x, style.c2.y }, style.c2_radius,
+               kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation);
          }
       };
 
-      std::visit(apply, _state->_fill_style);
+      std::visit(apply_fill, _state->_fill_style);
 
       // if (_view._state->gradient && !(_view._state->paint ==  view_state::default_))
       // {
@@ -285,24 +299,43 @@ namespace cycfi::elements
 //          ]
 //       );
 //    }
-// //
-//    void canvas::fill_style(linear_gradient gr)
-//    {
-//       if (_view._state->gradient)
-//       {
-//          _view._state->linear_gradient = gr;
-//          _view._state->paint = _view._state->linear;
-//       }
-//    }
 
-//    void canvas::fill_style(radial_gradient gr)
-//    {
-//       if (_view._state->gradient)
-//       {
-//          _view._state->radial_gradient = gr;
-//          _view._state->paint = _view._state->radial;
-//       }
-//    }
+   namespace
+   {
+      void make_gradient(std::vector<canvas::color_stop> const& space, CGGradientRef& gradient)
+      {
+         auto nspaces = space.size();
+         CGFloat locations[nspaces];
+         CGFloat components[nspaces * 4];
+         for (size_t i = 0; i != nspaces; ++i)
+         {
+            locations[i] = space[i].offset;
+            auto* cp = &components[i*4];
+            *cp++ = space[i].color.red;
+            *cp++ = space[i].color.green;
+            *cp++ = space[i].color.blue;
+            *cp   = space[i].color.alpha;
+         }
+         auto space_ = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
+         gradient =
+            CGGradientCreateWithColorComponents(
+               space_, components, locations, nspaces
+            );
+         CGColorSpaceRelease(space_);
+      }
+   }
+
+   void canvas::fill_style(linear_gradient const& gr)
+   {
+      _state->_fill_style = gr;
+      make_gradient(gr.space, _state->_fill_gradient);
+   }
+
+   void canvas::fill_style(radial_gradient const& gr)
+   {
+      _state->_fill_style = gr;
+      make_gradient(gr.space, _state->_fill_gradient);
+   }
 
 //    void canvas::color_space(color_stop const space[], std::size_t nspaces)
 //    {

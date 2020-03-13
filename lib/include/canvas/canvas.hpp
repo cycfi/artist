@@ -172,6 +172,25 @@ namespace cycfi::elements
 //      void              draw(pixmap const& pm, struct rect dest);
 //      void              draw(pixmap const& pm, point pos);
 
+      ///////////////////////////////////////////////////////////////////////////////////
+      // States
+      class state
+      {
+      public:
+                        state(canvas& cnv_);
+                        state(state&& rhs) noexcept;
+                        state(state const&) = delete;
+                        ~state();
+
+         state&         operator=(state const&) = delete;
+         state&         operator=(state&& rhs) noexcept;
+
+      private:
+
+         canvas* cnv;
+      };
+
+      state             new_state()   { return state{ *this }; }
       void              save();
       void              restore();
 
@@ -179,11 +198,11 @@ namespace cycfi::elements
 
       // friend class glyphs;
 
-      struct state;
-      using state_ptr = std::unique_ptr<state>;
+      struct canvas_state;
+      using canvas_state_ptr = std::unique_ptr<canvas_state>;
 
       host_context_ptr  _context;
-      state_ptr         _state;
+      canvas_state_ptr  _state;
    };
 }
 
