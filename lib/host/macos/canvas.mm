@@ -6,13 +6,31 @@
 #include <canvas/canvas.hpp>
 #include <Quartz/Quartz.h>
 // #include "osx_view_state.hpp"
+#include <stack>
+#include <variant>
 
 struct canvas_impl;
 
 namespace cycfi::elements
 {
+   struct canvas::state
+   {
+      using style = std::variant<
+         color
+       , canvas::linear_gradient
+       , canvas::radial_gradient
+      >;
+
+      using style_stack = std::stack<std::pair<style, style>>;
+
+      style          _fill_style;
+      style          _stroke_style;
+      style_stack    _style_stack;
+   };
+
    canvas::canvas(host_context_ptr context_)
-    : _context(context_)
+    : _context{ context_ }
+    , _state{ std::make_unique<state>() }
    {
       // Flip the text drawing vertically
       auto ctx = CGContextRef(_context);
@@ -42,11 +60,18 @@ namespace cycfi::elements
    void canvas::save()
    {
       CGContextSaveGState(CGContextRef(_context));
+      _state->_style_stack.push(
+         { _state->_fill_style, _state->_stroke_style }
+      );
    }
 
    void canvas::restore()
    {
       CGContextRestoreGState(CGContextRef(_context));
+      auto& [ fs, ss ] = _state->_style_stack.top();
+      _state->_fill_style = std::move(fs);
+      _state->_stroke_style = std::move(ss);
+      _state->_style_stack.pop();
    }
 
    void canvas::begin_path()
@@ -61,6 +86,25 @@ namespace cycfi::elements
 
    void canvas::fill()
    {
+      auto apply = [this](auto const& style)
+      {
+         using T = std::decay_t<decltype(style)>;
+         if constexpr (std::is_same<T, color>::value)
+         {
+            auto ctx = CGContextRef(_context);
+            CGContextSetRGBFillColor(ctx, style.red, style.green, style.blue, style.alpha);
+            CGContextFillPath(ctx);
+         }
+         else if constexpr (std::is_same<T, radial_gradient>::value)
+         {
+         }
+         else if constexpr (std::is_same<T, linear_gradient>::value)
+         {
+         }
+      };
+
+      std::visit(apply, _state->_fill_style);
+
       // if (_view._state->gradient && !(_view._state->paint ==  view_state::default_))
       // {
       //    auto  state = new_state();
@@ -100,7 +144,24 @@ namespace cycfi::elements
 
    void canvas::stroke()
    {
-      CGContextStrokePath(CGContextRef(_context));
+      auto apply = [this](auto const& style)
+      {
+         using T = std::decay_t<decltype(style)>;
+         if constexpr (std::is_same<T, color>::value)
+         {
+            auto ctx = CGContextRef(_context);
+            CGContextSetRGBFillColor(ctx, style.red, style.green, style.blue, style.alpha);
+            CGContextStrokePath(ctx);
+         }
+         else if constexpr (std::is_same<T, radial_gradient>::value)
+         {
+         }
+         else if constexpr (std::is_same<T, linear_gradient>::value)
+         {
+         }
+      };
+
+      std::visit(apply, _state->_stroke_style);
    }
 
    void canvas::stroke_preserve()
@@ -194,11 +255,13 @@ namespace cycfi::elements
 
    void canvas::fill_style(color c)
    {
-      CGContextSetRGBFillColor(CGContextRef(_context), c.red, c.green, c.blue, c.alpha);
+      _state->_fill_style = c;
    }
 
    void canvas::stroke_style(color c)
    {
+      _state->_stroke_style = c;
+
       CGContextSetRGBStrokeColor(CGContextRef(_context), c.red, c.green, c.blue, c.alpha);
    }
 

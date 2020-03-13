@@ -13,9 +13,10 @@
 // #include <canvas/support/font.hpp>
 // #include <boost/filesystem.hpp>
 
-// #include <vector>
+#include <vector>
+#include <memory>
+
 // #include <functional>
-// #include <stack>
 // #include <cmath>
 // #include <cassert>
 
@@ -35,10 +36,10 @@ namespace cycfi::elements
    public:
 
       explicit          canvas(host_context_ptr context_);
-                        canvas(canvas&& rhs);
+                        canvas(canvas const& rhs) = delete;
                         ~canvas();
 
-                        canvas(canvas const& rhs) = delete;
+                        canvas(canvas&& rhs) = delete;
       canvas&           operator=(canvas const& rhs) = delete;
       host_context_ptr  host_context() const;
 
@@ -87,32 +88,32 @@ namespace cycfi::elements
       // Gradients
       struct color_stop
       {
-         float             offset;
+         float          offset;
          struct color   color;
       };
 
-//      struct linear_gradient
-//      {
-//         point start = {};
-//         point end = {};
-//
-//         void  add_color_stop(color_stop cs);
-//         std::vector<color_stop> space = {};
-//      };
+      struct linear_gradient
+      {
+         point start = {};
+         point end = {};
 
-//      struct radial_gradient
-//      {
-//         point c1 = {};
-//         float c1_radius = {};
-//         point c2 = c1;
-//         float c2_radius = c1_radius;
-//
-//         void  add_color_stop(color_stop cs);
-//         std::vector<color_stop> space = {};
-//      };
+         void  add_color_stop(color_stop cs);
+         std::vector<color_stop> space = {};
+      };
 
-//      void              fill_style(linear_gradient const& gr);
-//      void              fill_style(radial_gradient const& gr);
+      struct radial_gradient
+      {
+         point c1 = {};
+         float c1_radius = {};
+         point c2 = c1;
+         float c2_radius = c1_radius;
+
+         void  add_color_stop(color_stop cs);
+         std::vector<color_stop> space = {};
+      };
+
+     void              fill_style(linear_gradient const& gr);
+     void              fill_style(radial_gradient const& gr);
 
       enum fill_rule_enum
       {
@@ -178,7 +179,11 @@ namespace cycfi::elements
 
       // friend class glyphs;
 
+      struct state;
+      using state_ptr = std::unique_ptr<state>;
+
       host_context_ptr  _context;
+      state_ptr         _state;
    };
 }
 
