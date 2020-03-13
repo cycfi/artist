@@ -74,6 +74,9 @@ namespace cycfi::elements
       void              round_rect(struct rect r, float radius);
       void              circle(struct circle c);
 
+      void              quadratic_curve_to(point cp, point end);
+      void              bezier_curve_to(point cp1, point cp2, point end);
+
       ///////////////////////////////////////////////////////////////////////////////////
       // Styles
       void              fill_style(color c);
