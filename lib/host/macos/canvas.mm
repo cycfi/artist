@@ -118,35 +118,6 @@ namespace cycfi::elements
       };
 
       std::visit(apply_fill, _state->_fill_style);
-
-      // if (_view._state->gradient && !(_view._state->paint ==  view_state::default_))
-      // {
-      //    auto  state = new_state();
-      //    clip();  // Set to clip current path
-      //    if (_view._state->paint == view_state::linear)
-      //    {
-      //       auto& gr = _view._state->linear_gradient;
-      //       CGContextDrawLinearGradient(
-      //          CGContextRef(_context), _view._state->gradient,
-      //          CGPoint{ gr.start.x, gr.start.y },
-      //          CGPoint{ gr.end.x, gr.end.y },
-      //          kCGGradientDrawsAfterEndLocation);
-      //    }
-      //    else
-      //    {
-      //       auto& gr = _view._state->radial_gradient;
-      //       CGContextDrawRadialGradient(
-      //          CGContextRef(_context), _view._state->gradient,
-      //          CGPoint{ gr.start.x, gr.start.y }, gr.start_radius,
-      //          CGPoint{ gr.end.x, gr.end.y }, gr.end_radius,
-      //          kCGGradientDrawsAfterEndLocation);
-
-      //    }
-      // }
-      // else
-      // {
-         CGContextFillPath(CGContextRef(_context));
-      // }
    }
 
    void canvas::fill_preserve()
@@ -158,7 +129,7 @@ namespace cycfi::elements
 
    void canvas::stroke()
    {
-      auto apply = [this](auto const& style)
+      auto apply_stroke = [this](auto const& style)
       {
          using T = std::decay_t<decltype(style)>;
          if constexpr (std::is_same<T, color>::value)
@@ -167,15 +138,35 @@ namespace cycfi::elements
             CGContextSetRGBFillColor(ctx, style.red, style.green, style.blue, style.alpha);
             CGContextStrokePath(ctx);
          }
-         else if constexpr (std::is_same<T, radial_gradient>::value)
-         {
-         }
          else if constexpr (std::is_same<T, linear_gradient>::value)
          {
+            auto  state = new_state();
+            auto ctx = CGContextRef(_context);
+            CGContextReplacePathWithStrokedPath(ctx);
+
+            clip();  // Set to clip current path
+            CGContextDrawLinearGradient(
+               ctx, _state->_stroke_gradient,
+               CGPoint{ style.start.x, style.start.y },
+               CGPoint{ style.end.x, style.end.y },
+               kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation);
+         }
+         else if constexpr (std::is_same<T, radial_gradient>::value)
+         {
+            auto  state = new_state();
+            auto ctx = CGContextRef(_context);
+            CGContextReplacePathWithStrokedPath(ctx);
+
+            clip();  // Set to clip current path
+            CGContextDrawRadialGradient(
+               ctx, _state->_stroke_gradient,
+               CGPoint{ style.c1.x, style.c1.y }, style.c1_radius,
+               CGPoint{ style.c2.x, style.c2.y }, style.c2_radius,
+               kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation);
          }
       };
 
-      std::visit(apply, _state->_stroke_style);
+      std::visit(apply_stroke, _state->_stroke_style);
    }
 
    void canvas::stroke_preserve()
@@ -188,7 +179,6 @@ namespace cycfi::elements
    void canvas::clip()
    {
       CGContextClip(CGContextRef(_context));
-      //CGContextEOClip(CGContextRef(_context));
    }
 
    void canvas::move_to(point p)
@@ -335,6 +325,18 @@ namespace cycfi::elements
    {
       _state->_fill_style = gr;
       make_gradient(gr.space, _state->_fill_gradient);
+   }
+
+   void canvas::stroke_style(linear_gradient const& gr)
+   {
+      _state->_stroke_style = gr;
+      make_gradient(gr.space, _state->_stroke_gradient);
+   }
+
+   void canvas::stroke_style(radial_gradient const& gr)
+   {
+      _state->_stroke_style = gr;
+      make_gradient(gr.space, _state->_stroke_gradient);
    }
 
 //    void canvas::color_space(color_stop const space[], std::size_t nspaces)

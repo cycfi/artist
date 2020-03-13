@@ -121,12 +121,27 @@ void radial_gradient(canvas& cnv)
     cnv.fill();
 }
 
+void stroke_gradient(canvas& cnv)
+{
+    auto x = 300.0f;
+    auto y = 20.0f;
+    auto gr = canvas::linear_gradient{ { x, y }, { x+150, y+80 } };
+    gr.add_color_stop({ 0.0, colors::navy_blue });
+    gr.add_color_stop({ 1.0, colors::maroon });
+
+    cnv.round_rect({ x, y, x+150, y+80 }, 5);
+    cnv.line_width(8);
+    cnv.stroke_style(gr);
+    cnv.stroke();
+}
+
 void draw(canvas& cnv)
 {
     basics(cnv);
     transformed(cnv);
     linear_gradient(cnv);
     radial_gradient(cnv);
+    stroke_gradient(cnv);
 }
 
 int main(int argc, const char* argv[])
