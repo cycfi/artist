@@ -15,13 +15,7 @@ namespace cycfi::elements
 
    pixmap::pixmap(std::string_view filename)
    {
-      // auto filename_ =
-      //    [[NSString alloc]
-      //       initWithCharacters : (unichar const*) filename.data()
-      //       length : filename.size()
-      //    ];
       auto filename_ = [NSString stringWithUTF8String : std::string{filename}.c_str() ];
-
       auto img_ = [[NSImage alloc] initWithContentsOfFile : filename_];
       _pixmap = (__bridge_retained host_pixmap_ptr) img_;
    }
