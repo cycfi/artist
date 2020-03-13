@@ -3,8 +3,8 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#if !defined(CANVAS_CIRCLE_APRIL_17_2016)
-#define CANVAS_CIRCLE_APRIL_17_2016
+#if !defined(ELEMENTS_CIRCLE_APRIL_17_2016)
+#define ELEMENTS_CIRCLE_APRIL_17_2016
 
 #include <canvas/rect.hpp>
 #include <algorithm>

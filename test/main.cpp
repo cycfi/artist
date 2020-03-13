@@ -100,10 +100,10 @@ void linear_gradient(canvas& cnv)
 {
     auto x = 300.0f;
     auto y = 20.0f;
-    auto gr = canvas::linear_gradient{ { x, y }, { x+150, y } };
+    auto gr = canvas::linear_gradient{ { x, y }, { x+300, y } };
     rainbow(gr);
 
-    cnv.round_rect({ x, y, x+150, y+80 }, 5);
+    cnv.round_rect({ x, y, x+300, y+80 }, 5);
     cnv.fill_style(gr);
     cnv.fill();
 }
@@ -125,14 +125,21 @@ void stroke_gradient(canvas& cnv)
 {
     auto x = 300.0f;
     auto y = 20.0f;
-    auto gr = canvas::linear_gradient{ { x, y }, { x+150, y+80 } };
+    auto gr = canvas::linear_gradient{ { x, y }, { x+300, y+80 } };
     gr.add_color_stop({ 0.0, colors::navy_blue });
     gr.add_color_stop({ 1.0, colors::maroon });
 
-    cnv.round_rect({ x, y, x+150, y+80 }, 5);
+    cnv.round_rect({ x, y, x+300, y+80 }, 5);
     cnv.line_width(8);
     cnv.stroke_style(gr);
     cnv.stroke();
+}
+
+void draw_pixmap(canvas& cnv)
+{
+    pixmap pm{ get_resource_path() + "/logo.png" };
+    auto x = 250.0f, y = 150.0f;
+    cnv.draw(pm, point{ x, y }, 0.5);
 }
 
 void draw(canvas& cnv)
@@ -142,6 +149,7 @@ void draw(canvas& cnv)
     linear_gradient(cnv);
     radial_gradient(cnv);
     stroke_gradient(cnv);
+    draw_pixmap(cnv);
 }
 
 int main(int argc, const char* argv[])

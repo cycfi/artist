@@ -3,14 +3,16 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#if !defined(CANVAS_TEST_APP_MARCH_12_2020)
-#define CANVAS_TEST_APP_MARCH_12_2020
+#if !defined(ELEMENTS_TEST_APP_MARCH_12_2020)
+#define ELEMENTS_TEST_APP_MARCH_12_2020
 
 #include <canvas/canvas.hpp>
+#include <string>
 
 using namespace cycfi::elements;
 
-int   run_app(int argc, const char* argv[]);
-void  draw(canvas& cnv);
+int            run_app(int argc, const char* argv[]);
+void           draw(canvas& cnv);
+std::string    get_resource_path();
 
 #endif

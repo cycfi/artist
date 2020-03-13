@@ -3,13 +3,13 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#if !defined(CANVAS_CANVAS_MAY_3_2016)
-#define CANVAS_CANVAS_MAY_3_2016
+#if !defined(ELEMENTS_CANVAS_MAY_3_2016)
+#define ELEMENTS_CANVAS_MAY_3_2016
 
 #include <canvas/color.hpp>
 #include <canvas/rect.hpp>
 #include <canvas/circle.hpp>
-// #include <canvas/support/pixmap.hpp>
+#include <canvas/pixmap.hpp>
 // #include <canvas/support/font.hpp>
 // #include <boost/filesystem.hpp>
 
@@ -174,9 +174,10 @@ namespace cycfi::elements
       ///////////////////////////////////////////////////////////////////////////////////
       // Pixmaps
 
-//      void              draw(pixmap const& pm, struct rect src, struct rect dest);
-//      void              draw(pixmap const& pm, struct rect dest);
-//      void              draw(pixmap const& pm, point pos);
+      void              draw(pixmap const& pm, struct rect src, struct rect dest);
+      void              draw(pixmap const& pm, struct rect dest);
+      void              draw(pixmap const& pm, point pos);
+      void              draw(pixmap const& pm, point pos, float scale);
 
       ///////////////////////////////////////////////////////////////////////////////////
       // States
