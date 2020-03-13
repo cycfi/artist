@@ -5,11 +5,23 @@
 =============================================================================*/
 #include "app.hpp"
 
+void balloon(canvas& cnv)
+{
+    // quadratic_curve_to
+    cnv.begin_path();
+    cnv.move_to({ 75, 25 });
+    cnv.quadratic_curve_to({ 25, 25 }, { 25, 62.5 });
+    cnv.quadratic_curve_to({ 25, 100 }, { 50, 100 });
+    cnv.quadratic_curve_to({ 50, 120 }, { 30, 125 });
+    cnv.quadratic_curve_to({ 60, 120 }, { 65, 100 });
+    cnv.quadratic_curve_to({ 125, 100 }, { 125, 62.5 });
+    cnv.quadratic_curve_to({ 125, 25 }, { 75, 25 });
+}
+
 void heart(canvas& cnv)
 {
     // bezier_curve_to
-    cnv.translate({ -100, 100 });
-    float y0 = 40, y1 = 50, y2 = 23, y3 = 90, y4 = 45, y5 = 75, y6 = 125;
+    constexpr float y0 = 40, y1 = 50, y2 = 23, y3 = 90, y4 = 45, y5 = 75, y6 = 125;
     cnv.begin_path();
     cnv.move_to({ 75, y0 });
     cnv.bezier_curve_to({ 75, y4 }, { 70, y2 }, { 50, y2 });
@@ -19,26 +31,6 @@ void heart(canvas& cnv)
     cnv.bezier_curve_to({ 130, y1}, { 130, y2 }, { 100, y2 });
     cnv.bezier_curve_to({ 85, y2 }, { 75, y4 }, { 75, y0 });
     cnv.fill_style(color{ 0.2, 0, 0 }.opacity(0.4));
-    cnv.line_width(2);
-    cnv.stroke_style(color{ 0.8, 0, 0 });
-    cnv.stroke_preserve();
-    cnv.fill();
-}
-
-void balloon(canvas& cnv)
-{
-    // quadratic_curve_to
-    cnv.translate({ 120, 0 });
-    cnv.begin_path();
-    cnv.move_to({ 75, 25 });
-    cnv.quadratic_curve_to({ 25, 25 }, { 25, 62.5 });
-    cnv.quadratic_curve_to({ 25, 100 }, { 50, 100 });
-    cnv.quadratic_curve_to({ 50, 120 }, { 30, 125 });
-    cnv.quadratic_curve_to({ 60, 120 }, { 65, 100 });
-    cnv.quadratic_curve_to({ 125, 100 }, { 125, 62.5 });
-    cnv.quadratic_curve_to({ 125, 25 }, { 75, 25 });
-    cnv.stroke_style(colors::light_gray);
-    cnv.stroke();
 }
 
 void basics(canvas& cnv)
@@ -68,8 +60,17 @@ void basics(canvas& cnv)
     cnv.fill_preserve();
     cnv.stroke();
 
+    cnv.translate({ 120, 0 });
     balloon(cnv);
+    cnv.stroke_style(colors::light_gray);
+    cnv.stroke();
+
+    cnv.translate({ -100, 100 });
     heart(cnv);
+    cnv.line_width(2);
+    cnv.stroke_style(color{ 0.8, 0, 0 });
+    cnv.stroke_preserve();
+    cnv.fill();
 }
 
 void draw(canvas& cnv)
