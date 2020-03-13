@@ -182,6 +182,16 @@ namespace cycfi::elements
          rect(r);
    }
 
+   void canvas::quadratic_curve_to(point cp, point end)
+   {
+      CGContextAddQuadCurveToPoint(CGContextRef(_context), cp.x, cp.y, end.x, end.y);
+   }
+
+   void canvas::bezier_curve_to(point cp1, point cp2, point end)
+   {
+      CGContextAddCurveToPoint(CGContextRef(_context), cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+   }
+
    void canvas::fill_style(color c)
    {
       CGContextSetRGBFillColor(CGContextRef(_context), c.red, c.green, c.blue, c.alpha);
