@@ -25,15 +25,15 @@ namespace cycfi::elements
       arc(point{ c.cx, c.cy }, c.radius, 0.0, 2 * M_PI);
    }
 
-   // inline void canvas::linear_gradient::add_color_stop(color_stop cs)
-   // {
-   //    space.push_back(cs);
-   // }
+   inline void canvas::linear_gradient::add_color_stop(color_stop cs)
+   {
+      space.push_back(cs);
+   }
 
-   // inline void canvas::radial_gradient::add_color_stop(color_stop cs)
-   // {
-   //    space.push_back(cs);
-   // }
+   inline void canvas::radial_gradient::add_color_stop(color_stop cs)
+   {
+      space.push_back(cs);
+   }
 
    inline void canvas::fill_rect(struct rect r)
    {
@@ -74,48 +74,30 @@ namespace cycfi::elements
    //    draw(pm, { 0, 0, pm.size() }, { pos, pm.size() });
    // }
 
-   // inline canvas::state::state(canvas& cnv_)
-   //   : cnv(&cnv_)
-   // {
-   //    cnv->save();
-   // }
+   inline canvas::state::state(canvas& cnv_)
+     : cnv(&cnv_)
+   {
+      cnv->save();
+   }
 
-   // inline canvas::state::state(state&& rhs) noexcept
-   //  : cnv(rhs.cnv)
-   // {
-   //    rhs.cnv = 0;
-   // }
+   inline canvas::state::state(state&& rhs) noexcept
+    : cnv(rhs.cnv)
+   {
+      rhs.cnv = 0;
+   }
 
-   // inline canvas::state::~state()
-   // {
-   //    if (cnv)
-   //       cnv->restore();
-   // }
+   inline canvas::state::~state()
+   {
+      if (cnv)
+         cnv->restore();
+   }
 
-   // inline canvas::state& canvas::state::operator=(state&& rhs) noexcept
-   // {
-   //    cnv = rhs.cnv;
-   //    rhs.cnv = 0;
-   //    return *this;
-   // }
-
-   // inline void canvas::apply_fill_style()
-   // {
-   //    if (_state.pattern_set != _state.fill_set && _state.fill_style)
-   //    {
-   //       _state.fill_style();
-   //       _state.pattern_set = _state.fill_set;
-   //    }
-   // }
-
-   // inline void canvas::apply_stroke_style()
-   // {
-   //    if (_state.pattern_set != _state.stroke_set && _state.stroke_style)
-   //    {
-   //       _state.stroke_style();
-   //       _state.pattern_set = _state.stroke_set;
-   //    }
-   // }
+   inline canvas::state& canvas::state::operator=(state&& rhs) noexcept
+   {
+      cnv = rhs.cnv;
+      rhs.cnv = 0;
+      return *this;
+   }
 }
 
 #endif
