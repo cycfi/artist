@@ -15,26 +15,26 @@ namespace cycfi::elements
    struct host_context;
    using host_context_ptr = host_context*;
 
-   class host_pixmap;
-   using host_pixmap_ptr = host_pixmap*;
+   class host_picture;
+   using host_picture_ptr = host_picture*;
 
    ////////////////////////////////////////////////////////////////////////////
    // pixmaps
    ////////////////////////////////////////////////////////////////////////////
-   class pixmap
+   class picture
    {
    public:
 
-      explicit          pixmap(point size);
-      explicit          pixmap(std::string_view path);
-                        pixmap(pixmap const& rhs) = delete;
-                        pixmap(pixmap&& rhs) noexcept;
-                        ~pixmap();
+      explicit          picture(point size);
+      explicit          picture(std::string_view path);
+                        picture(picture const& rhs) = delete;
+                        picture(picture&& rhs) noexcept;
+                        ~picture();
 
-      pixmap&           operator=(pixmap const& rhs) = delete;
-      pixmap&           operator=(pixmap&& rhs) noexcept;
+      picture&          operator=(picture const& rhs) = delete;
+      picture&          operator=(picture&& rhs) noexcept;
 
-      host_pixmap_ptr   host_pixmap() const;
+      host_picture_ptr  host_pixmap() const;
       extent            size() const;
       void              save_png(std::string_view path) const;
 
@@ -49,28 +49,28 @@ namespace cycfi::elements
       state_ptr         _state;
    };
 
-   using pixmap_ptr = std::shared_ptr<pixmap>;
+   using pixmap_ptr = std::shared_ptr<picture>;
 
    ////////////////////////////////////////////////////////////////////////////
    // pixmap_context allows drawing into a pixmap
    ////////////////////////////////////////////////////////////////////////////
-   class pixmap_context
+   class picture_context
    {
    public:
 
-      explicit          pixmap_context(pixmap& pixmap_);
-                        ~pixmap_context();
-      pixmap_context&   operator=(pixmap_context const& rhs) = delete;
+      explicit          picture_context(picture& pixmap_);
+                        ~picture_context();
+      picture_context&   operator=(picture_context const& rhs) = delete;
 
       host_context_ptr  context() const;
 
    private:
-                        pixmap_context(pixmap_context const&) = delete;
+                        picture_context(picture_context const&) = delete;
 
       struct state;
       using state_ptr = std::unique_ptr<state>;
 
-      pixmap&           _pixmap;
+      picture&          _picture;
       state_ptr         _state;
    };
 }

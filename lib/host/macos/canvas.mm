@@ -529,7 +529,7 @@ namespace cycfi::elements
 //        return { float(size_.width), float(size_.height) };
 //    }
 
-   void canvas::draw(pixmap const& pm, struct rect src, struct rect dest)
+   void canvas::draw(picture const& pm, struct rect src, struct rect dest)
    {
       auto  pm_ = (__bridge NSImage*) pm.host_pixmap();
       auto  src_ = NSRect{ src.left, src.top, src.width(), src.height() };

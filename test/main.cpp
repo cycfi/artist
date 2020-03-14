@@ -148,7 +148,7 @@ void stroke_gradient(canvas& cnv)
 
 void draw_pixmap(canvas& cnv)
 {
-    pixmap pm{ get_images_path() + "logo.png" };
+    picture pm{get_images_path() + "logo.png" };
     auto x = 250.0f, y = 120.0f;
     // auto x = 100.0f, y = 100.0f;
     cnv.draw(pm, point{ x, y }, 0.3);
@@ -184,11 +184,11 @@ float diff_pixel(uint32_t a, uint32_t b)
     return float(a1-b1) + float(a2-b2) + float(a3-b3) + float(a4-b4);
 }
 
-void compare_golden(pixmap const& pm, std::string name)
+void compare_golden(picture const& pm, std::string name)
 {
     pm.save_png(get_results_path() + name + ".png");
-    auto golden = pixmap(get_golden_path() + name + ".png");
-    auto result = pixmap(get_results_path() + name + ".png");
+    auto golden = picture(get_golden_path() + name + ".png");
+    auto result = picture(get_results_path() + name + ".png");
 
     if (result.size() != golden.size())
     {
@@ -210,12 +210,12 @@ void draw(canvas& cnv)
 {
     test_draw(cnv);
     {
-        pixmap pm{ window_size };
+        picture pm{window_size };
 
         auto bits = pm.pixels(); // TEST
 
         {
-            pixmap_context ctx{ pm };
+            picture_context ctx{pm };
             canvas pm_cnv{ ctx.context() };
             test_draw(pm_cnv);
 

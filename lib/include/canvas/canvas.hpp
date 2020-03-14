@@ -9,7 +9,7 @@
 #include <canvas/color.hpp>
 #include <canvas/rect.hpp>
 #include <canvas/circle.hpp>
-#include <canvas/pixmap.hpp>
+#include <canvas/picture.hpp>
 // #include <canvas/support/font.hpp>
 // #include <boost/filesystem.hpp>
 
@@ -174,10 +174,10 @@ namespace cycfi::elements
       ///////////////////////////////////////////////////////////////////////////////////
       // Pixmaps
 
-      void              draw(pixmap const& pm, struct rect src, struct rect dest);
-      void              draw(pixmap const& pm, struct rect dest);
-      void              draw(pixmap const& pm, point pos);
-      void              draw(pixmap const& pm, point pos, float scale);
+      void              draw(picture const& pm, struct rect src, struct rect dest);
+      void              draw(picture const& pm, struct rect dest);
+      void              draw(picture const& pm, point pos);
+      void              draw(picture const& pm, point pos, float scale);
 
       ///////////////////////////////////////////////////////////////////////////////////
       // States
