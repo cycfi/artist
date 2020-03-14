@@ -4,6 +4,7 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
 #include "app.hpp"
+#include <iostream>
 
 auto constexpr window_size = point{ 640.0f, 480.0f };
 auto constexpr bkd_color = rgba(35, 35, 37, 255);
@@ -149,7 +150,7 @@ void draw_pixmap(canvas& cnv)
 {
     pixmap pm{ get_images_path() + "logo.png" };
     auto x = 250.0f, y = 120.0f;
-    // auto x = 50.0f, y = 50.0f;
+    // auto x = 100.0f, y = 100.0f;
     cnv.draw(pm, point{ x, y }, 0.3);
 
     static auto gp = get_golden_path();
@@ -180,26 +181,29 @@ float diff_pixel(uint32_t a, uint32_t b)
     auto b3 = (b >> 16) & 0xff;
     auto b4 = (b >> 24) & 0xff;
 
-    return float(a1-b1) + float(a2-b2) - float(a3-b3) - float(a4-b4);
+    return float(a1-b1) + float(a2-b2) + float(a3-b3) + float(a4-b4);
 }
 
 void compare_golden(pixmap const& pm, std::string name)
 {
     pm.save_png(get_results_path() + name + ".png");
     auto golden = pixmap(get_golden_path() + name + ".png");
+    auto result = pixmap(get_results_path() + name + ".png");
 
-    if (pm.size() != golden.size())
+    if (result.size() != golden.size())
     {
         static int bad = 12345;
     }
 
-    // auto a = golden.pixels();
-    // auto b = pm.pixels();
-    // int diff = 0;
-    // for (auto i = 0; i != (window_size.x * window_size.y); ++i)
-    // {
-    //     auto diff = diff_pixel(a[i], b[i]);
-    // }
+    auto a = golden.pixels();
+    auto b = result.pixels();
+    for (auto i = 0; i != (window_size.x * window_size.y); ++i)
+    {
+        auto diff = diff_pixel(a[i], b[i]);
+        if (diff)
+            std::cout << diff << std::endl;
+    }
+
 }
 
 void draw(canvas& cnv)
