@@ -533,11 +533,13 @@ namespace cycfi::elements
    {
       auto  pm_ = (__bridge NSImage*) pm.host_pixmap();
       auto  src_ = NSRect{ src.left, src.top, src.width(), src.height() };
-      auto  dest_ = NSRect{ dest.left, dest.top, dest.width(), dest.height() };
+      auto  dest_ = NSRect{ 0, 0, dest.width(), dest.height() };
 
-      // CGContextSaveGState(CGContextRef(_context));
-      // translate({ 0.0f, src.top + src.width() });
-      // scale({ 1.0f, -1.0f });
+      // Flip the image (reverse cartesian)
+      auto move_x = dest.left;
+      auto move_y = dest.top + dest.height();
+      translate({ move_x, move_y });
+      scale({ 1.0f, -1.0f });
 
       [pm_
          drawInRect     :  dest_
@@ -548,6 +550,8 @@ namespace cycfi::elements
          hints          :  nil
       ];
 
-      // CGContextRestoreGState(CGContextRef(_context));
+      // Restore transforms
+      scale({ 1.0f, -1.0f });
+      translate({ -move_x, -move_y });
    }
 }

@@ -64,7 +64,7 @@ namespace cycfi::elements
    {
       auto path = [NSString stringWithUTF8String : std::string{path_}.c_str() ];
       _state->image = [[NSImage alloc] initWithContentsOfFile : path];
-      [_state->image setFlipped : YES];
+      // [_state->image setFlipped : YES];
    }
 
    pixmap::~pixmap()
