@@ -67,7 +67,11 @@ namespace cycfi::elements
    private:
                         pixmap_context(pixmap_context const&) = delete;
 
-      pixmap&          _pixmap;
+      struct state;
+      using state_ptr = std::unique_ptr<state>;
+
+      pixmap&           _pixmap;
+      state_ptr         _state;
    };
 }
 

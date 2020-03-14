@@ -56,6 +56,7 @@ namespace cycfi::elements
                         bitsPerPixel : 0
          ];
       [_state->image addRepresentation : rep];
+      [_state->image setFlipped : YES];
    }
 
    pixmap::pixmap(std::string_view path_)
@@ -63,6 +64,7 @@ namespace cycfi::elements
    {
       auto path = [NSString stringWithUTF8String : std::string{path_}.c_str() ];
       _state->image = [[NSImage alloc] initWithContentsOfFile : path];
+      [_state->image setFlipped : YES];
    }
 
    pixmap::~pixmap()
@@ -116,20 +118,40 @@ namespace cycfi::elements
       return get_pixels(_state->image);
    }
 
+   struct pixmap_context::state
+   {
+      NSGraphicsContext* ctx = nullptr;
+   };
+
    pixmap_context::pixmap_context(pixmap& pixmap_)
     : _pixmap(pixmap_)
    {
-      [get_ns_image(_pixmap.host_pixmap()) lockFocusFlipped : YES];
+      if (auto rep = get_bitmap(get_ns_image(_pixmap.host_pixmap())))
+      {
+         _state = std::make_unique<state>();
+         _state->ctx = [NSGraphicsContext graphicsContextWithBitmapImageRep : rep];
+         [NSGraphicsContext saveGraphicsState];
+         [NSGraphicsContext setCurrentContext : _state->ctx];
+      }
    }
 
    pixmap_context::~pixmap_context()
    {
-      [get_ns_image(_pixmap.host_pixmap()) unlockFocus];
+      if (_state)
+      {
+         [_state->ctx flushGraphics];
+         [NSGraphicsContext restoreGraphicsState];
+      }
    }
 
    host_context_ptr pixmap_context::context() const
    {
-      return (host_context_ptr) NSGraphicsContext.currentContext.CGContext;
+      if (_state)
+      {
+         auto ctx = NSGraphicsContext.currentContext.CGContext;
+         return (host_context_ptr) ctx;
+      }
+      return nullptr;
    }
 }
 
