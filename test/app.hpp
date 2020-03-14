@@ -13,6 +13,20 @@ using namespace cycfi::elements;
 
 int            run_app(int argc, const char* argv[]);
 void           draw(canvas& cnv);
-std::string    get_resource_path();
+
+inline std::string get_images_path()
+{
+   return IMAGES_PATH;
+}
+
+inline std::string get_golden_path()
+{
+   return GOLDEN_PATH;
+}
+
+inline std::string get_results_path()
+{
+   return RESULTS_PATH;
+}
 
 #endif

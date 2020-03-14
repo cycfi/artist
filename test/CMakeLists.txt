@@ -53,3 +53,24 @@ endif()
 
 target_link_libraries(canvas_test infra canvas)
 
+# Copy golden files to the binary dir
+file(
+  COPY golden
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+# Copy results folder to the binary dir
+file(
+  COPY results
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+# Copy images folder to the binary dir
+file(
+  COPY images
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+add_definitions(
+   -DGOLDEN_PATH="${CMAKE_CURRENT_BINARY_DIR}/golden/"
+   -DRESULTS_PATH="${CMAKE_CURRENT_BINARY_DIR}/results/"
+   -DIMAGES_PATH="${CMAKE_CURRENT_BINARY_DIR}/images/"
+)
+

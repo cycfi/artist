@@ -137,12 +137,17 @@ void stroke_gradient(canvas& cnv)
 
 void draw_pixmap(canvas& cnv)
 {
-    pixmap pm{ get_resource_path() + "/logo.png" };
-    auto x = 250.0f, y = 150.0f;
-    cnv.draw(pm, point{ x, y }, 0.5);
+    pixmap pm{ get_images_path() + "logo.png" };
+    auto x = 250.0f, y = 120.0f;
+    cnv.draw(pm, point{ x, y }, 0.3);
+
+    static auto gp = get_golden_path();
+
+    auto bits = pm.pixels(); // TEST
+
 }
 
-void draw(canvas& cnv)
+void test_draw(canvas& cnv)
 {
     basics(cnv);
     transformed(cnv);
@@ -150,6 +155,20 @@ void draw(canvas& cnv)
     radial_gradient(cnv);
     stroke_gradient(cnv);
     draw_pixmap(cnv);
+}
+
+void draw(canvas& cnv)
+{
+    test_draw(cnv);
+    {
+        pixmap pm{{ 640, 480 }};
+        {
+            pixmap_context ctx{ pm };
+            canvas pm_cnv{ ctx.context() };
+            test_draw(pm_cnv);
+        }
+        pm.save_png(get_results_path() + "wakamaya.png");
+    }
 }
 
 int main(int argc, const char* argv[])
