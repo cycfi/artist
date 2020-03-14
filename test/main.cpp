@@ -5,6 +5,16 @@
 =============================================================================*/
 #include "app.hpp"
 
+auto constexpr window_size = point{ 640.0f, 480.0f };
+auto constexpr bkd_color = rgba(35, 35, 37, 255);
+
+void background(canvas& cnv)
+{
+    cnv.rect({ { 0, 0 }, window_size });
+    cnv.fill_style(bkd_color);
+    cnv.fill();
+}
+
 void balloon(canvas& cnv)
 {
     // quadratic_curve_to
@@ -139,16 +149,17 @@ void draw_pixmap(canvas& cnv)
 {
     pixmap pm{ get_images_path() + "logo.png" };
     auto x = 250.0f, y = 120.0f;
+    // auto x = 50.0f, y = 50.0f;
     cnv.draw(pm, point{ x, y }, 0.3);
 
     static auto gp = get_golden_path();
 
     auto bits = pm.pixels(); // TEST
-
 }
 
 void test_draw(canvas& cnv)
 {
+    background(cnv);
     basics(cnv);
     transformed(cnv);
     linear_gradient(cnv);
@@ -157,17 +168,59 @@ void test_draw(canvas& cnv)
     draw_pixmap(cnv);
 }
 
+float diff_pixel(uint32_t a, uint32_t b)
+{
+    auto a1 = a & 0xff;
+    auto a2 = (a >> 8) & 0xff;
+    auto a3 = (a >> 16) & 0xff;
+    auto a4 = (a >> 24) & 0xff;
+
+    auto b1 = b & 0xff;
+    auto b2 = (b >> 8) & 0xff;
+    auto b3 = (b >> 16) & 0xff;
+    auto b4 = (b >> 24) & 0xff;
+
+    return float(a1-b1) + float(a2-b2) - float(a3-b3) - float(a4-b4);
+}
+
+void compare_golden(pixmap const& pm, std::string name)
+{
+    pm.save_png(get_results_path() + name + ".png");
+    auto golden = pixmap(get_golden_path() + name + ".png");
+
+    if (pm.size() != golden.size())
+    {
+        static int bad = 12345;
+    }
+
+    // auto a = golden.pixels();
+    // auto b = pm.pixels();
+    // int diff = 0;
+    // for (auto i = 0; i != (window_size.x * window_size.y); ++i)
+    // {
+    //     auto diff = diff_pixel(a[i], b[i]);
+    // }
+}
+
 void draw(canvas& cnv)
 {
     test_draw(cnv);
     {
-        pixmap pm{{ 640, 480 }};
+        pixmap pm{ window_size };
+
+        auto bits = pm.pixels(); // TEST
+
         {
             pixmap_context ctx{ pm };
             canvas pm_cnv{ ctx.context() };
             test_draw(pm_cnv);
+
+            bits = pm.pixels(); // TEST
         }
-        pm.save_png(get_results_path() + "wakamaya.png");
+
+        bits = pm.pixels(); // TEST
+
+        compare_golden(pm, "wakamiya");
     }
 }
 
