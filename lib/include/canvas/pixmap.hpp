@@ -36,6 +36,10 @@ namespace cycfi::elements
 
       host_pixmap_ptr   host_pixmap() const;
       extent            size() const;
+      void              save_png(std::string_view filename);
+
+      uint32_t*         pixels();
+      uint32_t const*   pixels() const;
 
    private:
 
@@ -51,19 +55,16 @@ namespace cycfi::elements
    {
    public:
 
-      explicit          pixmap_context(pixmap& pm);
+      explicit          pixmap_context(pixmap& pixmap_);
                         ~pixmap_context();
-                        pixmap_context(pixmap_context&& rhs) noexcept;
-
       pixmap_context&   operator=(pixmap_context const& rhs) = delete;
-      pixmap_context&   operator=(pixmap_context&& rhs) noexcept;
 
-      host_context_ptr  context() const { return _context; }
+      host_context_ptr  context() const;
 
    private:
                         pixmap_context(pixmap_context const&) = delete;
 
-      host_context_ptr  _context;
+      pixmap&          _pixmap;
    };
 
    ////////////////////////////////////////////////////////////////////////////
@@ -85,19 +86,6 @@ namespace cycfi::elements
    inline host_pixmap_ptr pixmap::host_pixmap() const
    {
       return _pixmap;
-   }
-
-   inline pixmap_context::pixmap_context(pixmap_context&& rhs) noexcept
-    : _context(rhs._context)
-   {
-      rhs._context = nullptr;
-   }
-
-   inline pixmap_context& pixmap_context::operator=(pixmap_context&& rhs) noexcept
-   {
-      _context = rhs._context;
-      rhs._context = nullptr;
-      return *this;
    }
 }
 
