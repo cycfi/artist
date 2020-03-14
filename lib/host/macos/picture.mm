@@ -10,18 +10,8 @@
 
 namespace cycfi::elements
 {
-   struct picture::state
-   {
-      NSImage* image = nullptr;
-   };
-
    namespace
    {
-      NSImage* get_ns_image(host_picture_ptr image)
-      {
-         return (__bridge NSImage*)image;
-      }
-
       NSBitmapImageRep* get_bitmap(NSImage* image)
       {
          for (NSImageRep* rep in [image representations])
@@ -39,53 +29,43 @@ namespace cycfi::elements
    }
 
    picture::picture(point size)
-    : _state(std::make_unique<state>())
    {
-      _state->image = [[NSImage alloc] initWithSize : NSMakeSize(size.x, size.y)];
+      auto img_ = [[NSImage alloc] initWithSize : NSMakeSize(size.x, size.y)];
+      _host = (__bridge_retained host_picture_ptr) img_;
    }
 
    picture::picture(std::string_view path_)
-    : _state(std::make_unique<state>())
    {
       auto path = [NSString stringWithUTF8String : std::string{path_}.c_str() ];
-      _state->image = [[NSImage alloc] initWithContentsOfFile : path];
+      auto img_ = [[NSImage alloc] initWithContentsOfFile : path];
+      _host = (__bridge_retained host_picture_ptr) img_;
    }
 
    picture::~picture()
-   {}
-
-   picture::picture(picture&& rhs) noexcept
-    : _state(std::forward<state_ptr>(rhs._state))
    {
-      rhs._state = nullptr;
+      CFBridgingRelease(_host);
    }
 
-   picture& picture::operator=(picture&& rhs) noexcept
+   inline host_picture_ptr picture::host_picture() const
    {
-      _state = std::move(rhs._state);
-      rhs._state = nullptr;
-      return *this;
-   }
-
-   inline host_picture_ptr picture::host_pixmap() const
-   {
-      return (__bridge host_picture_ptr)_state->image;
+      return _host;
    }
 
    extent picture::size() const
    {
-      auto size_ = [_state->image size];
+      auto size_ = [(__bridge NSImage*) _host size];
       return { float(size_.width), float(size_.height) };
    }
 
    void picture::save_png(std::string_view path_) const
    {
       auto path = [NSString stringWithUTF8String : std::string{path_}.c_str() ];
-      auto ref = [_state->image CGImageForProposedRect : nullptr
+      auto image = (__bridge NSImage*) _host;
+      auto ref = [image CGImageForProposedRect : nullptr
                                                context : nullptr
                                                  hints : nullptr];
       auto* rep = [[NSBitmapImageRep alloc] initWithCGImage : ref];
-      [rep setSize:[_state->image size]];
+      [rep setSize:[image size]];
 
       auto* data = [rep representationUsingType : NSBitmapImageFileTypePNG properties : @{}];
       [data writeToFile : path atomically : YES];
@@ -94,28 +74,23 @@ namespace cycfi::elements
 
    uint32_t* picture::pixels()
    {
-      return get_pixels(_state->image);
+      return get_pixels((__bridge NSImage*) _host);
    }
 
    uint32_t const* picture::pixels() const
    {
-      return get_pixels(_state->image);
+      return get_pixels((__bridge NSImage*) _host);
    }
-
-   struct picture_context::state
-   {
-      NSGraphicsContext* ctx = nullptr;
-   };
 
    picture_context::picture_context(picture& pixmap_)
     : _picture(pixmap_)
    {
-      [get_ns_image(_picture.host_pixmap()) lockFocusFlipped : YES];
+      [((__bridge NSImage*) _picture.host_picture()) lockFocusFlipped : YES];
    }
 
    picture_context::~picture_context()
    {
-      [get_ns_image(_picture.host_pixmap()) unlockFocus];
+      [((__bridge NSImage*) _picture.host_picture()) unlockFocus];
    }
 
    host_context_ptr picture_context::context() const
