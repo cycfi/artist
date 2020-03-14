@@ -26,7 +26,7 @@ namespace cycfi::elements
    public:
 
       explicit          pixmap(point size);
-      explicit          pixmap(std::string_view filename);
+      explicit          pixmap(std::string_view path);
                         pixmap(pixmap const& rhs) = delete;
                         pixmap(pixmap&& rhs) noexcept;
                         ~pixmap();
@@ -36,7 +36,7 @@ namespace cycfi::elements
 
       host_pixmap_ptr   host_pixmap() const;
       extent            size() const;
-      void              save_png(std::string_view filename);
+      void              save_png(std::string_view path) const;
 
       uint32_t*         pixels();
       uint32_t const*   pixels() const;
