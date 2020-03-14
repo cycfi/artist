@@ -18,7 +18,7 @@ set(CANVAS_HEADERS
 if (APPLE)
    set(CANVAS_HOST
       host/macos/canvas.mm
-      host/macos/pixmap.mm
+           host/macos/picture.mm
    )
 elseif (UNIX)
    set(CANVAS_HOST

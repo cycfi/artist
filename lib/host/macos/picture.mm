@@ -3,21 +3,21 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#include <canvas/pixmap.hpp>
+#include <canvas/picture.hpp>
 #include <Quartz/Quartz.h>
 #include <string>
 #include <stdexcept>
 
 namespace cycfi::elements
 {
-   struct pixmap::state
+   struct picture::state
    {
       NSImage* image = nullptr;
    };
 
    namespace
    {
-      NSImage* get_ns_image(host_pixmap_ptr image)
+      NSImage* get_ns_image(host_picture_ptr image)
       {
          return (__bridge NSImage*)image;
       }
@@ -38,63 +38,47 @@ namespace cycfi::elements
       }
    }
 
-   pixmap::pixmap(point size)
+   picture::picture(point size)
     : _state(std::make_unique<state>())
    {
       _state->image = [[NSImage alloc] initWithSize : NSMakeSize(size.x, size.y)];
-      NSBitmapImageRep* rep =
-         [[NSBitmapImageRep alloc]
-            initWithBitmapDataPlanes : nullptr
-                          pixelsWide : size.x
-                          pixelsHigh : size.y
-                       bitsPerSample : 8
-                     samplesPerPixel : 4
-                            hasAlpha : YES
-                            isPlanar : NO
-                      colorSpaceName : NSCalibratedRGBColorSpace
-                         bytesPerRow : 0
-                        bitsPerPixel : 0
-         ];
-      [_state->image addRepresentation : rep];
-      [_state->image setFlipped : YES];
    }
 
-   pixmap::pixmap(std::string_view path_)
+   picture::picture(std::string_view path_)
     : _state(std::make_unique<state>())
    {
       auto path = [NSString stringWithUTF8String : std::string{path_}.c_str() ];
       _state->image = [[NSImage alloc] initWithContentsOfFile : path];
-      // [_state->image setFlipped : YES];
    }
 
-   pixmap::~pixmap()
+   picture::~picture()
    {}
 
-   pixmap::pixmap(pixmap&& rhs) noexcept
+   picture::picture(picture&& rhs) noexcept
     : _state(std::forward<state_ptr>(rhs._state))
    {
       rhs._state = nullptr;
    }
 
-   pixmap& pixmap::operator=(pixmap&& rhs) noexcept
+   picture& picture::operator=(picture&& rhs) noexcept
    {
       _state = std::move(rhs._state);
       rhs._state = nullptr;
       return *this;
    }
 
-   inline host_pixmap_ptr pixmap::host_pixmap() const
+   inline host_picture_ptr picture::host_pixmap() const
    {
-      return (__bridge host_pixmap_ptr)_state->image;
+      return (__bridge host_picture_ptr)_state->image;
    }
 
-   extent pixmap::size() const
+   extent picture::size() const
    {
       auto size_ = [_state->image size];
       return { float(size_.width), float(size_.height) };
    }
 
-   void pixmap::save_png(std::string_view path_) const
+   void picture::save_png(std::string_view path_) const
    {
       auto path = [NSString stringWithUTF8String : std::string{path_}.c_str() ];
       auto ref = [_state->image CGImageForProposedRect : nullptr
@@ -108,50 +92,35 @@ namespace cycfi::elements
       return;
    }
 
-   uint32_t* pixmap::pixels()
+   uint32_t* picture::pixels()
    {
       return get_pixels(_state->image);
    }
 
-   uint32_t const* pixmap::pixels() const
+   uint32_t const* picture::pixels() const
    {
       return get_pixels(_state->image);
    }
 
-   struct pixmap_context::state
+   struct picture_context::state
    {
       NSGraphicsContext* ctx = nullptr;
    };
 
-   pixmap_context::pixmap_context(pixmap& pixmap_)
-    : _pixmap(pixmap_)
+   picture_context::picture_context(picture& pixmap_)
+    : _picture(pixmap_)
    {
-      if (auto rep = get_bitmap(get_ns_image(_pixmap.host_pixmap())))
-      {
-         _state = std::make_unique<state>();
-         _state->ctx = [NSGraphicsContext graphicsContextWithBitmapImageRep : rep];
-         [NSGraphicsContext saveGraphicsState];
-         [NSGraphicsContext setCurrentContext : _state->ctx];
-      }
+      [get_ns_image(_picture.host_pixmap()) lockFocusFlipped : YES];
    }
 
-   pixmap_context::~pixmap_context()
+   picture_context::~picture_context()
    {
-      if (_state)
-      {
-         [_state->ctx flushGraphics];
-         [NSGraphicsContext restoreGraphicsState];
-      }
+      [get_ns_image(_picture.host_pixmap()) unlockFocus];
    }
 
-   host_context_ptr pixmap_context::context() const
+   host_context_ptr picture_context::context() const
    {
-      if (_state)
-      {
-         auto ctx = NSGraphicsContext.currentContext.CGContext;
-         return (host_context_ptr) ctx;
-      }
-      return nullptr;
+      return (host_context_ptr) NSGraphicsContext.currentContext.CGContext;
    }
 }
 

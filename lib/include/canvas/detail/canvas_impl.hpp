@@ -64,17 +64,17 @@ namespace cycfi::elements
    //    _state.align = align;
    // }
 
-   inline void canvas::draw(pixmap const& pm, struct rect dest)
+   inline void canvas::draw(picture const& pm, struct rect dest)
    {
       draw(pm, { 0, 0, pm.size() }, dest);
    }
 
-   inline void canvas::draw(pixmap const& pm, point pos)
+   inline void canvas::draw(picture const& pm, point pos)
    {
       draw(pm, { 0, 0, pm.size() }, { pos, pm.size() });
    }
 
-   inline void canvas::draw(pixmap const& pm, point pos, float scale)
+   inline void canvas::draw(picture const& pm, point pos, float scale)
    {
       auto size = pm.size();
       auto scaled = extent{ size.x*scale, size.y*scale };
