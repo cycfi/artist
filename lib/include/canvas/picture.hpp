@@ -8,7 +8,6 @@
 
 #include <canvas/point.hpp>
 #include <string_view>
-#include <memory>
 
 namespace cycfi::elements
 {
@@ -34,7 +33,7 @@ namespace cycfi::elements
       picture&          operator=(picture const& rhs) = delete;
       picture&          operator=(picture&& rhs) noexcept;
 
-      host_picture_ptr  host_pixmap() const;
+      host_picture_ptr  host_picture() const;
       extent            size() const;
       void              save_png(std::string_view path) const;
 
@@ -43,10 +42,7 @@ namespace cycfi::elements
 
    private:
 
-      struct state;
-      using state_ptr = std::unique_ptr<state>;
-
-      state_ptr         _state;
+      host_picture_ptr  _host;
    };
 
    using pixmap_ptr = std::shared_ptr<picture>;
@@ -67,12 +63,24 @@ namespace cycfi::elements
    private:
                         picture_context(picture_context const&) = delete;
 
-      struct state;
-      using state_ptr = std::unique_ptr<state>;
-
       picture&          _picture;
-      state_ptr         _state;
    };
+
+   ////////////////////////////////////////////////////////////////////////////
+   // Inlines
+   ////////////////////////////////////////////////////////////////////////////
+   inline picture::picture(picture&& rhs) noexcept
+    : _host(rhs._host)
+   {
+      rhs._host = nullptr;
+   }
+
+   inline picture& picture::operator=(picture&& rhs) noexcept
+   {
+      _host = std::move(rhs._host);
+      rhs._host = nullptr;
+      return *this;
+   }
 }
 
 #endif
