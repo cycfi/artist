@@ -30,9 +30,9 @@ namespace cycfi::elements
       _pixmap = (__bridge_retained host_pixmap_ptr) img_;
    }
 
-   pixmap::pixmap(std::string_view filename)
+   pixmap::pixmap(std::string_view path_)
    {
-      auto path = [NSString stringWithUTF8String : std::string{filename}.c_str() ];
+      auto path = [NSString stringWithUTF8String : std::string{path_}.c_str() ];
       auto img_ = [[NSImage alloc] initWithContentsOfFile : path];
       _pixmap = (__bridge_retained host_pixmap_ptr) img_;
    }
@@ -48,14 +48,14 @@ namespace cycfi::elements
       return { float(size_.width), float(size_.height) };
    }
 
-   void pixmap::save_png(std::string_view filename)
+   void pixmap::save_png(std::string_view path_) const
    {
-      auto path = [NSString stringWithUTF8String : std::string{filename}.c_str() ];
+      auto path = [NSString stringWithUTF8String : std::string{path_}.c_str() ];
       auto image = (__bridge NSImage*) _pixmap;
-      auto ref = [image CGImageForProposedRect : NULL
-                                       context : nil
-                                         hints : nil];
-      auto* rep = [[NSBitmapImageRep alloc] initWithCGImage:ref];
+      auto ref = [image CGImageForProposedRect : nullptr
+                                       context : nullptr
+                                         hints : nullptr];
+      auto* rep = [[NSBitmapImageRep alloc] initWithCGImage : ref];
       [rep setSize:[image size]];
 
       auto* data = [rep representationUsingType : NSBitmapImageFileTypePNG properties : @{}];
