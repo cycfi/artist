@@ -10,9 +10,38 @@
 
 namespace cycfi::elements
 {
-   pixmap::pixmap(point size)
+   struct pixmap::state
    {
-      auto img_ = [[NSImage alloc] initWithSize : NSMakeSize(size.x, size.y)];
+      NSImage* image = nullptr;
+   };
+
+   namespace
+   {
+      NSImage* get_ns_image(host_pixmap_ptr image)
+      {
+         return (__bridge NSImage*)image;
+      }
+
+      NSBitmapImageRep* get_bitmap(NSImage* image)
+      {
+         for (NSImageRep* rep in [image representations])
+            if ([rep isKindOfClass : [NSBitmapImageRep class]])
+               return (NSBitmapImageRep*)rep;
+         return nullptr;
+      }
+
+      uint32_t* get_pixels(NSImage* image)
+      {
+         if (auto bitmap = get_bitmap(image))
+            return (uint32_t*) [bitmap bitmapData];
+         return nullptr;
+      }
+   }
+
+   pixmap::pixmap(point size)
+    : _state(std::make_unique<state>())
+   {
+      _state->image = [[NSImage alloc] initWithSize : NSMakeSize(size.x, size.y)];
       NSBitmapImageRep* rep =
          [[NSBitmapImageRep alloc]
             initWithBitmapDataPlanes : nullptr
@@ -26,73 +55,76 @@ namespace cycfi::elements
                          bytesPerRow : 0
                         bitsPerPixel : 0
          ];
-      [img_ addRepresentation : rep];
-      _pixmap = (__bridge_retained host_pixmap_ptr) img_;
+      [_state->image addRepresentation : rep];
    }
 
    pixmap::pixmap(std::string_view path_)
+    : _state(std::make_unique<state>())
    {
       auto path = [NSString stringWithUTF8String : std::string{path_}.c_str() ];
-      auto img_ = [[NSImage alloc] initWithContentsOfFile : path];
-      _pixmap = (__bridge_retained host_pixmap_ptr) img_;
+      _state->image = [[NSImage alloc] initWithContentsOfFile : path];
    }
 
    pixmap::~pixmap()
+   {}
+
+   pixmap::pixmap(pixmap&& rhs) noexcept
+    : _state(std::forward<state_ptr>(rhs._state))
    {
-      CFBridgingRelease(_pixmap);
+      rhs._state = nullptr;
+   }
+
+   pixmap& pixmap::operator=(pixmap&& rhs) noexcept
+   {
+      _state = std::move(rhs._state);
+      rhs._state = nullptr;
+      return *this;
+   }
+
+   inline host_pixmap_ptr pixmap::host_pixmap() const
+   {
+      return (__bridge host_pixmap_ptr)_state->image;
    }
 
    extent pixmap::size() const
    {
-      auto size_ = [((__bridge NSImage*) _pixmap) size];
+      auto size_ = [_state->image size];
       return { float(size_.width), float(size_.height) };
    }
 
    void pixmap::save_png(std::string_view path_) const
    {
       auto path = [NSString stringWithUTF8String : std::string{path_}.c_str() ];
-      auto image = (__bridge NSImage*) _pixmap;
-      auto ref = [image CGImageForProposedRect : nullptr
-                                       context : nullptr
-                                         hints : nullptr];
+      auto ref = [_state->image CGImageForProposedRect : nullptr
+                                               context : nullptr
+                                                 hints : nullptr];
       auto* rep = [[NSBitmapImageRep alloc] initWithCGImage : ref];
-      [rep setSize:[image size]];
+      [rep setSize:[_state->image size]];
 
       auto* data = [rep representationUsingType : NSBitmapImageFileTypePNG properties : @{}];
       [data writeToFile : path atomically : YES];
       return;
    }
 
-   namespace
-   {
-      uint32_t* get_pixels(NSImage* image)
-      {
-         for (NSImageRep* rep in [image representations])
-            if ([rep isKindOfClass : [NSBitmapImageRep class]])
-               return (uint32_t*) [((NSBitmapImageRep*)rep) bitmapData];
-         return nullptr;
-      }
-   }
-
    uint32_t* pixmap::pixels()
    {
-      return get_pixels((__bridge NSImage*) _pixmap);
+      return get_pixels(_state->image);
    }
 
    uint32_t const* pixmap::pixels() const
    {
-      return get_pixels((__bridge NSImage*) _pixmap);
+      return get_pixels(_state->image);
    }
 
    pixmap_context::pixmap_context(pixmap& pixmap_)
     : _pixmap(pixmap_)
    {
-      [((__bridge NSImage*) _pixmap.host_pixmap()) lockFocusFlipped : YES];
+      [get_ns_image(_pixmap.host_pixmap()) lockFocusFlipped : YES];
    }
 
    pixmap_context::~pixmap_context()
    {
-      [((__bridge NSImage*) _pixmap.host_pixmap()) unlockFocus];
+      [get_ns_image(_pixmap.host_pixmap()) unlockFocus];
    }
 
    host_context_ptr pixmap_context::context() const
