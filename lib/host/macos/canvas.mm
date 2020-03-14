@@ -512,46 +512,20 @@ namespace cycfi::elements
 //       _view._state->text_align = align;
 //    }
 
-//    canvas::image::image(char const* filename)
-//    {
-//       auto filename_ = [NSString stringWithUTF8String:filename];
-//       auto img_ = [[NSImage alloc] initWithContentsOfFile:filename_];
-//       _rep = (__bridge_retained rep*) img_;
-//    }
-
-//    canvas::image::~image()
-//    {
-//       CFBridgingRelease(_rep);
-//    }
-//    photon::size canvas::image::size() const
-//    {
-//        auto size_ = [((__bridge NSImage*) _rep) size];
-//        return { float(size_.width), float(size_.height) };
-//    }
-
-   void canvas::draw(picture const& pm, struct rect src, struct rect dest)
+   void canvas::draw(picture const& pic, struct rect src, struct rect dest)
    {
-      auto  pm_ = (__bridge NSImage*) pm.host_pixmap();
-      auto  src_ = NSRect{ src.left, src.top, src.width(), src.height() };
-      auto  dest_ = NSRect{ 0, 0, dest.width(), dest.height() };
+      auto  img = (__bridge NSImage*) pic.host_picture();
+      auto  src_ = NSRect{ src.left, [img size].height - src.bottom, src.width(), src.height() };
+      auto  dest_ = NSRect{ dest.left, dest.top, dest.width(), dest.height() };
 
-      // Flip the image (reverse cartesian)
-      auto move_x = dest.left;
-      auto move_y = dest.top + dest.height();
-      translate({ move_x, move_y });
-      scale({ 1.0f, -1.0f });
-
-      [pm_
+      [img
          drawInRect     :  dest_
          fromRect       :  src_
          operation      :  NSCompositingOperationSourceOver
          fraction       :  1.0
-         respectFlipped :  NO
+         respectFlipped :  YES
          hints          :  nil
       ];
 
-      // Restore transforms
-      scale({ 1.0f, -1.0f });
-      translate({ -move_x, -move_y });
    }
 }

@@ -174,10 +174,10 @@ namespace cycfi::elements
       ///////////////////////////////////////////////////////////////////////////////////
       // Pixmaps
 
-      void              draw(picture const& pm, struct rect src, struct rect dest);
-      void              draw(picture const& pm, struct rect dest);
-      void              draw(picture const& pm, point pos);
-      void              draw(picture const& pm, point pos, float scale);
+      void              draw(picture const& pic, struct rect src, struct rect dest);
+      void              draw(picture const& pic, struct rect dest);
+      void              draw(picture const& pic, point pos);
+      void              draw(picture const& pic, point pos, float scale);
 
       ///////////////////////////////////////////////////////////////////////////////////
       // States
