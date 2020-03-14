@@ -43,7 +43,10 @@ namespace cycfi::elements
 
    private:
 
-      host_pixmap_ptr   _pixmap;
+      struct state;
+      using state_ptr = std::unique_ptr<state>;
+
+      state_ptr         _state;
    };
 
    using pixmap_ptr = std::shared_ptr<pixmap>;
@@ -66,27 +69,6 @@ namespace cycfi::elements
 
       pixmap&          _pixmap;
    };
-
-   ////////////////////////////////////////////////////////////////////////////
-   // Inlines
-   ////////////////////////////////////////////////////////////////////////////
-   inline pixmap::pixmap(pixmap&& rhs) noexcept
-    : _pixmap(rhs._pixmap)
-   {
-      rhs._pixmap = nullptr;
-   }
-
-   inline pixmap& pixmap::operator=(pixmap&& rhs) noexcept
-   {
-      _pixmap = rhs._pixmap;
-      rhs._pixmap = nullptr;
-      return *this;
-   }
-
-   inline host_pixmap_ptr pixmap::host_pixmap() const
-   {
-      return _pixmap;
-   }
 }
 
 #endif
