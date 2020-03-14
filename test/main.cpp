@@ -150,8 +150,7 @@ void draw_pixmap(canvas& cnv)
 {
     picture pm{get_images_path() + "logo.png" };
     auto x = 250.0f, y = 120.0f;
-    // auto x = 100.0f, y = 100.0f;
-    cnv.draw(pm, point{ x, y }, 0.3);
+    cnv.draw(pm, point{ x, y }, 0.4);
 
     static auto gp = get_golden_path();
 
@@ -203,7 +202,6 @@ void compare_golden(picture const& pm, std::string name)
         if (diff)
             std::cout << diff << std::endl;
     }
-
 }
 
 void draw(canvas& cnv)
@@ -211,19 +209,11 @@ void draw(canvas& cnv)
     test_draw(cnv);
     {
         picture pm{window_size };
-
-        auto bits = pm.pixels(); // TEST
-
         {
             picture_context ctx{pm };
             canvas pm_cnv{ ctx.context() };
             test_draw(pm_cnv);
-
-            bits = pm.pixels(); // TEST
         }
-
-        bits = pm.pixels(); // TEST
-
         compare_golden(pm, "wakamiya");
     }
 }
