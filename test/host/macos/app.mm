@@ -104,3 +104,8 @@ int run_app(int argc, const char* argv[])
    window _win;
    return _app.run();
 }
+
+void stop_app()
+{
+   [NSApp terminate : nil];
+}
