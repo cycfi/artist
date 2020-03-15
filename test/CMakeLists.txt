@@ -8,6 +8,8 @@ project(canvas_test)
 
 set(CANVAS_TEST_RESOURCES
    ${CMAKE_CURRENT_LIST_DIR}/images/logo.png
+   ${CMAKE_CURRENT_LIST_DIR}/fonts/OpenSansCondensed-Light.ttf
+   ${CMAKE_CURRENT_LIST_DIR}/fonts/OpenSansCondensed-LightItalic.ttf
 )
 
 ###############################################################################

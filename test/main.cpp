@@ -151,10 +151,6 @@ void draw_pixmap(canvas& cnv)
     picture pm{get_images_path() + "logo.png" };
     auto x = 250.0f, y = 120.0f;
     cnv.draw(pm, point{ x, y }, 0.4);
-
-    static auto gp = get_golden_path();
-
-    auto bits = pm.pixels(); // TEST
 }
 
 void test_draw(canvas& cnv)
@@ -204,18 +200,61 @@ void compare_golden(picture const& pm, std::string name)
     }
 }
 
+void typography(canvas& cnv)
+{
+    cnv.fill_style(rgba(220, 220, 220, 200));
+    cnv.stroke_style(rgba(220, 220, 220, 200));
+
+    // Note: This is just a demo. Normally, you do not want to
+    // create fonts when drawing. Preferrably, you will want to
+    // create your fonts somewhere else (e.g. in a constructor).
+
+    cnv.font(font_descr{ "Open Sans", 36 });
+    cnv.fill_text("Regular", { 20, 40 });
+
+    cnv.font(font_descr{ "Open Sans", 36 }.bold());
+    cnv.fill_text("Bold", { 160, 40 });
+
+    cnv.font(font_descr{ "Open Sans", 36 }.light());
+    cnv.fill_text("Light", { 250, 40 });
+
+    cnv.font(font_descr{ "Open Sans", 36 }.italic());
+    cnv.fill_text("Italic", { 340, 40 });
+
+    // In this case, the font already describes the condensed 'stretch'
+    cnv.font(font_descr{ "Open Sans Condensed", 36 });
+    cnv.fill_text("Condensed", { 430, 40 });
+
+    // In this case, the font already describes the condensed 'stretch'
+    cnv.font(font_descr{ "Open Sans Condensed", 36 }.italic());
+    cnv.fill_text("Condensed Italic", { 20, 100 });
+
+    cnv.font(font_descr{ "Open Sans", 36 }.bold());
+    cnv.line_width(0.5);
+    cnv.stroke_text("Outline", { 210, 100 });
+
+    cnv.font(font_descr{ "Open Sans", 46 }.bold());
+    auto gr = canvas::linear_gradient{ { 360, 80 }, { 360, 120 } };
+    gr.add_color_stop({ 0.0, colors::navy_blue });
+    gr.add_color_stop({ 1.0, colors::maroon });
+    cnv.fill_style(gr);
+    cnv.fill_text("Gradient", { 360, 100 });
+}
+
 void draw(canvas& cnv)
 {
-    test_draw(cnv);
-    {
-        picture pm{window_size };
-        {
-            picture_context ctx{pm };
-            canvas pm_cnv{ ctx.context() };
-            test_draw(pm_cnv);
-        }
-        compare_golden(pm, "wakamiya");
-    }
+    typography(cnv);
+
+    // test_draw(cnv);
+    // {
+    //     picture pm{window_size };
+    //     {
+    //         picture_context ctx{pm };
+    //         canvas pm_cnv{ ctx.context() };
+    //         test_draw(pm_cnv);
+    //     }
+    //     compare_golden(pm, "wakamiya");
+    // }
 }
 
 int main(int argc, const char* argv[])

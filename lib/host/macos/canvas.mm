@@ -18,26 +18,33 @@ namespace cycfi::elements
        , canvas::radial_gradient
       >;
 
-      using style_stack = std::stack<std::pair<style, style>>;
+      struct aux
+      {
+         style       _fill_style;
+         style       _stroke_style;
+         struct font _font;
+         int         _text_align;
+      };
 
-      style          _fill_style;
-      CGGradientRef  _fill_gradient;
-      style          _stroke_style;
-      CGGradientRef  _stroke_gradient;
-      style_stack    _style_stack;
+      using aux_stack = std::stack<aux>;
+
+      style          _fill_style = colors::black;
+      CGGradientRef  _fill_gradient = nullptr;
+      style          _stroke_style = colors::black;
+      CGGradientRef  _stroke_gradient = nullptr;
+      struct font    _font = font_descr{ "Helvetica Neue", 12 };
+      int            _text_align = canvas::baseline;
+      aux_stack      _aux_stack;
    };
 
    canvas::canvas(host_context_ptr context_)
     : _context{ context_ }
     , _state{ std::make_unique<canvas_state>() }
    {
-      // // Flip the drawing vertically
-      // auto ctx = CGContextRef(_context);
-      // CGAffineTransform trans = CGAffineTransformMakeScale(1, -1);
-      // CGContextSetTextMatrix(ctx, trans);
-
-      // scale({ 1.0, -1.0 });
-      // translate({ 0.0, -480 });
+      // Flip text drawing vertically
+      auto ctx = CGContextRef(_context);
+      CGAffineTransform trans = CGAffineTransformMakeScale(1, -1);
+      CGContextSetTextMatrix(ctx, trans);
    }
 
    canvas::~canvas()
@@ -62,18 +69,24 @@ namespace cycfi::elements
    void canvas::save()
    {
       CGContextSaveGState(CGContextRef(_context));
-      _state->_style_stack.push(
-         { _state->_fill_style, _state->_stroke_style }
+      _state->_aux_stack.push(
+         {
+            _state->_fill_style,
+            _state->_stroke_style,
+            _state->_font
+         }
       );
    }
 
    void canvas::restore()
    {
       CGContextRestoreGState(CGContextRef(_context));
-      auto& [ fs, ss ] = _state->_style_stack.top();
-      _state->_fill_style = std::move(fs);
-      _state->_stroke_style = std::move(ss);
-      _state->_style_stack.pop();
+      auto& [ fs, ss, f, ta ] = _state->_aux_stack.top();
+      _state->_fill_style     = std::move(fs);
+      _state->_stroke_style   = std::move(ss);
+      _state->_font           = std::move(f);
+      _state->_text_align     = ta;
+      _state->_aux_stack.pop();
    }
 
    void canvas::begin_path()
@@ -91,13 +104,13 @@ namespace cycfi::elements
       auto apply_fill = [this](auto const& style)
       {
          using T = std::decay_t<decltype(style)>;
-         if constexpr (std::is_same<T, color>::value)
+         if constexpr (std::is_same_v<T, color>)
          {
             auto ctx = CGContextRef(_context);
             CGContextSetRGBFillColor(ctx, style.red, style.green, style.blue, style.alpha);
             CGContextFillPath(ctx);
          }
-         else if constexpr (std::is_same<T, linear_gradient>::value)
+         else if constexpr (std::is_same_v<T, linear_gradient>)
          {
             auto  state = new_state();
             clip();  // Set to clip current path
@@ -108,7 +121,7 @@ namespace cycfi::elements
                kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
             );
          }
-         else if constexpr (std::is_same<T, radial_gradient>::value)
+         else if constexpr (std::is_same_v<T, radial_gradient>)
          {
             auto  state = new_state();
             clip();  // Set to clip current path
@@ -135,13 +148,13 @@ namespace cycfi::elements
       auto apply_stroke = [this](auto const& style)
       {
          using T = std::decay_t<decltype(style)>;
-         if constexpr (std::is_same<T, color>::value)
+         if constexpr (std::is_same_v<T, color>)
          {
             auto ctx = CGContextRef(_context);
-            CGContextSetRGBFillColor(ctx, style.red, style.green, style.blue, style.alpha);
+            CGContextSetRGBStrokeColor(ctx, style.red, style.green, style.blue, style.alpha);
             CGContextStrokePath(ctx);
          }
-         else if constexpr (std::is_same<T, linear_gradient>::value)
+         else if constexpr (std::is_same_v<T, linear_gradient>)
          {
             auto  state = new_state();
             auto ctx = CGContextRef(_context);
@@ -152,9 +165,10 @@ namespace cycfi::elements
                ctx, _state->_stroke_gradient,
                CGPoint{ style.start.x, style.start.y },
                CGPoint{ style.end.x, style.end.y },
-               kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation);
+               kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
+            );
          }
-         else if constexpr (std::is_same<T, radial_gradient>::value)
+         else if constexpr (std::is_same_v<T, radial_gradient>)
          {
             auto  state = new_state();
             auto ctx = CGContextRef(_context);
@@ -165,7 +179,8 @@ namespace cycfi::elements
                ctx, _state->_stroke_gradient,
                CGPoint{ style.c1.x, style.c1.y }, style.c1_radius,
                CGPoint{ style.c2.x, style.c2.y }, style.c2_radius,
-               kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation);
+               kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
+            );
          }
       };
 
@@ -268,8 +283,6 @@ namespace cycfi::elements
    void canvas::stroke_style(color c)
    {
       _state->_stroke_style = c;
-
-      CGContextSetRGBStrokeColor(CGContextRef(_context), c.red, c.green, c.blue, c.alpha);
    }
 
    void canvas::line_width(float w)
@@ -342,132 +355,154 @@ namespace cycfi::elements
       make_gradient(gr.space, _state->_stroke_gradient);
    }
 
-//    void canvas::font(char const* family, float size_, int style_)
-//    {
-//       auto  family_ = [NSString stringWithUTF8String:family];
-//       int   style = 0;
-//       if (style_ & bold)
-//          style |= NSBoldFontMask;
-//       if (style_ & italic)
-//          style |= NSItalicFontMask;
+   void canvas::font(struct font const& font_)
+   {
+      _state->_font = font_;
+   }
 
-//       auto font_manager = [NSFontManager sharedFontManager];
-//       auto font =
-//          [font_manager
-//             fontWithFamily : family_
-//                     traits : style
-//                     weight : 5
-//                       size : size_
-//          ];
+   CFStringRef cf_string(char const* f, char const* l)
+   {
+      return CFStringCreateWithBytesNoCopy(
+         nullptr, (UInt8 const*)f, l-f, kCFStringEncodingUTF8
+       , false, kCFAllocatorNull
+      );
+   }
 
-//       if (font)
-//       {
-//          CFStringRef keys[] = { kCTFontAttributeName, kCTForegroundColorFromContextAttributeName };
-//          CFTypeRef   values[] = { (__bridge const void*)font, kCFBooleanTrue };
+   namespace detail
+   {
+      CTLineRef measure_text(
+         font const& font_
+       , char const* f, char const* l
+       , CGFloat width, CGFloat& ascent, CGFloat& descent, CGFloat& leading
+      )
+      {
+         CFDictionaryRef font_attributes = (CFDictionaryRef) font_.host_font();
+         auto text = cf_string(f, l);
+         auto attr_string =
+            CFAttributedStringCreate(kCFAllocatorDefault, text, font_attributes);
+         CFRelease(text);
 
-//          if (_view._state->font_attributes)
-//             CFRelease(_view._state->font_attributes);
+         auto line = CTLineCreateWithAttributedString(attr_string);
+         width = CTLineGetTypographicBounds(line, &ascent, &descent, &leading);
+         return line;
+      }
 
-//          _view._state->font_attributes = CFDictionaryCreate(
-//            kCFAllocatorDefault, (const void**)&keys,
-//            (const void**)&values, sizeof(keys) / sizeof(keys[0]),
-//            &kCFTypeDictionaryKeyCallBacks,
-//            &kCFTypeDictionaryValueCallBacks
-//          );
-//       }
-//    }
+      CTLineRef prepare_text(
+         font const& font_
+       , int text_align
+       , point& p, char const* f, char const* l
+      )
+      {
+         CGFloat ascent, descent, leading, width;
+         auto line = measure_text(font_, f, l, width, ascent, descent, leading);
+         switch (text_align & 0x1C)
+         {
+            case canvas::top:
+               p.y += ascent;
+               break;
 
-//    CFStringRef cf_string(char const* f, char const* l = nullptr)
-//    {
-//       char* bytes;
-//       std::size_t len = l? (l-f) : strlen(f);
-//       bytes = (char*) CFAllocatorAllocate(CFAllocatorGetDefault(), len, 0);
-//       strncpy(bytes, f, len);
-//       return CFStringCreateWithCStringNoCopy(nullptr, bytes, kCFStringEncodingUTF8, nullptr);
-//    }
+            case canvas::middle:
+               p.y += ascent/2 - descent/2;
+               break;
 
-//    namespace detail
-//    {
-//       CTLineRef measure_text(
-//          CGContextRef ctx, view_state const* state
-//        , char const* f, char const* l
-//        , CGFloat width, CGFloat& ascent, CGFloat& descent, CGFloat& leading
-//       )
-//       {
-//          auto text = cf_string(f, l);
-//          auto attr_string =
-//             CFAttributedStringCreate(kCFAllocatorDefault, text, state->font_attributes);
-//          CFRelease(text);
+            case canvas::bottom:
+               p.y -= descent;
+               break;
 
-//          auto line = CTLineCreateWithAttributedString(attr_string);
-//          width = CTLineGetTypographicBounds(line, &ascent, &descent, &leading);
-//          return line;
-//       }
+            default:
+               break;
+         }
 
-//       CTLineRef prepare_text(
-//          CGContextRef ctx, view_state const* state
-//        , point& p, char const* f, char const* l
-//       )
-//       {
-//          CGFloat ascent, descent, leading, width;
-//          auto line = measure_text(ctx, state, f, l, width, ascent, descent, leading);
-//          switch (state->text_align & 0x1C)
-//          {
-//             case canvas::top:
-//                p.y += ascent;
-//                break;
+         switch (text_align & 0x3)
+         {
+            case canvas::center:
+               p.x -= width/2;
+               break;
 
-//             case canvas::middle:
-//                p.y += ascent/2 - descent/2;
-//                break;
+            case canvas::right:
+               p.x -= width;
+               break;
 
-//             case canvas::bottom:
-//                p.y -= descent;
-//                break;
+            default:
+               break;
+         }
 
-//             default:
-//                break;
-//          }
+         return line;
+      }
+   }
 
-//          switch (state->text_align & 0x3)
-//          {
-//             case canvas::center:
-//                p.x -= width/2;
-//                break;
+   void canvas::fill_text(std::string_view utf8, point p)
+   {
+      auto ctx = CGContextRef(_context);
+      auto line = detail::prepare_text(
+         _state->_font, _state->_text_align
+       , p, utf8.begin(), utf8.end()
+      );
+      CGContextSetTextPosition(ctx, p.x, p.y);
 
-//             case canvas::right:
-//                p.x -= width;
-//                break;
+      auto apply_fill = [&](auto const& style)
+      {
+         using T = std::decay_t<decltype(style)>;
+         if constexpr (std::is_same_v<T, color>)
+         {
+            CGContextSetRGBFillColor(ctx, style.red, style.green, style.blue, style.alpha);
+            CGContextSetTextDrawingMode(ctx, kCGTextFill);
+            CTLineDraw(line, ctx);
+         }
+         else if constexpr (std::is_same_v<T, linear_gradient>)
+         {
+            auto  state = new_state();
+            auto ctx = CGContextRef(_context);
+            CGContextSetTextDrawingMode(ctx, kCGTextFillClip);
+            CTLineDraw(line, ctx);
 
-//             default:
-//                break;
-//          }
+            // CGContextDrawLinearGradient(
+            //    CGContextRef(_context), _state->_fill_gradient,
+            //    CGPoint{ style.start.x, style.start.y },
+            //    CGPoint{ style.end.x, style.end.y },
+            //    kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
+            // );
+         }
+         else if constexpr (std::is_same_v<T, radial_gradient>)
+         {
+         }
+      };
 
-//          return line;
-//       }
-//    }
+      std::visit(apply_fill, _state->_fill_style);
+      CFRelease(line);
+   }
 
-//    void canvas::fill_text(point p, char const* f, char const* l)
-//    {
-//       auto ctx = CGContextRef(_context);
-//       auto line = detail::prepare_text(ctx, _view._state.get(), p, f, l);
-//       CGContextSetTextPosition(ctx, p.x, p.y);
-//       CGContextSetTextDrawingMode(ctx, kCGTextFill);
-//       CTLineDraw(line, ctx);
-//       CFRelease(line);
-//    }
+   void canvas::stroke_text(std::string_view utf8, point p)
+   {
+      auto ctx = CGContextRef(_context);
+      auto line = detail::prepare_text(
+         _state->_font, _state->_text_align
+       , p, utf8.begin(), utf8.end()
+      );
+      CGContextSetTextPosition(ctx, p.x, p.y);
 
-//    void canvas::stroke_text(point p, char const* f, char const* l)
-//    {
-//       auto ctx = CGContextRef(_context);
-//       auto line = detail::prepare_text(ctx, _view._state.get(), p, f, l);
-//       CGContextSetTextPosition(ctx, p.x, p.y);
-//       CGContextSetTextDrawingMode(ctx, kCGTextStroke);
-//       CTLineDraw(line, ctx);
-//       CFRelease(line);
-//    }
+      auto apply_stroke = [&](auto const& style)
+      {
+         using T = std::decay_t<decltype(style)>;
+         if constexpr (std::is_same_v<T, color>)
+         {
+            CGContextSetRGBStrokeColor(ctx, style.red, style.green, style.blue, style.alpha);
+            CGContextSetTextDrawingMode(ctx, kCGTextStroke);
+            CTLineDraw(line, ctx);
+            CFRelease(line);
+         }
+         else if constexpr (std::is_same_v<T, linear_gradient>)
+         {
+         }
+         else if constexpr (std::is_same_v<T, radial_gradient>)
+         {
+         }
+      };
 
-//    canvas::text_metrics canvas::measure_text(char const* f, char const* l)
+      std::visit(apply_stroke, _state->_stroke_style);
+   }
+
+//    canvas::text_metrics canvas::measure_text(std::string_view utf8)
 //    {
 //       auto ctx = CGContextRef(_context);
 //       CGFloat ascent, descent, leading, width;
