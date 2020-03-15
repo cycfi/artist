@@ -61,9 +61,9 @@ namespace cycfi { namespace elements
          auto font =
             [font_manager
                fontWithFamily : family_
-                      traits : style
-                      weight : weight
-                        size : descr._size
+                       traits : style
+                       weight : weight
+                         size : descr._size
             ];
 
          if (font)
@@ -82,8 +82,8 @@ namespace cycfi { namespace elements
       }
       if (font_attributes)
          _ptr = host_font_ptr{
-            (host_font*)font_attributes
-          , [](host_font* p){ CFRelease(p); }
+            (struct host_font*)font_attributes
+          , [](struct host_font* p){ CFRelease(p); }
          };
    }
 

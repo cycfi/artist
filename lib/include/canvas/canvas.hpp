@@ -10,7 +10,7 @@
 #include <canvas/rect.hpp>
 #include <canvas/circle.hpp>
 #include <canvas/picture.hpp>
-// #include <canvas/support/font.hpp>
+#include <canvas/font.hpp>
 // #include <boost/filesystem.hpp>
 
 #include <vector>
@@ -139,8 +139,6 @@ namespace cycfi::elements
       ///////////////////////////////////////////////////////////////////////////////////
       // Font
       void              font(struct font const& font_);
-      void              font(struct font const& font_, float size);
-      void              font_size(float size);
 
       ///////////////////////////////////////////////////////////////////////////////////
       // Text
@@ -166,9 +164,9 @@ namespace cycfi::elements
          point       size;
       };
 
-      void              fill_text(point p, char const* utf8);
-      void              stroke_text(point p, char const* utf8);
-      text_metrics      measure_text(char const* utf8);
+      void              fill_text(std::string_view utf8, point p);
+      void              stroke_text(std::string_view utf8, point p);
+      text_metrics      measure_text(std::string_view utf8);
       void              text_align(int align);
 
       ///////////////////////////////////////////////////////////////////////////////////

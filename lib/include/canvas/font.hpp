@@ -98,8 +98,10 @@ namespace cycfi { namespace elements
                            font(font_descr descr);
                            font(font const& rhs) = default;
                            ~font();
+
       font&                operator=(font const& rhs) = default;
       explicit             operator bool() const;
+      host_font*           host_font() const;
 
    private:
 
@@ -110,6 +112,11 @@ namespace cycfi { namespace elements
    ////////////////////////////////////////////////////////////////////////////
    // Inlines
    ////////////////////////////////////////////////////////////////////////////
+   inline host_font* font::host_font() const
+   {
+      return _ptr.get();
+   }
+
    inline font_descr font_descr::normal() const
    {
       font_descr r = *this;
