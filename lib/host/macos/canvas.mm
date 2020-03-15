@@ -342,25 +342,6 @@ namespace cycfi::elements
       make_gradient(gr.space, _state->_stroke_gradient);
    }
 
-//    void canvas::color_space(color_stop const space[], std::size_t nspaces)
-//    {
-//       CGFloat   locations[nspaces];
-//       CGFloat   components[nspaces * 4];
-//       for (size_t i = 0; i != nspaces; ++i)
-//       {
-//          locations[i] = space[i].offset;
-//          auto* cp = &components[i*4];
-//          *cp++ = space[i].color.red;
-//          *cp++ = space[i].color.green;
-//          *cp++ = space[i].color.blue;
-//          *cp   = space[i].color.alpha;
-//       }
-//       auto  space_ = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
-//       _view._state->gradient = CGGradientCreateWithColorComponents(
-//                                  space_, components, locations, nspaces);
-//       CGColorSpaceRelease(space_);
-//    }
-
 //    void canvas::font(char const* family, float size_, int style_)
 //    {
 //       auto  family_ = [NSString stringWithUTF8String:family];

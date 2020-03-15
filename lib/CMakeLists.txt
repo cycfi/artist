@@ -13,12 +13,20 @@ set(CANVAS_SOURCES
 )
 
 set(CANVAS_HEADERS
+   include/canvas/canvas.hpp
+   include/canvas/circle.hpp
+   include/canvas/color.hpp
+   include/canvas/font.hpp
+   include/canvas/picture.hpp
+   include/canvas/point.hpp
+   include/canvas/rect.hpp
 )
 
 if (APPLE)
    set(CANVAS_HOST
       host/macos/canvas.mm
-           host/macos/picture.mm
+      host/macos/picture.mm
+      host/macos/font.mm
    )
 elseif (UNIX)
    set(CANVAS_HOST
