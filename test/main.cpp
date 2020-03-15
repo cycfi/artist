@@ -239,6 +239,7 @@ void typography(canvas& cnv)
     gr.add_color_stop({ 1.0, colors::maroon });
     cnv.fill_style(gr);
     cnv.fill_text("Gradient", { 360, 100 });
+    cnv.stroke_text("Gradient", { 360, 100 });
 }
 
 void draw(canvas& cnv)

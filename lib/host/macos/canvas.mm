@@ -429,6 +429,42 @@ namespace cycfi::elements
 
          return line;
       }
+
+      CGMutablePathRef line_to_path(CTLineRef line, point p)
+      {
+         CFArrayRef runArray = CTLineGetGlyphRuns(line);
+         CGMutablePathRef path = CGPathCreateMutable();
+
+         // for each RUN
+         for (CFIndex runIndex = 0; runIndex < CFArrayGetCount(runArray); runIndex++)
+         {
+            // Get FONT for this run
+            CTRunRef run = (CTRunRef) CFArrayGetValueAtIndex(runArray, runIndex);
+            CTFontRef runFont = (CTFontRef) CFDictionaryGetValue(CTRunGetAttributes(run), kCTFontAttributeName);
+
+            // for each GLYPH in run
+            for (CFIndex runGlyphIndex = 0; runGlyphIndex < CTRunGetGlyphCount(run); runGlyphIndex++)
+            {
+               // get Glyph & Glyph-data
+               CFRange thisGlyphRange = CFRangeMake(runGlyphIndex, 1);
+               CGGlyph glyph;
+               CGPoint position;
+               CTRunGetGlyphs(run, thisGlyphRange, &glyph);
+               CTRunGetPositions(run, thisGlyphRange, &position);
+
+               // Get PATH of outline
+               {
+                  CGPathRef letter = CTFontCreatePathForGlyph(runFont, glyph, NULL);
+                  CGAffineTransform t = CGAffineTransformMakeScale(1.0, -1.0);
+                  t = CGAffineTransformTranslate(t, position.x + p.x, position.y + -p.y);
+                  // CGAffineTransformMakeTranslation(position.x + p.x, position.y + p.y);
+                  CGPathAddPath(path, &t, letter);
+                  CGPathRelease(letter);
+               }
+            }
+         }
+         return path;
+      }
    }
 
    void canvas::fill_text(std::string_view utf8, point p)
@@ -453,15 +489,29 @@ namespace cycfi::elements
          {
             auto  state = new_state();
             auto ctx = CGContextRef(_context);
-            CGContextSetTextDrawingMode(ctx, kCGTextFillClip);
-            CTLineDraw(line, ctx);
 
-            // CGContextDrawLinearGradient(
-            //    CGContextRef(_context), _state->_fill_gradient,
-            //    CGPoint{ style.start.x, style.start.y },
-            //    CGPoint{ style.end.x, style.end.y },
-            //    kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
-            // );
+            begin_path();
+            auto path = detail::line_to_path(line, p);   // Convert text to path and add
+
+            // scale({ 1.0, -1.0 });
+            // translate({ p.x, -p.y });
+
+
+            CGContextAddPath(ctx, path);              // Add path
+
+
+            // translate({ -p.x, p.y });
+            // scale({ -1.0, 1.0 });
+
+            // rect({ p.x, p.y -50, p.x+150, p.y+20 });
+            clip();                                   // Set to clip current path
+
+            CGContextDrawLinearGradient(
+               CGContextRef(_context), _state->_fill_gradient,
+               CGPoint{ style.start.x, style.start.y },
+               CGPoint{ style.end.x, style.end.y },
+               kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
+            );
          }
          else if constexpr (std::is_same_v<T, radial_gradient>)
          {
