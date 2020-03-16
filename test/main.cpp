@@ -280,54 +280,37 @@ void typography(canvas& cnv)
     cnv.fill_style(rgba(220, 220, 220, 200));
     cnv.font(font_descr{ "Open Sans", 14 });
 
+    char const* align_text[] = {
+        "text_align(left)",
+        "text_align(right)",
+        "text_align(center)",
+        "text_align(baseline)",
+        "text_align(top)",
+        "text_align(middle)",
+        "text_align(bottom)"
+    };
+
+    int aligns[] = {
+        cnv.left,
+        cnv.right,
+        cnv.center,
+        cnv.baseline,
+        cnv.top,
+        cnv.middle,
+        cnv.bottom
+    };
+
     float vspace = 35;
-    float vstart = 250;
-    cnv.move_to({ 400, vstart });
-    cnv.line_to({ 600, vstart });
-    cnv.stroke();
-    cnv.fill_text("text_align(left)", { 500, vstart });
-
-    vstart += vspace;
-    cnv.move_to({ 400, vstart });
-    cnv.line_to({ 600, vstart });
-    cnv.stroke();
-    cnv.text_align(cnv.right);
-    cnv.fill_text("text_align(right)", { 500, vstart });
-
-    vstart += vspace;
-    cnv.move_to({ 400, vstart });
-    cnv.line_to({ 600, vstart });
-    cnv.stroke();
-    cnv.text_align(cnv.center);
-    cnv.fill_text("text_align(center)", { 500, vstart });
-
-    vstart += vspace;
-    cnv.move_to({ 400, vstart });
-    cnv.line_to({ 600, vstart });
-    cnv.stroke();
-    cnv.text_align(cnv.baseline);
-    cnv.fill_text("text_align(baseline)", { 500, vstart });
-
-    vstart += vspace;
-    cnv.move_to({ 400, vstart });
-    cnv.line_to({ 600, vstart });
-    cnv.stroke();
-    cnv.text_align(cnv.top);
-    cnv.fill_text("text_align(top)", { 500, vstart });
-
-    vstart += vspace;
-    cnv.move_to({ 400, vstart });
-    cnv.line_to({ 600, vstart });
-    cnv.stroke();
-    cnv.text_align(cnv.middle);
-    cnv.fill_text("text_align(middle)", { 500, vstart });
-
-    vstart += vspace;
-    cnv.move_to({ 400, vstart });
-    cnv.line_to({ 600, vstart });
-    cnv.stroke();
-    cnv.text_align(cnv.bottom);
-    cnv.fill_text("text_align(bottom)", { 500, vstart });
+    float vstart = 250-vspace;
+    for (int i = 0; i != 7; ++i)
+    {
+        vstart += vspace;
+        cnv.move_to({ 400, vstart });
+        cnv.line_to({ 600, vstart });
+        cnv.stroke();
+        cnv.text_align(aligns[i]);
+        cnv.fill_text(align_text[i], { 500, vstart });
+    }
 }
 
 void draw(canvas& cnv)
