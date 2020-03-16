@@ -22,7 +22,7 @@ namespace cycfi::elements
       {
          style       _fill_style;
          style       _stroke_style;
-         struct font _font;
+         class font  _font;
          int         _text_align;
       };
 
@@ -32,7 +32,7 @@ namespace cycfi::elements
       CGGradientRef  _fill_gradient = nullptr;
       style          _stroke_style = colors::black;
       CGGradientRef  _stroke_gradient = nullptr;
-      struct font    _font = font_descr{ "Helvetica Neue", 12 };
+      class font     _font = font_descr{ "Helvetica Neue", 12 };
       int            _text_align = canvas::baseline;
       aux_stack      _aux_stack;
    };
@@ -145,6 +145,7 @@ namespace cycfi::elements
       auto save = CGContextCopyPath(CGContextRef(_context));
       fill();
       CGContextAddPath(CGContextRef(_context), save);
+      CGPathRelease(save);
    }
 
    void canvas::stroke()
@@ -198,6 +199,7 @@ namespace cycfi::elements
       auto save = CGContextCopyPath(CGContextRef(_context));
       stroke();
       CGContextAddPath(CGContextRef(_context), save);
+      CGPathRelease(save);
    }
 
    void canvas::clip()
@@ -361,7 +363,7 @@ namespace cycfi::elements
       make_gradient(gr.space, _state->_stroke_gradient);
    }
 
-   void canvas::font(struct font const& font_)
+   void canvas::font(class font const& font_)
    {
       _state->_font = font_;
    }
@@ -390,6 +392,7 @@ namespace cycfi::elements
 
          auto line = CTLineCreateWithAttributedString(attr_string);
          width = CTLineGetTypographicBounds(line, &ascent, &descent, &leading);
+         CFRelease(attr_string);
          return line;
       }
 
@@ -403,49 +406,32 @@ namespace cycfi::elements
          auto line = measure_text(font_, f, l, width, ascent, descent, leading);
          switch (text_align & 0x1C)
          {
-            case canvas::top:
-               p.y += ascent;
-               break;
-
-            case canvas::middle:
-               p.y += ascent/2 - descent/2;
-               break;
-
-            case canvas::bottom:
-               p.y -= descent;
-               break;
-
-            default:
-               break;
+            case canvas::top:    p.y += ascent; break;
+            case canvas::middle: p.y += ascent/2 - descent/2; break;
+            case canvas::bottom: p.y -= descent; break;
+            default: break;
          }
 
          switch (text_align & 0x3)
          {
-            case canvas::center:
-               p.x -= width/2;
-               break;
-
-            case canvas::right:
-               p.x -= width;
-               break;
-
-            default:
-               break;
+            case canvas::center: p.x -= width/2; break;
+            case canvas::right:  p.x -= width; break;
+            default: break;
          }
 
          return line;
       }
 
-      CGMutablePathRef line_to_path(CTLineRef line)
+      void add_line_to_path(CGContextRef ctx, CTLineRef line)
       {
-         auto runArray = CTLineGetGlyphRuns(line);
+         auto run_array = CTLineGetGlyphRuns(line);
          auto path = CGPathCreateMutable();
 
          // for each RUN
-         for (CFIndex runIndex = 0; runIndex < CFArrayGetCount(runArray); runIndex++)
+         for (CFIndex run_index = 0; run_index < CFArrayGetCount(run_array); ++run_index)
          {
             // Get FONT for this run
-            auto run = (CTRunRef) CFArrayGetValueAtIndex(runArray, runIndex);
+            auto run = (CTRunRef) CFArrayGetValueAtIndex(run_array, run_index);
             auto runFont = (CTFontRef) CFDictionaryGetValue(CTRunGetAttributes(run), kCTFontAttributeName);
             auto glyph_count = CTRunGetGlyphCount(run);
             if (!glyph_count)
@@ -478,7 +464,8 @@ namespace cycfi::elements
                pos.y = glyph_pos.y;
             }
          }
-         return path;
+         CGContextAddPath(ctx, path);
+         CGPathRelease(path);
       }
    }
 
@@ -495,9 +482,8 @@ namespace cycfi::elements
       {
          CGContextSaveGState(ctx);
          begin_path();
-         auto path = detail::line_to_path(line);   // Convert text to path and add
          translate({ p.x, p.y });                  // Move to p
-         CGContextAddPath(ctx, path);              // Add path
+         detail::add_line_to_path(ctx, line);      // Convert text to path and add
          clip();                                   // Set to clip current path
          apply();                                  // Apply the gradient
          CGContextRestoreGState(ctx);
@@ -557,9 +543,8 @@ namespace cycfi::elements
       {
          CGContextSaveGState(ctx);
          begin_path();
-         auto path = detail::line_to_path(line);   // Convert text to path and add
          translate({ p.x, p.y });                  // Move to p
-         CGContextAddPath(ctx, path);              // Add path
+         detail::add_line_to_path(ctx, line);      // Convert text to path and add
          CGContextReplacePathWithStrokedPath(ctx); // Convert stroke to path
          clip();                                   // Set to clip current path
          apply();                                  // Apply the gradient
@@ -634,8 +619,8 @@ namespace cycfi::elements
    void canvas::draw(picture const& pic, struct rect src, struct rect dest)
    {
       auto  img = (__bridge NSImage*) pic.host_picture();
-      auto  src_ = NSRect{ src.left, [img size].height - src.bottom, src.width(), src.height() };
-      auto  dest_ = NSRect{ dest.left, dest.top, dest.width(), dest.height() };
+       auto  src_ = NSRect{ { src.left, [img size].height - src.bottom }, { src.width(), src.height() } };
+       auto  dest_ = NSRect{ { dest.left, dest.top }, { dest.width(), dest.height() } };
 
       [img
          drawInRect     :  dest_
@@ -645,6 +630,5 @@ namespace cycfi::elements
          respectFlipped :  YES
          hints          :  nil
       ];
-
    }
 }

@@ -187,7 +187,7 @@ void compare_golden(picture const& pm, std::string name)
 
     if (result.size() != golden.size())
     {
-        static int bad = 12345;
+        // static int bad = 12345;
     }
 
     auto a = golden.pixels();
