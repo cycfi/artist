@@ -379,7 +379,7 @@ namespace cycfi::elements
       CTLineRef measure_text(
          font const& font_
        , char const* f, char const* l
-       , CGFloat width, CGFloat& ascent, CGFloat& descent, CGFloat& leading
+       , CGFloat& width, CGFloat& ascent, CGFloat& descent, CGFloat& leading
       )
       {
          CFDictionaryRef font_attributes = (CFDictionaryRef) font_.host_font();
