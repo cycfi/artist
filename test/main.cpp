@@ -254,7 +254,7 @@ void typography(canvas& cnv)
         gr.add_color_stop({ 1.0, colors::medium_violet_red });
         cnv.line_width(1.5);
         cnv.stroke_style(gr);
-        cnv.stroke_text("Outline Gradient Fill", { 20, 190 });
+        cnv.stroke_text("Outline Gradient", { 20, 190 });
     }
 
     {
