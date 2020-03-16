@@ -296,21 +296,21 @@ namespace cycfi::elements
       CGContextSetLineWidth(CGContextRef(_context), w);
    }
 
-//    void canvas::shadow_style(point p, float blur, color c)
-//    {
-//       CGContextSetShadowWithColor(
-//          CGContextRef(_context), CGSizeMake(p.x, -p.y), blur,
-//          [
-//             [NSColor
-//                colorWithRed : c.red
-//                       green : c.green
-//                       blue  : c.blue
-//                       alpha : c.alpha
-//             ]
-//             CGColor
-//          ]
-//       );
-//    }
+   void canvas::shadow_style(point p, float blur, color c)
+   {
+      CGContextSetShadowWithColor(
+         CGContextRef(_context), CGSizeMake(p.x, -p.y), blur,
+         [
+            [NSColor
+               colorWithRed : c.red
+                      green : c.green
+                      blue  : c.blue
+                      alpha : c.alpha
+            ]
+            CGColor
+         ]
+      );
+   }
 
    namespace
    {
@@ -607,31 +607,29 @@ namespace cycfi::elements
       CFRelease(line);
    }
 
-//    canvas::text_metrics canvas::measure_text(std::string_view utf8)
-//    {
-//       auto ctx = CGContextRef(_context);
-//       CGFloat ascent, descent, leading, width;
+   canvas::text_metrics canvas::measure_text(std::string_view utf8)
+   {
+      auto ctx = CGContextRef(_context);
+      CGFloat ascent, descent, leading, width;
 
-//       auto line = detail::measure_text(
-//          ctx, _view._state.get(), f, l, width, ascent, descent, leading);
+      auto line = detail::measure_text(
+         _state->_font, utf8.begin(), utf8.end(), width, ascent, descent, leading);
 
-//       auto bounds = CTLineGetImageBounds(line, ctx);
-//       CFRelease(line);
-//       return canvas::text_metrics
-//       {
-//          float(ascent), float(descent),
-//          float(leading), float(width),
-//          {
-//             float(bounds.origin.x), float(bounds.origin.y),
-//             float(bounds.size.width), float(bounds.size.height)
-//          }
-//       };
-//    }
+      auto bounds = CTLineGetImageBounds(line, ctx);
+      CFRelease(line);
+      return canvas::text_metrics
+      {
+         float(ascent)
+       , float(descent)
+       , float(leading)
+       , { float(width), float(bounds.size.height) }
+      };
+   }
 
-//    void canvas::text_align(int align)
-//    {
-//       _view._state->text_align = align;
-//    }
+   void canvas::text_align(int align)
+   {
+      _state->_text_align = align;
+   }
 
    void canvas::draw(picture const& pic, struct rect src, struct rect dest)
    {

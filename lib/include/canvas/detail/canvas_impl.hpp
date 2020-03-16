@@ -25,6 +25,11 @@ namespace cycfi::elements
       arc(point{ c.cx, c.cy }, c.radius, 0.0, 2 * M_PI);
    }
 
+   inline void canvas::shadow_style(float blur, color c)
+   {
+      shadow_style({ 0.0f, 0.0f }, blur, c);
+   }
+
    inline void canvas::linear_gradient::add_color_stop(color_stop cs)
    {
       space.push_back(cs);

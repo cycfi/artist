@@ -236,9 +236,9 @@ void typography(canvas& cnv)
     cnv.line_width(0.5);
     cnv.stroke_text("Outline", { 210, 115 });
 
+    cnv.font(font_descr{ "Open Sans", 52 }.bold());
     // Gradient Fill
     {
-        cnv.font(font_descr{ "Open Sans", 52 }.bold());
         auto gr = canvas::linear_gradient{ { 360, 90 }, { 360, 140 } };
         gr.add_color_stop({ 0.0, colors::navy_blue });
         gr.add_color_stop({ 1.0, colors::maroon });
@@ -249,7 +249,6 @@ void typography(canvas& cnv)
 
     // Outline Gradient Fill
     {
-        cnv.font(font_descr{ "Open Sans", 52 }.bold());
         auto gr = canvas::linear_gradient{ { 360, 165 }, { 360, 215 } };
         gr.add_color_stop({ 0.0, colors::medium_blue });
         gr.add_color_stop({ 1.0, colors::medium_violet_red });
@@ -257,6 +256,16 @@ void typography(canvas& cnv)
         cnv.stroke_style(gr);
         cnv.stroke_text("Outline Gradient Fill", { 20, 190 });
     }
+
+    // Shadow
+    cnv.fill_style(rgba(220, 220, 220, 200));
+    cnv.shadow_style({ 5.0, 5.0 }, 5, colors::black);
+    cnv.fill_text("Shadow", { 20, 265 });
+
+    // Glow
+    cnv.fill_style(bkd_color);
+    cnv.shadow_style(8, colors::light_sky_blue);
+    cnv.fill_text("Glow", { 250, 265 });
 }
 
 void draw(canvas& cnv)
