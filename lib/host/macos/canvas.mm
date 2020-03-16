@@ -432,35 +432,44 @@ namespace cycfi::elements
 
       CGMutablePathRef line_to_path(CTLineRef line)
       {
-         CFArrayRef runArray = CTLineGetGlyphRuns(line);
-         CGMutablePathRef path = CGPathCreateMutable();
+         auto runArray = CTLineGetGlyphRuns(line);
+         auto path = CGPathCreateMutable();
 
          // for each RUN
          for (CFIndex runIndex = 0; runIndex < CFArrayGetCount(runArray); runIndex++)
          {
             // Get FONT for this run
-            CTRunRef run = (CTRunRef) CFArrayGetValueAtIndex(runArray, runIndex);
-            CTFontRef runFont = (CTFontRef) CFDictionaryGetValue(CTRunGetAttributes(run), kCTFontAttributeName);
+            auto run = (CTRunRef) CFArrayGetValueAtIndex(runArray, runIndex);
+            auto runFont = (CTFontRef) CFDictionaryGetValue(CTRunGetAttributes(run), kCTFontAttributeName);
+            auto glyph_count = CTRunGetGlyphCount(run);
+            if (!glyph_count)
+               continue;
+
+            CGPoint pos;
+            CTRunGetPositions(run, CFRangeMake(0, 1), &pos);
+            CGAffineTransform t = CGAffineTransformMakeScale(1.0, -1.0);
 
             // for each GLYPH in run
-            for (CFIndex runGlyphIndex = 0; runGlyphIndex < CTRunGetGlyphCount(run); runGlyphIndex++)
+            for (auto glyph_index = 0; glyph_index < glyph_count; glyph_index++)
             {
                // get Glyph & Glyph-data
-               CFRange thisGlyphRange = CFRangeMake(runGlyphIndex, 1);
+               auto glyph_range = CFRangeMake(glyph_index, 1);
                CGGlyph glyph;
-               CGPoint position;
-               CTRunGetGlyphs(run, thisGlyphRange, &glyph);
-               CTRunGetPositions(run, thisGlyphRange, &position);
+               CTRunGetGlyphs(run, glyph_range, &glyph);
+
+               CGPoint glyph_pos;
+               CTRunGetPositions(run, glyph_range, &glyph_pos);
 
                // Get PATH of outline
                {
-                  CGPathRef letter = CTFontCreatePathForGlyph(runFont, glyph, NULL);
-                  CGAffineTransform t = CGAffineTransformMakeScale(1.0, -1.0);
-                  t = CGAffineTransformTranslate(t, position.x, position.y);
-                  // CGAffineTransformMakeTranslation(position.x + p.x, position.y + p.y);
-                  CGPathAddPath(path, &t, letter);
-                  CGPathRelease(letter);
+                  auto glyph_path = CTFontCreatePathForGlyph(runFont, glyph, nullptr);
+                  t = CGAffineTransformTranslate(t, glyph_pos.x-pos.x, glyph_pos.y-pos.y);
+                  CGPathAddPath(path, &t, glyph_path);
+                  CGPathRelease(glyph_path);
                }
+
+               pos.x = glyph_pos.x;
+               pos.y = glyph_pos.y;
             }
          }
          return path;
