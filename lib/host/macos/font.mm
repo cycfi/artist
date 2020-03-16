@@ -51,7 +51,7 @@ namespace cycfi { namespace elements
       std::istringstream str(std::string{ descr._families });
       std::string family;
       auto font_manager = [NSFontManager sharedFontManager];
-      CFDictionaryRef font_attributes;
+      CFDictionaryRef font_attributes = nullptr;
 
       while (getline(str, family, ','))
       {
