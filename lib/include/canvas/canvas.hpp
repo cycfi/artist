@@ -11,20 +11,9 @@
 #include <canvas/circle.hpp>
 #include <canvas/picture.hpp>
 #include <canvas/font.hpp>
-// #include <boost/filesystem.hpp>
 
 #include <vector>
 #include <memory>
-
-// #include <functional>
-// #include <cmath>
-// #include <cassert>
-
-// extern "C"
-// {
-//    typedef struct _cairo cairo_t;
-// }
-
 
 namespace cycfi::elements
 {
@@ -83,6 +72,8 @@ namespace cycfi::elements
       void              fill_style(color c);
       void              stroke_style(color c);
       void              line_width(float w);
+      void              shadow_style(point p, float blur, color c);
+      void              shadow_style(float blur, color c);
 
       ///////////////////////////////////////////////////////////////////////////////////
       // Gradients
@@ -200,8 +191,6 @@ namespace cycfi::elements
       void              restore();
 
    private:
-
-      // friend class glyphs;
 
       struct canvas_state;
       using canvas_state_ptr = std::unique_ptr<canvas_state>;
