@@ -430,7 +430,7 @@ namespace cycfi::elements
          return line;
       }
 
-      CGMutablePathRef line_to_path(CTLineRef line, point p)
+      CGMutablePathRef line_to_path(CTLineRef line)
       {
          CFArrayRef runArray = CTLineGetGlyphRuns(line);
          CGMutablePathRef path = CGPathCreateMutable();
@@ -456,7 +456,7 @@ namespace cycfi::elements
                {
                   CGPathRef letter = CTFontCreatePathForGlyph(runFont, glyph, NULL);
                   CGAffineTransform t = CGAffineTransformMakeScale(1.0, -1.0);
-                  t = CGAffineTransformTranslate(t, position.x + p.x, position.y + -p.y);
+                  t = CGAffineTransformTranslate(t, position.x, position.y);
                   // CGAffineTransformMakeTranslation(position.x + p.x, position.y + p.y);
                   CGPathAddPath(path, &t, letter);
                   CGPathRelease(letter);
@@ -491,10 +491,10 @@ namespace cycfi::elements
             auto ctx = CGContextRef(_context);
 
             begin_path();
-            auto path = detail::line_to_path(line, p);   // Convert text to path and add
+            auto path = detail::line_to_path(line);   // Convert text to path and add
 
             // scale({ 1.0, -1.0 });
-            // translate({ p.x, -p.y });
+            translate({ p.x, p.y });
 
 
             CGContextAddPath(ctx, path);              // Add path
@@ -508,8 +508,8 @@ namespace cycfi::elements
 
             CGContextDrawLinearGradient(
                CGContextRef(_context), _state->_fill_gradient,
-               CGPoint{ style.start.x, style.start.y },
-               CGPoint{ style.end.x, style.end.y },
+               CGPoint{ -p.x+style.start.x, -p.y+style.start.y },
+               CGPoint{ -p.x+style.end.x, -p.y+style.end.y },
                kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
             );
          }
