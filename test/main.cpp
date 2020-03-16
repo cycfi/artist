@@ -205,41 +205,45 @@ void typography(canvas& cnv)
     cnv.fill_style(rgba(220, 220, 220, 200));
     cnv.stroke_style(rgba(220, 220, 220, 200));
 
-    // Note: This is just a demo. Normally, you do not want to
-    // create fonts when drawing. Preferrably, you will want to
-    // create your fonts somewhere else (e.g. in a constructor).
-
+    // Regular
     cnv.font(font_descr{ "Open Sans", 36 });
     cnv.fill_text("Regular", { 20, 40 });
 
+    // Bold
     cnv.font(font_descr{ "Open Sans", 36 }.bold());
     cnv.fill_text("Bold", { 160, 40 });
 
+    // Light
     cnv.font(font_descr{ "Open Sans", 36 }.light());
     cnv.fill_text("Light", { 250, 40 });
 
+    // Italic
     cnv.font(font_descr{ "Open Sans", 36 }.italic());
     cnv.fill_text("Italic", { 340, 40 });
 
+    // Condensed
     // In this case, the font already describes the condensed 'stretch'
     cnv.font(font_descr{ "Open Sans Condensed", 36 });
     cnv.fill_text("Condensed", { 430, 40 });
 
+    // Condensed Italic
     // In this case, the font already describes the condensed 'stretch'
     cnv.font(font_descr{ "Open Sans Condensed", 36 }.italic());
-    cnv.fill_text("Condensed Italic", { 20, 100 });
+    cnv.fill_text("Condensed Italic", { 20, 115 });
 
+    // Outline
     cnv.font(font_descr{ "Open Sans", 36 }.bold());
     cnv.line_width(0.5);
-    cnv.stroke_text("Outline", { 210, 100 });
+    cnv.stroke_text("Outline", { 210, 115 });
 
-    cnv.font(font_descr{ "Open Sans", 46 }.bold());
-    auto gr = canvas::linear_gradient{ { 360, 80 }, { 360, 120 } };
+    // Gradient Fill
+    cnv.font(font_descr{ "Open Sans", 52 }.bold());
+    auto gr = canvas::linear_gradient{ { 360, 90 }, { 360, 140 } };
     gr.add_color_stop({ 0.0, colors::navy_blue });
     gr.add_color_stop({ 1.0, colors::maroon });
     cnv.fill_style(gr);
-    cnv.fill_text("Gradient", { 360, 100 });
-    cnv.stroke_text("Gradient", { 360, 100 });
+    cnv.fill_text("Gradient", { 360, 115 });
+    cnv.stroke_text("Gradient", { 360, 115 });
 }
 
 void draw(canvas& cnv)

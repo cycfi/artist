@@ -112,24 +112,28 @@ namespace cycfi::elements
          }
          else if constexpr (std::is_same_v<T, linear_gradient>)
          {
-            auto  state = new_state();
+            auto ctx = CGContextRef(_context);
+            CGContextSaveGState(ctx);
             clip();  // Set to clip current path
             CGContextDrawLinearGradient(
-               CGContextRef(_context), _state->_fill_gradient,
+               ctx, _state->_fill_gradient,
                CGPoint{ style.start.x, style.start.y },
                CGPoint{ style.end.x, style.end.y },
                kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
             );
+            CGContextRestoreGState(ctx);
          }
          else if constexpr (std::is_same_v<T, radial_gradient>)
          {
-            auto  state = new_state();
+            auto ctx = CGContextRef(_context);
+            CGContextSaveGState(ctx);
             clip();  // Set to clip current path
             CGContextDrawRadialGradient(
-               CGContextRef(_context), _state->_fill_gradient,
+               ctx, _state->_fill_gradient,
                CGPoint{ style.c1.x, style.c1.y }, style.c1_radius,
                CGPoint{ style.c2.x, style.c2.y }, style.c2_radius,
                kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation);
+            CGContextRestoreGState(ctx);
          }
       };
 
@@ -156,8 +160,8 @@ namespace cycfi::elements
          }
          else if constexpr (std::is_same_v<T, linear_gradient>)
          {
-            auto  state = new_state();
             auto ctx = CGContextRef(_context);
+            CGContextSaveGState(ctx);
             CGContextReplacePathWithStrokedPath(ctx);
 
             clip();  // Set to clip current path
@@ -167,11 +171,12 @@ namespace cycfi::elements
                CGPoint{ style.end.x, style.end.y },
                kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
             );
+            CGContextRestoreGState(ctx);
          }
          else if constexpr (std::is_same_v<T, radial_gradient>)
          {
-            auto  state = new_state();
             auto ctx = CGContextRef(_context);
+            CGContextSaveGState(ctx);
             CGContextReplacePathWithStrokedPath(ctx);
 
             clip();  // Set to clip current path
@@ -181,6 +186,7 @@ namespace cycfi::elements
                CGPoint{ style.c2.x, style.c2.y }, style.c2_radius,
                kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
             );
+            CGContextRestoreGState(ctx);
          }
       };
 
@@ -485,6 +491,18 @@ namespace cycfi::elements
       );
       CGContextSetTextPosition(ctx, p.x, p.y);
 
+      auto apply_gradient = [&](auto&& apply)
+      {
+         CGContextSaveGState(ctx);
+         begin_path();
+         auto path = detail::line_to_path(line);   // Convert text to path and add
+         translate({ p.x, p.y });                  // Move to p
+         CGContextAddPath(ctx, path);              // Add path
+         clip();                                   // Set to clip current path
+         apply();                                  // Apply the gradient
+         CGContextRestoreGState(ctx);
+      };
+
       auto apply_fill = [&](auto const& style)
       {
          using T = std::decay_t<decltype(style)>;
@@ -496,34 +514,29 @@ namespace cycfi::elements
          }
          else if constexpr (std::is_same_v<T, linear_gradient>)
          {
-            auto  state = new_state();
-            auto ctx = CGContextRef(_context);
-
-            begin_path();
-            auto path = detail::line_to_path(line);   // Convert text to path and add
-
-            // scale({ 1.0, -1.0 });
-            translate({ p.x, p.y });
-
-
-            CGContextAddPath(ctx, path);              // Add path
-
-
-            // translate({ -p.x, p.y });
-            // scale({ -1.0, 1.0 });
-
-            // rect({ p.x, p.y -50, p.x+150, p.y+20 });
-            clip();                                   // Set to clip current path
-
-            CGContextDrawLinearGradient(
-               CGContextRef(_context), _state->_fill_gradient,
-               CGPoint{ -p.x+style.start.x, -p.y+style.start.y },
-               CGPoint{ -p.x+style.end.x, -p.y+style.end.y },
-               kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
+            apply_gradient(
+               [&] {
+                  CGContextDrawLinearGradient(
+                     CGContextRef(_context), _state->_fill_gradient,
+                     CGPoint{ -p.x+style.start.x, -p.y+style.start.y },
+                     CGPoint{ -p.x+style.end.x, -p.y+style.end.y },
+                     kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
+                  );
+               }
             );
          }
          else if constexpr (std::is_same_v<T, radial_gradient>)
          {
+            apply_gradient(
+               [&] {
+                  CGContextDrawRadialGradient(
+                     ctx, _state->_stroke_gradient,
+                     CGPoint{ -p.x+style.c1.x, -p.y+style.c1.y }, style.c1_radius,
+                     CGPoint{ -p.x+style.c2.x, -p.y+style.c2.y }, style.c2_radius,
+                     kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
+                  );
+               }
+            );
          }
       };
 
