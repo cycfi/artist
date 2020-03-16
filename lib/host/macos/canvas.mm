@@ -517,7 +517,7 @@ namespace cycfi::elements
             apply_gradient(
                [&] {
                   CGContextDrawLinearGradient(
-                     CGContextRef(_context), _state->_fill_gradient,
+                     ctx, _state->_fill_gradient,
                      CGPoint{ -p.x+style.start.x, -p.y+style.start.y },
                      CGPoint{ -p.x+style.end.x, -p.y+style.end.y },
                      kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
@@ -530,7 +530,7 @@ namespace cycfi::elements
             apply_gradient(
                [&] {
                   CGContextDrawRadialGradient(
-                     ctx, _state->_stroke_gradient,
+                     ctx, _state->_fill_gradient,
                      CGPoint{ -p.x+style.c1.x, -p.y+style.c1.y }, style.c1_radius,
                      CGPoint{ -p.x+style.c2.x, -p.y+style.c2.y }, style.c2_radius,
                      kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
@@ -553,6 +553,19 @@ namespace cycfi::elements
       );
       CGContextSetTextPosition(ctx, p.x, p.y);
 
+      auto apply_gradient = [&](auto&& apply)
+      {
+         CGContextSaveGState(ctx);
+         begin_path();
+         auto path = detail::line_to_path(line);   // Convert text to path and add
+         translate({ p.x, p.y });                  // Move to p
+         CGContextAddPath(ctx, path);              // Add path
+         CGContextReplacePathWithStrokedPath(ctx); // Convert stroke to path
+         clip();                                   // Set to clip current path
+         apply();                                  // Apply the gradient
+         CGContextRestoreGState(ctx);
+      };
+
       auto apply_stroke = [&](auto const& style)
       {
          using T = std::decay_t<decltype(style)>;
@@ -561,17 +574,37 @@ namespace cycfi::elements
             CGContextSetRGBStrokeColor(ctx, style.red, style.green, style.blue, style.alpha);
             CGContextSetTextDrawingMode(ctx, kCGTextStroke);
             CTLineDraw(line, ctx);
-            CFRelease(line);
          }
          else if constexpr (std::is_same_v<T, linear_gradient>)
          {
+            apply_gradient(
+               [&] {
+                  CGContextDrawLinearGradient(
+                     ctx, _state->_stroke_gradient,
+                     CGPoint{ -p.x+style.start.x, -p.y+style.start.y },
+                     CGPoint{ -p.x+style.end.x, -p.y+style.end.y },
+                     kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
+                  );
+               }
+            );
          }
          else if constexpr (std::is_same_v<T, radial_gradient>)
          {
+            apply_gradient(
+               [&] {
+                  CGContextDrawRadialGradient(
+                     ctx, _state->_stroke_gradient,
+                     CGPoint{ -p.x+style.c1.x, -p.y+style.c1.y }, style.c1_radius,
+                     CGPoint{ -p.x+style.c2.x, -p.y+style.c2.y }, style.c2_radius,
+                     kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
+                  );
+               }
+            );
          }
       };
 
       std::visit(apply_stroke, _state->_stroke_style);
+      CFRelease(line);
    }
 
 //    canvas::text_metrics canvas::measure_text(std::string_view utf8)
