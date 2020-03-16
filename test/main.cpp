@@ -219,7 +219,7 @@ void typography(canvas& cnv)
 
     // Italic
     cnv.font(font_descr{ "Open Sans", 36 }.italic());
-    cnv.fill_text("Italic", { 340, 40 });
+    cnv.fill_text("Italic", { 345, 40 });
 
     // Condensed
     // In this case, the font already describes the condensed 'stretch'
@@ -257,15 +257,77 @@ void typography(canvas& cnv)
         cnv.stroke_text("Outline Gradient Fill", { 20, 190 });
     }
 
-    // Shadow
-    cnv.fill_style(rgba(220, 220, 220, 200));
-    cnv.shadow_style({ 5.0, 5.0 }, 5, colors::black);
-    cnv.fill_text("Shadow", { 20, 265 });
+    {
+        auto state = cnv.new_state();
 
-    // Glow
-    cnv.fill_style(bkd_color);
-    cnv.shadow_style(8, colors::light_sky_blue);
-    cnv.fill_text("Glow", { 250, 265 });
+        // Shadow
+        cnv.fill_style(rgba(220, 220, 220, 200));
+        cnv.shadow_style({ 5.0, 5.0 }, 5, colors::black);
+        cnv.fill_text("Shadow", { 20, 265 });
+
+        // Glow
+        cnv.fill_style(bkd_color);
+        cnv.shadow_style(8, colors::light_sky_blue);
+        cnv.fill_text("Glow", { 250, 265 });
+    }
+
+    cnv.move_to({ 500, 220 });
+    cnv.line_to({ 500, 480 });
+    cnv.stroke_style(colors::red);
+    cnv.line_width(0.5);
+    cnv.stroke();
+
+    cnv.fill_style(rgba(220, 220, 220, 200));
+    cnv.font(font_descr{ "Open Sans", 14 });
+
+    float vspace = 35;
+    float vstart = 250;
+    cnv.move_to({ 400, vstart });
+    cnv.line_to({ 600, vstart });
+    cnv.stroke();
+    cnv.fill_text("text_align(left)", { 500, vstart });
+
+    vstart += vspace;
+    cnv.move_to({ 400, vstart });
+    cnv.line_to({ 600, vstart });
+    cnv.stroke();
+    cnv.text_align(cnv.right);
+    cnv.fill_text("text_align(right)", { 500, vstart });
+
+    vstart += vspace;
+    cnv.move_to({ 400, vstart });
+    cnv.line_to({ 600, vstart });
+    cnv.stroke();
+    cnv.text_align(cnv.center);
+    cnv.fill_text("text_align(center)", { 500, vstart });
+
+    vstart += vspace;
+    cnv.move_to({ 400, vstart });
+    cnv.line_to({ 600, vstart });
+    cnv.stroke();
+    cnv.text_align(cnv.baseline);
+    cnv.fill_text("text_align(baseline)", { 500, vstart });
+
+    vstart += vspace;
+    cnv.move_to({ 400, vstart });
+    cnv.line_to({ 600, vstart });
+    cnv.stroke();
+    cnv.text_align(cnv.top);
+    cnv.fill_text("text_align(top)", { 500, vstart });
+
+    vstart += vspace;
+    cnv.move_to({ 400, vstart });
+    cnv.line_to({ 600, vstart });
+    cnv.stroke();
+    cnv.text_align(cnv.middle);
+    cnv.fill_text("text_align(middle)", { 500, vstart });
+
+    vstart += vspace;
+    cnv.move_to({ 400, vstart });
+    cnv.line_to({ 600, vstart });
+    cnv.stroke();
+    cnv.text_align(cnv.bottom);
+    cnv.fill_text("text_align(bottom)", { 500, vstart });
 }
 
 void draw(canvas& cnv)
