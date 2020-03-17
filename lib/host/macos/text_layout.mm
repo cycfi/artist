@@ -58,16 +58,23 @@ namespace cycfi { namespace elements
 
             if (justify)
             {
-               CGFloat ascent, descent, leading;
-               auto line_width = CTLineGetTypographicBounds(line, &ascent, &descent, &leading);
-               if ((line_width / width) > 0.85)
+               // Full justify only if the line is not the end of the paragraph
+               // and the line width is greater than 90% of the desired width.
+               auto rng = CTLineGetStringRange(line);
+               auto line_str = _utf8.substr(rng.location, rng.length);
+               auto ch = line_str.back();
+               if (ch != '\n' && ch != '\r')
                {
-                  CTLineRef justified = CTLineCreateJustifiedLine(line, 1.0, width);
-                  CFRelease(line);
-                  line = justified;
+                  CGFloat ascent, descent, leading;
+                  auto line_width = CTLineGetTypographicBounds(line, &ascent, &descent, &leading);
+                  if ((line_width / width) > 0.9)
+                  {
+                     CTLineRef justified = CTLineCreateJustifiedLine(line, 1.0, width);
+                     CFRelease(line);
+                     line = justified;
+                  }
                }
             }
-
             _rows.push_back(line);
             start += count;
          }
