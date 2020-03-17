@@ -3,8 +3,11 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#include "app.hpp"
-#include <map>
+#define CATCH_CONFIG_MAIN
+#include <infra/catch.hpp>
+#include "paths.hpp"
+
+using namespace cycfi::elements;
 
 auto constexpr window_size = point{ 640.0f, 480.0f };
 auto constexpr bkd_color = rgba(54, 52, 55, 255);
@@ -179,8 +182,6 @@ float diff_pixel(uint32_t a, uint32_t b)
     return float(a1-b1) + float(a2-b2) + float(a3-b3) + float(a4-b4);
 }
 
-std::map<std::string, int> diff_results;
-
 void compare_golden(picture const& pm, std::string name)
 {
     pm.save_png(get_results_path() + name + ".png");
@@ -197,12 +198,7 @@ void compare_golden(picture const& pm, std::string name)
     auto diff = 0;
     for (auto i = 0; i != (window_size.x * window_size.y); ++i)
         diff += diff_pixel(a[i], b[i]);
-    diff_results[name] = diff;
-}
-
-void exit()
-{
-    stop_app();
+    CHECK(diff == 0);
 }
 
 void typography(canvas& cnv)
@@ -337,46 +333,26 @@ void typography(canvas& cnv)
     cnv.draw(tlayout, { 20, 300 });
 }
 
-void draw(canvas& cnv)
+
+TEST_CASE("Drawing")
 {
-    static int count = 0;
-
-    if (count == 0)
+    picture pm{window_size };
     {
-        test_draw(cnv);
-        {
-            picture pm{window_size };
-            {
-                picture_context ctx{pm };
-                canvas pm_cnv{ ctx.context() };
-                test_draw(pm_cnv);
-            }
-            compare_golden(pm, "wakamiya");
-        }
-        ++count;
-        refresh();
+        picture_context ctx{pm };
+        canvas pm_cnv{ ctx.context() };
+        test_draw(pm_cnv);
     }
-
-    if (count == 1)
-    {
-        typography(cnv);
-        {
-            picture pm{window_size };
-            {
-                picture_context ctx{pm };
-                canvas pm_cnv{ ctx.context() };
-                typography(pm_cnv);
-            }
-            compare_golden(pm, "nakamura");
-        }
-        ++count;
-        refresh();
-        exit();
-    }
+    compare_golden(pm, "wakamiya");
 }
 
-int main(int argc, const char* argv[])
+TEST_CASE("Typography")
 {
-    return run_app(argc, argv);
+    picture pm{window_size };
+    {
+        picture_context ctx{pm };
+        canvas pm_cnv{ ctx.context() };
+        typography(pm_cnv);
+    }
+    compare_golden(pm, "nakamura");
 }
 
