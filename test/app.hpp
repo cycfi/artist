@@ -12,6 +12,7 @@
 using namespace cycfi::elements;
 
 int            run_app(int argc, const char* argv[]);
+void           refresh();
 void           stop_app();
 void           draw(canvas& cnv);
 

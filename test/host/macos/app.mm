@@ -58,6 +58,11 @@ public:
       [_window setAppearance : [NSAppearance appearanceNamed : NSAppearanceNameVibrantDark]];
    }
 
+   void refresh()
+   {
+      [_content setNeedsDisplay : YES];
+   }
+
 private:
 
    id _window;
@@ -98,11 +103,19 @@ private:
    id _menubar;
 };
 
+window* _win_ptr = nullptr;
+
 int run_app(int argc, const char* argv[])
 {
    app _app;
    window _win;
+   _win_ptr = &_win;
    return _app.run();
+}
+
+void refresh()
+{
+   _win_ptr->refresh();
 }
 
 void stop_app()

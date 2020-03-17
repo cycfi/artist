@@ -4,10 +4,10 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
 #include "app.hpp"
-#include <iostream>
+#include <map>
 
 auto constexpr window_size = point{ 640.0f, 480.0f };
-auto constexpr bkd_color = rgba(35, 35, 37, 255);
+auto constexpr bkd_color = rgba(54, 52, 55, 255);
 
 void background(canvas& cnv)
 {
@@ -179,6 +179,8 @@ float diff_pixel(uint32_t a, uint32_t b)
     return float(a1-b1) + float(a2-b2) + float(a3-b3) + float(a4-b4);
 }
 
+std::map<std::string, int> diff_results;
+
 void compare_golden(picture const& pm, std::string name)
 {
     pm.save_png(get_results_path() + name + ".png");
@@ -192,16 +194,21 @@ void compare_golden(picture const& pm, std::string name)
 
     auto a = golden.pixels();
     auto b = result.pixels();
+    auto diff = 0;
     for (auto i = 0; i != (window_size.x * window_size.y); ++i)
-    {
-        auto diff = diff_pixel(a[i], b[i]);
-        if (diff)
-            std::cout << diff << std::endl;
-    }
+        diff += diff_pixel(a[i], b[i]);
+    diff_results[name] = diff;
+}
+
+void exit()
+{
+    stop_app();
 }
 
 void typography(canvas& cnv)
 {
+    background(cnv);
+
     cnv.fill_style(rgba(220, 220, 220, 200));
     cnv.stroke_style(rgba(220, 220, 220, 200));
 
@@ -332,18 +339,40 @@ void typography(canvas& cnv)
 
 void draw(canvas& cnv)
 {
-    typography(cnv);
+    static int count = 0;
 
-    // test_draw(cnv);
-    // {
-    //     picture pm{window_size };
-    //     {
-    //         picture_context ctx{pm };
-    //         canvas pm_cnv{ ctx.context() };
-    //         test_draw(pm_cnv);
-    //     }
-    //     compare_golden(pm, "wakamiya");
-    // }
+    if (count == 0)
+    {
+        test_draw(cnv);
+        {
+            picture pm{window_size };
+            {
+                picture_context ctx{pm };
+                canvas pm_cnv{ ctx.context() };
+                test_draw(pm_cnv);
+            }
+            compare_golden(pm, "wakamiya");
+        }
+        ++count;
+        refresh();
+    }
+
+    if (count == 1)
+    {
+        typography(cnv);
+        {
+            picture pm{window_size };
+            {
+                picture_context ctx{pm };
+                canvas pm_cnv{ ctx.context() };
+                typography(pm_cnv);
+            }
+            compare_golden(pm, "nakamura");
+        }
+        ++count;
+        refresh();
+        exit();
+    }
 }
 
 int main(int argc, const char* argv[])
