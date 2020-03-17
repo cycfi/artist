@@ -36,6 +36,11 @@ namespace cycfi { namespace elements
 
    using namespace font_constants;
 
+   font::font()
+    : _ptr(nullptr)
+   {
+   }
+
    font::font(font_descr descr)
    {
       int weight = std::ceil(float(descr._weight * 5) / 40);
@@ -81,14 +86,41 @@ namespace cycfi { namespace elements
          }
       }
       if (font_attributes)
-         _ptr = host_font_ptr{
-            (struct host_font*)font_attributes
-          , [](struct host_font* p){ CFRelease(p); }
-         };
+         _ptr = (host_font_ptr) font_attributes;
+   }
+
+   font::font(font const& rhs)
+    : _ptr((host_font_ptr) CFRetain(rhs._ptr))
+   {
+   }
+
+   font::font(font&& rhs) noexcept
+    : _ptr(rhs._ptr)
+   {
+      rhs._ptr = nullptr;
    }
 
    font::~font()
    {
+      if (_ptr)
+         CFRelease(_ptr);
+   }
+
+   font& font::operator=(font const& rhs)
+   {
+      if (this != &rhs)
+         _ptr = (host_font_ptr) CFRetain(rhs._ptr);
+      return *this;
+   }
+
+   font& font::operator=(font&& rhs) noexcept
+   {
+      if (this != &rhs)
+      {
+         _ptr = rhs._ptr;
+         rhs._ptr = nullptr;
+      }
+      return *this;
    }
 }}
 
