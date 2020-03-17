@@ -188,10 +188,7 @@ void compare_golden(picture const& pm, std::string name)
     auto golden = picture(get_golden_path() + name + ".png");
     auto result = picture(get_results_path() + name + ".png");
 
-    if (result.size() != golden.size())
-    {
-        // static int bad = 12345;
-    }
+    CHECK(result.size() == golden.size());
 
     auto a = golden.pixels();
     auto b = result.pixels();
@@ -336,7 +333,7 @@ void typography(canvas& cnv)
 
 TEST_CASE("Drawing")
 {
-    picture pm{window_size };
+    picture pm{ window_size };
     {
         picture_context ctx{pm };
         canvas pm_cnv{ ctx.context() };
@@ -347,7 +344,7 @@ TEST_CASE("Drawing")
 
 TEST_CASE("Typography")
 {
-    picture pm{window_size };
+    picture pm{ window_size };
     {
         picture_context ctx{pm };
         canvas pm_cnv{ ctx.context() };
