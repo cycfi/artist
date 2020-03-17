@@ -20,6 +20,7 @@ set(CANVAS_HEADERS
    include/canvas/picture.hpp
    include/canvas/point.hpp
    include/canvas/rect.hpp
+   include/canvas/text_layout.hpp
 )
 
 if (APPLE)
@@ -27,6 +28,7 @@ if (APPLE)
       host/macos/canvas.mm
       host/macos/picture.mm
       host/macos/font.mm
+      host/macos/text_layout.mm
    )
 elseif (UNIX)
    set(CANVAS_HOST

@@ -11,6 +11,7 @@
 #include <canvas/circle.hpp>
 #include <canvas/picture.hpp>
 #include <canvas/font.hpp>
+#include <canvas/text_layout.hpp>
 
 #include <vector>
 #include <memory>
@@ -159,6 +160,8 @@ namespace cycfi::elements
       void              stroke_text(std::string_view utf8, point p);
       text_metrics      measure_text(std::string_view utf8);
       void              text_align(int align);
+
+      void              draw(text_layout const& text, point p);
 
       ///////////////////////////////////////////////////////////////////////////////////
       // Pixmaps

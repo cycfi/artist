@@ -7,6 +7,7 @@
 #include <Quartz/Quartz.h>
 #include <stack>
 #include <variant>
+#include "osx_utils.hpp"
 
 namespace cycfi::elements
 {
@@ -365,15 +366,8 @@ namespace cycfi::elements
 
    void canvas::font(class font const& font_)
    {
-      _state->_font = font_;
-   }
-
-   CFStringRef cf_string(char const* f, char const* l)
-   {
-      return CFStringCreateWithBytesNoCopy(
-         nullptr, (UInt8 const*)f, l-f, kCFStringEncodingUTF8
-       , false, kCFAllocatorNull
-      );
+      if (font_)
+         _state->_font = font_;
    }
 
    namespace detail
@@ -384,7 +378,17 @@ namespace cycfi::elements
        , CGFloat& width, CGFloat& ascent, CGFloat& descent, CGFloat& leading
       )
       {
-         CFDictionaryRef font_attributes = (CFDictionaryRef) font_.host_font();
+         NSFont* font = (__bridge NSFont*) font_.host_font();
+         CFStringRef keys[] = { kCTFontAttributeName, kCTForegroundColorFromContextAttributeName };
+         CFTypeRef   values[] = { (__bridge const void*)font, kCFBooleanTrue };
+
+         CFDictionaryRef font_attributes = CFDictionaryCreate(
+            kCFAllocatorDefault, (const void**)&keys,
+            (const void**)&values, sizeof(keys) / sizeof(keys[0]),
+            &kCFTypeDictionaryKeyCallBacks,
+            &kCFTypeDictionaryValueCallBacks
+         );
+
          auto text = cf_string(f, l);
          auto attr_string =
             CFAttributedStringCreate(kCFAllocatorDefault, text, font_attributes);
