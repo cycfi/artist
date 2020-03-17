@@ -105,6 +105,15 @@ namespace cycfi { namespace elements
       explicit             operator bool() const;
       host_font_ptr        host_font() const;
 
+      struct metrics_info
+      {
+         float             ascent;
+         float             descent;
+         float             leading;
+      };
+
+      metrics_info         metrics() const;
+
    private:
 
       friend class canvas;

@@ -311,6 +311,23 @@ void typography(canvas& cnv)
         cnv.text_align(aligns[i]);
         cnv.fill_text(align_text[i], { 500, vstart });
     }
+
+    std::string text =
+        "Although I am a typical loner in daily life, my consciousness of "
+        "belonging to the invisible community of those who strive for "
+        "truth, beauty, and justice has preserved me from feeling isolated.\n\n"
+
+        "The years of anxious searching in the dark, with their intense "
+        "longing, their alternations of confidence and exhaustion, and "
+        "final emergence into light—only those who have experienced it "
+        "can understand that.\n\n"
+
+        "⁠—Albert Einstein"
+        ;
+
+    auto tlayout = text_layout{ font_descr{ "Open Sans", 12 }.italic(), text };
+    tlayout.flow(350, 0, 0, true);
+    cnv.draw(tlayout, { 20, 300 });
 }
 
 void draw(canvas& cnv)

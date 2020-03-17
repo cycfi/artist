@@ -42,6 +42,7 @@ namespace cycfi { namespace elements
    }
 
    font::font(font_descr descr)
+    : _ptr(nullptr)
    {
       int weight = std::ceil(float(descr._weight * 5) / 40);
       int style = 0;
@@ -56,7 +57,6 @@ namespace cycfi { namespace elements
       std::istringstream str(std::string{ descr._families });
       std::string family;
       auto font_manager = [NSFontManager sharedFontManager];
-      CFDictionaryRef font_attributes = nullptr;
 
       while (getline(str, family, ','))
       {
@@ -73,20 +73,11 @@ namespace cycfi { namespace elements
 
          if (font)
          {
-            CFStringRef keys[] = { kCTFontAttributeName, kCTForegroundColorFromContextAttributeName };
-            CFTypeRef   values[] = { (__bridge const void*)font, kCFBooleanTrue };
-
-            font_attributes = CFDictionaryCreate(
-               kCFAllocatorDefault, (const void**)&keys,
-               (const void**)&values, sizeof(keys) / sizeof(keys[0]),
-               &kCFTypeDictionaryKeyCallBacks,
-               &kCFTypeDictionaryValueCallBacks
-            );
+            _ptr = (__bridge host_font_ptr) font;
+            CFRetain(_ptr);
             break;
          }
       }
-      if (font_attributes)
-         _ptr = (host_font_ptr) font_attributes;
    }
 
    font::font(font const& rhs)
@@ -121,6 +112,16 @@ namespace cycfi { namespace elements
          rhs._ptr = nullptr;
       }
       return *this;
+   }
+
+   font::metrics_info font::metrics() const
+   {
+      NSFont* font = (__bridge NSFont*) _ptr;
+      return {
+         float([font ascender]),
+         float(-[font descender]),
+         float([font leading])
+      };
    }
 }}
 
