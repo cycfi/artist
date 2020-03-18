@@ -13,10 +13,25 @@ using namespace cycfi::artist;
 
 @interface CocoaView : NSView
 {
+   NSTimer*    _task;
 }
+
+-(void) start;
+
 @end
 
 @implementation CocoaView
+
+- (void) start
+{
+   _task =
+      [NSTimer scheduledTimerWithTimeInterval : 0.016 // 60Hz
+           target : self
+         selector : @selector(on_tick:)
+         userInfo : nil
+          repeats : YES
+      ];
+}
 
 - (void) drawRect : (NSRect) dirty
 {
@@ -31,6 +46,13 @@ using namespace cycfi::artist;
 {
    return YES;
 }
+
+- (void) on_tick : (id) sender
+{
+   [self setNeedsDisplay : YES];
+}
+
+- (BOOL) isOpaque { return YES; }
 
 @end
 
@@ -54,21 +76,17 @@ public:
          ];
 
       _content = [[CocoaView alloc] init];
+      [_content start];
       [_window setContentView : _content];
       [_window cascadeTopLeftFromPoint : NSMakePoint(20, 20)];
       [_window makeKeyAndOrderFront : nil];
       [_window setAppearance : [NSAppearance appearanceNamed : NSAppearanceNameVibrantDark]];
    }
 
-   void refresh()
-   {
-      [_content setNeedsDisplay : YES];
-   }
-
 private:
 
-   id _window;
-   id _content;
+   NSWindow*   _window;
+   CocoaView*  _content;
 };
 
 //=======================================================================
@@ -113,11 +131,6 @@ int run_app(int argc, const char* argv[])
    window _win;
    _win_ptr = &_win;
    return _app.run();
-}
-
-void refresh()
-{
-   _win_ptr->refresh();
 }
 
 void stop_app()
