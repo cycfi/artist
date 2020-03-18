@@ -9,7 +9,7 @@
 #include <sstream>
 #include <cmath>
 
-namespace cycfi { namespace artist
+namespace cycfi::artist
 {
    namespace
    {
@@ -123,6 +123,6 @@ namespace cycfi { namespace artist
          float([font leading])
       };
    }
-}}
+}
 
 

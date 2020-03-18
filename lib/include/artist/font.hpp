@@ -9,7 +9,7 @@
 #include <string_view>
 #include <memory>
 
-namespace cycfi { namespace artist
+namespace cycfi::artist
 {
    struct host_font;
    using host_font_ptr = host_font*;
@@ -323,6 +323,6 @@ namespace cycfi { namespace artist
    {
       return bool(_ptr);
    }
-}}
+}
 
 #endif

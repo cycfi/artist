@@ -30,4 +30,5 @@ endif()
 add_subdirectory(${CYCFI_INFRA_ROOT} "${CMAKE_CURRENT_BINARY_DIR}/infra")
 
 add_subdirectory(lib)
+add_subdirectory(examples)
 add_subdirectory(test)

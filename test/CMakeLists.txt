@@ -7,8 +7,8 @@
 project(artist_test)
 
 set(ARTIST_TEST_RESOURCES
-   ${CMAKE_CURRENT_LIST_DIR}/fonts/OpenSansCondensed-Light.ttf
-   ${CMAKE_CURRENT_LIST_DIR}/fonts/OpenSansCondensed-LightItalic.ttf
+   ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/OpenSansCondensed-Light.ttf
+   ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/OpenSansCondensed-LightItalic.ttf
 )
 
 ###############################################################################
@@ -25,8 +25,8 @@ if (APPLE)
       artist_test
       PROPERTIES
       MACOSX_BUNDLE_INFO_PLIST
-      ${CMAKE_CURRENT_LIST_DIR}/plist.in
-   )
+      ${CMAKE_CURRENT_LIST_DIR}/../resources/macos/plist.in
+      )
 endif()
 
 if (APPLE)
