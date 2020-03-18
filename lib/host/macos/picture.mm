@@ -46,7 +46,7 @@ namespace cycfi::artist
       CFBridgingRelease(_host);
    }
 
-   inline host_picture_ptr picture::host_picture() const
+   host_picture_ptr picture::host_picture() const
    {
       return _host;
    }
@@ -90,8 +90,8 @@ namespace cycfi::artist
       return { float(pixels_wide), float(pixels_high) };
    }
 
-   picture_context::picture_context(picture& pixmap_)
-    : _picture(pixmap_)
+   picture_context::picture_context(picture& pict)
+    : _picture(pict)
    {
       [((__bridge NSImage*) _picture.host_picture()) lockFocusFlipped : YES];
    }

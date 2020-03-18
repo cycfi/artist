@@ -8,8 +8,12 @@
 
 using namespace cycfi::artist;
 
-auto constexpr window_size = point{ 640.0f, 480.0f };
+///////////////////////////////////////////////////////////////////////////////
+// Ported from Rainbow Rain animation:
+// https://onaircode.com/awesome-html5-canvas-examples-source-code/
+///////////////////////////////////////////////////////////////////////////////
 
+constexpr auto window_size = point{ 640.0f, 480.0f };
 constexpr auto w = window_size.x;
 constexpr auto h = window_size.y;
 constexpr int total = w;
@@ -50,9 +54,16 @@ void rain(canvas& cnv)
     }
 }
 
+picture offscreen{ window_size };
+
 void draw(canvas& cnv)
 {
-   rain(cnv);
+    {
+        picture_context ctx{ offscreen };
+        canvas rain_cnv{ ctx.context() };
+        rain(rain_cnv);
+    }
+    cnv.draw(offscreen);
 }
 
 void init()

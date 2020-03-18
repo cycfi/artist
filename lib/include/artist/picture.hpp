@@ -55,7 +55,7 @@ namespace cycfi::artist
    {
    public:
 
-      explicit          picture_context(picture& pixmap_);
+      explicit          picture_context(picture& pict);
                         ~picture_context();
       picture_context&   operator=(picture_context const& rhs) = delete;
 
