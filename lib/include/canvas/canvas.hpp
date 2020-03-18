@@ -70,9 +70,27 @@ namespace cycfi::elements
 
       ///////////////////////////////////////////////////////////////////////////////////
       // Styles
+
+      enum line_cap_enum
+      {
+         butt,
+         round,
+         square
+      };
+
+      enum join_enum
+      {
+         bevel_join,
+         round_join,
+         miter_join
+      };
+
       void              fill_style(color c);
       void              stroke_style(color c);
       void              line_width(float w);
+      void              line_cap(line_cap_enum cap);
+      void              line_join(join_enum join);
+      void              miter_limit(float limit = 10);
       void              shadow_style(point p, float blur, color c);
       void              shadow_style(float blur, color c);
 
@@ -160,8 +178,6 @@ namespace cycfi::elements
       void              stroke_text(std::string_view utf8, point p);
       text_metrics      measure_text(std::string_view utf8);
       void              text_align(int align);
-
-      void              draw(text_layout const& text, point p);
 
       ///////////////////////////////////////////////////////////////////////////////////
       // Pixmaps

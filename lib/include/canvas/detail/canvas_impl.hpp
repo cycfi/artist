@@ -110,11 +110,6 @@ namespace cycfi::elements
       rhs.cnv = 0;
       return *this;
    }
-
-   inline void canvas::draw(text_layout const& text, point p)
-   {
-      text.draw(*this, p);
-   }
 }
 
 #endif

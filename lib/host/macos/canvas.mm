@@ -299,6 +299,35 @@ namespace cycfi::elements
       CGContextSetLineWidth(CGContextRef(_context), w);
    }
 
+   void canvas::line_cap(line_cap_enum cap_)
+   {
+      CGLineCap cap;
+      switch (cap_)
+      {
+         case butt:     cap = kCGLineCapButt; break;
+         case round:    cap = kCGLineCapRound; break;
+         case square:   cap = kCGLineCapSquare; break;
+      }
+      CGContextSetLineCap(CGContextRef(_context), cap);
+   }
+
+   void canvas::line_join(join_enum join_)
+   {
+      CGLineJoin join;
+      switch (join_)
+      {
+         case bevel_join:  join = kCGLineJoinBevel; break;
+         case round_join:  join = kCGLineJoinRound; break;
+         case miter_join:  join = kCGLineJoinMiter; break;
+      }
+      CGContextSetLineJoin(CGContextRef(_context), join);
+   }
+
+   void canvas::miter_limit(float limit)
+   {
+      CGContextSetMiterLimit(CGContextRef(_context), limit);
+   }
+
    void canvas::shadow_style(point p, float blur, color c)
    {
       CGContextSetShadowWithColor(
@@ -623,11 +652,10 @@ namespace cycfi::elements
    void canvas::draw(picture const& pic, struct rect src, struct rect dest)
    {
       auto  img = (__bridge NSImage*) pic.host_picture();
-       auto  src_ = NSRect{ { src.left, [img size].height - src.bottom }, { src.width(), src.height() } };
-       auto  dest_ = NSRect{ { dest.left, dest.top }, { dest.width(), dest.height() } };
+      auto  src_ = NSRect{ { src.left, [img size].height - src.bottom }, { src.width(), src.height() } };
+      auto  dest_ = NSRect{ { dest.left, dest.top }, { dest.width(), dest.height() } };
 
-      [img
-         drawInRect     :  dest_
+      [img drawInRect   :  dest_
          fromRect       :  src_
          operation      :  NSCompositingOperationSourceOver
          fraction       :  1.0

@@ -62,14 +62,14 @@ namespace cycfi::elements
       auto path = [NSString stringWithUTF8String : std::string{path_}.c_str() ];
       auto image = (__bridge NSImage*) _host;
       auto ref = [image CGImageForProposedRect : nullptr
-                                               context : nullptr
-                                                 hints : nullptr];
+                                       context : nullptr
+                                         hints : nullptr];
       auto* rep = [[NSBitmapImageRep alloc] initWithCGImage : ref];
       [rep setSize:[image size]];
 
-      auto* data = [rep representationUsingType : NSBitmapImageFileTypePNG properties : @{}];
+      auto* data = [rep representationUsingType : NSBitmapImageFileTypePNG
+                                     properties : @{}];
       [data writeToFile : path atomically : YES];
-      return;
    }
 
    uint32_t* picture::pixels()
@@ -80,6 +80,14 @@ namespace cycfi::elements
    uint32_t const* picture::pixels() const
    {
       return get_pixels((__bridge NSImage*) _host);
+   }
+
+   extent picture::bitmap_size() const
+   {
+      auto bm = get_bitmap((__bridge NSImage*) _host);
+      auto pixels_wide = [bm pixelsWide];
+      auto pixels_high = [bm pixelsHigh];
+      return { float(pixels_wide), float(pixels_high) };
    }
 
    picture_context::picture_context(picture& pixmap_)
