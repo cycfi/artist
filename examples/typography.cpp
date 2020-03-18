@@ -151,7 +151,6 @@ void typography(canvas& cnv)
 
 void draw(canvas& cnv)
 {
-    // images(cnv);
     typography(cnv);
 }
 
