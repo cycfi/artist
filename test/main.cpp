@@ -156,6 +156,60 @@ void draw_pixmap(canvas& cnv)
     cnv.draw(pm, point{ x, y }, 0.4);
 }
 
+void line_styles(canvas& cnv)
+{
+    auto where = point{ 500, 200 };
+    cnv.shadow_style({ 5.0, 5.0 }, 5, colors::black);
+
+    cnv.stroke_style(colors::gold);
+    cnv.begin_path();
+    cnv.line_width(10);
+    cnv.line_cap(cnv.butt);
+    cnv.move_to({ where.x, where.y });
+    cnv.line_to({ where.x+100, where.y });
+    cnv.stroke();
+
+    cnv.stroke_style(colors::sky_blue);
+    cnv.begin_path();
+    cnv.line_cap(cnv.round);
+    cnv.move_to({ where.x, where.y+20 });
+    cnv.line_to({ where.x+100, where.y+20 });
+    cnv.stroke();
+
+    cnv.stroke_style(colors::light_sea_green);
+    cnv.begin_path();
+    cnv.line_cap(cnv.square);
+    cnv.move_to({ where.x, where.y+40 });
+    cnv.line_to({ where.x+100, where.y+40 });
+    cnv.stroke();
+
+    where.x -= 20;
+
+    cnv.stroke_style(colors::gold);
+    cnv.begin_path();
+    cnv.line_join(cnv.bevel_join);
+    cnv.move_to({ where.x, where.y+100 });
+    cnv.line_to({ where.x+60, where.y+140 });
+    cnv.line_to({ where.x, where.y+180 });
+    cnv.stroke();
+
+    cnv.stroke_style(colors::sky_blue);
+    cnv.begin_path();
+    cnv.line_join(cnv.round_join);
+    cnv.move_to({ where.x+40, where.y+100 });
+    cnv.line_to({ where.x+100, where.y+140 });
+    cnv.line_to({ where.x+40, where.y+180 });
+    cnv.stroke();
+
+    cnv.stroke_style(colors::light_sea_green);
+    cnv.begin_path();
+    cnv.line_join(cnv.miter_join);
+    cnv.move_to({ where.x+80, where.y+100 });
+    cnv.line_to({ where.x+140, where.y+140 });
+    cnv.line_to({ where.x+80, where.y+180 });
+    cnv.stroke();
+}
+
 void test_draw(canvas& cnv)
 {
     background(cnv);
@@ -165,6 +219,7 @@ void test_draw(canvas& cnv)
     radial_gradient(cnv);
     stroke_gradient(cnv);
     draw_pixmap(cnv);
+    line_styles(cnv);
 }
 
 float diff_pixel(uint32_t a, uint32_t b)
@@ -188,12 +243,13 @@ void compare_golden(picture const& pm, std::string name)
     auto golden = picture(get_golden_path() + name + ".png");
     auto result = picture(get_results_path() + name + ".png");
 
-    CHECK(result.size() == golden.size());
+    auto size = result.bitmap_size();
+    CHECK(size == golden.bitmap_size());
 
     auto a = golden.pixels();
     auto b = result.pixels();
     auto diff = 0;
-    for (auto i = 0; i != (window_size.x * window_size.y); ++i)
+    for (auto i = 0; i != (size.x * size.y); ++i)
         diff += diff_pixel(a[i], b[i]);
     CHECK(diff == 0);
 }
@@ -237,6 +293,7 @@ void typography(canvas& cnv)
     cnv.stroke_text("Outline", { 210, 115 });
 
     cnv.font(font_descr{ "Open Sans", 52 }.bold());
+
     // Gradient Fill
     {
         auto gr = canvas::linear_gradient{ { 360, 90 }, { 360, 140 } };
@@ -256,6 +313,10 @@ void typography(canvas& cnv)
         cnv.stroke_style(gr);
         cnv.stroke_text("Outline Gradient", { 20, 190 });
     }
+
+    cnv.font(font_descr{ "Lucida Grande", 52 }.bold());
+    cnv.fill_style(rgba(220, 220, 220, 200));
+    cnv.fill_text("fi", { 500, 190 });
 
     {
         auto state = cnv.new_state();
@@ -327,9 +388,8 @@ void typography(canvas& cnv)
 
     auto tlayout = text_layout{ font_descr{ "Open Sans", 12 }.italic(), text };
     tlayout.flow(350, 0, 0, true);
-    cnv.draw(tlayout, { 20, 300 });
+    tlayout.draw(cnv, { 20, 300 });
 }
-
 
 TEST_CASE("Drawing")
 {
@@ -353,3 +413,13 @@ TEST_CASE("Typography")
     compare_golden(pm, "nakamura");
 }
 
+// TEST_CASE("LineStyles")
+// {
+//     picture pm{ window_size };
+//     {
+//         picture_context ctx{pm };
+//         canvas pm_cnv{ ctx.context() };
+//         line_styles(pm_cnv);
+//     }
+//     compare_golden(pm, "takahashi");
+// }

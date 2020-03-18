@@ -39,6 +39,7 @@ namespace cycfi::elements
 
       uint32_t*         pixels();
       uint32_t const*   pixels() const;
+      extent            bitmap_size() const;
 
    private:
 
