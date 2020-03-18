@@ -184,7 +184,7 @@ namespace cycfi::artist
 
       void              draw(picture const& pic, struct rect src, struct rect dest);
       void              draw(picture const& pic, struct rect dest);
-      void              draw(picture const& pic, point pos);
+      void              draw(picture const& pic, point pos = { 0, 0 });
       void              draw(picture const& pic, point pos, float scale);
 
       ///////////////////////////////////////////////////////////////////////////////////

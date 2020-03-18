@@ -52,7 +52,7 @@ using namespace cycfi::artist;
    [self setNeedsDisplay : YES];
 }
 
-- (BOOL) isOpaque { return YES; }
+//- (BOOL) isOpaque { return YES; }
 
 @end
 
