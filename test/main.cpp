@@ -23,6 +23,7 @@ void balloon(canvas& cnv)
 {
     // quadratic_curve_to
     cnv.begin_path();
+    cnv.line_join(cnv.round_join);
     cnv.move_to({ 75, 25 });
     cnv.quadratic_curve_to({ 25, 25 }, { 25, 62.5 });
     cnv.quadratic_curve_to({ 25, 100 }, { 50, 100 });
@@ -413,13 +414,3 @@ TEST_CASE("Typography")
     compare_golden(pm, "nakamura");
 }
 
-// TEST_CASE("LineStyles")
-// {
-//     picture pm{ window_size };
-//     {
-//         picture_context ctx{pm };
-//         canvas pm_cnv{ ctx.context() };
-//         line_styles(pm_cnv);
-//     }
-//     compare_golden(pm, "takahashi");
-// }
