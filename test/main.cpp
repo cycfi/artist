@@ -7,7 +7,7 @@
 #include <infra/catch.hpp>
 #include "paths.hpp"
 
-using namespace cycfi::elements;
+using namespace cycfi::artist;
 
 auto constexpr window_size = point{ 640.0f, 480.0f };
 auto constexpr bkd_color = rgba(54, 52, 55, 255);

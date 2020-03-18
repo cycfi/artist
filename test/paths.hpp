@@ -6,7 +6,7 @@
 #if !defined(ELEMENTS_TEST_PATHS_MARCH_12_2020)
 #define ELEMENTS_TEST_PATHS_MARCH_12_2020
 
-#include <canvas/canvas.hpp>
+#include <artist/canvas.hpp>
 #include <string>
 
 inline std::string get_images_path()

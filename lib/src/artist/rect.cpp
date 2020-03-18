@@ -4,10 +4,10 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
 #include <infra/support.hpp>
-#include <canvas/rect.hpp>
+#include <artist/rect.hpp>
 #include <algorithm>
 
-namespace cycfi::elements
+namespace cycfi::artist
 {
    bool intersects(rect a, rect b)
    {

@@ -4,9 +4,9 @@
 #  Distributed under the MIT License (https://opensource.org/licenses/MIT)
 ###############################################################################
 
-project(canvas_test)
+project(artist_test)
 
-set(CANVAS_TEST_RESOURCES
+set(ARTIST_TEST_RESOURCES
    ${CMAKE_CURRENT_LIST_DIR}/fonts/OpenSansCondensed-Light.ttf
    ${CMAKE_CURRENT_LIST_DIR}/fonts/OpenSansCondensed-LightItalic.ttf
 )
@@ -16,13 +16,13 @@ set(CANVAS_TEST_RESOURCES
 
 if (APPLE)
    add_executable(
-      canvas_test MACOSX_BUNDLE
+      artist_test MACOSX_BUNDLE
       main.cpp
-      ${CANVAS_TEST_RESOURCES}
+      ${ARTIST_TEST_RESOURCES}
    )
 
    set_target_properties(
-      canvas_test
+      artist_test
       PROPERTIES
       MACOSX_BUNDLE_INFO_PLIST
       ${CMAKE_CURRENT_LIST_DIR}/plist.in
@@ -30,18 +30,18 @@ if (APPLE)
 endif()
 
 if (APPLE)
-   target_link_options(canvas_test PRIVATE -framework AppKit)
+   target_link_options(artist_test PRIVATE -framework AppKit)
 endif()
 
 if (APPLE)
    set_source_files_properties(
-      ${CANVAS_TEST_RESOURCES}
+      ${ARTIST_TEST_RESOURCES}
       PROPERTIES
       MACOSX_PACKAGE_LOCATION Resources
    )
 endif()
 
-target_link_libraries(canvas_test infra canvas)
+target_link_libraries(artist_test infra artist)
 
 # Copy golden files to the binary dir
 file(

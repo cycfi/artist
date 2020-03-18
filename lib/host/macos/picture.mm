@@ -3,12 +3,12 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#include <canvas/picture.hpp>
+#include <artist/picture.hpp>
 #include <Quartz/Quartz.h>
 #include <string>
 #include <stdexcept>
 
-namespace cycfi::elements
+namespace cycfi::artist
 {
    namespace
    {
