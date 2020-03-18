@@ -9,7 +9,7 @@
 #include "osx_utils.hpp"
 #include <vector>
 
-namespace cycfi { namespace artist
+namespace cycfi::artist
 {
    struct text_layout::impl
    {
@@ -147,5 +147,5 @@ namespace cycfi { namespace artist
    {
       return _impl->hit_test(p);
    }
-}}
+}
 

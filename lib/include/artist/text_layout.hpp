@@ -11,7 +11,7 @@
 #include <artist/rect.hpp>
 #include <memory>
 
-namespace cycfi { namespace artist
+namespace cycfi::artist
 {
    class canvas;
 
@@ -44,6 +44,6 @@ namespace cycfi { namespace artist
 
       impl_ptr             _impl;
    };
-}}
+}
 
 #endif
