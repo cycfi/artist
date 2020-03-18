@@ -6,10 +6,10 @@
 #if !defined(ELEMENTS_IMAGE_SEPTEMBER_5_2016)
 #define ELEMENTS_IMAGE_SEPTEMBER_5_2016
 
-#include <canvas/point.hpp>
+#include <artist/point.hpp>
 #include <string_view>
 
-namespace cycfi::elements
+namespace cycfi::artist
 {
    struct host_context;
    using host_context_ptr = host_context*;

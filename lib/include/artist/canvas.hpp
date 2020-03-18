@@ -6,17 +6,17 @@
 #if !defined(ELEMENTS_CANVAS_MAY_3_2016)
 #define ELEMENTS_CANVAS_MAY_3_2016
 
-#include <canvas/color.hpp>
-#include <canvas/rect.hpp>
-#include <canvas/circle.hpp>
-#include <canvas/picture.hpp>
-#include <canvas/font.hpp>
-#include <canvas/text_layout.hpp>
+#include <artist/color.hpp>
+#include <artist/rect.hpp>
+#include <artist/circle.hpp>
+#include <artist/picture.hpp>
+#include <artist/font.hpp>
+#include <artist/text_layout.hpp>
 
 #include <vector>
 #include <memory>
 
-namespace cycfi::elements
+namespace cycfi::artist
 {
    struct host_context;
    using host_context_ptr = host_context*;
@@ -219,5 +219,5 @@ namespace cycfi::elements
    };
 }
 
-#include <canvas/detail/canvas_impl.hpp>
+#include <artist/detail/canvas_impl.hpp>
 #endif

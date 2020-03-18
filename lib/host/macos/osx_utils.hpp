@@ -8,7 +8,7 @@
 
 #include <Quartz/Quartz.h>
 
-namespace cycfi::elements::detail
+namespace cycfi::artist::detail
 {
    inline CFStringRef cf_string(char const* f, char const* l)
    {

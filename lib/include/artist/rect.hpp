@@ -6,9 +6,9 @@
 #if !defined(ELEMENTS_RECT_APRIL_10_2016)
 #define ELEMENTS_RECT_APRIL_10_2016
 
-#include <canvas/point.hpp>
+#include <artist/point.hpp>
 
-namespace cycfi::elements
+namespace cycfi::artist
 {
    ////////////////////////////////////////////////////////////////////////////
    // rect

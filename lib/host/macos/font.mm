@@ -3,13 +3,13 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#include <canvas/font.hpp>
+#include <artist/font.hpp>
 #include <Quartz/Quartz.h>
 #include <algorithm>
 #include <sstream>
 #include <cmath>
 
-namespace cycfi { namespace elements
+namespace cycfi { namespace artist
 {
    namespace
    {

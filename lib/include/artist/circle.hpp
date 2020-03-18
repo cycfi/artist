@@ -6,10 +6,10 @@
 #if !defined(ELEMENTS_CIRCLE_APRIL_17_2016)
 #define ELEMENTS_CIRCLE_APRIL_17_2016
 
-#include <canvas/rect.hpp>
+#include <artist/rect.hpp>
 #include <algorithm>
 
-namespace cycfi::elements
+namespace cycfi::artist
 {
    ////////////////////////////////////////////////////////////////////////////
    // Circles

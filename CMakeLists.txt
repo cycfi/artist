@@ -5,7 +5,7 @@
 ###############################################################################
 cmake_minimum_required(VERSION 3.9.6...3.15.0)
 
-project(canvas LANGUAGES C CXX)
+project(artist LANGUAGES C CXX)
 
 set(DEFAULT_BUILD_TYPE "Release")
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)

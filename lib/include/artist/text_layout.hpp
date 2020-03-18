@@ -7,11 +7,11 @@
 #define ELEMENTS_TEXT_LAYOUT_MARCH_17_2020
 
 #include <string_view>
-#include <canvas/font.hpp>
-#include <canvas/rect.hpp>
+#include <artist/font.hpp>
+#include <artist/rect.hpp>
 #include <memory>
 
-namespace cycfi { namespace elements
+namespace cycfi { namespace artist
 {
    class canvas;
 

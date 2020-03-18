@@ -3,13 +3,13 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#include <canvas/canvas.hpp>
+#include <artist/canvas.hpp>
 #include <Quartz/Quartz.h>
 #include <stack>
 #include <variant>
 #include "osx_utils.hpp"
 
-namespace cycfi::elements
+namespace cycfi::artist
 {
    struct canvas::canvas_state
    {

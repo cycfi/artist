@@ -10,7 +10,7 @@
 # define M_PI 3.14159265358979323846
 #endif
 
-namespace cycfi::elements
+namespace cycfi::artist
 {
    ////////////////////////////////////////////////////////////////////////////
    // Inlines
@@ -63,11 +63,6 @@ namespace cycfi::elements
       round_rect(r, radius);
       stroke();
    }
-
-   // inline void canvas::text_align(int align)
-   // {
-   //    _state.align = align;
-   // }
 
    inline void canvas::draw(picture const& pic, struct rect dest)
    {

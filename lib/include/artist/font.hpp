@@ -9,7 +9,7 @@
 #include <string_view>
 #include <memory>
 
-namespace cycfi { namespace elements
+namespace cycfi { namespace artist
 {
    struct host_font;
    using host_font_ptr = host_font*;

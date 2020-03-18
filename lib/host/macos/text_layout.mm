@@ -4,12 +4,12 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
 #include <string_view>
-#include <canvas/text_layout.hpp>
-#include <canvas/canvas.hpp>
+#include <artist/text_layout.hpp>
+#include <artist/canvas.hpp>
 #include "osx_utils.hpp"
 #include <vector>
 
-namespace cycfi { namespace elements
+namespace cycfi { namespace artist
 {
    struct text_layout::impl
    {

@@ -6,7 +6,7 @@
 #if !defined(ELEMENTS_POINT_APRIL_10_2016)
 #define ELEMENTS_POINT_APRIL_10_2016
 
-namespace cycfi::elements
+namespace cycfi::artist
 {
    ////////////////////////////////////////////////////////////////////////////
    // Points

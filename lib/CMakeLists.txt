@@ -8,65 +8,65 @@ cmake_minimum_required(VERSION 3.7.2...3.15.0)
 ###############################################################################
 # Sources (and Resources)
 
-set(CANVAS_SOURCES
-   src/canvas/rect.cpp
+set(ARTIST_SOURCES
+   src/artist/rect.cpp
 )
 
-set(CANVAS_HEADERS
-   include/canvas/canvas.hpp
-   include/canvas/circle.hpp
-   include/canvas/color.hpp
-   include/canvas/font.hpp
-   include/canvas/picture.hpp
-   include/canvas/point.hpp
-   include/canvas/rect.hpp
-   include/canvas/text_layout.hpp
+set(ARTIST_HEADERS
+   include/artist/canvas.hpp
+   include/artist/circle.hpp
+   include/artist/color.hpp
+   include/artist/font.hpp
+   include/artist/picture.hpp
+   include/artist/point.hpp
+   include/artist/rect.hpp
+   include/artist/text_layout.hpp
 )
 
 if (APPLE)
-   set(CANVAS_HOST
+   set(ARTIST_HOST
       host/macos/canvas.mm
       host/macos/picture.mm
       host/macos/font.mm
       host/macos/text_layout.mm
    )
 elseif (UNIX)
-   set(CANVAS_HOST
+   set(ARTIST_HOST
    )
 elseif (WIN32)
-   set(CANVAS_HOST
+   set(ARTIST_HOST
    )
 endif()
 
-source_group("Source Files\\canvas"
+source_group("Source Files\\artist"
    FILES
-   ${CANVAS_SOURCES}
+   ${ARTIST_SOURCES}
 )
 
 source_group("Source Files\\canvas_host"
    FILES
-   ${CANVAS_HOST}
+   ${ARTIST_HOST}
 )
 
-source_group("Header Files\\canvas"
+source_group("Header Files\\artist"
    FILES
-   ${CANVAS_HEADERS}
+   ${ARTIST_HEADERS}
 )
 
-add_library(canvas)
+add_library(artist)
 
-target_sources(canvas
-   PRIVATE ${CANVAS_SOURCES} ${CANVAS_HOST}
-   PUBLIC ${CANVAS_HEADERS}
+target_sources(artist
+   PRIVATE ${ARTIST_SOURCES} ${ARTIST_HOST}
+   PUBLIC ${ARTIST_HEADERS}
 )
 
-target_include_directories(canvas PUBLIC include)
+target_include_directories(artist PUBLIC include)
 
-target_compile_features(canvas PUBLIC cxx_std_17)
+target_compile_features(artist PUBLIC cxx_std_17)
 
 if (IPO_SUPPORTED AND CMAKE_BUILD_TYPE STREQUAL "Release")
-   message(STATUS "Enabling LTO for canvas")
-   set_target_properties(canvas PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+   message(STATUS "Enabling LTO for artist")
+   set_target_properties(artist PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
 if (NOT MSVC)
@@ -76,7 +76,7 @@ endif()
 ###############################################################################
 # Get rid of certain warnings
 
-target_compile_options(canvas PRIVATE
+target_compile_options(artist PRIVATE
     $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic -ftemplate-backtrace-limit=0>
     $<$<CXX_COMPILER_ID:Clang>:-Wall -Wpedantic -ftemplate-backtrace-limit=0>
     $<$<CXX_COMPILER_ID:MSVC>:/W4 /wd4244 /wd4305 /wd4996 /wd4267 /wd4018>
@@ -86,12 +86,12 @@ target_compile_options(canvas PRIVATE
 # Global options
 
 if (APPLE)
-   target_compile_definitions(canvas PRIVATE
-      CANVAS_CLASS_PREFIX=${CANVAS_CLASS_PREFIX}
+   target_compile_definitions(artist PRIVATE
+      ARTIST_CLASS_PREFIX=${ARTIST_CLASS_PREFIX}
    )
-   target_compile_options(canvas PUBLIC "-fobjc-arc")
+   target_compile_options(artist PUBLIC "-fobjc-arc")
 elseif (WIN32)
-   target_compile_definitions(canvas PUBLIC
+   target_compile_definitions(artist PUBLIC
       WIN32_LEAN_AND_MEAN
       NOMINMAX
       _UNICODE
@@ -101,11 +101,11 @@ endif()
 ###############################################################################
 # Libraries and linking
 
-target_link_libraries(canvas PUBLIC
+target_link_libraries(artist PUBLIC
    infra
 )
 
 if (UNIX OR (WIN32 AND NOT MSVC))
 endif()
 
-add_library(cycfi::canvas ALIAS canvas)
+add_library(cycfi::artist ALIAS artist)
