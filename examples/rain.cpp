@@ -13,7 +13,7 @@ using namespace cycfi::artist;
 // https://onaircode.com/awesome-html5-canvas-examples-source-code/
 ///////////////////////////////////////////////////////////////////////////////
 
-constexpr auto window_size = point{ 640.0f, 480.0f };
+constexpr auto window_size = extent{ 640, 360 };
 constexpr auto w = window_size.x;
 constexpr auto h = window_size.y;
 constexpr int total = w;
@@ -38,12 +38,13 @@ void rain(canvas& cnv)
     {
         auto current_y = dots[i] - 1;
         dots[i] += dots_vel[i] += accelleration;
-
-        auto dot_color = hsl(portion * i, 0.8, 0.5);
-        cnv.stroke_style(dot_color);
-        cnv.move_to({ float(i), current_y });
-        cnv.line_to({ float(i), current_y + dots_vel[i] + 1 });
-        cnv.stroke();
+        cnv.fill_style(hsl(portion * i, 0.8, 0.5));
+        cnv.fill_rect({
+            float(i)
+          , current_y
+          , float(i+1)
+          , current_y + dots_vel[i] + 1
+        });
 
         if (dots[i] > h && random_size() < .01)
             dots[i] = dots_vel[i] = 0;
@@ -74,6 +75,6 @@ void init()
 int main(int argc, const char* argv[])
 {
     init();
-    return run_app(argc, argv);
+    return run_app(argc, argv, { 640, 360 }, true);
 }
 
