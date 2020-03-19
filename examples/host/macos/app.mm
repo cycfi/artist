@@ -17,6 +17,7 @@ using namespace cycfi::artist;
 }
 
 -(void) start;
+-(void) start_animation;
 
 @end
 
@@ -24,13 +25,6 @@ using namespace cycfi::artist;
 
 - (void) start
 {
-   _task =
-      [NSTimer scheduledTimerWithTimeInterval : 0.016 // 60Hz
-           target : self
-         selector : @selector(on_tick:)
-         userInfo : nil
-          repeats : YES
-      ];
 }
 
 - (void) drawRect : (NSRect) dirty
@@ -52,6 +46,17 @@ using namespace cycfi::artist;
    [self setNeedsDisplay : YES];
 }
 
+-(void) start_animation
+{
+   _task =
+      [NSTimer scheduledTimerWithTimeInterval : 0.016 // 60Hz
+           target : self
+         selector : @selector(on_tick:)
+         userInfo : nil
+          repeats : YES
+      ];
+}
+
 //- (BOOL) isOpaque { return YES; }
 
 @end
@@ -61,11 +66,11 @@ class window
 {
 public:
 
-   window()
+   window(extent window_size)
    {
       _window =
          [[NSWindow alloc]
-            initWithContentRect : NSMakeRect(0, 0, 640, 480)
+            initWithContentRect : NSMakeRect(0, 0, window_size.x, window_size.y)
             styleMask :
                NSWindowStyleMaskTitled |
                NSWindowStyleMaskClosable |
@@ -81,6 +86,11 @@ public:
       [_window cascadeTopLeftFromPoint : NSMakePoint(20, 20)];
       [_window makeKeyAndOrderFront : nil];
       [_window setAppearance : [NSAppearance appearanceNamed : NSAppearanceNameVibrantDark]];
+   }
+
+   void start_animation()
+   {
+      [_content start_animation];
    }
 
 private:
@@ -123,13 +133,11 @@ private:
    id _menubar;
 };
 
-window* _win_ptr = nullptr;
-
-int run_app(int argc, const char* argv[])
+int run_app(int argc, const char* argv[], extent window_size, bool animate)
 {
    app _app;
-   window _win;
-   _win_ptr = &_win;
+   window _win(window_size);
+   _win.start_animation();
    return _app.run();
 }
 

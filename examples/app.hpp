@@ -10,8 +10,15 @@
 #include <string>
 
 using cycfi::artist::canvas;
+using cycfi::artist::extent;
 
-int            run_app(int argc, const char* argv[]);
+int            run_app(
+                  int argc
+                , const char* argv[]
+                , extent window_size
+                , bool animate = false
+               );
+
 void           stop_app();
 void           draw(canvas& cnv);
 

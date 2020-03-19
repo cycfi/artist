@@ -8,7 +8,7 @@
 
 using namespace cycfi::artist;
 auto constexpr window_size = point{ 640.0f, 480.0f };
-auto constexpr bkd_color = rgba(54, 52, 55, 255);
+auto constexpr bkd_color = rgb(44, 42, 45);
 
 void background(canvas& cnv)
 {
@@ -156,6 +156,6 @@ void draw(canvas& cnv)
 
 int main(int argc, const char* argv[])
 {
-    return run_app(argc, argv);
+    return run_app(argc, argv, window_size);
 }
 
