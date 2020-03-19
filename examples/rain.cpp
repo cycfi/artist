@@ -18,8 +18,6 @@ constexpr auto w = window_size.x;
 constexpr auto h = window_size.y;
 constexpr int total = w;
 constexpr auto accelleration = 0.05;
-constexpr auto size = w/total;
-constexpr auto occupation = w/total;
 constexpr auto repaint_color = rgb(0, 0, 0).opacity(0.04);
 constexpr auto portion = 360.0f/total;
 
@@ -41,13 +39,11 @@ void rain(canvas& cnv)
         auto current_y = dots[i] - 1;
         dots[i] += dots_vel[i] += accelleration;
 
-        auto dot_size = extent{ size, dots_vel[i] + 1 };
         auto dot_color = hsl(portion * i, 0.8, 0.5);
-
-        // cnv.fill_style(colors::white);
-
-        cnv.fill_style(dot_color);
-        cnv.fill_rect({ occupation * i, current_y, dot_size });
+        cnv.stroke_style(dot_color);
+        cnv.move_to({ float(i), current_y });
+        cnv.line_to({ float(i), current_y + dots_vel[i] + 1 });
+        cnv.stroke();
 
         if (dots[i] > h && random_size() < .01)
             dots[i] = dots_vel[i] = 0;
