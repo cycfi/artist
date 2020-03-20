@@ -19,12 +19,15 @@ namespace cycfi::artist
        , canvas::radial_gradient
       >;
 
+      using mode = canvas::composite_operation_enum;
+
       struct aux
       {
          style       _fill_style;
          style       _stroke_style;
          class font  _font;
          int         _text_align;
+         mode        _mode;
       };
 
       using aux_stack = std::stack<aux>;
@@ -36,6 +39,7 @@ namespace cycfi::artist
       class font     _font = font_descr{ "Helvetica Neue", 12 };
       int            _text_align = canvas::baseline;
       aux_stack      _aux_stack;
+      mode           _mode;
    };
 
    canvas::canvas(host_context_ptr context_)
@@ -74,7 +78,9 @@ namespace cycfi::artist
          {
             _state->_fill_style,
             _state->_stroke_style,
-            _state->_font
+            _state->_font,
+            _state->_text_align,
+            _state->_mode
          }
       );
    }
@@ -82,11 +88,12 @@ namespace cycfi::artist
    void canvas::restore()
    {
       CGContextRestoreGState(CGContextRef(_context));
-      auto& [ fs, ss, f, ta ] = _state->_aux_stack.top();
+      auto& [ fs, ss, f, ta, m ] = _state->_aux_stack.top();
       _state->_fill_style     = std::move(fs);
       _state->_stroke_style   = std::move(ss);
       _state->_font           = std::move(f);
       _state->_text_align     = ta;
+      _state->_mode           = m;
       _state->_aux_stack.pop();
    }
 
@@ -107,7 +114,43 @@ namespace cycfi::artist
          using T = std::decay_t<decltype(style)>;
          if constexpr (std::is_same_v<T, color>)
          {
+            auto needs_workaround = [](auto mode)
+            {
+               switch (mode)
+               {
+                  case source_in:
+                  case source_out:
+                  case destination_atop:
+                  case destination_in:
+                  case copy:
+                     return true;
+                  default:
+                     return false;
+               };
+            };
+
             auto ctx = CGContextRef(_context);
+            if (needs_workaround(_state->_mode))
+            {
+               // This is needed to conform to the html5 canvas specs
+               // (e.g. https://www.w3schools.com/tags/canvas_globalcompositeoperation.asp)
+               // There are still some artifacts with source_out, but this is the best we
+               // can do for now.
+               auto save = CGContextCopyPath(ctx);
+               {
+                  CGContextSaveGState(ctx);
+                  CGContextAddRect(ctx, CGRectInfinite);
+                  CGContextEOClip(ctx);
+                  CGContextSetBlendMode(ctx, kCGBlendModeClear);
+                  CGContextAddRect(ctx, CGRectInfinite);
+                  CGContextFillPath(ctx);
+                  CGContextRestoreGState(CGContextRef(_context));
+               }
+
+               CGContextAddPath(ctx, save);
+               CGPathRelease(save);
+            }
+
             CGContextSetRGBFillColor(ctx, style.red, style.green, style.blue, style.alpha);
             CGContextFillPath(ctx);
          }
@@ -342,6 +385,28 @@ namespace cycfi::artist
             CGColor
          ]
       );
+   }
+
+   void canvas::global_composite_operation(composite_operation_enum mode)
+   {
+      _state->_mode = mode;
+      CGBlendMode cg_mode;
+      switch (mode)
+      {
+         case source_over:          cg_mode = kCGBlendModeNormal; break;
+         case source_atop:          cg_mode = kCGBlendModeSourceAtop; break;
+         case source_in:            cg_mode = kCGBlendModeSourceIn; break;
+         case source_out:           cg_mode = kCGBlendModeSourceOut; break;
+         case destination_over:     cg_mode = kCGBlendModeDestinationOver; break;
+         case destination_atop:     cg_mode = kCGBlendModeDestinationAtop; break;
+         case destination_in:       cg_mode = kCGBlendModeDestinationIn; break;
+         case destination_out:      cg_mode = kCGBlendModeDestinationOut; break;
+         case lighter:              cg_mode = kCGBlendModePlusLighter; break;
+         case darker:               cg_mode = kCGBlendModePlusDarker; break;
+         case copy:                 cg_mode = kCGBlendModeCopy; break;
+         case xor_:                 cg_mode = kCGBlendModeXOR; break;
+      };
+      CGContextSetBlendMode(CGContextRef(_context), cg_mode);
    }
 
    namespace
@@ -655,9 +720,26 @@ namespace cycfi::artist
       auto  src_ = NSRect{ { src.left, [img size].height - src.bottom }, { src.width(), src.height() } };
       auto  dest_ = NSRect{ { dest.left, dest.top }, { dest.width(), dest.height() } };
 
+      NSCompositingOperation ns_mode;
+      switch (_state->_mode)
+      {
+         case source_over:          ns_mode = NSCompositingOperationSourceOver; break;
+         case source_atop:          ns_mode = NSCompositingOperationSourceAtop; break;
+         case source_in:            ns_mode = NSCompositingOperationSourceIn; break;
+         case source_out:           ns_mode = NSCompositingOperationSourceOut; break;
+         case destination_over:     ns_mode = NSCompositingOperationDestinationOver; break;
+         case destination_atop:     ns_mode = NSCompositingOperationDestinationAtop; break;
+         case destination_in:       ns_mode = NSCompositingOperationDestinationIn; break;
+         case destination_out:      ns_mode = NSCompositingOperationDestinationOut; break;
+         case lighter:              ns_mode = NSCompositingOperationPlusLighter; break;
+         case darker:               ns_mode = NSCompositingOperationPlusDarker; break;
+         case copy:                 ns_mode = NSCompositingOperationCopy; break;
+         case xor_:                 ns_mode = NSCompositingOperationXOR; break;
+      };
+
       [img drawInRect   :  dest_
          fromRect       :  src_
-         operation      :  NSCompositingOperationSourceOver
+         operation      :  ns_mode
          fraction       :  1.0
          respectFlipped :  YES
          hints          :  nil

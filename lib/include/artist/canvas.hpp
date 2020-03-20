@@ -94,6 +94,24 @@ namespace cycfi::artist
       void              shadow_style(point p, float blur, color c);
       void              shadow_style(float blur, color c);
 
+      enum composite_operation_enum
+      {
+         source_over,
+         source_atop,
+         source_in,
+         source_out,
+         destination_over,
+         destination_atop,
+         destination_in,
+         destination_out,
+         lighter,
+         darker,
+         copy,
+         xor_
+      };
+
+      void              global_composite_operation(composite_operation_enum mode);
+
       ///////////////////////////////////////////////////////////////////////////////////
       // Gradients
       struct color_stop

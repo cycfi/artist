@@ -38,6 +38,8 @@ namespace cycfi::artist
    {
       auto path = [NSString stringWithUTF8String : std::string{path_}.c_str() ];
       auto img_ = [[NSImage alloc] initWithContentsOfFile : path];
+      if (!img_)
+         img_ = [NSImage imageNamed : path];
       _host = (__bridge_retained host_picture_ptr) img_;
    }
 
