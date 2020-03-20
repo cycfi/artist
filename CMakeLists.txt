@@ -29,6 +29,8 @@ endif()
 
 add_subdirectory(${CYCFI_INFRA_ROOT} "${CMAKE_CURRENT_BINARY_DIR}/infra")
 
+option(ARTIST_QUARTZ_2D "build Artist using quartz 2d on MacOS" ON)
+
 add_subdirectory(lib)
 add_subdirectory(examples)
 add_subdirectory(test)

@@ -24,12 +24,14 @@ set(ARTIST_HEADERS
 )
 
 if (APPLE)
-   set(ARTIST_HOST
-      host/macos/canvas.mm
-      host/macos/picture.mm
-      host/macos/font.mm
-      host/macos/text_layout.mm
-   )
+   if (ARTIST_QUARTZ_2D)
+      set(ARTIST_HOST
+         host/macos/canvas.mm
+         host/macos/picture.mm
+         host/macos/font.mm
+         host/macos/text_layout.mm
+      )
+   endif()
 elseif (UNIX)
    set(ARTIST_HOST
    )
