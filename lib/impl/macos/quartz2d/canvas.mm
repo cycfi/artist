@@ -500,10 +500,10 @@ namespace cycfi::artist
       CGContextSetMiterLimit(CGContextRef(_context), limit);
    }
 
-   void canvas::shadow_style(point p, float blur, color c)
+   void canvas::shadow_style(point offset, float blur, color c)
    {
       CGContextSetShadowWithColor(
-         CGContextRef(_context), CGSizeMake(p.x, -p.y), blur,
+         CGContextRef(_context), CGSizeMake(offset.x, -offset.y), blur,
          [
             [NSColor
                colorWithRed : c.red
