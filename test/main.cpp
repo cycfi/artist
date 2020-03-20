@@ -436,7 +436,7 @@ void composite_draw(canvas& cnv, point p, canvas::composite_operation_enum mode)
     cnv.fill_text(mode_name(mode), { p.x+60, p.y+110 });
 }
 
-void composite(canvas& cnv)
+void composite_ops(canvas& cnv)
 {
     cnv.font(font_descr{ "Open Sans", 10 });
 
@@ -468,7 +468,7 @@ TEST_CASE("Drawing")
         canvas pm_cnv{ ctx.context() };
         test_draw(pm_cnv);
     }
-    compare_golden(pm, "wakamiya");
+    compare_golden(pm, "shapes_and_images");
 }
 
 TEST_CASE("Typography")
@@ -479,7 +479,7 @@ TEST_CASE("Typography")
         canvas pm_cnv{ ctx.context() };
         typography(pm_cnv);
     }
-    compare_golden(pm, "nakamura");
+    compare_golden(pm, "typography");
 }
 
 TEST_CASE("Composite")
@@ -488,8 +488,8 @@ TEST_CASE("Composite")
     {
         picture_context ctx{pm };
         canvas pm_cnv{ ctx.context() };
-        composite(pm_cnv);
+       composite_ops(pm_cnv);
     }
-    compare_golden(pm, "watanabe");
+    compare_golden(pm, "composite_ops");
 }
 

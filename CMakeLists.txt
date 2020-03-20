@@ -19,7 +19,7 @@ endif()
 
 include(CheckIPOSupported)
 check_ipo_supported(RESULT IPO_SUPPORTED)
-if(IPO_SUPPORTED)
+if (IPO_SUPPORTED)
     message(STATUS "Link-time optimization supported. Will be enabled in Release build type")
 endif()
 
