@@ -34,6 +34,7 @@ namespace cycfi::artist
 
       void                 flow(float width, float indent = 0, float line_height = 0, bool justify = false);
       void                 draw(canvas& cnv, point p) const;
+      void                 draw(canvas& cnv, float x, float y) const;
       glyph_position       position(char const* text) const;
       char const*          hit_test(point p) const;
 
@@ -44,6 +45,14 @@ namespace cycfi::artist
 
       impl_ptr             _impl;
    };
+
+   ////////////////////////////////////////////////////////////////////////////
+   // Inlines
+   ////////////////////////////////////////////////////////////////////////////
+   inline void text_layout::draw(canvas& cnv, float x, float y) const
+   {
+      draw(cnv, { x, y });
+   }
 }
 
 #endif

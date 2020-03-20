@@ -24,7 +24,7 @@ void balloon(canvas& cnv)
     // quadratic_curve_to
     cnv.begin_path();
     cnv.line_join(cnv.round_join);
-    cnv.move_to({ 75, 25 });
+    cnv.move_to(75, 25);
     cnv.quadratic_curve_to({ 25, 25 }, { 25, 62.5 });
     cnv.quadratic_curve_to({ 25, 100 }, { 50, 100 });
     cnv.quadratic_curve_to({ 50, 120 }, { 30, 125 });
@@ -52,7 +52,7 @@ void basics(canvas& cnv)
 {
     auto state = cnv.new_state();
 
-    cnv.rect({ 20, 20, 100, 60 });
+    cnv.rect(20, 20, 80, 40);
     cnv.fill_style(colors::navy_blue);
     cnv.fill_preserve();
 
@@ -60,29 +60,29 @@ void basics(canvas& cnv)
     cnv.line_width(0.5);
     cnv.stroke();
 
-    cnv.round_rect({ 40, 35, 120, 80 }, 8);
+    cnv.round_rect(40, 35, 80, 45, 8);
     cnv.fill_style(colors::light_sea_green.opacity(0.5));
     cnv.fill();
 
-    cnv.move_to({ 10, 10 });
-    cnv.line_to({ 100, 100 });
+    cnv.move_to(10, 10);
+    cnv.line_to(100, 100);
     cnv.line_width(10);
     cnv.stroke_style(colors::hot_pink);
     cnv.stroke();
 
-    cnv.circle({{ 120, 80 }, 40});
+    cnv.circle(120, 80, 40);
     cnv.line_width(4);
     cnv.fill_style(colors::gold.opacity(0.5));
     cnv.stroke_style(colors::gold);
     cnv.fill_preserve();
     cnv.stroke();
 
-    cnv.translate({ 120, 0 });
+    cnv.translate(120, 0);
     balloon(cnv);
     cnv.stroke_style(colors::light_gray);
     cnv.stroke();
 
-    cnv.translate({ -100, 100 });
+    cnv.translate(-100, 100);
     heart(cnv);
     cnv.line_width(2);
     cnv.stroke_style(color{ 0.8, 0, 0 });
@@ -93,8 +93,8 @@ void basics(canvas& cnv)
 void transformed(canvas& cnv)
 {
     auto state = cnv.new_state();
-    cnv.scale({ 1.5, 1.5 });
-    cnv.translate({ 150, 80 });
+    cnv.scale(1.5, 1.5);
+    cnv.translate(150, 80);
     cnv.rotate(0.8);
     basics(cnv);
 }
@@ -115,10 +115,10 @@ void linear_gradient(canvas& cnv)
 {
     auto x = 300.0f;
     auto y = 20.0f;
-    auto gr = canvas::linear_gradient{ { x, y }, { x+300, y } };
+    auto gr = canvas::linear_gradient{ x, y, x+300, y };
     rainbow(gr);
 
-    cnv.round_rect({ x, y, x+300, y+80 }, 5);
+    cnv.round_rect(x, y, 300, 80, 5);
     cnv.fill_style(gr);
     cnv.fill();
 }
@@ -140,11 +140,11 @@ void stroke_gradient(canvas& cnv)
 {
     auto x = 300.0f;
     auto y = 20.0f;
-    auto gr = canvas::linear_gradient{ { x, y }, { x+300, y+80 } };
+    auto gr = canvas::linear_gradient{ x, y, x+300, y+80 };
     gr.add_color_stop({ 0.0, colors::navy_blue });
     gr.add_color_stop({ 1.0, colors::maroon });
 
-    cnv.round_rect({ x, y, x+300, y+80 }, 5);
+    cnv.round_rect(x, y, 300, 80, 5);
     cnv.line_width(8);
     cnv.stroke_style(gr);
     cnv.stroke();
@@ -154,7 +154,7 @@ void draw_pixmap(canvas& cnv)
 {
     picture pm{get_images_path() + "logo.png" };
     auto x = 250.0f, y = 120.0f;
-    cnv.draw(pm, point{ x, y }, 0.4);
+    cnv.draw(pm, x, y, 0.4);
 }
 
 void line_styles(canvas& cnv)
@@ -166,22 +166,22 @@ void line_styles(canvas& cnv)
     cnv.begin_path();
     cnv.line_width(10);
     cnv.line_cap(cnv.butt);
-    cnv.move_to({ where.x, where.y });
-    cnv.line_to({ where.x+100, where.y });
+    cnv.move_to(where.x, where.y);
+    cnv.line_to(where.x+100, where.y);
     cnv.stroke();
 
     cnv.stroke_style(colors::sky_blue);
     cnv.begin_path();
     cnv.line_cap(cnv.round);
-    cnv.move_to({ where.x, where.y+20 });
-    cnv.line_to({ where.x+100, where.y+20 });
+    cnv.move_to(where.x, where.y+20);
+    cnv.line_to(where.x+100, where.y+20);
     cnv.stroke();
 
     cnv.stroke_style(colors::light_sea_green);
     cnv.begin_path();
     cnv.line_cap(cnv.square);
-    cnv.move_to({ where.x, where.y+40 });
-    cnv.line_to({ where.x+100, where.y+40 });
+    cnv.move_to(where.x, where.y+40);
+    cnv.line_to(where.x+100, where.y+40);
     cnv.stroke();
 
     where.x -= 20;
@@ -189,25 +189,25 @@ void line_styles(canvas& cnv)
     cnv.stroke_style(colors::gold);
     cnv.begin_path();
     cnv.line_join(cnv.bevel_join);
-    cnv.move_to({ where.x, where.y+100 });
-    cnv.line_to({ where.x+60, where.y+140 });
-    cnv.line_to({ where.x, where.y+180 });
+    cnv.move_to(where.x, where.y+100);
+    cnv.line_to(where.x+60, where.y+140);
+    cnv.line_to(where.x, where.y+180);
     cnv.stroke();
 
     cnv.stroke_style(colors::sky_blue);
     cnv.begin_path();
     cnv.line_join(cnv.round_join);
-    cnv.move_to({ where.x+40, where.y+100 });
-    cnv.line_to({ where.x+100, where.y+140 });
-    cnv.line_to({ where.x+40, where.y+180 });
+    cnv.move_to(where.x+40, where.y+100);
+    cnv.line_to(where.x+100, where.y+140);
+    cnv.line_to(where.x+40, where.y+180);
     cnv.stroke();
 
     cnv.stroke_style(colors::light_sea_green);
     cnv.begin_path();
     cnv.line_join(cnv.miter_join);
-    cnv.move_to({ where.x+80, where.y+100 });
-    cnv.line_to({ where.x+140, where.y+140 });
-    cnv.line_to({ where.x+80, where.y+180 });
+    cnv.move_to(where.x+80, where.y+100);
+    cnv.line_to(where.x+140, where.y+140);
+    cnv.line_to(where.x+80, where.y+180);
     cnv.stroke();
 }
 
@@ -268,34 +268,34 @@ void typography(canvas& cnv)
 
     // Regular
     cnv.font(font_descr{ "Open Sans", 36 });
-    cnv.fill_text("Regular", { 20, 40 });
+    cnv.fill_text("Regular", 20, 40);
 
     // Bold
     cnv.font(font_descr{ "Open Sans", 36 }.bold());
-    cnv.fill_text("Bold", { 160, 40 });
+    cnv.fill_text("Bold", 160, 40);
 
     // Light
     cnv.font(font_descr{ "Open Sans", 36 }.light());
-    cnv.fill_text("Light", { 250, 40 });
+    cnv.fill_text("Light", 250, 40);
 
     // Italic
     cnv.font(font_descr{ "Open Sans", 36 }.italic());
-    cnv.fill_text("Italic", { 345, 40 });
+    cnv.fill_text("Italic", 345, 40);
 
     // Condensed
     // In this case, the font already describes the condensed 'stretch'
     cnv.font(font_descr{ "Open Sans Condensed", 36 });
-    cnv.fill_text("Condensed", { 430, 40 });
+    cnv.fill_text("Condensed", 430, 40);
 
     // Condensed Italic
     // In this case, the font already describes the condensed 'stretch'
     cnv.font(font_descr{ "Open Sans Condensed", 36 }.italic());
-    cnv.fill_text("Condensed Italic", { 20, 115 });
+    cnv.fill_text("Condensed Italic", 20, 115);
 
     // Outline
     cnv.font(font_descr{ "Open Sans", 36 }.bold());
     cnv.line_width(0.5);
-    cnv.stroke_text("Outline", { 210, 115 });
+    cnv.stroke_text("Outline", 210, 115);
 
     cnv.font(font_descr{ "Open Sans", 52 }.bold());
 
@@ -305,8 +305,8 @@ void typography(canvas& cnv)
         gr.add_color_stop({ 0.0, colors::navy_blue });
         gr.add_color_stop({ 1.0, colors::maroon });
         cnv.fill_style(gr);
-        cnv.fill_text("Gradient", { 360, 115 });
-        cnv.stroke_text("Gradient", { 360, 115 });
+        cnv.fill_text("Gradient", 360, 115);
+        cnv.stroke_text("Gradient", 360, 115);
     }
 
     // Outline Gradient Fill
@@ -316,12 +316,12 @@ void typography(canvas& cnv)
         gr.add_color_stop({ 1.0, colors::medium_violet_red });
         cnv.line_width(1.5);
         cnv.stroke_style(gr);
-        cnv.stroke_text("Outline Gradient", { 20, 190 });
+        cnv.stroke_text("Outline Gradient", 20, 190);
     }
 
     cnv.font(font_descr{ "Lucida Grande", 52 }.bold());
     cnv.fill_style(rgba(220, 220, 220, 200));
-    cnv.fill_text("fi", { 500, 190 });
+    cnv.fill_text("fi", 500, 190);
 
     {
         auto state = cnv.new_state();
@@ -329,12 +329,12 @@ void typography(canvas& cnv)
         // Shadow
         cnv.fill_style(rgba(220, 220, 220, 200));
         cnv.shadow_style({ 5.0, 5.0 }, 5, colors::black);
-        cnv.fill_text("Shadow", { 20, 265 });
+        cnv.fill_text("Shadow", 20, 265);
 
         // Glow
         cnv.fill_style(bkd_color);
         cnv.shadow_style(8, colors::light_sky_blue);
-        cnv.fill_text("Glow", { 250, 265 });
+        cnv.fill_text("Glow", 250, 265);
     }
 
     cnv.move_to({ 500, 220 });
@@ -375,7 +375,7 @@ void typography(canvas& cnv)
         cnv.line_to({ 600, vstart });
         cnv.stroke();
         cnv.text_align(aligns[i]);
-        cnv.fill_text(align_text[i], { 500, vstart });
+        cnv.fill_text(align_text[i], 500, vstart);
     }
 
     std::string text =
@@ -393,7 +393,7 @@ void typography(canvas& cnv)
 
     auto tlayout = text_layout{ font_descr{ "Open Sans", 12 }.italic(), text };
     tlayout.flow(350, 0, 0, true);
-    tlayout.draw(cnv, { 20, 300 });
+    tlayout.draw(cnv, 20, 300);
 }
 
 char const* mode_name(canvas::composite_operation_enum mode)
@@ -424,16 +424,16 @@ void composite_draw(canvas& cnv, point p, canvas::composite_operation_enum mode)
 
         cnv.global_composite_operation(cnv.source_over);
         cnv.fill_style(colors::blue);
-        cnv.fill_rect({ { p.x+20, p.y+20 }, { 60, 60 } });
+        cnv.fill_rect(p.x+20, p.y+20, 60, 60);
         cnv.global_composite_operation(mode);
         cnv.fill_style(colors::red);
-        cnv.circle({ { p.x+70, p.y+70 }, 30 });
+        cnv.circle(p.x+70, p.y+70, 30);
         cnv.fill();
     }
 
     cnv.fill_style(colors::black);
     cnv.text_align(cnv.center);
-    cnv.fill_text(mode_name(mode), { p.x+60, p.y+110 });
+    cnv.fill_text(mode_name(mode), p.x+60, p.y+110);
 }
 
 void composite_ops(canvas& cnv)

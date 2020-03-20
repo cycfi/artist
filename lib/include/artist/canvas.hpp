@@ -41,6 +41,11 @@ namespace cycfi::artist
       point             device_to_user(point p);
       point             user_to_device(point p);
 
+      void              translate(float x, float y);
+      void              scale(float x, float y);
+      point             device_to_user(float x, float y);
+      point             user_to_device(float x, float y);
+
       ///////////////////////////////////////////////////////////////////////////////////
       // Paths
       void              begin_path();
@@ -68,6 +73,33 @@ namespace cycfi::artist
       void              quadratic_curve_to(point cp, point end);
       void              bezier_curve_to(point cp1, point cp2, point end);
 
+      void              move_to(float x, float y);
+      void              line_to(float x, float y);
+      void              arc_to(
+                           float x1, float y1,
+                           float x2, float y2,
+                           float radius
+                        );
+      void              arc(
+                           float x, float y, float radius,
+                           float start_angle, float end_angle,
+                           bool ccw = false
+                        );
+      void              rect(float x, float y, float width, float height);
+      void              round_rect(
+                           float x, float y,
+                           float width, float height,
+                           float radius
+                        );
+      void              circle(float cx, float cy, float radius);
+
+      void              quadratic_curve_to(float cpx, float cpy, float x, float y);
+      void              bezier_curve_to(
+                           float cp1x, float cp1y,
+                           float cp2x, float cp2y,
+                           float x, float y
+                        );
+
       ///////////////////////////////////////////////////////////////////////////////////
       // Styles
 
@@ -91,8 +123,12 @@ namespace cycfi::artist
       void              line_cap(line_cap_enum cap);
       void              line_join(join_enum join);
       void              miter_limit(float limit = 10);
-      void              shadow_style(point p, float blur, color c);
+      void              shadow_style(point offset, float blur, color c);
+      void              shadow_style(float offsetx, float offsety, float blur, color c);
       void              shadow_style(float blur, color c);
+
+      void              stroke_color(color c);
+      void              fill_color(color c);
 
       enum composite_operation_enum
       {
@@ -122,6 +158,16 @@ namespace cycfi::artist
 
       struct linear_gradient
       {
+         linear_gradient(float startx, float starty, float endx, float endy)
+          : start{ startx, starty }
+          , end{ endx, endy }
+         {}
+
+         linear_gradient(point start, point end)
+          : start{ start }
+          , end{ end }
+         {}
+
          point start = {};
          point end = {};
 
@@ -131,6 +177,26 @@ namespace cycfi::artist
 
       struct radial_gradient
       {
+         radial_gradient(
+            float c1x, float c1y, float c1r,
+            float c2x, float c2y, float c2r
+         )
+          : c1{ c1x, c1y }
+          , c1_radius{ c1r }
+          , c2{ c2x, c2y }
+          , c2_radius{ c2r }
+         {}
+
+         radial_gradient(
+            point c1, float c1r,
+            point c2, float c2r
+         )
+          : c1{ c1 }
+          , c1_radius{ c1r }
+          , c2{ c2 }
+          , c2_radius{ c2r }
+         {}
+
          point c1 = {};
          float c1_radius = {};
          point c2 = c1;
@@ -163,6 +229,11 @@ namespace cycfi::artist
       void              fill_round_rect(struct rect r, float radius);
       void              stroke_rect(struct rect r);
       void              stroke_round_rect(struct rect r, float radius);
+
+      void              fill_rect(float x, float y, float width, float height);
+      void              fill_round_rect(float x, float y, float width, float height, float radius);
+      void              stroke_rect(float x, float y, float width, float height);
+      void              stroke_round_rect(float x, float y, float width, float height, float radius);
 
       ///////////////////////////////////////////////////////////////////////////////////
       // Font
@@ -197,6 +268,9 @@ namespace cycfi::artist
       text_metrics      measure_text(std::string_view utf8);
       void              text_align(int align);
 
+      void              fill_text(std::string_view utf8, float x, float y);
+      void              stroke_text(std::string_view utf8, float x, float y);
+
       ///////////////////////////////////////////////////////////////////////////////////
       // Pixmaps
 
@@ -204,6 +278,8 @@ namespace cycfi::artist
       void              draw(picture const& pic, struct rect dest);
       void              draw(picture const& pic, point pos = { 0, 0 });
       void              draw(picture const& pic, point pos, float scale);
+      void              draw(picture const& pic, float posx, float posy);
+      void              draw(picture const& pic, float posx, float posy, float scale);
 
       ///////////////////////////////////////////////////////////////////////////////////
       // States
