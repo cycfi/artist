@@ -25,18 +25,18 @@ set(ARTIST_HEADERS
 
 if (APPLE)
    if (ARTIST_QUARTZ_2D)
-      set(ARTIST_HOST
-         host/macos/canvas.mm
-         host/macos/picture.mm
-         host/macos/font.mm
-         host/macos/text_layout.mm
+      set(ARTIST_IMPL
+         impl/macos/quartz2d/canvas.mm
+         impl/macos/quartz2d/picture.mm
+         impl/macos/quartz2d/font.mm
+         impl/macos/quartz2d/text_layout.mm
       )
    endif()
 elseif (UNIX)
-   set(ARTIST_HOST
+   set(ARTIST_IMPL
    )
 elseif (WIN32)
-   set(ARTIST_HOST
+   set(ARTIST_IMPL
    )
 endif()
 
@@ -47,7 +47,7 @@ source_group("Source Files\\artist"
 
 source_group("Source Files\\canvas_host"
    FILES
-   ${ARTIST_HOST}
+   ${ARTIST_IMPL}
 )
 
 source_group("Header Files\\artist"
@@ -58,7 +58,7 @@ source_group("Header Files\\artist"
 add_library(artist)
 
 target_sources(artist
-   PRIVATE ${ARTIST_SOURCES} ${ARTIST_HOST}
+   PRIVATE ${ARTIST_SOURCES} ${ARTIST_IMPL}
    PUBLIC ${ARTIST_HEADERS}
 )
 
