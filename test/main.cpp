@@ -249,6 +249,10 @@ void compare_golden(picture const& pm, std::string name)
 
     auto a = golden.pixels();
     auto b = result.pixels();
+
+    REQUIRE(a != nullptr);
+    REQUIRE(b != nullptr);
+
     auto diff = 0;
     for (auto i = 0; i != (size.x * size.y); ++i)
         diff += diff_pixel(a[i], b[i]);
@@ -392,6 +396,70 @@ void typography(canvas& cnv)
     tlayout.draw(cnv, { 20, 300 });
 }
 
+char const* mode_name(canvas::composite_operation_enum mode)
+{
+    switch (mode)
+    {
+        case canvas::source_over:       return "source_over";
+        case canvas::source_atop:       return "source_atop";
+        case canvas::source_in:         return "source_in";
+        case canvas::source_out:        return "source_out";
+        case canvas::destination_over:  return "destination_over";
+        case canvas::destination_atop:  return "destination_atop";
+        case canvas::destination_in:    return "destination_in";
+        case canvas::destination_out:   return "destination_out";
+        case canvas::lighter:           return "lighter";
+        case canvas::darker:            return "darker";
+        case canvas::copy:              return "copy";
+        case canvas::xor_:              return "xor_";
+    };
+}
+
+void composite_draw(canvas& cnv, point p, canvas::composite_operation_enum mode)
+{
+    {
+        auto save = cnv.new_state();
+        cnv.rect({ p.x, p.y, p.x+120, p.y+130 });
+        cnv.clip();
+
+        cnv.global_composite_operation(cnv.source_over);
+        cnv.fill_style(colors::blue);
+        cnv.fill_rect({ { p.x+20, p.y+20 }, { 60, 60 } });
+        cnv.global_composite_operation(mode);
+        cnv.fill_style(colors::red);
+        cnv.circle({ { p.x+70, p.y+70 }, 30 });
+        cnv.fill();
+    }
+
+    cnv.fill_style(colors::black);
+    cnv.text_align(cnv.center);
+    cnv.fill_text(mode_name(mode), { p.x+60, p.y+110 });
+}
+
+void composite(canvas& cnv)
+{
+    cnv.font(font_descr{ "Open Sans", 10 });
+
+    composite_draw(cnv, { 0, 0 }, cnv.source_over);
+    composite_draw(cnv, { 120, 0 }, cnv.source_atop);
+    composite_draw(cnv, { 240, 0 }, cnv.source_in);
+    composite_draw(cnv, { 360, 0 }, cnv.source_out);
+
+    composite_draw(cnv, { 0, 120 }, cnv.destination_over);
+    composite_draw(cnv, { 120, 120 }, cnv.destination_atop);
+    composite_draw(cnv, { 240, 120 }, cnv.destination_in);
+    composite_draw(cnv, { 360, 120 }, cnv.destination_out);
+
+    composite_draw(cnv, { 0, 240 }, cnv.lighter);
+    composite_draw(cnv, { 120, 240 }, cnv.darker);
+    composite_draw(cnv, { 240, 240 }, cnv.copy);
+    composite_draw(cnv, { 360, 240 }, cnv.xor_);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Test Drivers
+///////////////////////////////////////////////////////////////////////////////
+
 TEST_CASE("Drawing")
 {
     picture pm{ window_size };
@@ -412,5 +480,16 @@ TEST_CASE("Typography")
         typography(pm_cnv);
     }
     compare_golden(pm, "nakamura");
+}
+
+TEST_CASE("Composite")
+{
+    picture pm{ window_size };
+    {
+        picture_context ctx{pm };
+        canvas pm_cnv{ ctx.context() };
+        composite(pm_cnv);
+    }
+    compare_golden(pm, "watanabe");
 }
 
