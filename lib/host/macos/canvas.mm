@@ -64,12 +64,12 @@ namespace cycfi::artist
       };
 
       using state_info_ptr = std::unique_ptr<state_info>;
-      using aux_stack = std::stack<state_info_ptr>;
+      using state_info_stack = std::stack<state_info_ptr>;
 
-      state_info*       current() { return _aux_stack.top().get(); }
-      state_info const* current() const { return _aux_stack.top().get(); }
+      state_info*       current() { return _stack.top().get(); }
+      state_info const* current() const { return _stack.top().get(); }
 
-      aux_stack         _aux_stack;
+      state_info_stack  _stack;
    };
 
    namespace
@@ -99,7 +99,7 @@ namespace cycfi::artist
 
    canvas::canvas_state::canvas_state()
    {
-      _aux_stack.push(std::make_unique<state_info>());
+      _stack.push(std::make_unique<state_info>());
    }
 
    canvas::canvas_state::style const& canvas::canvas_state::fill_style() const
@@ -176,13 +176,13 @@ namespace cycfi::artist
 
    void canvas::canvas_state::save()
    {
-      _aux_stack.push(std::make_unique<state_info>(*current()));
+      _stack.push(std::make_unique<state_info>(*current()));
    }
 
    void canvas::canvas_state::restore()
    {
-      if (_aux_stack.size())
-         _aux_stack.pop();
+      if (_stack.size())
+         _stack.pop();
    }
 
    canvas::canvas(host_context_ptr context_)
