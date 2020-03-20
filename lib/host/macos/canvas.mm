@@ -11,36 +11,179 @@
 
 namespace cycfi::artist
 {
-   struct canvas::canvas_state
+   class canvas::canvas_state
    {
+   public:
+
       using style = std::variant<
          color
        , canvas::linear_gradient
        , canvas::radial_gradient
       >;
 
-      using mode = canvas::composite_operation_enum;
+      using mode_enum = canvas::composite_operation_enum;
+      using color_space = std::vector<color_stop>;
 
-      struct aux
+                        canvas_state();
+                        canvas_state(canvas_state const&) = delete;
+      canvas_state&     operator=(canvas_state const&) = delete;
+
+      style const&      fill_style() const;
+      void              fill_style(style const& style);
+      void              fill_style(style const& style, color_space const& space);
+      CGGradientRef     fill_gradient() const;
+
+      style const&      stroke_style() const;
+      void              stroke_style(style const& style);
+      void              stroke_style(style const& style, color_space const& space);
+      CGGradientRef     stroke_gradient() const;
+
+      class font const& font() const;
+      void              font(class font const& font_);
+
+      int               text_align() const;
+      void              text_align(int align);
+
+      mode_enum         mode() const;
+      void              mode(mode_enum mode_);
+
+      void              save();
+      void              restore();
+
+   private:
+
+      struct state_info
       {
-         style       _fill_style;
-         style       _stroke_style;
-         class font  _font;
-         int         _text_align;
-         mode        _mode;
+         style          _fill_style       = colors::black;
+         CGGradientRef  _fill_gradient    = nullptr;
+         style          _stroke_style     = colors::black;
+         CGGradientRef  _stroke_gradient  = nullptr;
+         class font     _font             = font_descr{ "Helvetica Neue", 12 };
+         int            _text_align       = canvas::baseline;
+         mode_enum      _mode             = source_over;
       };
 
-      using aux_stack = std::stack<aux>;
+      using state_info_ptr = std::unique_ptr<state_info>;
+      using aux_stack = std::stack<state_info_ptr>;
 
-      style          _fill_style = colors::black;
-      CGGradientRef  _fill_gradient = nullptr;
-      style          _stroke_style = colors::black;
-      CGGradientRef  _stroke_gradient = nullptr;
-      class font     _font = font_descr{ "Helvetica Neue", 12 };
-      int            _text_align = canvas::baseline;
-      aux_stack      _aux_stack;
-      mode           _mode;
+      state_info*       current() { return _aux_stack.top().get(); }
+      state_info const* current() const { return _aux_stack.top().get(); }
+
+      aux_stack         _aux_stack;
    };
+
+   namespace
+   {
+      void make_gradient(std::vector<canvas::color_stop> const& space, CGGradientRef& gradient)
+      {
+         auto nspaces = space.size();
+         CGFloat locations[nspaces];
+         CGFloat components[nspaces * 4];
+         for (size_t i = 0; i != nspaces; ++i)
+         {
+            locations[i] = space[i].offset;
+            auto* cp = &components[i*4];
+            *cp++ = space[i].color.red;
+            *cp++ = space[i].color.green;
+            *cp++ = space[i].color.blue;
+            *cp   = space[i].color.alpha;
+         }
+         auto space_ = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
+         gradient =
+            CGGradientCreateWithColorComponents(
+               space_, components, locations, nspaces
+            );
+         CGColorSpaceRelease(space_);
+      }
+   }
+
+   canvas::canvas_state::canvas_state()
+   {
+      _aux_stack.push(std::make_unique<state_info>());
+   }
+
+   canvas::canvas_state::style const& canvas::canvas_state::fill_style() const
+   {
+      return current()->_fill_style;
+   }
+
+   void canvas::canvas_state::fill_style(style const& style)
+   {
+      current()->_fill_style = style;
+   }
+
+   void canvas::canvas_state::fill_style(style const& style, color_space const& space)
+   {
+      current()->_fill_style = style;
+      make_gradient(space, current()->_fill_gradient);
+   }
+
+   CGGradientRef canvas::canvas_state::fill_gradient() const
+   {
+      return current()->_fill_gradient;
+   }
+
+   canvas::canvas_state::style const& canvas::canvas_state::stroke_style() const
+   {
+      return current()->_stroke_style;
+   }
+
+   void canvas::canvas_state::stroke_style(style const& style)
+   {
+      current()->_stroke_style = style;
+   }
+
+   void canvas::canvas_state::stroke_style(style const& style, color_space const& space)
+   {
+      current()->_stroke_style = style;
+      make_gradient(space, current()->_stroke_gradient);
+   }
+
+   CGGradientRef canvas::canvas_state::stroke_gradient() const
+   {
+      return current()->_stroke_gradient;
+   }
+
+   class font const& canvas::canvas_state::font() const
+   {
+      return current()->_font;
+   }
+
+   void canvas::canvas_state::font(class font const& font_)
+   {
+      current()->_font = font_;
+   }
+
+   int canvas::canvas_state::text_align() const
+   {
+      return current()->_text_align;
+   }
+
+   void canvas::canvas_state::text_align(int align)
+   {
+      current()->_text_align = align;
+   }
+
+   canvas::canvas_state::mode_enum canvas::canvas_state::mode() const
+   {
+      return current()->_mode;
+   }
+
+   void canvas::canvas_state::mode(mode_enum mode_)
+   {
+      current()->_mode = mode_;
+   }
+
+   void canvas::canvas_state::save()
+   {
+      _aux_stack.push(std::make_unique<state_info>(*current()));
+   }
+
+   void canvas::canvas_state::restore()
+   {
+      if (_aux_stack.size())
+         _aux_stack.pop();
+   }
 
    canvas::canvas(host_context_ptr context_)
     : _context{ context_ }
@@ -74,27 +217,13 @@ namespace cycfi::artist
    void canvas::save()
    {
       CGContextSaveGState(CGContextRef(_context));
-      _state->_aux_stack.push(
-         {
-            _state->_fill_style,
-            _state->_stroke_style,
-            _state->_font,
-            _state->_text_align,
-            _state->_mode
-         }
-      );
+      _state->save();
    }
 
    void canvas::restore()
    {
       CGContextRestoreGState(CGContextRef(_context));
-      auto& [ fs, ss, f, ta, m ] = _state->_aux_stack.top();
-      _state->_fill_style     = std::move(fs);
-      _state->_stroke_style   = std::move(ss);
-      _state->_font           = std::move(f);
-      _state->_text_align     = ta;
-      _state->_mode           = m;
-      _state->_aux_stack.pop();
+      _state->restore();
    }
 
    void canvas::begin_path()
@@ -130,7 +259,7 @@ namespace cycfi::artist
             };
 
             auto ctx = CGContextRef(_context);
-            if (needs_workaround(_state->_mode))
+            if (needs_workaround(_state->mode()))
             {
                // This is needed to conform to the html5 canvas specs
                // (e.g. https://www.w3schools.com/tags/canvas_globalcompositeoperation.asp)
@@ -160,7 +289,7 @@ namespace cycfi::artist
             CGContextSaveGState(ctx);
             clip();  // Set to clip current path
             CGContextDrawLinearGradient(
-               ctx, _state->_fill_gradient,
+               ctx, _state->fill_gradient(),
                CGPoint{ style.start.x, style.start.y },
                CGPoint{ style.end.x, style.end.y },
                kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
@@ -173,7 +302,7 @@ namespace cycfi::artist
             CGContextSaveGState(ctx);
             clip();  // Set to clip current path
             CGContextDrawRadialGradient(
-               ctx, _state->_fill_gradient,
+               ctx, _state->fill_gradient(),
                CGPoint{ style.c1.x, style.c1.y }, style.c1_radius,
                CGPoint{ style.c2.x, style.c2.y }, style.c2_radius,
                kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation);
@@ -181,7 +310,7 @@ namespace cycfi::artist
          }
       };
 
-      std::visit(apply_fill, _state->_fill_style);
+      std::visit(apply_fill, _state->fill_style());
    }
 
    void canvas::fill_preserve()
@@ -211,7 +340,7 @@ namespace cycfi::artist
 
             clip();  // Set to clip current path
             CGContextDrawLinearGradient(
-               ctx, _state->_stroke_gradient,
+               ctx, _state->stroke_gradient(),
                CGPoint{ style.start.x, style.start.y },
                CGPoint{ style.end.x, style.end.y },
                kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
@@ -226,7 +355,7 @@ namespace cycfi::artist
 
             clip();  // Set to clip current path
             CGContextDrawRadialGradient(
-               ctx, _state->_stroke_gradient,
+               ctx, _state->stroke_gradient(),
                CGPoint{ style.c1.x, style.c1.y }, style.c1_radius,
                CGPoint{ style.c2.x, style.c2.y }, style.c2_radius,
                kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
@@ -235,7 +364,7 @@ namespace cycfi::artist
          }
       };
 
-      std::visit(apply_stroke, _state->_stroke_style);
+      std::visit(apply_stroke, _state->stroke_style());
    }
 
    void canvas::stroke_preserve()
@@ -329,12 +458,12 @@ namespace cycfi::artist
 
    void canvas::fill_style(color c)
    {
-      _state->_fill_style = c;
+      _state->fill_style(c);
    }
 
    void canvas::stroke_style(color c)
    {
-      _state->_stroke_style = c;
+      _state->stroke_style(c);
    }
 
    void canvas::line_width(float w)
@@ -389,7 +518,7 @@ namespace cycfi::artist
 
    void canvas::global_composite_operation(composite_operation_enum mode)
    {
-      _state->_mode = mode;
+      _state->mode(mode);
       CGBlendMode cg_mode;
       switch (mode)
       {
@@ -409,59 +538,30 @@ namespace cycfi::artist
       CGContextSetBlendMode(CGContextRef(_context), cg_mode);
    }
 
-   namespace
-   {
-      void make_gradient(std::vector<canvas::color_stop> const& space, CGGradientRef& gradient)
-      {
-         auto nspaces = space.size();
-         CGFloat locations[nspaces];
-         CGFloat components[nspaces * 4];
-         for (size_t i = 0; i != nspaces; ++i)
-         {
-            locations[i] = space[i].offset;
-            auto* cp = &components[i*4];
-            *cp++ = space[i].color.red;
-            *cp++ = space[i].color.green;
-            *cp++ = space[i].color.blue;
-            *cp   = space[i].color.alpha;
-         }
-         auto space_ = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
-         gradient =
-            CGGradientCreateWithColorComponents(
-               space_, components, locations, nspaces
-            );
-         CGColorSpaceRelease(space_);
-      }
-   }
-
    void canvas::fill_style(linear_gradient const& gr)
    {
-      _state->_fill_style = gr;
-      make_gradient(gr.space, _state->_fill_gradient);
+      _state->fill_style(gr, gr.space);
    }
 
    void canvas::fill_style(radial_gradient const& gr)
    {
-      _state->_fill_style = gr;
-      make_gradient(gr.space, _state->_fill_gradient);
+      _state->fill_style(gr, gr.space);
    }
 
    void canvas::stroke_style(linear_gradient const& gr)
    {
-      _state->_stroke_style = gr;
-      make_gradient(gr.space, _state->_stroke_gradient);
+      _state->stroke_style(gr, gr.space);
    }
 
    void canvas::stroke_style(radial_gradient const& gr)
    {
-      _state->_stroke_style = gr;
-      make_gradient(gr.space, _state->_stroke_gradient);
+      _state->stroke_style(gr, gr.space);
    }
 
    void canvas::font(class font const& font_)
    {
       if (font_)
-         _state->_font = font_;
+         _state->font(font_);
    }
 
    namespace detail
@@ -571,7 +671,7 @@ namespace cycfi::artist
    {
       auto ctx = CGContextRef(_context);
       auto line = detail::prepare_text(
-         _state->_font, _state->_text_align
+         _state->font(), _state->text_align()
        , p, utf8.begin(), utf8.end()
       );
       CGContextSetTextPosition(ctx, p.x, p.y);
@@ -601,7 +701,7 @@ namespace cycfi::artist
             apply_gradient(
                [&] {
                   CGContextDrawLinearGradient(
-                     ctx, _state->_fill_gradient,
+                     ctx, _state->fill_gradient(),
                      CGPoint{ -p.x+style.start.x, -p.y+style.start.y },
                      CGPoint{ -p.x+style.end.x, -p.y+style.end.y },
                      kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
@@ -614,7 +714,7 @@ namespace cycfi::artist
             apply_gradient(
                [&] {
                   CGContextDrawRadialGradient(
-                     ctx, _state->_fill_gradient,
+                     ctx, _state->fill_gradient(),
                      CGPoint{ -p.x+style.c1.x, -p.y+style.c1.y }, style.c1_radius,
                      CGPoint{ -p.x+style.c2.x, -p.y+style.c2.y }, style.c2_radius,
                      kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
@@ -624,7 +724,7 @@ namespace cycfi::artist
          }
       };
 
-      std::visit(apply_fill, _state->_fill_style);
+      std::visit(apply_fill, _state->fill_style());
       CFRelease(line);
    }
 
@@ -632,7 +732,7 @@ namespace cycfi::artist
    {
       auto ctx = CGContextRef(_context);
       auto line = detail::prepare_text(
-         _state->_font, _state->_text_align
+         _state->font(), _state->text_align()
        , p, utf8.begin(), utf8.end()
       );
       CGContextSetTextPosition(ctx, p.x, p.y);
@@ -663,7 +763,7 @@ namespace cycfi::artist
             apply_gradient(
                [&] {
                   CGContextDrawLinearGradient(
-                     ctx, _state->_stroke_gradient,
+                     ctx, _state->stroke_gradient(),
                      CGPoint{ -p.x+style.start.x, -p.y+style.start.y },
                      CGPoint{ -p.x+style.end.x, -p.y+style.end.y },
                      kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
@@ -676,7 +776,7 @@ namespace cycfi::artist
             apply_gradient(
                [&] {
                   CGContextDrawRadialGradient(
-                     ctx, _state->_stroke_gradient,
+                     ctx, _state->stroke_gradient(),
                      CGPoint{ -p.x+style.c1.x, -p.y+style.c1.y }, style.c1_radius,
                      CGPoint{ -p.x+style.c2.x, -p.y+style.c2.y }, style.c2_radius,
                      kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
@@ -686,7 +786,7 @@ namespace cycfi::artist
          }
       };
 
-      std::visit(apply_stroke, _state->_stroke_style);
+      std::visit(apply_stroke, _state->stroke_style());
       CFRelease(line);
    }
 
@@ -696,7 +796,7 @@ namespace cycfi::artist
       CGFloat ascent, descent, leading, width;
 
       auto line = detail::measure_text(
-         _state->_font, utf8.begin(), utf8.end(), width, ascent, descent, leading);
+         _state->font(), utf8.begin(), utf8.end(), width, ascent, descent, leading);
 
       auto bounds = CTLineGetImageBounds(line, ctx);
       CFRelease(line);
@@ -711,7 +811,7 @@ namespace cycfi::artist
 
    void canvas::text_align(int align)
    {
-      _state->_text_align = align;
+      _state->text_align(align);
    }
 
    void canvas::draw(picture const& pic, struct rect src, struct rect dest)
@@ -721,7 +821,7 @@ namespace cycfi::artist
       auto  dest_ = NSRect{ { dest.left, dest.top }, { dest.width(), dest.height() } };
 
       NSCompositingOperation ns_mode;
-      switch (_state->_mode)
+      switch (_state->mode())
       {
          case source_over:          ns_mode = NSCompositingOperationSourceOver; break;
          case source_atop:          ns_mode = NSCompositingOperationSourceAtop; break;

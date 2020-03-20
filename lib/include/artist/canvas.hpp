@@ -229,7 +229,7 @@ namespace cycfi::artist
 
    private:
 
-      struct canvas_state;
+      class canvas_state;
       using canvas_state_ptr = std::unique_ptr<canvas_state>;
 
       host_context_ptr  _context;
