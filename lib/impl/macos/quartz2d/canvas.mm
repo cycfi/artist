@@ -21,7 +21,7 @@ namespace cycfi::artist
        , canvas::radial_gradient
       >;
 
-      using mode_enum = canvas::composite_operation_enum;
+      using mode_enum = canvas::composite_op_enum;
       using color_space = std::vector<color_stop>;
 
                         canvas_state();
@@ -236,6 +236,49 @@ namespace cycfi::artist
       CGContextClosePath(CGContextRef(_context));
    }
 
+   namespace
+   {
+      bool needs_workaround(canvas::composite_op_enum mode)
+      {
+         switch (mode)
+         {
+            case canvas::composite_op_enum::source_in:
+            case canvas::composite_op_enum::source_out:
+            case canvas::composite_op_enum::destination_atop:
+            case canvas::composite_op_enum::destination_in:
+            case canvas::composite_op_enum::copy:
+               return true;
+            default:
+               return false;
+         };
+      };
+
+      void composite_op_workaround(
+         CGContextRef ctx, canvas::composite_op_enum mode)
+      {
+         if (needs_workaround(mode))
+         {
+            // This is needed to conform to the html5 canvas specs
+            // (e.g. https://www.w3schools.com/tags/canvas_globalcompositeoperation.asp)
+            // There are still some artifacts with source_out, but this is the best we
+            // can do for now.
+            auto save = CGContextCopyPath(ctx);
+            {
+               CGContextSaveGState(ctx);
+               CGContextAddRect(ctx, CGRectInfinite);
+               CGContextEOClip(ctx);
+               CGContextSetBlendMode(ctx, kCGBlendModeClear);
+               CGContextAddRect(ctx, CGRectInfinite);
+               CGContextFillPath(ctx);
+               CGContextRestoreGState(ctx);
+            }
+
+            CGContextAddPath(ctx, save);
+            CGPathRelease(save);
+         }
+      }
+   }
+
    void canvas::fill()
    {
       auto apply_fill = [this](auto const& style)
@@ -243,43 +286,8 @@ namespace cycfi::artist
          using T = std::decay_t<decltype(style)>;
          if constexpr (std::is_same_v<T, color>)
          {
-            auto needs_workaround = [](auto mode)
-            {
-               switch (mode)
-               {
-                  case source_in:
-                  case source_out:
-                  case destination_atop:
-                  case destination_in:
-                  case copy:
-                     return true;
-                  default:
-                     return false;
-               };
-            };
-
             auto ctx = CGContextRef(_context);
-            if (needs_workaround(_state->mode()))
-            {
-               // This is needed to conform to the html5 canvas specs
-               // (e.g. https://www.w3schools.com/tags/canvas_globalcompositeoperation.asp)
-               // There are still some artifacts with source_out, but this is the best we
-               // can do for now.
-               auto save = CGContextCopyPath(ctx);
-               {
-                  CGContextSaveGState(ctx);
-                  CGContextAddRect(ctx, CGRectInfinite);
-                  CGContextEOClip(ctx);
-                  CGContextSetBlendMode(ctx, kCGBlendModeClear);
-                  CGContextAddRect(ctx, CGRectInfinite);
-                  CGContextFillPath(ctx);
-                  CGContextRestoreGState(CGContextRef(_context));
-               }
-
-               CGContextAddPath(ctx, save);
-               CGPathRelease(save);
-            }
-
+            composite_op_workaround(ctx, _state->mode());
             CGContextSetRGBFillColor(ctx, style.red, style.green, style.blue, style.alpha);
             CGContextFillPath(ctx);
          }
@@ -329,6 +337,7 @@ namespace cycfi::artist
          if constexpr (std::is_same_v<T, color>)
          {
             auto ctx = CGContextRef(_context);
+            composite_op_workaround(ctx, _state->mode());
             CGContextSetRGBStrokeColor(ctx, style.red, style.green, style.blue, style.alpha);
             CGContextStrokePath(ctx);
          }
@@ -516,7 +525,7 @@ namespace cycfi::artist
       );
    }
 
-   void canvas::global_composite_operation(composite_operation_enum mode)
+   void canvas::global_composite_operation(composite_op_enum mode)
    {
       _state->mode(mode);
       CGBlendMode cg_mode;

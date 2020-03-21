@@ -186,6 +186,11 @@ namespace cycfi::artist
       shadow_style({ offsetx, offsety }, blur, c);
    }
 
+   inline void canvas::composite_op(composite_op_enum mode)
+   {
+      global_composite_operation(mode);
+   }
+
    inline void canvas::draw(picture const& pic, struct rect dest)
    {
       draw(pic, {0, 0, pic.size() }, dest);
