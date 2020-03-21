@@ -130,7 +130,7 @@ namespace cycfi::artist
       void              stroke_color(color c);
       void              fill_color(color c);
 
-      enum composite_operation_enum
+      enum composite_op_enum
       {
          source_over,
          source_atop,
@@ -146,7 +146,8 @@ namespace cycfi::artist
          xor_
       };
 
-      void              global_composite_operation(composite_operation_enum mode);
+      void              global_composite_operation(composite_op_enum mode);
+      void              composite_op(composite_op_enum mode);
 
       ///////////////////////////////////////////////////////////////////////////////////
       // Gradients

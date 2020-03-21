@@ -396,7 +396,7 @@ void typography(canvas& cnv)
     tlayout.draw(cnv, 20, 300);
 }
 
-char const* mode_name(canvas::composite_operation_enum mode)
+char const* mode_name(canvas::composite_op_enum mode)
 {
     switch (mode)
     {
@@ -415,7 +415,7 @@ char const* mode_name(canvas::composite_operation_enum mode)
     };
 }
 
-void composite_draw(canvas& cnv, point p, canvas::composite_operation_enum mode)
+void composite_draw(canvas& cnv, point p, canvas::composite_op_enum mode)
 {
     {
         auto save = cnv.new_state();
