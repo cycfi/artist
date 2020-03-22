@@ -4,6 +4,18 @@
 #  Distributed under the MIT License (https://opensource.org/licenses/MIT)
 ###############################################################################
 cmake_minimum_required(VERSION 3.7.2...3.15.0)
+include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
+
+if (ARTIST_SKIA)
+   ExternalProject_Add(skia
+      PREFIX "skia_prebuilt"
+      URL https://github.com/cycfi/artist/releases/download/skia-prebuilt/libskia.a.zip
+      URL_MD5 ad9fe6b4eb133064e6e43e76ca441893
+      CONFIGURE_COMMAND ""
+      BUILD_COMMAND ""
+      INSTALL_COMMAND ""
+   )
+endif()
 
 ###############################################################################
 # Sources (and Resources)
@@ -40,6 +52,15 @@ elseif (WIN32)
    )
 endif()
 
+if (ARTIST_SKIA)
+   set(ARTIST_IMPL
+      impl/skia/canvas.cpp
+      impl/skia/picture.cpp
+      impl/skia/font.cpp
+      impl/skia/text_layout.cpp
+   )
+endif()
+
 source_group("Source Files\\artist"
    FILES
    ${ARTIST_SOURCES}
@@ -57,12 +78,35 @@ source_group("Header Files\\artist"
 
 add_library(artist)
 
+if (ARTIST_SKIA)
+   add_dependencies(artist skia)
+endif()
+
 target_sources(artist
    PRIVATE ${ARTIST_SOURCES} ${ARTIST_IMPL}
    PUBLIC ${ARTIST_HEADERS}
 )
 
 target_include_directories(artist PUBLIC include)
+
+if (ARTIST_SKIA)
+   target_include_directories(
+      artist
+      PRIVATE
+      external/skia
+      external/skia/include/core
+      external/skia/include/config
+      external/skia/include/utils
+      external/skia/include/gpu
+      external/skia/include/codec
+      external/skia/src/gpu
+   )
+   target_compile_definitions(
+      artist
+      PRIVATE
+      ARTIST_SKIA
+   )
+endif()
 
 target_compile_features(artist PUBLIC cxx_std_17)
 
@@ -105,9 +149,9 @@ endif()
 
 target_link_libraries(artist PUBLIC
    infra
+   ${CMAKE_CURRENT_BINARY_DIR}/skia_prebuilt/src/skia/libskia.a
 )
 
 if (UNIX OR (WIN32 AND NOT MSVC))
 endif()
 
-add_library(cycfi::artist ALIAS artist)
