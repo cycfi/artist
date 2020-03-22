@@ -77,17 +77,17 @@ void basics(canvas& cnv)
     cnv.fill_preserve();
     cnv.stroke();
 
-    cnv.translate(120, 0);
-    balloon(cnv);
-    cnv.stroke_style(colors::light_gray);
-    cnv.stroke();
+    // cnv.translate(120, 0);
+    // balloon(cnv);
+    // cnv.stroke_style(colors::light_gray);
+    // cnv.stroke();
 
-    cnv.translate(-100, 100);
-    heart(cnv);
-    cnv.line_width(2);
-    cnv.stroke_style(color{ 0.8, 0, 0 });
-    cnv.stroke_preserve();
-    cnv.fill();
+    // cnv.translate(-100, 100);
+    // heart(cnv);
+    // cnv.line_width(2);
+    // cnv.stroke_style(color{ 0.8, 0, 0 });
+    // cnv.stroke_preserve();
+    // cnv.fill();
 }
 
 void transformed(canvas& cnv)
@@ -214,8 +214,8 @@ void line_styles(canvas& cnv)
 void test_draw(canvas& cnv)
 {
     background(cnv);
-    // basics(cnv);
-    // transformed(cnv);
+    basics(cnv);
+    transformed(cnv);
     // linear_gradient(cnv);
     // radial_gradient(cnv);
     // stroke_gradient(cnv);
