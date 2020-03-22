@@ -5,7 +5,6 @@
 =============================================================================*/
 #include <artist/canvas.hpp>
 #include <stack>
-#include <variant>
 #include "opaque.hpp"
 
 #include "SkBitmap.h"
@@ -18,17 +17,61 @@
 
 namespace cycfi::artist
 {
-   struct canvas::canvas_state
+   class canvas::canvas_state
    {
-      canvas_state()
-      {
-         fill_paint.setAntiAlias(true);
-         fill_paint.setStyle(SkPaint::kFill_Style);
-      }
+   public:
 
-      SkPath   path;
-      SkPaint  fill_paint;
+      canvas_state();
+
+      SkPath&        path();
+      SkPaint&       fill_paint();
+      SkPaint&       stroke_paint();
+
+   private:
+
+      struct state_info
+      {
+         state_info()
+         {
+            _fill_paint.setAntiAlias(true);
+            _fill_paint.setStyle(SkPaint::kFill_Style);
+            _stroke_paint.setAntiAlias(true);
+            _stroke_paint.setStyle(SkPaint::kStroke_Style);
+         }
+
+         SkPath      _path;
+         SkPaint     _fill_paint;
+         SkPaint     _stroke_paint;
+      };
+
+      using state_info_ptr = std::unique_ptr<state_info>;
+      using state_info_stack = std::stack<state_info_ptr>;
+
+      state_info*       current() { return _stack.top().get(); }
+      state_info const* current() const { return _stack.top().get(); }
+
+      state_info_stack  _stack;
    };
+
+   canvas::canvas_state::canvas_state()
+   {
+      _stack.push(std::make_unique<state_info>());
+   }
+
+   SkPath& canvas::canvas_state::path()
+   {
+      return current()->_path;
+   }
+
+   SkPaint& canvas::canvas_state::fill_paint()
+   {
+      return current()->_fill_paint;
+   }
+
+   SkPaint& canvas::canvas_state::stroke_paint()
+   {
+      return current()->_stroke_paint;
+   }
 
    canvas::canvas(host_context_ptr context_)
     : _context{ context_ }
@@ -70,20 +113,26 @@ namespace cycfi::artist
 
    void canvas::fill()
    {
-      auto sk_canvas = (SkCanvas*)_context;
-      sk_canvas->drawPath(_state->path, _state->fill_paint);
+      fill_preserve();
+      _state->path().reset();
    }
 
    void canvas::fill_preserve()
    {
+      auto sk_canvas = (SkCanvas*)_context;
+      sk_canvas->drawPath(_state->path(), _state->fill_paint());
    }
 
    void canvas::stroke()
    {
+      stroke_preserve();
+      _state->path().reset();
    }
 
    void canvas::stroke_preserve()
    {
+      auto sk_canvas = (SkCanvas*)_context;
+      sk_canvas->drawPath(_state->path(), _state->stroke_paint());
    }
 
    void canvas::clip()
@@ -92,12 +141,12 @@ namespace cycfi::artist
 
    void canvas::move_to(point p)
    {
-      _state->path.moveTo(p.x, p.y);
+      _state->path().moveTo(p.x, p.y);
    }
 
    void canvas::line_to(point p)
    {
-      _state->path.lineTo(p.x, p.y);
+      _state->path().lineTo(p.x, p.y);
    }
 
    void canvas::arc_to(point p1, point p2, float radius)
@@ -114,12 +163,20 @@ namespace cycfi::artist
 
    void canvas::rect(struct rect r)
    {
-      _state->path.addRect({ r.left, r.top, r.right, r.bottom });
+      _state->path().addRect({ r.left, r.top, r.right, r.bottom });
    }
 
    void canvas::round_rect(struct rect r, float radius)
    {
+      _state->path().addRoundRect({ r.left, r.top, r.right, r.bottom }, radius, radius);
    }
+
+#if defined(ARTIST_SKIA)
+   void canvas::circle(struct circle c)
+   {
+      _state->path().addCircle(c.cx, c.cy, c.radius);
+   }
+#endif
 
    void canvas::quadratic_curve_to(point cp, point end)
    {
@@ -131,15 +188,17 @@ namespace cycfi::artist
 
    void canvas::fill_style(color c)
    {
-      _state->fill_paint.setColor4f({ c.red, c.green, c.blue, c.alpha }, nullptr);
+      _state->fill_paint().setColor4f({ c.red, c.green, c.blue, c.alpha }, nullptr);
    }
 
    void canvas::stroke_style(color c)
    {
+      _state->stroke_paint().setColor4f({ c.red, c.green, c.blue, c.alpha }, nullptr);
    }
 
    void canvas::line_width(float w)
    {
+      _state->stroke_paint().setStrokeWidth(w);
    }
 
    void canvas::line_cap(line_cap_enum cap_)
