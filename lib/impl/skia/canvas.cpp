@@ -23,9 +23,12 @@ namespace cycfi::artist
 
       canvas_state();
 
-      SkPath&        path();
-      SkPaint&       fill_paint();
-      SkPaint&       stroke_paint();
+      SkPath&           path();
+      SkPaint&          fill_paint();
+      SkPaint&          stroke_paint();
+
+      void              save();
+      void              restore();
 
    private:
 
@@ -39,9 +42,9 @@ namespace cycfi::artist
             _stroke_paint.setStyle(SkPaint::kStroke_Style);
          }
 
-         SkPath      _path;
-         SkPaint     _fill_paint;
-         SkPaint     _stroke_paint;
+         SkPath         _path;
+         SkPaint        _fill_paint;
+         SkPaint        _stroke_paint;
       };
 
       using state_info_ptr = std::unique_ptr<state_info>;
@@ -73,6 +76,17 @@ namespace cycfi::artist
       return current()->_stroke_paint;
    }
 
+   void canvas::canvas_state::save()
+   {
+      _stack.push(std::make_unique<state_info>(*current()));
+   }
+
+   void canvas::canvas_state::restore()
+   {
+      if (_stack.size())
+         _stack.pop();
+   }
+
    canvas::canvas(host_context_ptr context_)
     : _context{ context_ }
     , _state{ std::make_unique<canvas_state>() }
@@ -85,14 +99,20 @@ namespace cycfi::artist
 
    void canvas::translate(point p)
    {
+      auto sk_canvas = (SkCanvas*)_context;
+      sk_canvas->translate(p.x, p.y);
    }
 
    void canvas::rotate(float rad)
    {
+      auto sk_canvas = (SkCanvas*)_context;
+      sk_canvas->rotate(rad * (180.0/M_PI));
    }
 
    void canvas::scale(point p)
    {
+      auto sk_canvas = (SkCanvas*)_context;
+      sk_canvas->scale(p.x, p.y);
    }
 
    void canvas::save()
