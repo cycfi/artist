@@ -117,14 +117,9 @@ namespace cycfi::artist
       shadow_style({ 0.0f, 0.0f }, blur, c);
    }
 
-   inline void canvas::linear_gradient::add_color_stop(color_stop cs)
+   inline void canvas::gradient::add_color_stop(color_stop cs)
    {
-      space.push_back(cs);
-   }
-
-   inline void canvas::radial_gradient::add_color_stop(color_stop cs)
-   {
-      space.push_back(cs);
+      color_space.push_back(cs);
    }
 
    inline void canvas::fill_rect(struct rect r)
