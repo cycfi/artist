@@ -51,16 +51,9 @@ void rain(canvas& cnv)
     }
 }
 
-picture offscreen{ window_size };
-
 void draw(canvas& cnv)
 {
-    {
-        picture_context ctx{ offscreen };
-        canvas rain_cnv{ ctx.context() };
-        rain(rain_cnv);
-    }
-    cnv.draw(offscreen);
+    rain(cnv);
 }
 
 void init()
