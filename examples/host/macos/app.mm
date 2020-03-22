@@ -31,9 +31,11 @@ using namespace cycfi::artist;
 {
    [super drawRect : dirty];
 
+#if defined(ARTIST_QUARTZ_2D)
    auto ctx = NSGraphicsContext.currentContext.CGContext;
    auto cnv = canvas{ (host_context_ptr) ctx };
    draw(cnv);
+#endif
 }
 
 -(BOOL) isFlipped
