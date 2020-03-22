@@ -99,8 +99,7 @@ void transformed(canvas& cnv)
     basics(cnv);
 }
 
-template <typename Gradient>
-void rainbow(Gradient& gr)
+void rainbow(canvas::gradient& gr)
 {
     gr.add_color_stop({ 0.0/6, colors::red });
     gr.add_color_stop({ 1.0/6, colors::orange });
