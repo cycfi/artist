@@ -214,13 +214,13 @@ void line_styles(canvas& cnv)
 void test_draw(canvas& cnv)
 {
     background(cnv);
-    basics(cnv);
-    transformed(cnv);
-    linear_gradient(cnv);
-    radial_gradient(cnv);
-    stroke_gradient(cnv);
-    draw_pixmap(cnv);
-    line_styles(cnv);
+    // basics(cnv);
+    // transformed(cnv);
+    // linear_gradient(cnv);
+    // radial_gradient(cnv);
+    // stroke_gradient(cnv);
+    // draw_pixmap(cnv);
+    // line_styles(cnv);
 }
 
 float diff_pixel(uint32_t a, uint32_t b)
@@ -471,25 +471,25 @@ TEST_CASE("Drawing")
     compare_golden(pm, "shapes_and_images");
 }
 
-TEST_CASE("Typography")
-{
-    picture pm{ window_size };
-    {
-        picture_context ctx{pm };
-        canvas pm_cnv{ ctx.context() };
-        typography(pm_cnv);
-    }
-    compare_golden(pm, "typography");
-}
+// TEST_CASE("Typography")
+// {
+//     picture pm{ window_size };
+//     {
+//         picture_context ctx{pm };
+//         canvas pm_cnv{ ctx.context() };
+//         typography(pm_cnv);
+//     }
+//     compare_golden(pm, "typography");
+// }
 
-TEST_CASE("Composite")
-{
-    picture pm{ window_size };
-    {
-        picture_context ctx{pm };
-        canvas pm_cnv{ ctx.context() };
-       composite_ops(pm_cnv);
-    }
-    compare_golden(pm, "composite_ops");
-}
+// TEST_CASE("Composite")
+// {
+//     picture pm{ window_size };
+//     {
+//         picture_context ctx{pm };
+//         canvas pm_cnv{ ctx.context() };
+//        composite_ops(pm_cnv);
+//     }
+//     compare_golden(pm, "composite_ops");
+// }
 

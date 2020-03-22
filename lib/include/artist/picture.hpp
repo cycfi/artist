@@ -8,6 +8,7 @@
 
 #include <artist/point.hpp>
 #include <string_view>
+#include <memory>
 
 namespace cycfi::artist
 {
@@ -64,22 +65,28 @@ namespace cycfi::artist
    private:
                         picture_context(picture_context const&) = delete;
 
+      struct state;
+
       picture&          _picture;
+      state*            _state = nullptr;
    };
 
    ////////////////////////////////////////////////////////////////////////////
    // Inlines
    ////////////////////////////////////////////////////////////////////////////
    inline picture::picture(picture&& rhs) noexcept
-    : _host(rhs._host)
+    : _host(std::move(rhs._host))
    {
       rhs._host = nullptr;
    }
 
    inline picture& picture::operator=(picture&& rhs) noexcept
    {
-      _host = std::move(rhs._host);
-      rhs._host = nullptr;
+      if (this != &rhs)
+      {
+         _host = std::move(rhs._host);
+         rhs._host = nullptr;
+      }
       return *this;
    }
 }

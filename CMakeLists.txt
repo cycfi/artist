@@ -31,6 +31,16 @@ add_subdirectory(${CYCFI_INFRA_ROOT} "${CMAKE_CURRENT_BINARY_DIR}/infra")
 
 option(ARTIST_QUARTZ_2D "build Artist using quartz 2d on MacOS" ON)
 
+if (APPLE)
+  option(ARTIST_SKIA "build Artist using skia" OFF)
+else()
+  option(ARTIST_SKIA "build Artist using skia" ON)
+endif()
+
+if (ARTIST_SKIA)
+  set(ARTIST_QUARTZ_2D OFF)
+endif()
+
 add_subdirectory(lib)
 add_subdirectory(examples)
 add_subdirectory(test)
