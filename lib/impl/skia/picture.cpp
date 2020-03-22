@@ -163,7 +163,7 @@ namespace cycfi::artist
 
    host_context_ptr picture_context::context() const
    {
-      return host_context_ptr(_state->recording_canvas);
+      return _state->recording_canvas;
    }
 }
 
