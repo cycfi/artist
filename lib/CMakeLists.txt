@@ -15,6 +15,8 @@ if (ARTIST_SKIA)
       BUILD_COMMAND ""
       INSTALL_COMMAND ""
    )
+
+   find_package(OpenGL REQUIRED)
 endif()
 
 ###############################################################################
@@ -92,7 +94,7 @@ target_include_directories(artist PUBLIC include)
 if (ARTIST_SKIA)
    target_include_directories(
       artist
-      PRIVATE
+      PUBLIC
       external/skia
       external/skia/include/core
       external/skia/include/config
@@ -155,10 +157,17 @@ endif()
 ###############################################################################
 # Libraries and linking
 
-target_link_libraries(artist PUBLIC
-   infra
-   ${CMAKE_CURRENT_BINARY_DIR}/skia_prebuilt/src/skia/libskia.a
-)
+if (ARTIST_SKIA)
+   target_link_libraries(artist PUBLIC
+      infra
+      ${CMAKE_CURRENT_BINARY_DIR}/skia_prebuilt/src/skia/libskia.a
+      ${OPENGL_LIBRARIES}
+   )
+elseif (ARTIST_QUARTZ_2D)
+   target_link_libraries(artist PUBLIC
+      infra
+   )
+endif()
 
 if (UNIX OR (WIN32 AND NOT MSVC))
 endif()
