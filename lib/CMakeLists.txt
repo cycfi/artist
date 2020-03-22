@@ -103,8 +103,16 @@ if (ARTIST_SKIA)
    )
    target_compile_definitions(
       artist
-      PRIVATE
+      PUBLIC
       ARTIST_SKIA
+   )
+endif()
+
+if (ARTIST_QUARTZ_2D)
+   target_compile_definitions(
+      artist
+      PUBLIC
+      ARTIST_QUARTZ_2D
    )
 endif()
 

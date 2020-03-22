@@ -16,9 +16,17 @@
 #include <vector>
 #include <memory>
 
+#if defined(ARTIST_SKIA)
+class SkCanvas;
+using host_context = SkCanvas;
+#endif
+
 namespace cycfi::artist
 {
+#if defined(ARTIST_QUARTZ_2D)
    struct host_context;
+#endif
+
    using host_context_ptr = host_context*;
 
    class canvas

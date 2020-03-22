@@ -99,20 +99,17 @@ namespace cycfi::artist
 
    void canvas::translate(point p)
    {
-      auto sk_canvas = (SkCanvas*)_context;
-      sk_canvas->translate(p.x, p.y);
+      _context->translate(p.x, p.y);
    }
 
    void canvas::rotate(float rad)
    {
-      auto sk_canvas = (SkCanvas*)_context;
-      sk_canvas->rotate(rad * (180.0/M_PI));
+      _context->rotate(rad * (180.0/M_PI));
    }
 
    void canvas::scale(point p)
    {
-      auto sk_canvas = (SkCanvas*)_context;
-      sk_canvas->scale(p.x, p.y);
+      _context->scale(p.x, p.y);
    }
 
    void canvas::save()
@@ -139,8 +136,7 @@ namespace cycfi::artist
 
    void canvas::fill_preserve()
    {
-      auto sk_canvas = (SkCanvas*)_context;
-      sk_canvas->drawPath(_state->path(), _state->fill_paint());
+      _context->drawPath(_state->path(), _state->fill_paint());
    }
 
    void canvas::stroke()
@@ -151,8 +147,7 @@ namespace cycfi::artist
 
    void canvas::stroke_preserve()
    {
-      auto sk_canvas = (SkCanvas*)_context;
-      sk_canvas->drawPath(_state->path(), _state->stroke_paint());
+      _context->drawPath(_state->path(), _state->stroke_paint());
    }
 
    void canvas::clip()
@@ -280,7 +275,6 @@ namespace cycfi::artist
 
    void canvas::draw(picture const& pic, struct rect src, struct rect dest)
    {
-      auto sk_canvas = (SkCanvas*)_context;
       auto draw_picture =
          [&](auto const& that)
          {
@@ -291,12 +285,12 @@ namespace cycfi::artist
             if constexpr(std::is_same_v<T, sk_sp<SkPicture>>)
             {
                SkMatrix mat;
-               sk_canvas->drawPicture(that, &mat, nullptr);
+               _context->drawPicture(that, &mat, nullptr);
                // $$$ JDG: Fixme. Compute the matrix $$$
             }
             if constexpr(std::is_same_v<T, SkBitmap>)
             {
-               sk_canvas->drawBitmapRect(
+               _context->drawBitmapRect(
                   that,
                   SkRect{src.left, src.right, src.top, src.bottom },
                   SkRect{dest.left, dest.right, dest.top, dest.bottom },
