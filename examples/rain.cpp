@@ -29,17 +29,31 @@ float random_size()
     return float(std::rand()) / (RAND_MAX);
 }
 
+void rainbow(canvas::gradient& gr)
+{
+    gr.color_space = {
+        { 0.0/6, hsl(0, 0.8, 0.5) }
+      , { 1.0/6, hsl(60, 0.8, 0.5) }
+      , { 2.0/6, hsl(120, 0.8, 0.5) }
+      , { 3.0/6, hsl(180, 0.8, 0.5) }
+      , { 4.0/6, hsl(240, 0.8, 0.5) }
+      , { 5.0/6, hsl(300, 0.8, 0.5) }
+      , { 6.0/6, hsl(360, 0.8, 0.5) }
+    };
+}
+
 void rain(canvas& cnv)
 {
     cnv.fill_style(repaint_color);
     cnv.fill_rect({ 0, 0, window_size });
+    auto gr = canvas::linear_gradient{ 0, 0, w, 0 };
+    rainbow(gr);
 
     for (auto i = 0; i < total; ++i)
     {
         auto current_y = dots[i] - 1;
         dots[i] += dots_vel[i] += accelleration;
-        cnv.fill_style(hsl(portion * i, 0.8, 0.5));
-        cnv.fill_rect({
+        cnv.rect({
             float(i)
           , current_y
           , float(i+1)
@@ -49,6 +63,9 @@ void rain(canvas& cnv)
         if (dots[i] > h && random_size() < .01)
             dots[i] = dots_vel[i] = 0;
     }
+
+    cnv.fill_style(gr);
+    cnv.fill();
 }
 
 void draw(canvas& cnv)
