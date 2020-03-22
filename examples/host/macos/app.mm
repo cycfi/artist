@@ -14,6 +14,8 @@ using namespace cycfi::artist;
 @interface CocoaView : NSView
 {
    NSTimer*    _task;
+   CGLayerRef  _layer;
+   bool        _first;
 }
 
 -(void) start;
@@ -23,17 +25,32 @@ using namespace cycfi::artist;
 
 @implementation CocoaView
 
+- (void) dealloc
+{
+   _task = nil;
+   CGLayerRelease(_layer);
+}
+
 - (void) start
 {
+   _first = true;
 }
 
 - (void) drawRect : (NSRect) dirty
 {
-   [super drawRect : dirty];
-
    auto ctx = NSGraphicsContext.currentContext.CGContext;
-   auto cnv = canvas{ (host_context_ptr) ctx };
+
+   if (_first)
+   {
+      _first = false;
+      _layer = CGLayerCreateWithContext(ctx, self.bounds.size, nullptr);
+   }
+
+   auto offline_ctx = CGLayerGetContext(_layer);
+   auto cnv = canvas{ (host_context_ptr) offline_ctx };
    draw(cnv);
+
+   CGContextDrawLayerAtPoint(ctx, CGPointZero, _layer);
 }
 
 -(BOOL) isFlipped
