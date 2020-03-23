@@ -122,6 +122,7 @@ namespace cycfi::artist
 
    void canvas::begin_path()
    {
+      _state->path() = {};
    }
 
    void canvas::close_path()
@@ -166,6 +167,7 @@ namespace cycfi::artist
 
    void canvas::arc_to(point p1, point p2, float radius)
    {
+      _state->path().arcTo(p1.x, p1.y, p2.x, p2.y, radius);
    }
 
    void canvas::arc(
@@ -227,6 +229,14 @@ namespace cycfi::artist
 
    void canvas::line_cap(line_cap_enum cap_)
    {
+      SkPaint::Cap cap = SkPaint::kButt_Cap;
+      switch (cap_)
+      {
+         case line_cap_enum::butt:     cap = SkPaint::kButt_Cap; break;
+         case line_cap_enum::round:    cap = SkPaint::kRound_Cap; break;
+         case line_cap_enum::square:   cap = SkPaint::kSquare_Cap; break;
+      }
+      _state->stroke_paint().setStrokeCap(cap);
    }
 
    void canvas::line_join(join_enum join_)
