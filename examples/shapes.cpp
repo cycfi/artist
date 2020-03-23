@@ -17,10 +17,10 @@ void background(canvas& cnv)
     cnv.fill();
 }
 
-void draw(canvas& cnv)
+void rectangles(canvas& cnv)
 {
-    background(cnv);
-
+    ///////////////////////////////////////////////////////
+    // Rectangles
     cnv.line_width(2);
 
     cnv.rect(20, 20, 150, 100);
@@ -38,7 +38,12 @@ void draw(canvas& cnv)
     cnv.round_rect(50, 50, 150, 100, 10);
     cnv.stroke_style(colors::honeydew.opacity(0.5));
     cnv.stroke();
+}
 
+void circles_and_arcs(canvas& cnv)
+{
+    ///////////////////////////////////////////////////////
+    // Circles and Arcs
     for (int i = 0; i != 7; ++i)
     {
         auto cx = 280+(i*45);
@@ -56,6 +61,143 @@ void draw(canvas& cnv)
         cnv.stroke();
     }
 
+    ///////////////////////////////////////////////////////
+    // Arc To
+    {
+        constexpr auto x = 20;
+        constexpr auto y = 180;
+        constexpr auto r = 40;
+
+        cnv.stroke_style(colors::dodger_blue.opacity(0.6));
+        cnv.line_width(10);
+        cnv.begin_path();
+        cnv.move_to(x, y);
+        cnv.line_to(x+(80-r), y);
+        cnv.arc_to(x+80, y, x+80, y+20, r);
+        cnv.line_to(x+80, y+80);
+        cnv.stroke();
+
+        cnv.stroke_style(colors::orange);
+        cnv.line_width(1);
+        cnv.begin_path();
+        cnv.move_to(x, y);
+        cnv.line_to(x+80, y);
+        cnv.line_to(x+80, y+80);
+        cnv.stroke();
+    }
+}
+
+void arc_to(canvas& cnv)
+{
+    ///////////////////////////////////////////////////////
+    // Arc To
+    constexpr auto x = 20;
+    constexpr auto y = 180;
+    constexpr auto r = 40;
+
+    cnv.stroke_style(colors::dodger_blue.opacity(0.6));
+    cnv.line_width(10);
+    cnv.begin_path();
+    cnv.move_to(x, y);
+    cnv.line_to(x+(80-r), y);
+    cnv.arc_to(x+80, y, x+80, y+20, r);
+    cnv.line_to(x+80, y+80);
+    cnv.stroke();
+
+    cnv.stroke_style(colors::white);
+    cnv.line_width(1);
+    cnv.begin_path();
+    cnv.move_to(x, y);
+    cnv.line_to(x+80, y);
+    cnv.line_to(x+80, y+80);
+    cnv.stroke();
+}
+
+void line_caps(canvas& cnv)
+{
+    auto where = point{ 140, 190 };
+    auto spacing = 25;
+    cnv.line_width(10);
+
+    cnv.stroke_style(colors::gold);
+    cnv.begin_path();
+    cnv.line_width(10);
+    cnv.line_cap(cnv.butt);
+    cnv.move_to(where.x, where.y);
+    cnv.line_to(where.x+100, where.y);
+    cnv.stroke();
+
+    cnv.stroke_style(colors::sky_blue);
+    cnv.begin_path();
+    cnv.line_cap(cnv.round);
+    cnv.move_to(where.x, where.y+spacing);
+    cnv.line_to(where.x+100, where.y+spacing);
+    cnv.stroke();
+
+    cnv.stroke_style(colors::light_sea_green);
+    cnv.begin_path();
+    cnv.line_cap(cnv.square);
+    cnv.move_to(where.x, where.y+spacing*2);
+    cnv.line_to(where.x+100, where.y+spacing*2);
+    cnv.stroke();
+
+    cnv.stroke_style(colors::white);
+    cnv.line_width(1);
+
+    cnv.begin_path();
+    cnv.move_to(where.x, where.y);
+    cnv.line_to(where.x+100, where.y);
+    cnv.stroke();
+
+    cnv.begin_path();
+    cnv.move_to(where.x, where.y+spacing);
+    cnv.line_to(where.x+100, where.y+spacing);
+    cnv.stroke();
+
+    cnv.begin_path();
+    cnv.move_to(where.x, where.y+spacing*2);
+    cnv.line_to(where.x+100, where.y+spacing*2);
+    cnv.stroke();
+}
+
+void line_joins(canvas& cnv)
+{
+    auto where = point{ 270, 80 };
+    cnv.line_width(10);
+
+    cnv.stroke_style(colors::gold);
+    cnv.begin_path();
+    cnv.line_join(cnv.bevel_join);
+    cnv.move_to(where.x, where.y+100);
+    cnv.line_to(where.x+60, where.y+140);
+    cnv.line_to(where.x, where.y+180);
+    cnv.stroke();
+
+    cnv.stroke_style(colors::sky_blue);
+    cnv.begin_path();
+    cnv.line_join(cnv.round_join);
+    cnv.move_to(where.x+40, where.y+100);
+    cnv.line_to(where.x+100, where.y+140);
+    cnv.line_to(where.x+40, where.y+180);
+    cnv.stroke();
+
+    cnv.stroke_style(colors::light_sea_green);
+    cnv.begin_path();
+    cnv.line_join(cnv.miter_join);
+    cnv.move_to(where.x+80, where.y+100);
+    cnv.line_to(where.x+140, where.y+140);
+    cnv.line_to(where.x+80, where.y+180);
+    cnv.stroke();
+}
+
+void draw(canvas& cnv)
+{
+    background(cnv);
+    rectangles(cnv);
+    circles_and_arcs(cnv);
+    arc_to(cnv);
+    line_caps(cnv);
+    line_joins(cnv);
 }
 
 int main(int argc, const char* argv[])
