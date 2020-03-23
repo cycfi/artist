@@ -13,12 +13,12 @@ using namespace cycfi::artist;
 // https://onaircode.com/awesome-html5-canvas-examples-source-code/
 ///////////////////////////////////////////////////////////////////////////////
 
-constexpr auto window_size = extent{ 640, 360 };
+constexpr auto window_size = extent{ 1280, 360 };
 constexpr auto w = window_size.x;
 constexpr auto h = window_size.y;
 constexpr int total = w;
 constexpr auto accelleration = 0.05;
-constexpr auto repaint_color = rgb(0, 0, 0).opacity(0.04);
+constexpr auto repaint_color = rgb(0, 0, 0).opacity(0.15);
 constexpr auto portion = 360.0f/total;
 
 float dots[total];
@@ -31,17 +31,7 @@ float random_size()
 
 void draw(canvas& cnv)
 {
-    static int ii = 0;
-
-    // if (ii == 0)
-    //     cnv.fill_style(repaint_color.opacity(1.0));
-    // else
-        cnv.fill_style(repaint_color);
-
-    // if (ii == 2)
-    //     return;
-    ++ii;
-
+    cnv.fill_style(repaint_color);
     cnv.fill_rect({ 0, 0, window_size });
     for (auto i = 0; i < total; ++i)
     {
@@ -50,9 +40,9 @@ void draw(canvas& cnv)
         cnv.fill_style(hsl(portion * i, 0.8, 0.5));
         cnv.fill_rect({
             float(i)
-            , current_y
-            , float(i+1)
-            , current_y + dots_vel[i] + 1
+           , current_y
+           , float(i+1)
+           , (current_y + dots_vel[i] + 1) * 1.1f
         });
 
         if (dots[i] > h && random_size() < .01)
@@ -72,6 +62,6 @@ void init()
 int main(int argc, const char* argv[])
 {
     init();
-    return run_app(argc, argv, { 640, 360 }, true);
+    return run_app(argc, argv, window_size, true);
 }
 
