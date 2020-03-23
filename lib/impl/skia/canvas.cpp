@@ -174,6 +174,15 @@ namespace cycfi::artist
       bool ccw
    )
    {
+      auto start = start_angle * 180 / M_PI;
+      auto sweep = (end_angle - start_angle) * 180 / M_PI;
+      if (!ccw)
+         sweep = -sweep;
+
+      _state->path().addArc(
+         { p.x-radius, p.y-radius, p.x+radius, p.y+radius },
+         start, sweep
+      );
    }
 
    void canvas::rect(struct rect r)

@@ -13,12 +13,18 @@ using namespace cycfi::artist;
 // https://onaircode.com/awesome-html5-canvas-examples-source-code/
 ///////////////////////////////////////////////////////////////////////////////
 
-constexpr auto window_size = extent{ 1280, 360 };
+#if defined(ARTIST_SKIA)
+constexpr auto persistence = 0.15;
+#else
+constexpr auto persistence = 0.04;
+#endif
+
+constexpr auto window_size = extent{ 640, 360 };
 constexpr auto w = window_size.x;
 constexpr auto h = window_size.y;
 constexpr int total = w;
 constexpr auto accelleration = 0.05;
-constexpr auto repaint_color = rgb(0, 0, 0).opacity(0.15);
+constexpr auto repaint_color = rgb(0, 0, 0).opacity(persistence);
 constexpr auto portion = 360.0f/total;
 
 float dots[total];
