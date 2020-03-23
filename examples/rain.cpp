@@ -29,11 +29,20 @@ float random_size()
     return float(std::rand()) / (RAND_MAX);
 }
 
-void rain(canvas& cnv)
+void draw(canvas& cnv)
 {
-    cnv.fill_style(repaint_color);
-    cnv.fill_rect({ 0, 0, window_size });
+    static int ii = 0;
 
+    // if (ii == 0)
+    //     cnv.fill_style(repaint_color.opacity(1.0));
+    // else
+        cnv.fill_style(repaint_color);
+
+    // if (ii == 2)
+    //     return;
+    ++ii;
+
+    cnv.fill_rect({ 0, 0, window_size });
     for (auto i = 0; i < total; ++i)
     {
         auto current_y = dots[i] - 1;
@@ -41,26 +50,14 @@ void rain(canvas& cnv)
         cnv.fill_style(hsl(portion * i, 0.8, 0.5));
         cnv.fill_rect({
             float(i)
-          , current_y
-          , float(i+1)
-          , current_y + dots_vel[i] + 1
+            , current_y
+            , float(i+1)
+            , current_y + dots_vel[i] + 1
         });
 
         if (dots[i] > h && random_size() < .01)
             dots[i] = dots_vel[i] = 0;
     }
-}
-
-picture offscreen{ window_size };
-
-void draw(canvas& cnv)
-{
-    {
-        picture_context ctx{ offscreen };
-        canvas rain_cnv{ ctx.context() };
-        rain(rain_cnv);
-    }
-    cnv.draw(offscreen);
 }
 
 void init()
