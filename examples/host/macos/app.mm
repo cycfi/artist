@@ -5,6 +5,7 @@
 =============================================================================*/
 #import <Cocoa/Cocoa.h>
 #include <string>
+#include <stdexcept>
 #include "../../app.hpp"
 
 #if defined(ARTIST_SKIA)
@@ -33,12 +34,15 @@ using namespace cycfi::artist;
 
 //=======================================================================
 
+@class OpenGLLayer;
 @interface CocoaView : NSView
 {
-   NSTimer*    _task;
-   bool        _first;
+   OpenGLLayer*   _layer;
+
+   NSTimer*       _task;
+   bool           _first;
 #if defined(ARTIST_QUARTZ_2D)
-   CGLayerRef  _layer;
+   CGLayerRef     _layer;
 #endif
 }
 
@@ -51,11 +55,13 @@ using namespace cycfi::artist;
 
 @interface OpenGLLayer : NSOpenGLLayer
 {
-   bool        _first;
-   CocoaView*  _view;
+   bool                 _refresh;
+   bool                 _first;
+   CocoaView*           _view;
 }
 
 - (id) initWithIGraphicsView : (CocoaView*) view;
+- (void) refresh;
 
 @end
 
@@ -69,10 +75,11 @@ using namespace cycfi::artist;
 
 - (id) initWithIGraphicsView: (CocoaView*) view;
 {
+   _refresh = true;
    _first = true;
    _view = view;
    self = [super init];
-   if ( self != nil )
+   if (self != nil)
    {
       // Layer should render when size changes.
       self.needsDisplayOnBoundsChange = YES;
@@ -84,10 +91,16 @@ using namespace cycfi::artist;
    return self;
 }
 
+- (void) refresh
+{
+   _refresh = true;
+}
+
 - (NSOpenGLPixelFormat*) openGLPixelFormatForDisplayMas : (uint32_t) mask
 {
    NSOpenGLPixelFormatAttribute attr[] = {
-      NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core,
+      NSOpenGLPFAOpenGLProfile,
+      NSOpenGLProfileVersion3_2Core,
       NSOpenGLPFANoRecovery,
       NSOpenGLPFAAccelerated,
       NSOpenGLPFADoubleBuffer,
@@ -107,7 +120,7 @@ using namespace cycfi::artist;
                    forLayerTime : (CFTimeInterval) timeInterval
                     displayTime : (const CVTimeStamp*) timeStamp
 {
-   return YES;
+   return _refresh;
 }
 
 - (void) drawInOpenGLContext : (NSOpenGLContext*) context
@@ -115,6 +128,8 @@ using namespace cycfi::artist;
                 forLayerTime : (CFTimeInterval) timeInterval
                  displayTime : (const CVTimeStamp*) timeStamp
 {
+   _refresh = false;
+
    [context makeCurrentContext];
 
    CGLLockContext(context.CGLContextObj);
@@ -128,38 +143,22 @@ using namespace cycfi::artist;
    info.fFBOID = (GrGLuint) buffer;
    SkColorType colorType = kRGBA_8888_SkColorType;
 
+   auto bounds = [_view bounds];
    auto scale = self.contentsScale;
+   auto size = point{ float(bounds.size.width*scale), float(bounds.size.height*scale) };
 
-   auto b = [_view bounds];
    info.fFormat = GL_RGBA8;
-   GrBackendRenderTarget target(b.size.width*scale, b.size.height*scale, 0, 8, info);
+   GrBackendRenderTarget target(size.x, size.y, 0, 8, info);
 
    sk_sp<SkSurface> surface(
       SkSurface::MakeFromBackendRenderTarget(ctx.get(), target,
       kBottomLeft_GrSurfaceOrigin, colorType, nullptr, nullptr));
 
-   //SkImageInfo info = SkImageInfo:: MakeN32Premul(640, 480); // $$$ HARD CODE !!! $$$
-   // sk_sp<SkSurface> surface(
-   //    SkSurface::MakeRenderTarget(ctx.get(), SkBudgeted::kNo, info));
-
    if (!surface)
-   {
-      SkDebugf("SkSurface::MakeRenderTarget returned null\n");
-      return;
-   }
+      throw std::runtime_error("Error: SkSurface::MakeRenderTarget returned null");
 
-   SkCanvas* gpuCanvas = surface->getCanvas();
-
-   // static int ii = 0;
-
-   // if (ii == 0)
-   // {
-   //    ii = 1;
-   //    glClearColor(0.0, 0.0, 0.0, 1.0);
-   //    glClear(GL_COLOR_BUFFER_BIT);
-   // }
-
-   auto cnv = canvas{ gpuCanvas };
+   SkCanvas* gpu_canvas = surface->getCanvas();
+   auto cnv = canvas{ gpu_canvas };
    cnv.scale(scale, scale);
    draw(cnv);
 
@@ -223,7 +222,8 @@ using namespace cycfi::artist;
 
 - (CALayer*) makeBackingLayer
 {
-   return [[OpenGLLayer alloc] initWithIGraphicsView : self];
+   _layer = [[OpenGLLayer alloc] initWithIGraphicsView : self];
+   return _layer;
 }
 
 - (void) viewDidChangeBackingProperties
@@ -244,6 +244,8 @@ using namespace cycfi::artist;
 #if defined(ARTIST_QUARTZ_2D)
    [self setNeedsDisplay : YES];
 #endif
+
+   [_layer refresh];
 }
 
 -(void) start_animation
