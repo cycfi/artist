@@ -7,6 +7,7 @@
 #define ELEMENTS_POINT_APRIL_11_2016
 
 #include <cstdint>
+#include <algorithm>
 
 namespace cycfi::artist
 {
@@ -75,6 +76,7 @@ namespace cycfi::artist
    // From: http://bit.ly/3daVkCb
    constexpr color hsl(float h, float sl, float l)
    {
+      h = std::min(h, 359.99f);
       float r = l, g = l, b = l; // default to gray
       float v = (l <= 0.5) ? (l * (1.0 + sl)) : (l + sl - l * sl);
       if (v > 0)
