@@ -35,6 +35,7 @@ set(typography_fonts
    ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/OpenSansCondensed-LightItalic.ttf
 )
 
+add_example(shapes)
 add_example(typography)
 add_example(rain)
 

@@ -180,7 +180,7 @@ namespace cycfi::artist
       constexpr color brown                  = rgb(165, 42, 42);
       constexpr color burly_wood             = rgb(222, 184, 135);
       constexpr color cadet_blue             = rgb(95, 146, 158);
-      constexpr color kchartreuse            = rgb(127, 255, 0);
+      constexpr color chartreuse             = rgb(127, 255, 0);
       constexpr color chocolate              = rgb(210, 105, 30);
       constexpr color coral                  = rgb(255, 114, 86);
       constexpr color cornflower_blue        = rgb(34, 34, 152);
@@ -290,7 +290,6 @@ namespace cycfi::artist
       constexpr color tan                    = rgb(222, 184, 135);
       constexpr color thistle                = rgb(216, 191, 216);
       constexpr color tomato                 = rgb(255, 99, 71);
-      constexpr color transparent            = rgb(0, 0, 1);
       constexpr color turquoise              = rgb(25, 204, 223);
       constexpr color violet                 = rgb(156, 62, 206);
       constexpr color violet_red             = rgb(243, 62, 150);

@@ -63,7 +63,7 @@ namespace cycfi::artist
       float start_angle, float end_angle,
       bool ccw)
    {
-      arc({ x, y }, start_angle, end_angle, ccw);
+      arc({ x, y }, radius, start_angle, end_angle, ccw);
    }
 
    inline void canvas::rect(float x, float y, float width, float height)

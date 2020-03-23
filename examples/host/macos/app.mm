@@ -24,8 +24,6 @@
 #include "SkPath.h"
 #include "GrBackendSurface.h"
 
-
-
 #endif
 
 #include <OpenGL/gl.h>
@@ -35,6 +33,8 @@ using namespace cycfi::artist;
 //=======================================================================
 
 @class OpenGLLayer;
+using offscreen_type = std::shared_ptr<picture>;
+
 @interface CocoaView : NSView
 {
 #if defined(ARTIST_SKIA)
@@ -44,11 +44,9 @@ using namespace cycfi::artist;
    NSTimer*       _task;
 
 #if defined(ARTIST_QUARTZ_2D)
-   bool           _first;
-#endif
 
-#if defined(ARTIST_QUARTZ_2D)
-   CGLayerRef     _layer;
+   bool           _first;
+   offscreen_type _offscreen;
 #endif
 }
 
@@ -183,9 +181,6 @@ using namespace cycfi::artist;
 - (void) dealloc
 {
    _task = nil;
-#if defined(ARTIST_QUARTZ_2D)
-   CGLayerRelease(_layer);
-#endif
 }
 
 - (void) start
@@ -202,6 +197,7 @@ using namespace cycfi::artist;
 
 #if defined(ARTIST_QUARTZ_2D)
    _first = true;
+   _task = nullptr;
 #endif
 }
 
@@ -210,17 +206,29 @@ using namespace cycfi::artist;
 #if defined(ARTIST_QUARTZ_2D)
    auto ctx = NSGraphicsContext.currentContext.CGContext;
 
-   if (_first)
+   if (_first && _task)
    {
       _first = false;
-      _layer = CGLayerCreateWithContext(ctx, self.bounds.size, nullptr);
+      _offscreen = std::make_shared<picture>(
+         extent{ float(self.bounds.size.width), float(self.bounds.size.height) }
+      );
    }
 
-   auto offline_ctx = CGLayerGetContext(_layer);
-   auto cnv = canvas{ (host_context_ptr) offline_ctx };
-   draw(cnv);
-
-   CGContextDrawLayerAtPoint(ctx, CGPointZero, _layer);
+   if (_task)  // Do offscreen rendering
+   {
+      auto cnv = canvas{ (host_context_ptr) ctx };
+      {
+         picture_context ctx{ *_offscreen };
+         canvas offscreen_cnv{ ctx.context() };
+         draw(offscreen_cnv);
+      }
+      cnv.draw(*_offscreen);
+   }
+   else
+   {
+      auto cnv = canvas{ (host_context_ptr) ctx };
+      draw(cnv);
+   }
 #endif
 }
 
@@ -345,7 +353,8 @@ int run_app(int argc, const char* argv[], extent window_size, bool animate)
 {
    app _app;
    window _win(window_size);
-   _win.start_animation();
+   if (animate)
+      _win.start_animation();
    return _app.run();
 }
 
