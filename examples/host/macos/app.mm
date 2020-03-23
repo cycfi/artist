@@ -35,7 +35,11 @@ using namespace cycfi::artist;
 
 @interface CocoaView : NSView
 {
-   NSTimer*       _task;
+   NSTimer*    _task;
+   bool        _first;
+#if defined(ARTIST_QUARTZ_2D)
+   CGLayerRef  _layer;
+#endif
 }
 
 -(void) start;
@@ -47,7 +51,8 @@ using namespace cycfi::artist;
 
 @interface OpenGLLayer : NSOpenGLLayer
 {
-   CocoaView* _view;
+   bool        _first;
+   CocoaView*  _view;
 }
 
 - (id) initWithIGraphicsView : (CocoaView*) view;
@@ -64,6 +69,7 @@ using namespace cycfi::artist;
 
 - (id) initWithIGraphicsView: (CocoaView*) view;
 {
+   _first = true;
    _view = view;
    self = [super init];
    if ( self != nil )
@@ -78,7 +84,7 @@ using namespace cycfi::artist;
    return self;
 }
 
-- (NSOpenGLPixelFormat *)openGLPixelFormatForDisplayMask:(uint32_t)mask
+- (NSOpenGLPixelFormat*) openGLPixelFormatForDisplayMas : (uint32_t) mask
 {
    NSOpenGLPixelFormatAttribute attr[] = {
       NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core,
@@ -91,22 +97,27 @@ using namespace cycfi::artist;
    return [[NSOpenGLPixelFormat alloc] initWithAttributes:attr];
 }
 
-- (NSOpenGLContext*)openGLContextForPixelFormat:(NSOpenGLPixelFormat *)pixelFormat
+- (NSOpenGLContext*) openGLContextForPixelFormat : (NSOpenGLPixelFormat*) pixelFormat
 {
-   return [super openGLContextForPixelFormat:pixelFormat];
+   return [super openGLContextForPixelFormat : pixelFormat];
 }
 
-- (BOOL)canDrawInOpenGLContext:(NSOpenGLContext *)context pixelFormat:(NSOpenGLPixelFormat *)pixelFormat forLayerTime:(CFTimeInterval)timeInterval displayTime:(const CVTimeStamp *)timeStamp
+- (BOOL) canDrawInOpenGLContext : (NSOpenGLContext*) context
+                    pixelFormat : (NSOpenGLPixelFormat*) pixelFormat
+                   forLayerTime : (CFTimeInterval) timeInterval
+                    displayTime : (const CVTimeStamp*) timeStamp
 {
    return YES;
 }
 
-- (void)drawInOpenGLContext:(NSOpenGLContext *)context pixelFormat:(NSOpenGLPixelFormat *)pixelFormat forLayerTime:(CFTimeInterval)timeInterval displayTime:(const CVTimeStamp *)timeStamp
+- (void) drawInOpenGLContext : (NSOpenGLContext*) context
+                 pixelFormat : (NSOpenGLPixelFormat*) pixelFormat
+                forLayerTime : (CFTimeInterval) timeInterval
+                 displayTime : (const CVTimeStamp*) timeStamp
 {
    [context makeCurrentContext];
 
    CGLLockContext(context.CGLContextObj);
-
 
    auto interface = GrGLMakeNativeInterface();
    sk_sp<GrContext> ctx = GrContext::MakeGL(interface);
@@ -115,23 +126,20 @@ using namespace cycfi::artist;
    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &buffer);
    GrGLFramebufferInfo info;
    info.fFBOID = (GrGLuint) buffer;
-   SkColorType colorType;
+   SkColorType colorType = kRGBA_8888_SkColorType;
 
    auto scale = self.contentsScale;
 
    auto b = [_view bounds];
    info.fFormat = GL_RGBA8;
-   colorType = kRGBA_8888_SkColorType;
    GrBackendRenderTarget target(b.size.width*scale, b.size.height*scale, 0, 8, info);
 
    sk_sp<SkSurface> surface(
       SkSurface::MakeFromBackendRenderTarget(ctx.get(), target,
       kBottomLeft_GrSurfaceOrigin, colorType, nullptr, nullptr));
 
-
    //SkImageInfo info = SkImageInfo:: MakeN32Premul(640, 480); // $$$ HARD CODE !!! $$$
-
-   // sk_sp<SkSurface> gpuSurface(
+   // sk_sp<SkSurface> surface(
    //    SkSurface::MakeRenderTarget(ctx.get(), SkBudgeted::kNo, info));
 
    if (!surface)
@@ -142,46 +150,18 @@ using namespace cycfi::artist;
 
    SkCanvas* gpuCanvas = surface->getCanvas();
 
+   // static int ii = 0;
 
+   // if (ii == 0)
    // {
-   //    const SkScalar scale = 256.0f;
-   //    const SkScalar R = 0.45f * scale;
-   //    const SkScalar TAU = 6.2831853f;
-   //    SkPath path;
-   //    path.moveTo(R, 0.0f);
-   //    for (int i = 1; i < 7; ++i) {
-   //       SkScalar theta = 3 * i * TAU / 7;
-   //       path.lineTo(R * cos(theta), R * sin(theta));
-   //    }
-   //    path.close();
-   //    SkPaint p;
-   //    p.setAntiAlias(true);
-   //    canvas->clear(SK_ColorWHITE);
-   //    canvas->translate(0.5f * scale, 0.5f * scale);
-   //    canvas->drawPath(path, p);
+   //    ii = 1;
+   //    glClearColor(0.0, 0.0, 0.0, 1.0);
+   //    glClear(GL_COLOR_BUFFER_BIT);
    // }
-
-   // glClearColor(0.0, 0.0, 0.0, 1.0);
-   // glClear(GL_COLOR_BUFFER_BIT);
 
    auto cnv = canvas{ gpuCanvas };
    cnv.scale(scale, scale);
    draw(cnv);
-
-
-   // {
-   //    cnv.scale(scale, scale);
-
-   //    cnv.rect(50, 50, b.size.width-100, b.size.height-100);
-   //    cnv.fill_style(colors::magenta);
-   //    cnv.fill();
-   // }
-
-
-//   glClearColor(0.0, 0.0, 1.0, 1.0);
-//   glClear(GL_COLOR_BUFFER_BIT);
-
-   // TODO: Perform rendering here.
 
    [context flushBuffer];
    CGLUnlockContext(context.CGLContextObj);
@@ -194,6 +174,14 @@ using namespace cycfi::artist;
 //=======================================================================
 
 @implementation CocoaView
+
+- (void) dealloc
+{
+   _task = nil;
+#if defined(ARTIST_QUARTZ_2D)
+   CGLayerRelease(_layer);
+#endif
+}
 
 - (void) start
 {
@@ -209,41 +197,29 @@ using namespace cycfi::artist;
    self.layer.opaque = YES;
 
 #endif
+   _first = true;
 }
 
 - (void) drawRect : (NSRect) dirty
 {
-   [super drawRect : dirty];
-
 #if defined(ARTIST_QUARTZ_2D)
    auto ctx = NSGraphicsContext.currentContext.CGContext;
-   auto cnv = canvas{ (host_context_ptr) ctx };
+
+   if (_first)
+   {
+      _first = false;
+      _layer = CGLayerCreateWithContext(ctx, self.bounds.size, nullptr);
+   }
+
+   auto offline_ctx = CGLayerGetContext(_layer);
+   auto cnv = canvas{ (host_context_ptr) offline_ctx };
    draw(cnv);
+
+   CGContextDrawLayerAtPoint(ctx, CGPointZero, _layer);
 #endif
 }
 
 #if defined(ARTIST_SKIA)
-
-// - (void) render
-// {
-// //   const GrGLInterface* interface = nullptr;
-// //   sk_sp<GrContext> context = GrContext::MakeGL(glInterface);
-//    sk_sp<GrContext> context = GrContext::MakeGL(nullptr);
-//    SkImageInfo info = SkImageInfo:: MakeN32Premul(640, 480); // $$$ HARD CODE !!! $$$
-
-//    sk_sp<SkSurface> gpuSurface(
-//       SkSurface::MakeRenderTarget(context.get(), SkBudgeted::kNo, info));
-
-//    if (!gpuSurface)
-//    {
-//       SkDebugf("SkSurface::MakeRenderTarget returned null\n");
-//       return;
-//    }
-//    SkCanvas* gpuCanvas = gpuSurface->getCanvas();
-
-//    auto cnv = canvas{ gpuCanvas };
-//    draw(cnv);
-// }
 
 - (CALayer*) makeBackingLayer
 {
@@ -253,8 +229,6 @@ using namespace cycfi::artist;
 - (void) viewDidChangeBackingProperties
 {
    [super viewDidChangeBackingProperties];
-
-   // Need to propagate information about retina resolution
    self.layer.contentsScale = self.window.backingScaleFactor;
 }
 
@@ -270,11 +244,6 @@ using namespace cycfi::artist;
 #if defined(ARTIST_QUARTZ_2D)
    [self setNeedsDisplay : YES];
 #endif
-
-#if defined(ARTIST_SKIA)
-   // [self render];
-#endif
-
 }
 
 -(void) start_animation
@@ -287,8 +256,6 @@ using namespace cycfi::artist;
           repeats : YES
       ];
 }
-
-//- (BOOL) isOpaque { return YES; }
 
 @end
 
