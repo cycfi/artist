@@ -549,22 +549,22 @@ namespace cycfi::artist
 
    void canvas::fill_style(linear_gradient const& gr)
    {
-      _state->fill_style(gr, gr.space);
+      _state->fill_style(gr, gr.color_space);
    }
 
    void canvas::fill_style(radial_gradient const& gr)
    {
-      _state->fill_style(gr, gr.space);
+      _state->fill_style(gr, gr.color_space);
    }
 
    void canvas::stroke_style(linear_gradient const& gr)
    {
-      _state->stroke_style(gr, gr.space);
+      _state->stroke_style(gr, gr.color_space);
    }
 
    void canvas::stroke_style(radial_gradient const& gr)
    {
-      _state->stroke_style(gr, gr.space);
+      _state->stroke_style(gr, gr.color_space);
    }
 
    void canvas::font(class font const& font_)

@@ -165,7 +165,13 @@ namespace cycfi::artist
          struct color   color;
       };
 
-      struct linear_gradient
+      struct gradient
+      {
+         void  add_color_stop(color_stop cs);
+         std::vector<color_stop> color_space = {};
+      };
+
+      struct linear_gradient : gradient
       {
          linear_gradient(float startx, float starty, float endx, float endy)
           : start{ startx, starty }
@@ -179,12 +185,9 @@ namespace cycfi::artist
 
          point start = {};
          point end = {};
-
-         void  add_color_stop(color_stop cs);
-         std::vector<color_stop> space = {};
       };
 
-      struct radial_gradient
+      struct radial_gradient : gradient
       {
          radial_gradient(
             float c1x, float c1y, float c1r,
@@ -210,9 +213,6 @@ namespace cycfi::artist
          float c1_radius = {};
          point c2 = c1;
          float c2_radius = c1_radius;
-
-         void  add_color_stop(color_stop cs);
-         std::vector<color_stop> space = {};
       };
 
       ///////////////////////////////////////////////////////////////////////////////////
