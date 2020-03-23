@@ -37,10 +37,16 @@ using namespace cycfi::artist;
 @class OpenGLLayer;
 @interface CocoaView : NSView
 {
+#if defined(ARTIST_SKIA)
    OpenGLLayer*   _layer;
+#endif
 
    NSTimer*       _task;
+
+#if defined(ARTIST_QUARTZ_2D)
    bool           _first;
+#endif
+
 #if defined(ARTIST_QUARTZ_2D)
    CGLayerRef     _layer;
 #endif
@@ -184,19 +190,19 @@ using namespace cycfi::artist;
 
 - (void) start
 {
-
 #if defined(ARTIST_SKIA)
-
    // Enable retina-support
    self.wantsBestResolutionOpenGLSurface = YES;
 
    // Enable layer-backed drawing of view
-   [self setWantsLayer:YES];
+   [self setWantsLayer : YES];
 
    self.layer.opaque = YES;
-
 #endif
+
+#if defined(ARTIST_QUARTZ_2D)
    _first = true;
+#endif
 }
 
 - (void) drawRect : (NSRect) dirty
@@ -245,7 +251,9 @@ using namespace cycfi::artist;
    [self setNeedsDisplay : YES];
 #endif
 
+#if defined(ARTIST_SKIA)
    [_layer refresh];
+#endif
 }
 
 -(void) start_animation
