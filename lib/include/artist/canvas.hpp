@@ -170,6 +170,7 @@ namespace cycfi::artist
       struct gradient
       {
          void  add_color_stop(color_stop cs);
+         void  add_color_stop(float offset, struct color color_);
          std::vector<color_stop> color_space = {};
       };
 

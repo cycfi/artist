@@ -124,6 +124,11 @@ namespace cycfi::artist
       color_space.push_back(cs);
    }
 
+   inline void canvas::gradient::add_color_stop(float offset, struct color color_)
+   {
+      color_space.push_back({ offset, color_ });
+   }
+
    inline void canvas::fill_rect(struct rect r)
    {
       rect(r);
