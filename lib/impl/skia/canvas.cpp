@@ -210,6 +210,7 @@ namespace cycfi::artist
 
    void canvas::bezier_curve_to(point cp1, point cp2, point end)
    {
+      _state->path().cubicTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
    }
 
    void canvas::fill_style(color c)
@@ -241,6 +242,14 @@ namespace cycfi::artist
 
    void canvas::line_join(join_enum join_)
    {
+      SkPaint::Join join = SkPaint::kMiter_Join;
+      switch (join_)
+      {
+         case join_enum::bevel_join:   join = SkPaint::kBevel_Join; break;
+         case join_enum::round_join:   join = SkPaint::kRound_Join; break;
+         case join_enum::miter_join:   join = SkPaint::kMiter_Join; break;
+      }
+      _state->stroke_paint().setStrokeJoin(join);
    }
 
    void canvas::miter_limit(float limit)

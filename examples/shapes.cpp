@@ -19,8 +19,6 @@ void background(canvas& cnv)
 
 void rectangles(canvas& cnv)
 {
-    ///////////////////////////////////////////////////////
-    // Rectangles
     cnv.line_width(2);
 
     cnv.rect(20, 20, 150, 100);
@@ -42,8 +40,6 @@ void rectangles(canvas& cnv)
 
 void circles_and_arcs(canvas& cnv)
 {
-    ///////////////////////////////////////////////////////
-    // Circles and Arcs
     for (int i = 0; i != 7; ++i)
     {
         auto cx = 280+(i*45);
@@ -60,37 +56,10 @@ void circles_and_arcs(canvas& cnv)
         cnv.arc(cx, cy, radius, 0.0f, M_PI + (M_PI * ((i+1)/7.0f)), true);
         cnv.stroke();
     }
-
-    ///////////////////////////////////////////////////////
-    // Arc To
-    {
-        constexpr auto x = 20;
-        constexpr auto y = 180;
-        constexpr auto r = 40;
-
-        cnv.stroke_style(colors::dodger_blue.opacity(0.6));
-        cnv.line_width(10);
-        cnv.begin_path();
-        cnv.move_to(x, y);
-        cnv.line_to(x+(80-r), y);
-        cnv.arc_to(x+80, y, x+80, y+20, r);
-        cnv.line_to(x+80, y+80);
-        cnv.stroke();
-
-        cnv.stroke_style(colors::orange);
-        cnv.line_width(1);
-        cnv.begin_path();
-        cnv.move_to(x, y);
-        cnv.line_to(x+80, y);
-        cnv.line_to(x+80, y+80);
-        cnv.stroke();
-    }
 }
 
 void arc_to(canvas& cnv)
 {
-    ///////////////////////////////////////////////////////
-    // Arc To
     constexpr auto x = 20;
     constexpr auto y = 180;
     constexpr auto r = 40;
@@ -115,7 +84,7 @@ void arc_to(canvas& cnv)
 
 void line_caps(canvas& cnv)
 {
-    auto where = point{ 140, 190 };
+    auto where = point{ 140, 195 };
     auto spacing = 25;
     cnv.line_width(10);
 
@@ -164,6 +133,7 @@ void line_joins(canvas& cnv)
 {
     auto where = point{ 270, 80 };
     cnv.line_width(10);
+    cnv.line_cap(cnv.butt);
 
     cnv.stroke_style(colors::gold);
     cnv.begin_path();
@@ -188,6 +158,61 @@ void line_joins(canvas& cnv)
     cnv.line_to(where.x+140, where.y+140);
     cnv.line_to(where.x+80, where.y+180);
     cnv.stroke();
+
+    cnv.stroke_style(colors::white);
+    cnv.line_width(1);
+
+    cnv.begin_path();
+    cnv.move_to(where.x, where.y+100);
+    cnv.line_to(where.x+60, where.y+140);
+    cnv.line_to(where.x, where.y+180);
+    cnv.stroke();
+
+    cnv.begin_path();
+    cnv.move_to(where.x+40, where.y+100);
+    cnv.line_to(where.x+100, where.y+140);
+    cnv.line_to(where.x+40, where.y+180);
+    cnv.stroke();
+
+    cnv.begin_path();
+    cnv.move_to(where.x+80, where.y+100);
+    cnv.line_to(where.x+140, where.y+140);
+    cnv.line_to(where.x+80, where.y+180);
+    cnv.stroke();
+}
+
+void beziers(canvas& cnv)
+{
+    auto where = point{ 450, 260 };
+    auto height = 100;
+    auto width = 120;
+    auto xmove = 20;
+    auto start = point{ where.x, where.y };
+    auto cp1 = point{ where.x+xmove, where.y-height };
+    auto cp2 = point{ where.x+width-xmove, where.y-height };
+    auto end = point{ where.x+width, where.y };
+
+    cnv.line_width(10);
+    cnv.stroke_style(colors::dodger_blue.opacity(0.6));
+    cnv.line_cap(cnv.round);
+
+    cnv.begin_path();
+    cnv.move_to(start);
+    cnv.bezier_curve_to(cp1, cp2, end);
+    cnv.stroke();
+
+    cnv.stroke_style(colors::pink.opacity(0.2));
+    cnv.circle(cp1.x, cp1.y, 3);
+    cnv.circle(cp2.x, cp2.y, 3);
+    cnv.fill();
+
+    cnv.stroke_style(colors::white);
+    cnv.line_width(1);
+    cnv.move_to(start);
+    cnv.line_to(cp1);
+    cnv.move_to(cp2);
+    cnv.line_to(end);
+    cnv.stroke();
 }
 
 void draw(canvas& cnv)
@@ -198,6 +223,7 @@ void draw(canvas& cnv)
     arc_to(cnv);
     line_caps(cnv);
     line_joins(cnv);
+    beziers(cnv);
 }
 
 int main(int argc, const char* argv[])
