@@ -101,13 +101,13 @@ void transformed(canvas& cnv)
 
 void rainbow(canvas::gradient& gr)
 {
-    gr.add_color_stop({ 0.0/6, colors::red });
-    gr.add_color_stop({ 1.0/6, colors::orange });
-    gr.add_color_stop({ 2.0/6, colors::yellow });
-    gr.add_color_stop({ 3.0/6, colors::green });
-    gr.add_color_stop({ 4.0/6, colors::blue });
-    gr.add_color_stop({ 5.0/6, rgb(0x4B, 0x00, 0x82) });
-    gr.add_color_stop({ 6.0/6, colors::violet });
+    gr.add_color_stop(0.0/6, colors::red);
+    gr.add_color_stop(1.0/6, colors::orange);
+    gr.add_color_stop(2.0/6, colors::yellow);
+    gr.add_color_stop(3.0/6, colors::green);
+    gr.add_color_stop(4.0/6, colors::blue);
+    gr.add_color_stop(5.0/6, rgb(0x4B, 0x00, 0x82));
+    gr.add_color_stop(6.0/6, colors::violet);
 }
 
 void linear_gradient(canvas& cnv)
@@ -127,8 +127,8 @@ void radial_gradient(canvas& cnv)
     auto center = point{ 475, 90 };
     auto radius = 75.0f;
     auto gr = canvas::radial_gradient{ center, 5, center.move(15, 10), radius };
-    gr.add_color_stop({ 0.0, colors::red });
-    gr.add_color_stop({ 1.0, colors::black });
+    gr.add_color_stop(0.0, colors::red);
+    gr.add_color_stop(1.0, colors::black);
 
     cnv.circle({ center.move(15, 10), radius-10 });
     cnv.fill_style(gr);
@@ -140,8 +140,8 @@ void stroke_gradient(canvas& cnv)
     auto x = 300.0f;
     auto y = 20.0f;
     auto gr = canvas::linear_gradient{ x, y, x+300, y+80 };
-    gr.add_color_stop({ 0.0, colors::navy_blue });
-    gr.add_color_stop({ 1.0, colors::maroon });
+    gr.add_color_stop(0.0, colors::navy_blue);
+    gr.add_color_stop(1.0, colors::maroon);
 
     cnv.round_rect(x, y, 300, 80, 5);
     cnv.line_width(8);
@@ -301,8 +301,8 @@ void typography(canvas& cnv)
     // Gradient Fill
     {
         auto gr = canvas::linear_gradient{ { 360, 90 }, { 360, 140 } };
-        gr.add_color_stop({ 0.0, colors::navy_blue });
-        gr.add_color_stop({ 1.0, colors::maroon });
+        gr.add_color_stop(0.0, colors::navy_blue);
+        gr.add_color_stop(1.0, colors::maroon);
         cnv.fill_style(gr);
         cnv.fill_text("Gradient", 360, 115);
         cnv.stroke_text("Gradient", 360, 115);
@@ -311,8 +311,8 @@ void typography(canvas& cnv)
     // Outline Gradient Fill
     {
         auto gr = canvas::linear_gradient{ { 360, 165 }, { 360, 215 } };
-        gr.add_color_stop({ 0.0, colors::medium_blue });
-        gr.add_color_stop({ 1.0, colors::medium_violet_red });
+        gr.add_color_stop(0.0, colors::medium_blue);
+        gr.add_color_stop(1.0, colors::medium_violet_red);
         cnv.line_width(1.5);
         cnv.stroke_style(gr);
         cnv.stroke_text("Outline Gradient", 20, 190);

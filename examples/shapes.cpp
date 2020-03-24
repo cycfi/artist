@@ -252,13 +252,13 @@ void quad(canvas& cnv)
 
 void rainbow(canvas::gradient& gr)
 {
-    gr.add_color_stop({ 0.0/6, colors::red });
-    gr.add_color_stop({ 1.0/6, colors::orange });
-    gr.add_color_stop({ 2.0/6, colors::yellow });
-    gr.add_color_stop({ 3.0/6, colors::green });
-    gr.add_color_stop({ 4.0/6, colors::blue });
-    gr.add_color_stop({ 5.0/6, rgb(0x4B, 0x00, 0x82) });
-    gr.add_color_stop({ 6.0/6, colors::violet });
+    gr.add_color_stop(0.0/6, colors::red);
+    gr.add_color_stop(1.0/6, colors::orange);
+    gr.add_color_stop(2.0/6, colors::yellow);
+    gr.add_color_stop(3.0/6, colors::green);
+    gr.add_color_stop(4.0/6, colors::blue);
+    gr.add_color_stop(5.0/6, rgb(0x4B, 0x00, 0x82));
+    gr.add_color_stop(6.0/6, colors::violet);
 }
 
 void linear_gradient(canvas& cnv)
@@ -278,8 +278,8 @@ void radial_gradient(canvas& cnv)
     auto center = point{ 208, 360 };
     auto radius = 65.0f;
     auto gr = canvas::radial_gradient{ center, 5, center.move(15, 10), radius };
-    gr.add_color_stop({ 0.0, colors::red });
-    gr.add_color_stop({ 1.0, colors::black });
+    gr.add_color_stop(0.0, colors::red);
+    gr.add_color_stop(1.0, colors::black);
 
     cnv.circle({ center.move(15, 10), radius-10 });
     cnv.fill_style(gr);

@@ -56,8 +56,8 @@ void tauri(canvas& cnv)
 
     // Gradient
     auto gr = canvas::linear_gradient{ 0, 0, 50, 50 };
-    gr.add_color_stop({ 0.0, colors::gold });
-    gr.add_color_stop({ 1.0, colors::gold.opacity(0) });
+    gr.add_color_stop(0.0, colors::gold);
+    gr.add_color_stop(1.0, colors::gold.opacity(0));
 
     cnv.fill_style(gr);
     cnv.stroke_style(gr);
