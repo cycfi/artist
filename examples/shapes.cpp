@@ -19,31 +19,36 @@ void background(canvas& cnv)
 
 void rectangles(canvas& cnv)
 {
+    constexpr auto x = 40;
+    constexpr auto y = 40;
     cnv.line_width(2);
 
-    cnv.rect(20, 20, 150, 100);
+    cnv.rect(x, y, 150, 100);
     cnv.fill_style(colors::red);
     cnv.fill();
 
-    cnv.rect(20, 20, 150, 100);
+    cnv.rect(x, y, 150, 100);
     cnv.stroke_style(colors::navajo_white.opacity(0.5));
     cnv.stroke();
 
-    cnv.round_rect(50, 50, 150, 100, 10);
+    cnv.round_rect(x+30, y+30, 150, 100, 10);
     cnv.fill_style(colors::blue.opacity(0.5));
     cnv.fill();
 
-    cnv.round_rect(50, 50, 150, 100, 10);
+    cnv.round_rect(x+30, y+30, 150, 100, 10);
     cnv.stroke_style(colors::honeydew.opacity(0.5));
     cnv.stroke();
 }
 
 void circles_and_arcs(canvas& cnv)
 {
+    constexpr auto x = 300;
+    constexpr auto y = 100;
+
     for (int i = 0; i != 7; ++i)
     {
-        auto cx = 280+(i*45);
-        auto cy = 75;
+        auto cx = x+(i*45);
+        auto cy = y;
         auto ri = 7-i;
         auto radius = 20+(ri*5);
 
@@ -60,8 +65,8 @@ void circles_and_arcs(canvas& cnv)
 
 void arc_to(canvas& cnv)
 {
-    constexpr auto x = 20;
-    constexpr auto y = 180;
+    constexpr auto x = 40;
+    constexpr auto y = 200;
     constexpr auto r = 40;
 
     cnv.stroke_style(colors::dodger_blue.opacity(0.6));
@@ -84,7 +89,7 @@ void arc_to(canvas& cnv)
 
 void line_caps(canvas& cnv)
 {
-    auto where = point{ 140, 195 };
+    auto where = point{ 160, 215 };
     auto spacing = 25;
     cnv.line_width(10);
 
@@ -131,7 +136,7 @@ void line_caps(canvas& cnv)
 
 void line_joins(canvas& cnv)
 {
-    auto where = point{ 270, 80 };
+    auto where = point{ 290, 100 };
     cnv.line_width(10);
     cnv.line_cap(cnv.butt);
 
@@ -181,9 +186,9 @@ void line_joins(canvas& cnv)
     cnv.stroke();
 }
 
-void beziers(canvas& cnv)
+void bezier(canvas& cnv)
 {
-    auto where = point{ 450, 260 };
+    auto where = point{ 450, 280 };
     auto height = 100;
     auto width = 120;
     auto xmove = 20;
@@ -215,6 +220,36 @@ void beziers(canvas& cnv)
     cnv.stroke();
 }
 
+void quad(canvas& cnv)
+{
+    auto where = point{ 40, 420 };
+    auto height = 100;
+    auto width = 120;
+    auto start = point{ where.x, where.y };
+    auto cp = point{ where.x+(width/2), where.y-height };
+    auto end = point{ where.x+width, where.y };
+
+    cnv.line_width(10);
+    cnv.stroke_style(colors::dodger_blue.opacity(0.6));
+    cnv.line_cap(cnv.round);
+
+    cnv.begin_path();
+    cnv.move_to(start);
+    cnv.quadratic_curve_to(cp, end);
+    cnv.stroke();
+
+    cnv.stroke_style(colors::pink.opacity(0.2));
+    cnv.circle(cp.x, cp.y, 3);
+    cnv.fill();
+
+    cnv.stroke_style(colors::white);
+    cnv.line_width(1);
+    cnv.move_to(start);
+    cnv.line_to(cp);
+    cnv.line_to(end);
+    cnv.stroke();
+}
+
 void draw(canvas& cnv)
 {
     background(cnv);
@@ -223,7 +258,8 @@ void draw(canvas& cnv)
     arc_to(cnv);
     line_caps(cnv);
     line_joins(cnv);
-    beziers(cnv);
+    bezier(cnv);
+    quad(cnv);
 }
 
 int main(int argc, const char* argv[])
