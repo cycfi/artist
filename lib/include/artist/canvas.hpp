@@ -41,6 +41,8 @@ namespace cycfi::artist
       canvas&           operator=(canvas const& rhs) = delete;
       host_context_ptr  host_context() const;
 
+      void              pre_scale(point p);
+
       ///////////////////////////////////////////////////////////////////////////////////
       // Transforms
       void              translate(point p);

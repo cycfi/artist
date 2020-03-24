@@ -77,17 +77,17 @@ void basics(canvas& cnv)
     cnv.fill_preserve();
     cnv.stroke();
 
-    // cnv.translate(120, 0);
-    // balloon(cnv);
-    // cnv.stroke_style(colors::light_gray);
-    // cnv.stroke();
+     cnv.translate(120, 0);
+     balloon(cnv);
+     cnv.stroke_style(colors::light_gray);
+     cnv.stroke();
 
-    // cnv.translate(-100, 100);
-    // heart(cnv);
-    // cnv.line_width(2);
-    // cnv.stroke_style(color{ 0.8, 0, 0 });
-    // cnv.stroke_preserve();
-    // cnv.fill();
+     cnv.translate(-100, 100);
+     heart(cnv);
+     cnv.line_width(2);
+     cnv.stroke_style(color{ 0.8, 0, 0 });
+     cnv.stroke_preserve();
+     cnv.fill();
 }
 
 void transformed(canvas& cnv)
@@ -453,6 +453,22 @@ void composite_ops(canvas& cnv)
     composite_draw(cnv, { 120, 240 }, cnv.darker);
     composite_draw(cnv, { 240, 240 }, cnv.copy);
     composite_draw(cnv, { 360, 240 }, cnv.xor_);
+}
+
+// $$$ TODO : Test this $$$
+void drop_shadow(canvas& cnv)
+{
+    background(cnv);
+
+    cnv.shadow_style({ 20, 20 }, 10, colors::black);
+    cnv.fill_style(colors::red);
+    cnv.fill_rect(20, 20, 100, 80);
+
+    cnv.scale(2, 2);
+    cnv.translate(60, 0);
+    cnv.shadow_style({ 20, 20 }, 10, colors::black);
+    cnv.fill_style(colors::blue);
+    cnv.fill_rect(20, 20, 100, 80);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
