@@ -101,6 +101,7 @@ if (ARTIST_SKIA)
       external/skia/include/utils
       external/skia/include/gpu
       external/skia/include/codec
+      external/skia/include/effects
       external/skia/src/gpu
    )
    target_compile_definitions(

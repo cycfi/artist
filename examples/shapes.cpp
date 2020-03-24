@@ -250,6 +250,42 @@ void quad(canvas& cnv)
     cnv.stroke();
 }
 
+void rainbow(canvas::gradient& gr)
+{
+    gr.add_color_stop({ 0.0/6, colors::red });
+    gr.add_color_stop({ 1.0/6, colors::orange });
+    gr.add_color_stop({ 2.0/6, colors::yellow });
+    gr.add_color_stop({ 3.0/6, colors::green });
+    gr.add_color_stop({ 4.0/6, colors::blue });
+    gr.add_color_stop({ 5.0/6, rgb(0x4B, 0x00, 0x82) });
+    gr.add_color_stop({ 6.0/6, colors::violet });
+}
+
+void linear_gradient(canvas& cnv)
+{
+    auto x = 300.0f;
+    auto y = 330.0f;
+    auto gr = canvas::linear_gradient{ x, y, x+300, y };
+    rainbow(gr);
+
+    cnv.round_rect(x, y, 300, 80, 5);
+    cnv.fill_style(gr);
+    cnv.fill();
+}
+
+void radial_gradient(canvas& cnv)
+{
+    auto center = point{ 208, 360 };
+    auto radius = 65.0f;
+    auto gr = canvas::radial_gradient{ center, 5, center.move(15, 10), radius };
+    gr.add_color_stop({ 0.0, colors::red });
+    gr.add_color_stop({ 1.0, colors::black });
+
+    cnv.circle({ center.move(15, 10), radius-10 });
+    cnv.fill_style(gr);
+    cnv.fill();
+}
+
 void draw(canvas& cnv)
 {
     background(cnv);
@@ -260,6 +296,8 @@ void draw(canvas& cnv)
     line_joins(cnv);
     bezier(cnv);
     quad(cnv);
+    linear_gradient(cnv);
+    radial_gradient(cnv);
 }
 
 int main(int argc, const char* argv[])

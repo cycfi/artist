@@ -7,13 +7,14 @@
 #include <stack>
 #include "opaque.hpp"
 
-#include "SkBitmap.h"
-#include "SkData.h"
-#include "SkImage.h"
-#include "SkPicture.h"
-#include "SkSurface.h"
-#include "SkCanvas.h"
-#include "SkPath.h"
+#include <SkBitmap.h>
+#include <SkData.h>
+#include <SkImage.h>
+#include <SkPicture.h>
+#include <SkSurface.h>
+#include <SkCanvas.h>
+#include <SkPath.h>
+#include <SkGradientShader.h>
 
 namespace cycfi::artist
 {
@@ -265,20 +266,77 @@ namespace cycfi::artist
    {
    }
 
+   namespace
+   {
+      void convert_gradient(
+         canvas::gradient const& gr
+       , std::vector<SkColor>& colors_
+       , std::vector<SkScalar>& pos
+      )
+      {
+         for (auto const& ccs : gr.color_space)
+         {
+            colors_.push_back(
+               SkColor4f{
+                  ccs.color.red
+                  , ccs.color.green
+                  , ccs.color.blue
+                  , ccs.color.alpha
+               }.toSkColor()
+            );
+            pos.push_back(ccs.offset);
+         }
+      }
+
+      void set_linear(canvas::linear_gradient const& gr, SkPaint& paint)
+      {
+         SkPoint points[2] = {
+            { gr.start.x, gr.start.y },
+            { gr.end.x, gr.end.y }
+         };
+         std::vector<SkColor> colors_;
+         std::vector<SkScalar> pos;
+         convert_gradient(gr, colors_, pos);
+         paint.setShader(
+            SkGradientShader::MakeLinear(
+               points, colors_.data(), pos.data(), colors_.size()
+             , SkShader::TileMode::kClamp_TileMode, 0, nullptr
+            ));
+      }
+
+      void set_radial(canvas::radial_gradient const& gr, SkPaint& paint)
+      {
+         std::vector<SkColor> colors_;
+         std::vector<SkScalar> pos;
+         convert_gradient(gr, colors_, pos);
+         paint.setShader(
+            SkGradientShader::MakeTwoPointConical(
+               { gr.c1.x, gr.c1.y }, gr.c1_radius
+             , { gr.c2.x, gr.c2.y }, gr.c2_radius
+             , colors_.data(), pos.data(), colors_.size()
+             , SkShader::TileMode::kClamp_TileMode, 0, nullptr
+            ));
+      }
+   }
+
    void canvas::fill_style(linear_gradient const& gr)
    {
+      set_linear(gr, _state->fill_paint());
    }
 
    void canvas::fill_style(radial_gradient const& gr)
    {
+      set_radial(gr, _state->fill_paint());
    }
 
    void canvas::stroke_style(linear_gradient const& gr)
    {
+      set_linear(gr, _state->stroke_paint());
    }
 
    void canvas::stroke_style(radial_gradient const& gr)
    {
+      set_radial(gr, _state->stroke_paint());
    }
 
    void canvas::font(class font const& font_)
