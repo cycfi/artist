@@ -281,7 +281,7 @@ namespace cycfi::artist
 
    void canvas::shadow_style(point offset, float blur, color c)
    {
-      constexpr auto blur_factor = 0.5f;
+      constexpr auto blur_factor = 0.4f;
 
       auto matrix = _context->getTotalMatrix();
       auto scx = matrix.getScaleX() / _state->_pre_scale.x;
