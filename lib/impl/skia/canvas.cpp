@@ -15,12 +15,21 @@
 #include <SkCanvas.h>
 #include <SkPath.h>
 #include <SkGradientShader.h>
+#include <SkImageFilter.h>
+#include <SkDropShadowImageFilter.h>
 
 namespace cycfi::artist
 {
    class canvas::canvas_state
    {
    public:
+
+      struct blur_info
+      {
+         point    _offset;
+         float    _blur;
+         color    _color;
+      };
 
       canvas_state();
 
@@ -30,6 +39,8 @@ namespace cycfi::artist
 
       void              save();
       void              restore();
+
+      point             _pre_scale = { 1.0, 1.0 };
 
    private:
 
@@ -98,6 +109,12 @@ namespace cycfi::artist
    {
    }
 
+   void canvas::pre_scale(point p)
+   {
+      scale(p);
+      _state->_pre_scale = p;
+   }
+
    void canvas::translate(point p)
    {
       _context->translate(p.x, p.y);
@@ -115,10 +132,14 @@ namespace cycfi::artist
 
    void canvas::save()
    {
+      _context->save();
+      _state->save();
    }
 
    void canvas::restore()
    {
+      _context->restore();
+      _state->restore();
    }
 
    void canvas::begin_path()
@@ -260,6 +281,24 @@ namespace cycfi::artist
 
    void canvas::shadow_style(point offset, float blur, color c)
    {
+      constexpr auto blur_factor = 0.5f;
+
+      auto matrix = _context->getTotalMatrix();
+      auto scx = matrix.getScaleX() / _state->_pre_scale.x;
+      auto scy = matrix.getScaleY() / _state->_pre_scale.y;
+
+      auto shadow = SkDropShadowImageFilter::Make(
+         offset.x / scx
+       , offset.y / scy
+       , (blur * blur_factor) / scx
+       , (blur * blur_factor) / scy
+       , SkColor4f{ c.red, c.green, c.blue, c.alpha }.toSkColor()
+       , SkDropShadowImageFilter::kDrawShadowAndForeground_ShadowMode
+       , nullptr
+      );
+
+      _state->stroke_paint().setImageFilter(shadow);
+      _state->fill_paint().setImageFilter(shadow);
    }
 
    void canvas::global_composite_operation(composite_op_enum mode)
@@ -279,9 +318,9 @@ namespace cycfi::artist
             colors_.push_back(
                SkColor4f{
                   ccs.color.red
-                  , ccs.color.green
-                  , ccs.color.blue
-                  , ccs.color.alpha
+                 , ccs.color.green
+                 , ccs.color.blue
+                 , ccs.color.alpha
                }.toSkColor()
             );
             pos.push_back(ccs.offset);
