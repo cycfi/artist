@@ -124,6 +124,7 @@ namespace cycfi::artist
       };
 
       metrics_info         metrics() const;
+      float                line_height() const;
 
    private:
 
@@ -333,6 +334,12 @@ namespace cycfi::artist
    inline font::operator bool() const
    {
       return bool(_ptr);
+   }
+
+   inline float font::line_height() const
+   {
+      auto m = metrics();
+      return m.ascent + m.descent + m.leading;
    }
 }
 
