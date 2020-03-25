@@ -185,7 +185,7 @@ namespace cycfi::artist
          _stack.pop();
    }
 
-   canvas::canvas(host_context_ptr context_)
+   canvas::canvas(canvas_impl_ptr context_)
     : _context{ context_ }
     , _state{ std::make_unique<canvas_state>() }
    {
@@ -581,7 +581,7 @@ namespace cycfi::artist
        , CGFloat& width, CGFloat& ascent, CGFloat& descent, CGFloat& leading
       )
       {
-         NSFont* font = (__bridge NSFont*) font_.host_font();
+         NSFont* font = (__bridge NSFont*) font_.impl();
          CFStringRef keys[] = { kCTFontAttributeName, kCTForegroundColorFromContextAttributeName };
          CFTypeRef   values[] = { (__bridge const void*)font, kCFBooleanTrue };
 
@@ -825,7 +825,7 @@ namespace cycfi::artist
 
    void canvas::draw(picture const& pic, struct rect src, struct rect dest)
    {
-      auto  img = (__bridge NSImage*) pic.host_picture();
+      auto  img = (__bridge NSImage*) pic.impl();
       auto  src_ = NSRect{ { src.left, [img size].height - src.bottom }, { src.width(), src.height() } };
       auto  dest_ = NSRect{ { dest.left, dest.top }, { dest.width(), dest.height() } };
 

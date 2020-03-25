@@ -12,19 +12,19 @@
 
 #if defined(ARTIST_SKIA)
 class SkCanvas;
-using host_context = SkCanvas;
+using canvas_impl = SkCanvas;
 #endif
 
 namespace cycfi::artist
 {
 #if defined(ARTIST_QUARTZ_2D)
-   struct host_context;
+   struct canvas_impl;
 #endif
 
-   using host_context_ptr = host_context*;
+   using canvas_impl_ptr = canvas_impl*;
 
-   class host_picture;
-   using host_picture_ptr = host_picture*;
+   class picture_impl;
+   using picture_impl_ptr = picture_impl*;
 
    ////////////////////////////////////////////////////////////////////////////
    // pixmaps
@@ -42,7 +42,7 @@ namespace cycfi::artist
       picture&          operator=(picture const& rhs) = delete;
       picture&          operator=(picture&& rhs) noexcept;
 
-      host_picture_ptr  host_picture() const;
+      picture_impl_ptr  impl() const;
       extent            size() const;
       void              save_png(std::string_view path) const;
 
@@ -52,7 +52,7 @@ namespace cycfi::artist
 
    private:
 
-      host_picture_ptr  _host;
+      picture_impl_ptr  _impl;
    };
 
    using pixmap_ptr = std::shared_ptr<picture>;
@@ -68,7 +68,7 @@ namespace cycfi::artist
                         ~picture_context();
       picture_context&   operator=(picture_context const& rhs) = delete;
 
-      host_context_ptr  context() const;
+      canvas_impl_ptr   context() const;
 
    private:
                         picture_context(picture_context const&) = delete;
@@ -83,17 +83,17 @@ namespace cycfi::artist
    // Inlines
    ////////////////////////////////////////////////////////////////////////////
    inline picture::picture(picture&& rhs) noexcept
-    : _host(std::move(rhs._host))
+    : _impl(std::move(rhs._impl))
    {
-      rhs._host = nullptr;
+      rhs._impl = nullptr;
    }
 
    inline picture& picture::operator=(picture&& rhs) noexcept
    {
       if (this != &rhs)
       {
-         _host = std::move(rhs._host);
-         rhs._host = nullptr;
+         _impl = std::move(rhs._impl);
+         rhs._impl = nullptr;
       }
       return *this;
    }

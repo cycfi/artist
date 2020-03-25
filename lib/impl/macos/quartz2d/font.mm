@@ -73,7 +73,7 @@ namespace cycfi::artist
 
          if (font)
          {
-            _ptr = (__bridge host_font_ptr) font;
+            _ptr = (__bridge font_impl_ptr) font;
             CFRetain(_ptr);
             break;
          }
@@ -81,7 +81,7 @@ namespace cycfi::artist
    }
 
    font::font(font const& rhs)
-    : _ptr((host_font_ptr) CFRetain(rhs._ptr))
+    : _ptr((font_impl_ptr) CFRetain(rhs._ptr))
    {
    }
 
@@ -100,7 +100,7 @@ namespace cycfi::artist
    font& font::operator=(font const& rhs)
    {
       if (this != &rhs)
-         _ptr = (host_font_ptr) CFRetain(rhs._ptr);
+         _ptr = (font_impl_ptr) CFRetain(rhs._ptr);
       return *this;
    }
 

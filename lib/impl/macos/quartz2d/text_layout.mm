@@ -32,7 +32,7 @@ namespace cycfi::artist
          _indent = indent;
          _line_height = line_height;
 
-         NSFont* font = (__bridge NSFont*) _font.host_font();
+         NSFont* font = (__bridge NSFont*) _font.impl();
          CFStringRef keys[] = { kCTFontAttributeName, kCTForegroundColorFromContextAttributeName };
          CFTypeRef   values[] = { (__bridge const void*)font, kCFBooleanTrue };
 
@@ -84,7 +84,7 @@ namespace cycfi::artist
       {
          float x = _indent;
          float y = 0;
-         auto ctx = CGContextRef(cnv.host_context());
+         auto ctx = CGContextRef(cnv.impl());
          for (auto const& line : _rows)
          {
             CGContextSetTextPosition(ctx, p.x+x, p.y+y);

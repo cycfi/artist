@@ -16,12 +16,12 @@ class SkFont;
 namespace cycfi::artist
 {
 #if defined(ARTIST_SKIA)
-   using host_font = SkFont;
+   using font_impl = SkFont;
 #else
-   struct host_font;
+   struct font_impl;
 #endif
 
-   using host_font_ptr = host_font*;
+   using font_impl_ptr = font_impl*;
 
    namespace font_constants
    {
@@ -114,7 +114,7 @@ namespace cycfi::artist
       font&                operator=(font const& rhs);
       font&                operator=(font&& rhs) noexcept;
       explicit             operator bool() const;
-      host_font_ptr        host_font() const;
+      font_impl_ptr        impl() const;
 
       struct metrics_info
       {
@@ -128,13 +128,13 @@ namespace cycfi::artist
    private:
 
       friend class canvas;
-      host_font_ptr        _ptr;
+      font_impl_ptr        _ptr;
    };
 
    ////////////////////////////////////////////////////////////////////////////
    // Inlines
    ////////////////////////////////////////////////////////////////////////////
-   inline host_font_ptr font::host_font() const
+   inline font_impl_ptr font::impl() const
    {
       return _ptr;
    }

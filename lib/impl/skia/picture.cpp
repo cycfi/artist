@@ -20,11 +20,11 @@
 namespace cycfi::artist
 {
    picture::picture(point size)
-    : _host{ new artist::host_picture(size) }
+    : _impl{ new artist::picture_impl(size) }
    {}
 
    picture::picture(std::string_view path_)
-    : _host{ new artist::host_picture(SkBitmap{}) }
+    : _impl{ new artist::picture_impl(SkBitmap{}) }
    {
       std::string path{ path_ };
       auto fail = [&path]()
@@ -38,7 +38,7 @@ namespace cycfi::artist
          fail();
       SkImageInfo info = codec->getInfo().makeColorType(kN32_SkColorType);
 
-      auto& bitmap = std::get<SkBitmap>(*_host);
+      auto& bitmap = std::get<SkBitmap>(*_impl);
       if (!bitmap.tryAllocPixels(info))
          fail();
 
@@ -48,12 +48,12 @@ namespace cycfi::artist
 
    picture::~picture()
    {
-      delete _host;
+      delete _impl;
    }
 
-   host_picture_ptr picture::host_picture() const
+   picture_impl_ptr picture::impl() const
    {
-      return _host;
+      return _impl;
    }
 
    extent picture::size() const
@@ -78,7 +78,7 @@ namespace cycfi::artist
             return {};
          };
 
-      return std::visit(get_size, *_host);
+      return std::visit(get_size, *_impl);
    }
 
    void picture::save_png(std::string_view path_) const
@@ -110,7 +110,7 @@ namespace cycfi::artist
             }
          };
 
-      std::visit(draw_picture, *_host);
+      std::visit(draw_picture, *_impl);
 
       // Make a PNG encoded image using the canvas
       sk_sp<SkImage> image(surface->makeImageSnapshot());
@@ -157,11 +157,11 @@ namespace cycfi::artist
 
    picture_context::~picture_context()
    {
-      *(_picture.host_picture()) = _state->recorder.finishRecordingAsPicture();
+      *(_picture.impl()) = _state->recorder.finishRecordingAsPicture();
       delete _state;
    }
 
-   host_context_ptr picture_context::context() const
+   canvas_impl_ptr picture_context::context() const
    {
       return _state->recording_canvas;
    }

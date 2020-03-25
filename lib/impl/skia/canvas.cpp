@@ -109,7 +109,7 @@ namespace cycfi::artist
          _stack.pop();
    }
 
-   canvas::canvas(host_context_ptr context_)
+   canvas::canvas(canvas_impl_ptr context_)
     : _context{ context_ }
     , _state{ std::make_unique<canvas_state>() }
    {
@@ -392,10 +392,10 @@ namespace cycfi::artist
 
    void canvas::font(class font const& font_)
    {
-      _state->fill_paint().setTextSize(font_.host_font()->getSize());
-      _state->fill_paint().setTypeface(sk_sp<SkTypeface>(font_.host_font()->getTypeface()));
-      _state->stroke_paint().setTextSize(font_.host_font()->getSize());
-      _state->stroke_paint().setTypeface(sk_sp<SkTypeface>(font_.host_font()->getTypeface()));
+      _state->fill_paint().setTextSize(font_.impl()->getSize());
+      _state->fill_paint().setTypeface(sk_sp<SkTypeface>(font_.impl()->getTypeface()));
+      _state->stroke_paint().setTextSize(font_.impl()->getSize());
+      _state->stroke_paint().setTypeface(sk_sp<SkTypeface>(font_.impl()->getTypeface()));
    }
 
    namespace
@@ -480,6 +480,6 @@ namespace cycfi::artist
             }
          };
 
-      return std::visit(draw_picture, *pic.host_picture());
+      return std::visit(draw_picture, *pic.impl());
    }
 }
