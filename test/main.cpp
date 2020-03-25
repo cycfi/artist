@@ -391,7 +391,7 @@ void typography(canvas& cnv)
         ;
 
     auto tlayout = text_layout{ font_descr{ "Open Sans", 12 }.italic(), text };
-    tlayout.flow(350, 0, 0, true);
+    tlayout.flow(350, true);
     tlayout.draw(cnv, 20, 300);
 }
 
