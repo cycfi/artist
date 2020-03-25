@@ -20,9 +20,8 @@ void background(canvas& cnv)
 void basic_tauri(canvas& cnv)
 {
     cnv.begin_path();
-    cnv.move_to(24.091255,16.26616);
-    cnv.line_to(44.374182,43);
-
+    cnv.move_to(24.091255, 16.26616);
+    cnv.line_to(44.374182, 43);
     cnv.bezier_curve_to(44.374182, 43, 34.488091, 43.011495, 34.488091, 43.011495);
     cnv.bezier_curve_to(34.488091, 43.011495, 35.642931, 41.930399, 36.249098, 41.25);
     cnv.bezier_curve_to(37.686127, 39.636989, 37.287291, 38.778661, 31.154085, 30.285105);
