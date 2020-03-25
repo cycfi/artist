@@ -9,9 +9,18 @@
 #include <string_view>
 #include <memory>
 
+#if defined(ARTIST_SKIA)
+class SkFont;
+#endif
+
 namespace cycfi::artist
 {
+#if defined(ARTIST_SKIA)
+   using host_font = SkFont;
+#else
    struct host_font;
+#endif
+
    using host_font_ptr = host_font*;
 
    namespace font_constants
@@ -84,10 +93,12 @@ namespace cycfi::artist
       font_descr           extra_expanded() const;
       font_descr           ultra_expanded() const;
 
+      using slant_enum = font_constants::slant_enum;
+
       std::string_view     _families;
       float                _size = 12;
       uint8_t              _weight = font_constants::weight_normal;
-      uint8_t              _slant = font_constants::slant_normal;
+      slant_enum           _slant = font_constants::slant_normal;
       uint8_t              _stretch = font_constants::stretch_normal;
    };
 
