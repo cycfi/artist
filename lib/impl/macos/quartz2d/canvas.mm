@@ -614,7 +614,7 @@ namespace cycfi::artist
          switch (text_align & 0x1C)
          {
             case canvas::top:    p.y += ascent; break;
-            case canvas::middle: p.y += ascent/2 - descent/2; break;
+            case canvas::middle: p.y += (ascent - descent)/2; break;
             case canvas::bottom: p.y -= descent; break;
             default: break;
          }
