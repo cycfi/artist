@@ -5,6 +5,7 @@
 =============================================================================*/
 #include <artist/font.hpp>
 #include <SkTypeface.h>
+#include <SkFont.h>
 #include <sstream>
 
 namespace cycfi::artist

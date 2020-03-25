@@ -19,6 +19,7 @@
 #include <SkDropShadowImageFilter.h>
 #include <SkTextBlob.h>
 #include <SkTypeface.h>
+#include <SkFont.h>
 
 namespace cycfi::artist
 {
@@ -397,11 +398,40 @@ namespace cycfi::artist
       _state->stroke_paint().setTypeface(sk_sp<SkTypeface>(font_.host_font()->getTypeface()));
    }
 
+   namespace
+   {
+      void prepare_text(
+         SkPaint const& paint
+       , int text_align
+       , point& p, char const* f, char const* l
+      )
+      {
+         SkPaint::FontMetrics metrics;
+         auto line_height = paint.getFontMetrics(&metrics);
+         auto width = paint.measureText(f, l-f);
+         switch (text_align & 0x1C)
+         {
+            case canvas::top:    p.y -= metrics.fAscent; break;
+            case canvas::middle: p.y += (-metrics.fAscent - metrics.fDescent)/2; break;
+            case canvas::bottom: p.y -= metrics.fDescent; break;
+            default: break;
+         }
+
+         switch (text_align & 0x3)
+         {
+            case canvas::center: p.x -= width/2; break;
+            case canvas::right:  p.x -= width; break;
+            default: break;
+         }
+      }
+   }
+
    void canvas::fill_text(std::string_view utf8, point p)
    {
       auto text_blob = SkTextBlob::MakeFromText(
          utf8.data(), utf8.size(), _state->fill_paint()
       );
+      prepare_text(_state->fill_paint(), _state->text_align(), p, utf8.begin(), utf8.end());
       _context->drawTextBlob(text_blob.get(), p.x, p.y, _state->fill_paint());
    }
 
@@ -410,6 +440,7 @@ namespace cycfi::artist
       auto text_blob = SkTextBlob::MakeFromText(
          utf8.data(), utf8.size(), _state->stroke_paint()
       );
+      prepare_text(_state->stroke_paint(), _state->text_align(), p, utf8.begin(), utf8.end());
       _context->drawTextBlob(text_blob.get(), p.x, p.y, _state->stroke_paint());
    }
 
