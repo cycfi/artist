@@ -103,6 +103,7 @@ if (ARTIST_SKIA)
       external/skia/include/codec
       external/skia/include/effects
       external/skia/src/gpu
+      external/skia/modules/skshaper/include
    )
    target_compile_definitions(
       artist

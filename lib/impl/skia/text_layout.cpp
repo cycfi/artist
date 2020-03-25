@@ -8,6 +8,8 @@
 #include <artist/canvas.hpp>
 #include <vector>
 
+#include <SkShaper.h>
+
 namespace cycfi::artist
 {
    struct text_layout::impl
