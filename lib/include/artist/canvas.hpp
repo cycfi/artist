@@ -18,28 +18,28 @@
 
 #if defined(ARTIST_SKIA)
 class SkCanvas;
-using host_context = SkCanvas;
+using canvas_impl = SkCanvas;
 #endif
 
 namespace cycfi::artist
 {
 #if defined(ARTIST_QUARTZ_2D)
-   struct host_context;
+   struct canvas_impl;
 #endif
 
-   using host_context_ptr = host_context*;
+   using canvas_impl_ptr = canvas_impl*;
 
    class canvas
    {
    public:
 
-      explicit          canvas(host_context_ptr context_);
+      explicit          canvas(canvas_impl_ptr context_);
                         canvas(canvas const& rhs) = delete;
                         ~canvas();
 
                         canvas(canvas&& rhs) = delete;
       canvas&           operator=(canvas const& rhs) = delete;
-      host_context_ptr  host_context() const;
+      canvas_impl_ptr   impl() const;
 
       void              pre_scale(point p);
 
@@ -320,7 +320,7 @@ namespace cycfi::artist
       class canvas_state;
       using canvas_state_ptr = std::unique_ptr<canvas_state>;
 
-      host_context_ptr  _context;
+      canvas_impl_ptr   _context;
       canvas_state_ptr  _state;
    };
 }

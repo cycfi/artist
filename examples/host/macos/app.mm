@@ -216,7 +216,7 @@ using offscreen_type = std::shared_ptr<picture>;
 
    if (_task)
    {
-      auto cnv = canvas{ (host_context_ptr) ctx };
+      auto cnv = canvas{ (canvas_impl_ptr) ctx };
       {
          // Do offscreen rendering
          picture_context ctx{ *_offscreen };
@@ -227,7 +227,7 @@ using offscreen_type = std::shared_ptr<picture>;
    }
    else
    {
-      auto cnv = canvas{ (host_context_ptr) ctx };
+      auto cnv = canvas{ (canvas_impl_ptr) ctx };
       draw(cnv);
    }
 #endif
