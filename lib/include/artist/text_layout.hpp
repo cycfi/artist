@@ -10,20 +10,16 @@
 #include <artist/font.hpp>
 #include <artist/rect.hpp>
 #include <memory>
+#include <functional>
 
 namespace cycfi::artist
 {
    class canvas;
+   class text_layout;
 
    class text_layout
    {
    public:
-
-      struct glyph_position
-      {
-         float start;
-         float stop;
-      };
                            text_layout(font const& font_, std::string_view utf8);
                            text_layout(text_layout const& rhs) = delete;
                            text_layout(text_layout&& rhs) noexcept = default;
@@ -32,11 +28,25 @@ namespace cycfi::artist
       text_layout&         operator=(text_layout const& rhs) = delete;
       text_layout&         operator=(text_layout&& rhs) noexcept = default;
 
-      void                 flow(float width, float indent = 0, float line_height = 0, bool justify = false);
+      struct line_info
+      {
+         float    offset;
+         float    width;
+      };
+
+      struct flow_info
+      {
+         bool     justify;
+         float    line_height;
+         float    last_line_height;
+      };
+
+      using get_line_info = std::function<line_info(float y)>;
+
+      void                 flow(float width, bool justify = false);
+      void                 flow(get_line_info const& glf, flow_info finfo);
       void                 draw(canvas& cnv, point p) const;
       void                 draw(canvas& cnv, float x, float y) const;
-      glyph_position       position(char const* text) const;
-      char const*          hit_test(point p) const;
 
    private:
 

@@ -22,15 +22,12 @@ namespace cycfi::artist
       ~impl()
       {
          for (auto& line : _rows)
-            CFRelease(line);
+            CFRelease(line.second);
       }
 
-      void flow(float width, float indent, float line_height, bool justify)
+      void flow(get_line_info const& glf, flow_info finfo)
       {
          _rows.clear();
-         _width = width;
-         _indent = indent;
-         _line_height = line_height;
 
          NSFont* font = (__bridge NSFont*) _font.impl();
          CFStringRef keys[] = { kCTFontAttributeName, kCTForegroundColorFromContextAttributeName };
@@ -49,14 +46,17 @@ namespace cycfi::artist
          CFRelease(text);
 
          CFIndex start = 0;
+         float ypos = 0;
+         auto l_info = glf(ypos);
+
          NSUInteger length = CFAttributedStringGetLength(attr_string);
          CTTypesetterRef typesetter = CTTypesetterCreateWithAttributedString(attr_string);
          while (start < length)
          {
-            CFIndex count = CTTypesetterSuggestLineBreak(typesetter, start, width);
+            CFIndex count = CTTypesetterSuggestLineBreak(typesetter, start, l_info.width);
             CTLineRef line = CTTypesetterCreateLine(typesetter, CFRangeMake(start, count));
 
-            if (justify)
+            if (finfo.justify)
             {
                // Full justify only if the line is not the end of the paragraph
                // and the line width is greater than 90% of the desired width.
@@ -67,51 +67,37 @@ namespace cycfi::artist
                {
                   CGFloat ascent, descent, leading;
                   auto line_width = CTLineGetTypographicBounds(line, &ascent, &descent, &leading);
-                  if ((line_width / width) > 0.9)
+                  if ((line_width / l_info.width) > 0.9)
                   {
-                     CTLineRef justified = CTLineCreateJustifiedLine(line, 1.0, width);
+                     CTLineRef justified = CTLineCreateJustifiedLine(line, 1.0, l_info.width);
                      CFRelease(line);
                      line = justified;
                   }
                }
             }
-            _rows.push_back(line);
             start += count;
+            _rows.push_back(std::make_pair(point{ l_info.offset, ypos }, line));
+            ypos += finfo.line_height;
+            l_info = glf(ypos);
          }
+         _rows.back().first.y += finfo.last_line_height - finfo.line_height;
       }
 
       void  draw(canvas& cnv, point p)
       {
-         float x = _indent;
-         float y = 0;
          auto ctx = CGContextRef(cnv.impl());
          for (auto const& line : _rows)
          {
-            CGContextSetTextPosition(ctx, p.x+x, p.y+y);
-            x = 0;
-            y += _line_height;
-            CTLineDraw(line, ctx);
+            CGContextSetTextPosition(ctx, p.x+line.first.x, p.y+line.first.y);
+            CTLineDraw(line.second, ctx);
          }
       }
 
-      glyph_position position(char const* text) const
-      {
-         return {};
-      }
-
-      char const* hit_test(point p) const
-      {
-         return nullptr;
-      }
-
-      using rows = std::vector<CTLineRef>;
+      using rows = std::vector<std::pair<point, CTLineRef>>;
 
       font              _font;
       std::string_view  _utf8;
       rows              _rows;
-      float             _width;
-      float             _indent;
-      float             _line_height;
    };
 
    text_layout::text_layout(font const& font_, std::string_view utf8)
@@ -123,29 +109,25 @@ namespace cycfi::artist
    {
    }
 
-   void text_layout::flow(float width, float indent, float line_height, bool justify)
+   void text_layout::flow(get_line_info const& glf, flow_info finfo)
    {
-      if (line_height == 0)
+      _impl->flow(glf, finfo);
+   }
+
+   void text_layout::flow(float width, bool justify)
+   {
+      auto line_info_f = [this, width](float y)
       {
-         auto m = _impl->_font.metrics();
-         line_height = m.ascent + m.descent + m.leading;
-      }
-      _impl->flow(width, indent, line_height, justify);
+         return line_info{ 0, width };
+      };
+
+      auto lh = _impl->_font.line_height();
+      _impl->flow(line_info_f, { justify, lh, lh });
    }
 
    void text_layout::draw(canvas& cnv, point p) const
    {
       _impl->draw(cnv, p);
-   }
-
-   text_layout::glyph_position text_layout::position(char const* text) const
-   {
-      return _impl->position(text);
-   }
-
-   char const* text_layout::hit_test(point p) const
-   {
-      return _impl->hit_test(p);
    }
 }
 
