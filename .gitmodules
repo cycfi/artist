@@ -1,0 +1,3 @@
+[submodule "lib/external/libunibreak"]
+	path = lib/external/libunibreak
+	url = git@github.com:cycfi/libunibreak.git
