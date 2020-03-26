@@ -7,6 +7,7 @@ cmake_minimum_required(VERSION 3.7.2...3.15.0)
 include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 
 if (ARTIST_SKIA)
+
    ExternalProject_Add(skia
       PREFIX "skia_prebuilt"
       URL https://github.com/cycfi/artist/releases/download/skia-prebuilt/libskia.a.zip
@@ -16,8 +17,13 @@ if (ARTIST_SKIA)
       INSTALL_COMMAND ""
    )
 
+   add_custom_target(
+      libunibreak
+      COMMAND make release "${CMAKE_CURRENT_LIST_DIR}/external/libunibreak/src"
+      WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/external/libunibreak/src"
+   )
+
    find_package(opengl REQUIRED)
-   find_package(ICU REQUIRED COMPONENTS data i18n io tu)
    find_package(harfbuzz CONFIG REQUIRED)
 endif()
 
@@ -62,6 +68,7 @@ if (ARTIST_SKIA)
       impl/skia/picture.cpp
       impl/skia/font.cpp
       impl/skia/text_layout.cpp
+      impl/skia/detail/harfbuzz.cpp
    )
 endif()
 
@@ -83,7 +90,7 @@ source_group("Header Files\\artist"
 add_library(artist)
 
 if (ARTIST_SKIA)
-   add_dependencies(artist skia)
+   add_dependencies(artist skia libunibreak)
 endif()
 
 target_sources(artist
@@ -97,17 +104,16 @@ if (ARTIST_SKIA)
    target_include_directories(
       artist
       PUBLIC
-      external/skia
-      external/skia/include/core
-      external/skia/include/config
-      external/skia/include/utils
-      external/skia/include/gpu
-      external/skia/include/codec
-      external/skia/include/effects
-      external/skia/src/gpu
-      external/skia/modules/skshaper/include
-      PRIVATE
-      ${ICU_INCLUDE_DIRS}
+         external/skia
+         external/skia/include/core
+         external/skia/include/config
+         external/skia/include/utils
+         external/skia/include/gpu
+         external/skia/include/codec
+         external/skia/include/effects
+         external/skia/src/gpu
+         external/skia/modules/skshaper/include
+         external/libunibreak/src/
    )
    target_compile_definitions(
       artist
@@ -120,7 +126,7 @@ if (ARTIST_QUARTZ_2D)
    target_compile_definitions(
       artist
       PUBLIC
-      ARTIST_QUARTZ_2D
+         ARTIST_QUARTZ_2D
    )
 endif()
 
@@ -169,9 +175,10 @@ if (ARTIST_SKIA)
       infra
    PRIVATE
       ${CMAKE_CURRENT_BINARY_DIR}/skia_prebuilt/src/skia/libskia.a
+      # ${CMAKE_CURRENT_BINARY_DIR}/libunibreak/src/skia/libskia.a
       ${OPENGL_LIBRARIES}
-      ${ICU_LIBRARIES}
       harfbuzz::harfbuzz
+      "${CMAKE_CURRENT_LIST_DIR}/external/libunibreak/src/ReleaseDir/libunibreak.a"
    )
 elseif (ARTIST_QUARTZ_2D)
    target_link_libraries(artist PUBLIC
