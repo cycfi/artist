@@ -16,7 +16,9 @@ if (ARTIST_SKIA)
       INSTALL_COMMAND ""
    )
 
-   find_package(OpenGL REQUIRED)
+   find_package(opengl REQUIRED)
+   find_package(ICU REQUIRED COMPONENTS data i18n io tu)
+   find_package(harfbuzz CONFIG REQUIRED)
 endif()
 
 ###############################################################################
@@ -104,6 +106,8 @@ if (ARTIST_SKIA)
       external/skia/include/effects
       external/skia/src/gpu
       external/skia/modules/skshaper/include
+      PRIVATE
+      ${ICU_INCLUDE_DIRS}
    )
    target_compile_definitions(
       artist
@@ -160,10 +164,14 @@ endif()
 # Libraries and linking
 
 if (ARTIST_SKIA)
-   target_link_libraries(artist PUBLIC
+   target_link_libraries(artist
+   PUBLIC
       infra
+   PRIVATE
       ${CMAKE_CURRENT_BINARY_DIR}/skia_prebuilt/src/skia/libskia.a
       ${OPENGL_LIBRARIES}
+      ${ICU_LIBRARIES}
+      harfbuzz::harfbuzz
    )
 elseif (ARTIST_QUARTZ_2D)
    target_link_libraries(artist PUBLIC
