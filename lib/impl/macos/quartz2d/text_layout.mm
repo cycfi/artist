@@ -60,10 +60,11 @@ namespace cycfi::artist
             {
                // Full justify only if the line is not the end of the paragraph
                // and the line width is greater than 90% of the desired width.
-               auto rng = CTLineGetStringRange(line);
-               auto line_str = _utf8.substr(rng.location, rng.length);
-               auto ch = line_str.back();
-               if (ch != '\n' && ch != '\r')
+               // auto rng = CTLineGetStringRange(line);
+               NSString* string = [(__bridge NSAttributedString*)attr_string string];
+               auto end_pos = start + count;
+               auto ch = (end_pos == length)? 0 : [string characterAtIndex : start + count];
+               if (ch && ch != '\n' && ch != '\r')
                {
                   CGFloat ascent, descent, leading;
                   auto line_width = CTLineGetTypographicBounds(line, &ascent, &descent, &leading);
@@ -81,6 +82,7 @@ namespace cycfi::artist
             l_info = glf(ypos);
          }
          _rows.back().first.y += finfo.last_line_height - finfo.line_height;
+         CFRelease(attr_string);
       }
 
       void  draw(canvas& cnv, point p)
