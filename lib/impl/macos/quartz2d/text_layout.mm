@@ -77,7 +77,7 @@ namespace cycfi::artist
                }
             }
             start += count;
-            _rows.push_back(std::make_pair(point{ l_info.offset, ypos }, line));
+            _rows.emplace_back(std::pair{ point{ l_info.offset, ypos }, line });
             ypos += finfo.line_height;
             l_info = glf(ypos);
          }
