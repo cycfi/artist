@@ -41,49 +41,49 @@ namespace cycfi::artist
          auto sc_font = _font.impl();
          float scalex = (sc_font->getSize() / hb_scalex) * sc_font->getScaleX();
 
-         std::vector<float> pos;
-         pos.reserve(glyphs_info.count);
-         float x = 0;
-         float y = 0;
+         std::vector<float> positions;
+         positions.reserve(glyphs_info.count);
          auto linfo = glf(0);
+         float y = 0;
+         float x = linfo.offset;
          auto start = 0;
+
          for (auto i = 0; i != glyphs_info.count; ++i)
          {
-            pos.push_back(x + (glyphs_info.positions[i].x_offset * scalex));
+            positions.push_back(x + (glyphs_info.positions[i].x_offset * scalex));
             x += glyphs_info.positions[i].x_advance * scalex;
             if (x > linfo.width)
             {
                // here we break the line
-               std::size_t rng_len = pos.size();
-               for (int div = 5; div > 0; --div)
-                  if (auto len = pos.size() / 5; len > 2)
-                  {
-                     rng_len = len;
-                     break;
-                  }
-
-               auto end_i = pos.size();
-               auto r_index = pos.size() - rng_len;
-               while (end_i)
+               std::size_t len = positions.size();
+               if (len > 2)
                {
-                  auto r_cluster = glyphs_info.glyphs[start+r_index].cluster;
-                  auto rng = _utf8.substr(r_cluster, rng_len);
+                  auto r_cluster = glyphs_info.glyphs[start].cluster;
+                  auto rng = _utf8.substr(r_cluster, len);
 
                   // $$$ JDG "en" for now $$$
-                  std::string brks(rng_len, 0);
-                  set_linebreaks_utf8((utf8_t const*)rng.begin(), rng_len, "en", brks.data());
+                  std::string brks(len, 0);
+                  set_linebreaks_utf8((utf8_t const*)rng.begin(), len, "en", brks.data());
 
                   constexpr char const breaks[2] = { LINEBREAK_ALLOWBREAK, LINEBREAK_MUSTBREAK };
-                  auto pos = brks.find_last_of(breaks, rng_len-2, 2);
+                  auto pos = brks.find_last_of(breaks, len-2, 2);
                   if (pos != brks.npos)
                   {
-                     auto brk_index = r_index + pos;
+                     auto brk_index = pos;
                      auto brk_cluster = glyphs_info.glyphs[brk_index].cluster;
                      foo();
-                     break;
+
+                     positions.erase(positions.begin() + brk_index, positions.end());
+                     start = brk_index;
+                     y += finfo.line_height;
+                     linfo = glf(y);
+                     x = linfo.offset;
+                     continue;
                   }
-                  end_i = r_index;
-                  r_index = (end_i > rng_len)? end_i - rng_len : 0;
+               }
+               else
+               {
+                  // $$$ deal with this $$$
                }
             }
          }
@@ -115,7 +115,7 @@ namespace cycfi::artist
          return line_info{ 0, width };
       };
 
-      auto lh = _impl->_font.line_height();
+      auto lh = _impl->_font.impl()->getSize();
       flow(line_info_f, { justify, lh, lh });
    }
 
