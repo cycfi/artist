@@ -19,36 +19,85 @@ namespace cycfi::artist
        : _font{ font_ }
        , _hb_font(_font.impl()->getTypeface())
        , _utf8{ utf8 }
-       , _buff(hb_buffer_create())
-      //  , _locale("en") // $$$ For now
+       , _buff{ utf8 }
       {
-         hb_buffer_add_utf8(_buff, utf8.data(), utf8.size(), 0, utf8.size());
-
          // $$$ For now... later, this should be extracted from the text, perhaps?
-         hb_buffer_set_direction(_buff, HB_DIRECTION_LTR);
-         hb_buffer_set_script(_buff, HB_SCRIPT_LATIN);
-         hb_buffer_set_language(_buff, hb_language_from_string("en", -1));
+         _buff.direction(HB_DIRECTION_LTR);
+         _buff.script(HB_SCRIPT_LATIN);
+         _buff.language("en");
       }
 
       ~impl()
       {
-         hb_buffer_destroy(_buff);
       }
 
       void flow(get_line_info const& glf, flow_info finfo)
       {
-         unsigned int glyph_count = 0;
-         hb_glyph_info_t* glyph_info = hb_buffer_get_glyph_infos(_buff, &glyph_count);
-         hb_glyph_position_t* glyph_pos = hb_buffer_get_glyph_positions(_buff, &glyph_count);
+         _buff.shape(_hb_font);
+         auto glyphs_info = _buff.glyphs();
 
+         int hb_scalex, hb_scaley;
+         hb_font_get_scale(_hb_font.get(), &hb_scalex, &hb_scaley);
+         auto sc_font = _font.impl();
+         float scalex = (sc_font->getSize() / hb_scalex) * sc_font->getScaleX();
 
+         std::vector<float> pos;
+         pos.reserve(glyphs_info.count);
+         float x = 0;
+         float y = 0;
+         auto linfo = glf(0);
+         auto start = 0;
+         for (auto i = 0; i != glyphs_info.count; ++i)
+         {
+            pos.push_back(x + (glyphs_info.positions[i].x_offset * scalex));
+            x += glyphs_info.positions[i].x_advance * scalex;
+            if (x > linfo.width)
+            {
+               // here we break the line
+               std::size_t rng_len = pos.size();
+               for (int div = 5; div > 0; --div)
+                  if (auto len = pos.size() / 5; len > 2)
+                  {
+                     rng_len = len;
+                     break;
+                  }
+
+               auto end_i = pos.size();
+               auto r_index = pos.size() - rng_len;
+               while (end_i)
+               {
+                  auto r_cluster = glyphs_info.glyphs[start+r_index].cluster;
+                  auto rng = _utf8.substr(r_cluster, rng_len);
+
+                  // $$$ JDG "en" for now $$$
+                  std::string brks(rng_len, 0);
+                  set_linebreaks_utf8((utf8_t const*)rng.begin(), rng_len, "en", brks.data());
+
+                  constexpr char const breaks[2] = { LINEBREAK_ALLOWBREAK, LINEBREAK_MUSTBREAK };
+                  auto pos = brks.find_last_of(breaks, rng_len-2, 2);
+                  if (pos != brks.npos)
+                  {
+                     auto brk_index = r_index + pos;
+                     auto brk_cluster = glyphs_info.glyphs[brk_index].cluster;
+                     foo();
+                     break;
+                  }
+                  end_i = r_index;
+                  r_index = (end_i > rng_len)? end_i - rng_len : 0;
+               }
+            }
+         }
       }
+
+      void foo() {}
 
       font              _font;
       detail::hb_font   _hb_font;
       std::string_view  _utf8;
-      hb_buffer_t*      _buff;
+      detail::hb_buffer _buff;
    };
+
+   void foo() {}
 
    text_layout::text_layout(font const& font_, std::string_view utf8)
     : _impl{ std::make_unique<impl>(font_, utf8) }
