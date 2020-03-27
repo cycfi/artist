@@ -141,7 +141,7 @@ void typography(canvas& cnv)
         "final emergence into light—only those who have experienced it "
         "can understand that.\n\n"
 
-        "⁠—Albert Einstein"
+        "⁠☞ —Albert Einstein"
         ;
 
     auto tlayout = text_layout{ font_descr{ "Open Sans", 12 }.italic(), text };
