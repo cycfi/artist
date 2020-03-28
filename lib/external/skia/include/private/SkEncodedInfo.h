@@ -8,9 +8,9 @@
 #ifndef SkEncodedInfo_DEFINED
 #define SkEncodedInfo_DEFINED
 
-#include "SkData.h"
-#include "SkImageInfo.h"
-#include "../../third_party/skcms/skcms.h"
+#include "include/core/SkData.h"
+#include "include/core/SkImageInfo.h"
+#include "include/third_party/skcms/skcms.h"
 
 struct SkEncodedInfo {
 public:
@@ -129,12 +129,10 @@ public:
                 SkASSERT(8 == bitsPerComponent);
                 break;
             case kRGBA_Color:
-                SkASSERT(kOpaque_Alpha != alpha);
                 SkASSERT(bitsPerComponent >= 8);
                 break;
             case kBGRA_Color:
             case kYUVA_Color:
-                SkASSERT(kOpaque_Alpha != alpha);
                 SkASSERT(8 == bitsPerComponent);
                 break;
             case kXAlpha_Color:

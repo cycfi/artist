@@ -4,6 +4,7 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
 #include <string_view>
+#include <string>
 #include <artist/text_layout.hpp>
 #include <artist/canvas.hpp>
 #include <vector>

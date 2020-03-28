@@ -8,10 +8,9 @@
 #ifndef GrVkMemoryAllocator_DEFINED
 #define GrVkMemoryAllocator_DEFINED
 
-#include "SkRefCnt.h"
-#include "GrTypes.h"
-#include "GrVkDefines.h"
-#include "GrVkTypes.h"
+#include "include/core/SkRefCnt.h"
+#include "include/gpu/GrTypes.h"
+#include "include/gpu/vk/GrVkTypes.h"
 
 class GrVkMemoryAllocator : public SkRefCnt {
 public:
@@ -29,6 +28,8 @@ public:
         // flag is only valid for buffers which are host visible (i.e. must have a usage other than
         // BufferUsage::kGpuOnly).
         kPersistentlyMapped  = 0x4,
+        // Allocation can only be accessed by the device using a protected context.
+        kProtected  = 0x8,
     };
 
     GR_DECL_BITFIELD_CLASS_OPS_FRIENDS(AllocationPropertyFlags);
@@ -84,6 +85,6 @@ public:
     virtual uint64_t totalAllocatedMemory() const = 0;
 };
 
-GR_MAKE_BITFIELD_CLASS_OPS(GrVkMemoryAllocator::AllocationPropertyFlags);
+GR_MAKE_BITFIELD_CLASS_OPS(GrVkMemoryAllocator::AllocationPropertyFlags)
 
 #endif

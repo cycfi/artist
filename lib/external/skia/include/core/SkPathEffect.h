@@ -8,10 +8,10 @@
 #ifndef SkPathEffect_DEFINED
 #define SkPathEffect_DEFINED
 
-#include "SkFlattenable.h"
-#include "SkPath.h"
-#include "SkPoint.h"
-#include "SkRect.h"
+#include "include/core/SkFlattenable.h"
+#include "include/core/SkPath.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkRect.h"
 
 class SkPath;
 class SkStrokeRec;
@@ -144,7 +144,7 @@ public:
 
     DashType asADash(DashInfo* info) const;
 
-    static void InitializeFlattenables();
+    static void RegisterFlattenables();
 
     static SkFlattenable::Type GetFlattenableType() {
         return kSkPathEffect_Type;
@@ -160,11 +160,6 @@ public:
                                   SkFlattenable::Deserialize(
                                   kSkPathEffect_Type, data, size, procs).release()));
     }
-
-#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
-    /// Override for subclasses as appropriate.
-    virtual bool exposedInAndroidJavaAPI() const { return false; }
-#endif
 
 protected:
     SkPathEffect() {}

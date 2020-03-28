@@ -8,10 +8,9 @@
 #ifndef SkPictureRecorder_DEFINED
 #define SkPictureRecorder_DEFINED
 
-#include "../private/SkNoncopyable.h"
-#include "SkBBHFactory.h"
-#include "SkPicture.h"
-#include "SkRefCnt.h"
+#include "include/core/SkBBHFactory.h"
+#include "include/core/SkPicture.h"
+#include "include/core/SkRefCnt.h"
 
 #ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
 namespace android {
@@ -27,7 +26,7 @@ class SkPictureRecord;
 class SkRecord;
 class SkRecorder;
 
-class SK_API SkPictureRecorder : SkNoncopyable {
+class SK_API SkPictureRecorder {
 public:
     SkPictureRecorder();
     ~SkPictureRecorder();
@@ -44,10 +43,14 @@ public:
     /** Returns the canvas that records the drawing commands.
         @param bounds the cull rect used when recording this picture. Any drawing the falls outside
                       of this rect is undefined, and may be drawn or it may not.
-        @param bbhFactory factory to create desired acceleration structure
+        @param bbh         optional acceleration structure
         @param recordFlags optional flags that control recording.
         @return the canvas.
     */
+    SkCanvas* beginRecording(const SkRect& bounds,
+                             sk_sp<SkBBoxHierarchy> bbh,
+                             uint32_t recordFlags = 0);
+
     SkCanvas* beginRecording(const SkRect& bounds,
                              SkBBHFactory* bbhFactory = nullptr,
                              uint32_t recordFlags = 0);
@@ -57,6 +60,7 @@ public:
                              uint32_t recordFlags = 0) {
         return this->beginRecording(SkRect::MakeWH(width, height), bbhFactory, recordFlags);
     }
+
 
     /** Returns the recording canvas if one is active, or NULL if recording is
         not active. This does not alter the refcnt on the canvas (if present).
@@ -119,7 +123,8 @@ private:
     sk_sp<SkRecord>             fRecord;
     std::unique_ptr<SkMiniRecorder> fMiniRecorder;
 
-    typedef SkNoncopyable INHERITED;
+    SkPictureRecorder(SkPictureRecorder&&) = delete;
+    SkPictureRecorder& operator=(SkPictureRecorder&&) = delete;
 };
 
 #endif

@@ -11,7 +11,7 @@ if (ARTIST_SKIA)
    ExternalProject_Add(skia
       PREFIX "skia_prebuilt"
       URL https://github.com/cycfi/artist/releases/download/skia-prebuilt/libskia.a.zip
-      URL_MD5 ad9fe6b4eb133064e6e43e76ca441893
+      URL_MD5 f6726f24184673db83bfa66d05c6a027
       CONFIGURE_COMMAND ""
       BUILD_COMMAND ""
       INSTALL_COMMAND ""

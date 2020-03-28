@@ -21,8 +21,17 @@ extern "C" {
 // ~~~~ General Helper Macros ~~~~
     #define ARRAY_COUNT(arr) (int)(sizeof((arr)) / sizeof(*(arr)))
 
-// ~~~~ skcms_ICCProfile ~~~~
-    bool skcms_GetCHAD(const skcms_ICCProfile* profile, skcms_Matrix3x3* m);
+    typedef struct skcms_ICCTag {
+        uint32_t       signature;
+        uint32_t       type;
+        uint32_t       size;
+        const uint8_t* buf;
+    } skcms_ICCTag;
+
+    void skcms_GetTagByIndex    (const skcms_ICCProfile*, uint32_t idx, skcms_ICCTag*);
+    bool skcms_GetTagBySignature(const skcms_ICCProfile*, uint32_t sig, skcms_ICCTag*);
+
+    float skcms_MaxRoundtripError(const skcms_Curve* curve, const skcms_TransferFunction* inv_tf);
 
     // 252 of a random shuffle of all possible bytes.
     // 252 is evenly divisible by 3 and 4.  Only 192, 10, 241, and 43 are missing.
@@ -36,6 +45,11 @@ extern "C" {
     }
     static inline float fabsf_(float x) { return x < 0 ? -x : x; }
     float powf_(float, float);
+
+// ~~~~ Does this pixel format need a palette pointer to be usable? ~~~~
+    static inline bool needs_palette(skcms_PixelFormat fmt) {
+        return (fmt >> 1) == (skcms_PixelFormat_RGBA_8888_Palette8 >> 1);
+    }
 
 #ifdef __cplusplus
 }
