@@ -76,6 +76,10 @@ void typography(canvas& cnv)
         cnv.stroke_text("Outline Gradient", { 20, 190 });
     }
 
+    cnv.font(font_descr{ "Lucida Grande", 52 }.bold());
+    cnv.fill_style(rgba(220, 220, 220, 200));
+    cnv.fill_text("fi", 500, 190);
+
     {
         auto state = cnv.new_state();
 
@@ -141,7 +145,7 @@ void typography(canvas& cnv)
         "final emergence into light—only those who have experienced it "
         "can understand that.\n\n"
 
-        "⁠☞ —Albert Einstein"
+        "⁠—Albert Einstein"
         ;
 
     auto tlayout = text_layout{ font_descr{ "Open Sans", 12 }.italic(), text };
