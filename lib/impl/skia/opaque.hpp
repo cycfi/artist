@@ -16,6 +16,9 @@ namespace cycfi::artist
       using base_type = std::variant<extent, sk_sp<SkPicture>, SkBitmap>;
       using base_type::base_type;
    };
+
+   class canvas;
+   SkPaint& fill_paint(canvas const& cnv);
 }
 
 #endif
