@@ -51,7 +51,7 @@ namespace cycfi::artist
          positions.reserve(glyphs_info.count);
          auto linfo = glf(0);
          float y = 0;
-         float x = linfo.offset;
+         float x = 0;
          auto glyph_start = 0;
 
          std::string brks(_utf8.size(), 0);
@@ -60,11 +60,52 @@ namespace cycfi::artist
           , _utf8.size(), _buff.language(), brks.data()
          );
 
+         auto num_spaces =
+            [&](std::size_t glyph_idx) -> std::size_t
+            {
+               std::size_t count = 0;
+               for (auto i = glyph_start; i != glyph_idx; ++i)
+               {
+                  auto cl = glyphs_info.glyphs[i].cluster;
+                  if (brks[cl] == LINEBREAK_ALLOWBREAK)
+                     ++count;
+               }
+               return count;
+            };
+
+         auto justify =
+            [&](std::size_t glyph_idx, std::size_t glyph_count, bool must_break)
+            {
+               if (finfo.justify && !must_break)
+               {
+                  auto line_width =
+                     positions[glyph_idx-glyph_start] +
+                     (glyphs_info.positions[glyph_idx].x_advance * scalex)
+                  ;
+                  if (((line_width / linfo.width) > 0.9))
+                  {
+                     // Full justify
+                     auto nspaces = num_spaces(glyph_idx);
+                     float extra = (linfo.width - line_width) / nspaces;
+                     float offset = 0;
+                     for (auto i = glyph_start; i != glyph_idx; ++i)
+                     {
+                        auto cl = glyphs_info.glyphs[i].cluster;
+                        if (brks[cl] == LINEBREAK_ALLOWBREAK)
+                           offset += extra;
+                        positions[i-glyph_start] += offset;
+                     }
+                  }
+               }
+            };
+
          auto new_line =
-            [&](std::size_t start_line, std::size_t utf8_idx, std::size_t& i)
+            [&](std::size_t start_line, std::size_t utf8_idx, std::size_t& i, bool must_break)
             {
                auto glyph_idx = _buff.glyph_index(utf8_idx);
                auto glyph_count = glyph_idx - glyph_start;
+               justify(glyph_idx, glyph_count, must_break);
+
                if (i == glyphs_info.count-1)
                   ++glyph_count;
 
@@ -88,7 +129,7 @@ namespace cycfi::artist
                glyph_start = glyph_idx + 1;
                y += finfo.line_height;
                linfo = glf(y);
-               x = linfo.offset;
+               x = 0;
             };
 
          for (std::size_t i = 0; i != glyphs_info.count; ++i)
@@ -100,7 +141,7 @@ namespace cycfi::artist
             {
                // We must break now
                auto start_line = glyphs_info.glyphs[glyph_start].cluster;
-               new_line(start_line, idx, i);
+               new_line(start_line, idx, i, true);
             }
             else if (x > linfo.width)
             {
@@ -113,7 +154,7 @@ namespace cycfi::artist
                auto pos = brks_line.find_last_of(char(LINEBREAK_ALLOWBREAK), brks_len-1);
 
                if (pos != brks_line.npos)
-                  new_line(start_line, pos + start_line, i);
+                  new_line(start_line, pos + start_line, i, false);
                else
                   ; // deal with the case where we have to forcefully break the line
             }

@@ -88,9 +88,6 @@ namespace cycfi::artist::detail
       hb_font_destroy(_font);
    }
 
-
-   void foo() {}
-
    hb_buffer::hb_buffer(std::string_view utf8)
     : _buffer(hb_buffer_create())
    {
