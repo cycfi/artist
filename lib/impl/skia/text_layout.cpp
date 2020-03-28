@@ -11,6 +11,9 @@
 #include <SkFont.h>
 #include "detail/harfbuzz.hpp"
 #include "linebreak.h"
+#include "unicode.hpp"
+
+#include <iostream>
 
 namespace cycfi::artist
 {
@@ -43,59 +46,64 @@ namespace cycfi::artist
          float scalex = (sc_font->getSize() / hb_scalex) * sc_font->getScaleX();
 
          std::vector<float> positions;
+         std::vector<char32_t> line;
          positions.reserve(glyphs_info.count);
          auto linfo = glf(0);
          float y = 0;
          float x = linfo.offset;
          auto start = 0;
 
-         for (auto i = 0; i != glyphs_info.count; ++i)
+         // $$$ JDG "en" for now $$$
+         std::string brks(_utf8.size(), 0);
+         set_linebreaks_utf8((utf8_t const*)_utf8.begin(), _utf8.size(), "en", brks.data());
+
+         auto new_line = [&](std::size_t start_line, std::size_t idx, std::size_t& i)
+            {
+               auto utf8_index = idx;
+               auto brk_index = _buff.glyph_index(utf8_index);
+               auto brk_cluster = glyphs_info.glyphs[brk_index].cluster;
+
+               positions.clear();
+               i = brk_index;
+               start = brk_index + 1;
+               y += finfo.line_height;
+               linfo = glf(y);
+               x = linfo.offset;
+
+               std::cout << std::string_view(_utf8.begin() + start_line, utf8_index - start_line) << std::endl;
+            };
+
+         for (std::size_t i = 0; i != glyphs_info.count; ++i)
          {
             positions.push_back(x + (glyphs_info.positions[i].x_offset * scalex));
             x += glyphs_info.positions[i].x_advance * scalex;
-            if (x > linfo.width)
+
+            if (auto idx = glyphs_info.glyphs[i].cluster; brks[idx] == LINEBREAK_MUSTBREAK)
             {
-               // here we break the line
+               // We must break now
+               auto start_line = glyphs_info.glyphs[start].cluster;
+               new_line(start_line, idx, i);
+            }
+            else if (x > linfo.width)
+            {
+               // We break the line when x exceeds the target width
                std::size_t len = positions.size();
-               if (len > 2)
-               {
-                  auto r_cluster = glyphs_info.glyphs[start].cluster;
-                  auto rng = _utf8.substr(r_cluster, len);
+               auto start_line = glyphs_info.glyphs[start].cluster;
+               auto end_line = glyphs_info.glyphs[start+len].cluster;
+               auto brks_len = end_line-start_line;
+               auto brks_line = brks.substr(start_line, brks_len);
+               auto pos = brks_line.find_last_of(char(LINEBREAK_ALLOWBREAK), brks_len-1);
 
-                  // $$$ JDG "en" for now $$$
-                  std::string brks(len, 0);
-                  set_linebreaks_utf8((utf8_t const*)rng.begin(), len, "en", brks.data());
-
-                  constexpr char const breaks[2] = { LINEBREAK_ALLOWBREAK, LINEBREAK_MUSTBREAK };
-                  auto pos = brks.find_last_of(breaks, len-2, 2);
-                  if (pos != brks.npos)
-                  {
-                     auto brk_index = pos;
-                     auto brk_cluster = glyphs_info.glyphs[brk_index].cluster;
-                     foo();
-
-                     positions.erase(positions.begin() + brk_index, positions.end());
-                     start = brk_index;
-                     y += finfo.line_height;
-                     linfo = glf(y);
-                     x = linfo.offset;
-                     continue;
-                  }
-               }
-               else
-               {
-                  // $$$ deal with this $$$
-               }
+               if (pos != brks_line.npos)
+                  new_line(start_line, pos + start_line, i);
             }
          }
       }
 
-      void foo() {}
-
-      font              _font;
-      detail::hb_font   _hb_font;
-      std::string_view  _utf8;
-      detail::hb_buffer _buff;
+      font                    _font;
+      detail::hb_font         _hb_font;
+      std::string_view        _utf8;
+      detail::hb_buffer       _buff;
    };
 
    void foo() {}
@@ -116,7 +124,7 @@ namespace cycfi::artist
          return line_info{ 0, width };
       };
 
-      auto lh = _impl->_font.impl()->getSize();
+      auto lh = _impl->_font.line_height();
       flow(line_info_f, { justify, lh, lh });
    }
 

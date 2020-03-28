@@ -5,6 +5,7 @@
 =============================================================================*/
 #include <memory>
 #include <string_view>
+#include <vector>
 #include <hb.h>
 #include <hb-ot.h>
 
@@ -63,10 +64,12 @@ namespace cycfi::artist::detail
       glyphs_info          glyphs() const;
 
       hb_buffer_t*         get() const { return _buffer; }
+      int                  glyph_index(std::size_t index) const;
 
    private:
 
       hb_buffer_t*         _buffer = nullptr;
+      std::vector<int>     _map;
    };
 }
 

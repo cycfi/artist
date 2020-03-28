@@ -88,10 +88,14 @@ namespace cycfi::artist::detail
       hb_font_destroy(_font);
    }
 
+
+   void foo() {}
+
    hb_buffer::hb_buffer(std::string_view utf8)
     : _buffer(hb_buffer_create())
    {
       hb_buffer_add_utf8(_buffer, utf8.data(), utf8.size(), 0, utf8.size());
+      _map.insert(_map.begin(), hb_buffer_get_length(_buffer), -1);
    }
 
    hb_buffer::~hb_buffer()
@@ -117,6 +121,12 @@ namespace cycfi::artist::detail
    void hb_buffer::shape(hb_font const& font)
    {
       hb_shape(font.get(), _buffer, nullptr, 0);
+
+      unsigned int count;
+      auto glyphs = hb_buffer_get_glyph_infos(_buffer, &count);
+
+      for (auto i = 0; i != count; ++i)
+         _map[glyphs[i].cluster] = i;
    }
 
    hb_buffer::glyphs_info hb_buffer::glyphs() const
@@ -125,6 +135,17 @@ namespace cycfi::artist::detail
       info.glyphs = hb_buffer_get_glyph_infos(_buffer, &info.count);
       info.positions = hb_buffer_get_glyph_positions(_buffer, &info.count);
       return info;
+   }
+
+   int hb_buffer::glyph_index(std::size_t index) const
+   {
+      auto i = _map[index];
+      while (i == -1 && index > 0)
+      {
+         --index;
+         i = _map[index];
+      }
+      return i;
    }
 }
 
