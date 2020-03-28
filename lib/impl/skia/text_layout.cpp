@@ -11,7 +11,6 @@
 #include <SkFont.h>
 #include "detail/harfbuzz.hpp"
 #include "linebreak.h"
-#include "unicode.hpp"
 
 #include <iostream>
 
@@ -70,7 +69,10 @@ namespace cycfi::artist
                linfo = glf(y);
                x = linfo.offset;
 
-               std::cout << std::string_view(_utf8.begin() + start_line, utf8_index - start_line) << std::endl;
+               auto len = utf8_index - start_line;
+               if (i == glyphs_info.count-1)
+                  ++len;
+               std::cout << std::string_view(_utf8.begin() + start_line, len) << std::endl;
             };
 
          for (std::size_t i = 0; i != glyphs_info.count; ++i)
