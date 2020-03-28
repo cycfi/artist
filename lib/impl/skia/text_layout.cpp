@@ -9,6 +9,7 @@
 #include <artist/canvas.hpp>
 #include <vector>
 #include <SkFont.h>
+#include <SkTextBlob.h>
 #include "detail/harfbuzz.hpp"
 #include "linebreak.h"
 
@@ -28,6 +29,8 @@ namespace cycfi::artist
          _buff.direction(HB_DIRECTION_LTR);
          _buff.script(HB_SCRIPT_LATIN);
          _buff.language("en");
+
+         init_linebreak();
       }
 
       ~impl()
@@ -44,32 +47,44 @@ namespace cycfi::artist
          auto sc_font = _font.impl();
          float scalex = (sc_font->getSize() / hb_scalex) * sc_font->getScaleX();
 
-         std::vector<float> positions;
-         std::vector<char32_t> line;
+         std::vector<SkScalar> positions;
          positions.reserve(glyphs_info.count);
          auto linfo = glf(0);
          float y = 0;
          float x = linfo.offset;
-         auto start = 0;
+         auto glyph_start = 0;
 
-         // $$$ JDG "en" for now $$$
          std::string brks(_utf8.size(), 0);
-         set_linebreaks_utf8((utf8_t const*)_utf8.begin(), _utf8.size(), "en", brks.data());
+         set_linebreaks_utf8(
+            (utf8_t const*)_utf8.begin()
+          , _utf8.size(), _buff.language(), brks.data()
+         );
 
-         auto new_line = [&](std::size_t start_line, std::size_t idx, std::size_t& i)
+         auto new_line =
+            [&](std::size_t start_line, std::size_t utf8_idx, std::size_t& i)
             {
-               auto utf8_index = idx;
-               auto brk_index = _buff.glyph_index(utf8_index);
-               auto brk_cluster = glyphs_info.glyphs[brk_index].cluster;
+               auto glyph_idx = _buff.glyph_index(utf8_idx);
+               auto glyph_count = i - glyph_start;
+               std::vector<SkGlyphID> line_glyphs(glyph_count);
+               for (auto i = glyph_start; i != glyph_idx; ++i)
+                  line_glyphs[i - glyph_start] = glyphs_info.glyphs[i].codepoint;
+
+               _lines.push_back(
+                  SkTextBlob::MakeFromPosTextH(
+                     line_glyphs.data(), line_glyphs.size() * sizeof(SkGlyphID)
+                   , positions.data(), y
+                   , *_font.impl()
+                   , SkTextEncoding::kGlyphID)
+               );
 
                positions.clear();
-               i = brk_index;
-               start = brk_index + 1;
+               i = glyph_idx;
+               glyph_start = glyph_idx + 1;
                y += finfo.line_height;
                linfo = glf(y);
                x = linfo.offset;
 
-               auto len = utf8_index - start_line;
+               auto len = utf8_idx - start_line;
                if (i == glyphs_info.count-1)
                   ++len;
                std::cout << std::string_view(_utf8.begin() + start_line, len) << std::endl;
@@ -83,32 +98,35 @@ namespace cycfi::artist
             if (auto idx = glyphs_info.glyphs[i].cluster; brks[idx] == LINEBREAK_MUSTBREAK)
             {
                // We must break now
-               auto start_line = glyphs_info.glyphs[start].cluster;
+               auto start_line = glyphs_info.glyphs[glyph_start].cluster;
                new_line(start_line, idx, i);
             }
             else if (x > linfo.width)
             {
                // We break the line when x exceeds the target width
                std::size_t len = positions.size();
-               auto start_line = glyphs_info.glyphs[start].cluster;
-               auto end_line = glyphs_info.glyphs[start+len].cluster;
+               auto start_line = glyphs_info.glyphs[glyph_start].cluster;
+               auto end_line = glyphs_info.glyphs[glyph_start+len].cluster;
                auto brks_len = end_line-start_line;
                auto brks_line = brks.substr(start_line, brks_len);
                auto pos = brks_line.find_last_of(char(LINEBREAK_ALLOWBREAK), brks_len-1);
 
                if (pos != brks_line.npos)
                   new_line(start_line, pos + start_line, i);
+               else
+                  ; // deal with the case where we have to forcefully break the line
             }
          }
       }
+
+      using line_vector = std::vector<sk_sp<SkTextBlob>>;
 
       font                    _font;
       detail::hb_font         _hb_font;
       std::string_view        _utf8;
       detail::hb_buffer       _buff;
+      line_vector             _lines;
    };
-
-   void foo() {}
 
    text_layout::text_layout(font const& font_, std::string_view utf8)
     : _impl{ std::make_unique<impl>(font_, utf8) }

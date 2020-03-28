@@ -51,7 +51,8 @@ namespace cycfi::artist::detail
 
       void                 direction(hb_direction_t dir);
       void                 script(hb_script_t scr);
-      void                 language(std::string_view lang);
+      void                 language(char const* lang);
+      char const*          language() const;
 
       struct glyphs_info
       {
