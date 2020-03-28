@@ -8,15 +8,15 @@
 #ifndef SkPixelRef_DEFINED
 #define SkPixelRef_DEFINED
 
-#include "../private/SkMutex.h"
-#include "../private/SkTDArray.h"
-#include "SkBitmap.h"
-#include "SkFilterQuality.h"
-#include "SkImageInfo.h"
-#include "SkPixmap.h"
-#include "SkRefCnt.h"
-#include "SkSize.h"
-#include "SkString.h"
+#include "include/core/SkBitmap.h"
+#include "include/core/SkFilterQuality.h"
+#include "include/core/SkImageInfo.h"
+#include "include/core/SkPixmap.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkSize.h"
+#include "include/private/SkIDChangeListener.h"
+#include "include/private/SkMutex.h"
+#include "include/private/SkTDArray.h"
 
 #include <atomic>
 
@@ -35,6 +35,7 @@ public:
     SkPixelRef(int width, int height, void* addr, size_t rowBytes);
     ~SkPixelRef() override;
 
+    SkISize dimensions() const { return {fWidth, fHeight}; }
     int width() const { return fWidth; }
     int height() const { return fHeight; }
     void* pixels() const { return fPixels; }
@@ -72,13 +73,8 @@ public:
     // the listener when we're certain no one knows what our generation ID is.
     //
     // This can be used to invalidate caches keyed by SkPixelRef generation ID.
-    struct GenIDChangeListener {
-        virtual ~GenIDChangeListener() {}
-        virtual void onChange() = 0;
-    };
-
     // Takes ownership of listener.  Threadsafe.
-    void addGenIDChangeListener(GenIDChangeListener* listener);
+    void addGenIDChangeListener(sk_sp<SkIDChangeListener> listener);
 
     // Call when this pixelref is part of the key to a resourcecache entry. This allows the cache
     // to know automatically those entries can be purged when this pixelref is changed or deleted.
@@ -101,8 +97,7 @@ private:
     bool genIDIsUnique() const { return SkToBool(fTaggedGenID.load() & 1); }
     mutable std::atomic<uint32_t> fTaggedGenID;
 
-    SkMutex                         fGenIDChangeListenersMutex;
-    SkTDArray<GenIDChangeListener*> fGenIDChangeListeners;  // pointers are owned
+    SkIDChangeListener::List fGenIDChangeListeners;
 
     // Set true by caches when they cache content that's derived from the current pixels.
     std::atomic<bool> fAddedToCache;
@@ -120,13 +115,7 @@ private:
     void restoreMutability();
     friend class SkSurface_Raster;   // For the two methods above.
 
-    friend class SkImage_Raster;
-    friend class SkSpecialImage_Raster;
-
     void setImmutableWithID(uint32_t genID);
-    friend class SkImage_Gpu;
-    friend class SkImage_Lazy;
-    friend class SkSpecialImage_Gpu;
     friend void SkBitmapCache_setImmutableWithID(SkPixelRef*, uint32_t);
 
     typedef SkRefCnt INHERITED;

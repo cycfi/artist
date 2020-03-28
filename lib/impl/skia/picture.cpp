@@ -16,6 +16,7 @@
 
 #include "opaque.hpp"
 #include <stdexcept>
+#include <string>
 
 namespace cycfi::artist
 {

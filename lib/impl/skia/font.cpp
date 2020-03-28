@@ -7,6 +7,7 @@
 #include <SkTypeface.h>
 #include <SkFont.h>
 #include <sstream>
+#include <SkFontMetrics.h>
 
 namespace cycfi::artist
 {
@@ -36,10 +37,8 @@ namespace cycfi::artist
    using namespace font_constants;
 
    font::font()
-    : _ptr(SkFont::Make(nullptr, 12, SkFont::kA8_MaskType, 0).get())
+    : _ptr(std::make_shared<SkFont>())
    {
-      if (_ptr)
-         _ptr->ref();
    }
 
    font::font(font_descr descr)
@@ -63,66 +62,50 @@ namespace cycfi::artist
          auto face = SkTypeface::MakeFromName(family.c_str(), style);
          if (face != default_face)
          {
-            if (auto font = SkFont::Make(face, descr._size, SkFont::kA8_MaskType, 0))
-            {
-               _ptr = font.get();
-               _ptr->ref();
-            }
+            _ptr = std::make_shared<SkFont>(face, descr._size);
             break;
          }
       }
       if (!_ptr)
-      {
-         auto font = SkFont::Make(default_face, descr._size, SkFont::kA8_MaskType, 0);
-         _ptr = font.get();
-         _ptr->ref();
-      }
+         _ptr = std::make_shared<SkFont>(default_face, descr._size);
    }
 
    font::font(font const& rhs)
    {
-      if (rhs._ptr)
-      {
-         _ptr = rhs._ptr;
-         _ptr->ref();
-      }
+      _ptr = rhs._ptr;
    }
 
    font::font(font&& rhs) noexcept
-    : _ptr(rhs._ptr)
+    : _ptr(std::move(rhs._ptr))
    {
-      rhs._ptr = nullptr;
    }
 
    font::~font()
    {
-      if (_ptr)
-         _ptr->unref();
    }
 
    font& font::operator=(font const& rhs)
    {
-      if (this != &rhs)
-      {
-         _ptr = rhs._ptr;
-         _ptr->ref();
-      }
+      _ptr = rhs._ptr;
       return *this;
    }
 
    font& font::operator=(font&& rhs) noexcept
    {
-      if (this != &rhs)
-      {
-         _ptr = rhs._ptr;
-         rhs._ptr = nullptr;
-      }
+      _ptr = std::move(rhs._ptr);
       return *this;
    }
 
    font::metrics_info font::metrics() const
    {
-      return {};
+      SkFontMetrics sk_metrics;
+      _ptr->getMetrics(&sk_metrics);
+      return { -sk_metrics.fAscent, sk_metrics.fDescent, sk_metrics.fLeading };
+   }
+
+   float font::measure_text(std::string_view str) const
+   {
+      return _ptr->measureText(str.begin(), str.size(), SkTextEncoding::kUTF8);
    }
 }
 

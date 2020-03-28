@@ -39,6 +39,7 @@ namespace cycfi::artist
       SkPath&           path();
       SkPaint&          fill_paint();
       SkPaint&          stroke_paint();
+      class font&       font();
       int&              text_align();
 
       void              save();
@@ -61,6 +62,7 @@ namespace cycfi::artist
          SkPath         _path;
          SkPaint        _fill_paint;
          SkPaint        _stroke_paint;
+         class font     _font;
          int            _text_align = 0;
       };
 
@@ -91,6 +93,11 @@ namespace cycfi::artist
    SkPaint& canvas::canvas_state::stroke_paint()
    {
       return current()->_stroke_paint;
+   }
+
+   class font& canvas::canvas_state::font()
+   {
+      return current()->_font;
    }
 
    int& canvas::canvas_state::text_align()
@@ -351,7 +358,7 @@ namespace cycfi::artist
          paint.setShader(
             SkGradientShader::MakeLinear(
                points, colors_.data(), pos.data(), colors_.size()
-             , SkShader::TileMode::kClamp_TileMode, 0, nullptr
+             , SkTileMode::kClamp, 0, nullptr
             ));
       }
 
@@ -365,7 +372,7 @@ namespace cycfi::artist
                { gr.c1.x, gr.c1.y }, gr.c1_radius
              , { gr.c2.x, gr.c2.y }, gr.c2_radius
              , colors_.data(), pos.data(), colors_.size()
-             , SkShader::TileMode::kClamp_TileMode, 0, nullptr
+             , SkTileMode::kClamp, 0, nullptr
             ));
       }
    }
@@ -392,28 +399,25 @@ namespace cycfi::artist
 
    void canvas::font(class font const& font_)
    {
-      _state->fill_paint().setTextSize(font_.impl()->getSize());
-      _state->fill_paint().setTypeface(sk_sp<SkTypeface>(font_.impl()->getTypeface()));
-      _state->stroke_paint().setTextSize(font_.impl()->getSize());
-      _state->stroke_paint().setTypeface(sk_sp<SkTypeface>(font_.impl()->getTypeface()));
+      _state->font() = font_;
    }
 
    namespace
    {
       void prepare_text(
-         SkPaint const& paint
+         font const& font
        , int text_align
        , point& p, char const* f, char const* l
       )
       {
-         SkPaint::FontMetrics metrics;
-         auto line_height = paint.getFontMetrics(&metrics);
-         auto width = paint.measureText(f, l-f);
+         auto metrics = font.metrics();
+         auto line_height = metrics.ascent + metrics.descent + metrics.leading;
+         auto width = font.measure_text(std::string_view(f, l-f));
          switch (text_align & 0x1C)
          {
-            case canvas::top:    p.y -= metrics.fAscent; break;
-            case canvas::middle: p.y += (-metrics.fAscent - metrics.fDescent)/2; break;
-            case canvas::bottom: p.y -= metrics.fDescent; break;
+            case canvas::top:    p.y -= metrics.ascent; break;
+            case canvas::middle: p.y += (metrics.ascent - metrics.descent)/2; break;
+            case canvas::bottom: p.y -= metrics.descent; break;
             default: break;
          }
 
@@ -429,18 +433,18 @@ namespace cycfi::artist
    void canvas::fill_text(std::string_view utf8, point p)
    {
       auto text_blob = SkTextBlob::MakeFromText(
-         utf8.data(), utf8.size(), _state->fill_paint()
+         utf8.data(), utf8.size(), *_state->font().impl().get()
       );
-      prepare_text(_state->fill_paint(), _state->text_align(), p, utf8.begin(), utf8.end());
+      prepare_text(_state->font(), _state->text_align(), p, utf8.begin(), utf8.end());
       _context->drawTextBlob(text_blob.get(), p.x, p.y, _state->fill_paint());
    }
 
    void canvas::stroke_text(std::string_view utf8, point p)
    {
       auto text_blob = SkTextBlob::MakeFromText(
-         utf8.data(), utf8.size(), _state->stroke_paint()
+         utf8.data(), utf8.size(), *_state->font().impl().get()
       );
-      prepare_text(_state->stroke_paint(), _state->text_align(), p, utf8.begin(), utf8.end());
+      prepare_text(_state->font(), _state->text_align(), p, utf8.begin(), utf8.end());
       _context->drawTextBlob(text_blob.get(), p.x, p.y, _state->stroke_paint());
    }
 

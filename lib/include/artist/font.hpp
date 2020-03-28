@@ -17,11 +17,12 @@ namespace cycfi::artist
 {
 #if defined(ARTIST_SKIA)
    using font_impl = SkFont;
+   using font_impl_ptr = std::shared_ptr<SkFont>;
 #else
    struct font_impl;
+   using font_impl_ptr = font_impl*;
 #endif
 
-   using font_impl_ptr = font_impl*;
 
    namespace font_constants
    {
@@ -125,6 +126,7 @@ namespace cycfi::artist
 
       metrics_info         metrics() const;
       float                line_height() const;
+      float                measure_text(std::string_view str) const;
 
    private:
 

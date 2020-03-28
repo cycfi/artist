@@ -8,85 +8,11 @@
 #ifndef SkMatrix44_DEFINED
 #define SkMatrix44_DEFINED
 
-#include "SkMatrix.h"
-#include "SkScalar.h"
+#include "include/core/SkMatrix.h"
+#include "include/core/SkScalar.h"
 
 #include <atomic>
 #include <cstring>
-
-#ifdef SK_MSCALAR_IS_DOUBLE
-#ifdef SK_MSCALAR_IS_FLOAT
-    #error "can't define MSCALAR both as DOUBLE and FLOAT"
-#endif
-    typedef double SkMScalar;
-
-    static inline double SkFloatToMScalar(float x) {
-        return static_cast<double>(x);
-    }
-    static inline float SkMScalarToFloat(double x) {
-        return static_cast<float>(x);
-    }
-    static inline double SkDoubleToMScalar(double x) {
-        return x;
-    }
-    static inline double SkMScalarToDouble(double x) {
-        return x;
-    }
-    static inline double SkMScalarAbs(double x) {
-        return fabs(x);
-    }
-    static const SkMScalar SK_MScalarPI = 3.141592653589793;
-
-    #define SkMScalarFloor(x)           sk_double_floor(x)
-    #define SkMScalarCeil(x)            sk_double_ceil(x)
-    #define SkMScalarRound(x)           sk_double_round(x)
-
-    #define SkMScalarFloorToInt(x)      sk_double_floor2int(x)
-    #define SkMScalarCeilToInt(x)       sk_double_ceil2int(x)
-    #define SkMScalarRoundToInt(x)      sk_double_round2int(x)
-
-
-#elif defined SK_MSCALAR_IS_FLOAT
-#ifdef SK_MSCALAR_IS_DOUBLE
-    #error "can't define MSCALAR both as DOUBLE and FLOAT"
-#endif
-    typedef float SkMScalar;
-
-    static inline float SkFloatToMScalar(float x) {
-        return x;
-    }
-    static inline float SkMScalarToFloat(float x) {
-        return x;
-    }
-    static inline float SkDoubleToMScalar(double x) {
-        return sk_double_to_float(x);
-    }
-    static inline double SkMScalarToDouble(float x) {
-        return static_cast<double>(x);
-    }
-    static inline float SkMScalarAbs(float x) {
-        return sk_float_abs(x);
-    }
-    static const SkMScalar SK_MScalarPI = 3.14159265f;
-
-    #define SkMScalarFloor(x)           sk_float_floor(x)
-    #define SkMScalarCeil(x)            sk_float_ceil(x)
-    #define SkMScalarRound(x)           sk_float_round(x)
-
-    #define SkMScalarFloorToInt(x)      sk_float_floor2int(x)
-    #define SkMScalarCeilToInt(x)       sk_float_ceil2int(x)
-    #define SkMScalarRoundToInt(x)      sk_float_round2int(x)
-
-#endif
-
-#define SkIntToMScalar(n)       static_cast<SkMScalar>(n)
-
-#define SkMScalarToScalar(x)    SkMScalarToFloat(x)
-#define SkScalarToMScalar(x)    SkFloatToMScalar(x)
-
-static const SkMScalar SK_MScalar1 = 1;
-
-///////////////////////////////////////////////////////////////////////////////
 
 struct SkVector4 {
     SkScalar fData[4];
@@ -109,13 +35,11 @@ struct SkVector4 {
         return *this;
     }
 
-    bool operator==(const SkVector4& v) {
+    bool operator==(const SkVector4& v) const {
         return fData[0] == v.fData[0] && fData[1] == v.fData[1] &&
                fData[2] == v.fData[2] && fData[3] == v.fData[3];
     }
-    bool operator!=(const SkVector4& v) {
-        return !(*this == v);
-    }
+    bool operator!=(const SkVector4& v) const { return !(*this == v); }
     bool equals(SkScalar x, SkScalar y, SkScalar z, SkScalar w = SK_Scalar1) {
         return fData[0] == x && fData[1] == y &&
                fData[2] == z && fData[3] == w;
@@ -133,7 +57,6 @@ struct SkVector4 {
 
     The SkMatrix44 class holds a 4x4 matrix.
 
-    SkMatrix44 is not thread safe unless you've first called SkMatrix44::getType().
 */
 class SK_API SkMatrix44 {
 public:
@@ -144,6 +67,9 @@ public:
     enum Identity_Constructor {
         kIdentity_Constructor
     };
+    enum NaN_Constructor {
+        kNaN_Constructor
+    };
 
     SkMatrix44(Uninitialized_Constructor) {}  // ironically, cannot be constexpr
 
@@ -152,26 +78,23 @@ public:
                { 0, 1, 0, 0, },
                { 0, 0, 1, 0, },
                { 0, 0, 0, 1, }}
-        , fTypeMask(kIdentity_Mask)
-    {}
+        , fTypeMask(kIdentity_Mask) {}
+
+    SkMatrix44(NaN_Constructor)
+        : fMat{{ SK_ScalarNaN, SK_ScalarNaN, SK_ScalarNaN, SK_ScalarNaN },
+               { SK_ScalarNaN, SK_ScalarNaN, SK_ScalarNaN, SK_ScalarNaN },
+               { SK_ScalarNaN, SK_ScalarNaN, SK_ScalarNaN, SK_ScalarNaN },
+               { SK_ScalarNaN, SK_ScalarNaN, SK_ScalarNaN, SK_ScalarNaN }}
+        , fTypeMask(kTranslate_Mask | kScale_Mask | kAffine_Mask | kPerspective_Mask) {}
 
     constexpr SkMatrix44() : SkMatrix44{kIdentity_Constructor} {}
 
-    SkMatrix44(const SkMatrix44& src) {
-        memcpy(fMat, src.fMat, sizeof(fMat));
-        fTypeMask.store(src.fTypeMask, std::memory_order_relaxed);
-    }
+    SkMatrix44(const SkMatrix44& src) = default;
+
+    SkMatrix44& operator=(const SkMatrix44& src) = default;
 
     SkMatrix44(const SkMatrix44& a, const SkMatrix44& b) {
         this->setConcat(a, b);
-    }
-
-    SkMatrix44& operator=(const SkMatrix44& src) {
-        if (&src != this) {
-            memcpy(fMat, src.fMat, sizeof(fMat));
-            fTypeMask.store(src.fTypeMask, std::memory_order_relaxed);
-        }
-        return *this;
     }
 
     bool operator==(const SkMatrix44& other) const;
@@ -189,6 +112,11 @@ public:
      */
     SkMatrix44(const SkMatrix&);
     SkMatrix44& operator=(const SkMatrix& src);
+
+    // TODO: make this explicit (will need to guard that change to update chrome, etc.
+#ifndef SK_SUPPORT_LEGACY_IMPLICIT_CONVERSION_MATRIX44
+    explicit
+#endif
     operator SkMatrix() const;
 
     /**
@@ -196,12 +124,13 @@ public:
      */
     static const SkMatrix44& I();
 
-    enum TypeMask {
-        kIdentity_Mask      = 0,
-        kTranslate_Mask     = 0x01,  //!< set if the matrix has translation
-        kScale_Mask         = 0x02,  //!< set if the matrix has any scale != 1
-        kAffine_Mask        = 0x04,  //!< set if the matrix skews or rotates
-        kPerspective_Mask   = 0x08   //!< set if the matrix is in perspective
+    using TypeMask = uint8_t;
+    enum : TypeMask {
+        kIdentity_Mask = 0,
+        kTranslate_Mask = 1 << 0,    //!< set if the matrix has translation
+        kScale_Mask = 1 << 1,        //!< set if the matrix has any scale != 1
+        kAffine_Mask = 1 << 2,       //!< set if the matrix skews or rotates
+        kPerspective_Mask = 1 << 3,  //!< set if the matrix is in perspective
     };
 
     /**
@@ -211,13 +140,7 @@ public:
      *  other bits may be set to true even in the case of a pure perspective
      *  transform.
      */
-    inline TypeMask getType() const {
-        if (fTypeMask.load(std::memory_order_relaxed) & kUnknown_Mask) {
-            fTypeMask.store(this->computeTypeMask(), std::memory_order_relaxed);
-        }
-        SkASSERT(!(fTypeMask & kUnknown_Mask));
-        return (TypeMask)fTypeMask.load(std::memory_order_relaxed);
-    }
+    inline TypeMask getType() const { return fTypeMask; }
 
     /**
      *  Return true if the matrix is identity.
@@ -260,7 +183,7 @@ public:
      *  (0, 3)  translate-x
      *  (3, 0)  perspective-x
      */
-    inline SkMScalar get(int row, int col) const {
+    inline SkScalar get(int row, int col) const {
         SkASSERT((unsigned)row <= 3);
         SkASSERT((unsigned)col <= 3);
         return fMat[col][row];
@@ -272,24 +195,24 @@ public:
      *  (0, 3)  translate-x
      *  (3, 0)  perspective-x
      */
-    inline void set(int row, int col, SkMScalar value) {
+    inline void set(int row, int col, SkScalar value) {
         SkASSERT((unsigned)row <= 3);
         SkASSERT((unsigned)col <= 3);
         fMat[col][row] = value;
-        this->dirtyTypeMask();
+        this->recomputeTypeMask();
     }
 
     inline double getDouble(int row, int col) const {
-        return SkMScalarToDouble(this->get(row, col));
+        return double(this->get(row, col));
     }
     inline void setDouble(int row, int col, double value) {
-        this->set(row, col, SkDoubleToMScalar(value));
+        this->set(row, col, SkScalar(value));
     }
     inline float getFloat(int row, int col) const {
-        return SkMScalarToFloat(this->get(row, col));
+        return float(this->get(row, col));
     }
     inline void setFloat(int row, int col, float value) {
-        this->set(row, col, SkFloatToMScalar(value));
+        this->set(row, col, value);
     }
 
     /** These methods allow one to efficiently read matrix entries into an
@@ -321,55 +244,52 @@ public:
     void setRowMajorf(const float[]);
     void setRowMajord(const double[]);
 
-#ifdef SK_MSCALAR_IS_FLOAT
-    void setColMajor(const SkMScalar data[]) { this->setColMajorf(data); }
-    void setRowMajor(const SkMScalar data[]) { this->setRowMajorf(data); }
-#else
-    void setColMajor(const SkMScalar data[]) { this->setColMajord(data); }
-    void setRowMajor(const SkMScalar data[]) { this->setRowMajord(data); }
-#endif
+    void setColMajor(const SkScalar data[]) { this->setColMajorf(data); }
+    void setRowMajor(const SkScalar data[]) { this->setRowMajorf(data); }
 
     /* This sets the top-left of the matrix and clears the translation and
      * perspective components (with [3][3] set to 1).  m_ij is interpreted
      * as the matrix entry at row = i, col = j. */
-    void set3x3(SkMScalar m_00, SkMScalar m_10, SkMScalar m_20,
-                SkMScalar m_01, SkMScalar m_11, SkMScalar m_21,
-                SkMScalar m_02, SkMScalar m_12, SkMScalar m_22);
+    void set3x3(SkScalar m_00, SkScalar m_10, SkScalar m_20,
+                SkScalar m_01, SkScalar m_11, SkScalar m_21,
+                SkScalar m_02, SkScalar m_12, SkScalar m_22);
     void set3x3RowMajorf(const float[]);
 
-    void setTranslate(SkMScalar dx, SkMScalar dy, SkMScalar dz);
-    void preTranslate(SkMScalar dx, SkMScalar dy, SkMScalar dz);
-    void postTranslate(SkMScalar dx, SkMScalar dy, SkMScalar dz);
+    void set4x4(SkScalar m_00, SkScalar m_10, SkScalar m_20, SkScalar m_30,
+                SkScalar m_01, SkScalar m_11, SkScalar m_21, SkScalar m_31,
+                SkScalar m_02, SkScalar m_12, SkScalar m_22, SkScalar m_32,
+                SkScalar m_03, SkScalar m_13, SkScalar m_23, SkScalar m_33);
 
-    void setScale(SkMScalar sx, SkMScalar sy, SkMScalar sz);
-    void preScale(SkMScalar sx, SkMScalar sy, SkMScalar sz);
-    void postScale(SkMScalar sx, SkMScalar sy, SkMScalar sz);
+    SkMatrix44& setTranslate(SkScalar dx, SkScalar dy, SkScalar dz);
+    SkMatrix44& preTranslate(SkScalar dx, SkScalar dy, SkScalar dz);
+    SkMatrix44& postTranslate(SkScalar dx, SkScalar dy, SkScalar dz);
 
-    inline void setScale(SkMScalar scale) {
-        this->setScale(scale, scale, scale);
+    SkMatrix44& setScale(SkScalar sx, SkScalar sy, SkScalar sz);
+    SkMatrix44& preScale(SkScalar sx, SkScalar sy, SkScalar sz);
+    SkMatrix44& postScale(SkScalar sx, SkScalar sy, SkScalar sz);
+
+    inline SkMatrix44& setScale(SkScalar scale) {
+        return this->setScale(scale, scale, scale);
     }
-    inline void preScale(SkMScalar scale) {
-        this->preScale(scale, scale, scale);
+    inline SkMatrix44& preScale(SkScalar scale) {
+        return this->preScale(scale, scale, scale);
     }
-    inline void postScale(SkMScalar scale) {
-        this->postScale(scale, scale, scale);
+    inline SkMatrix44& postScale(SkScalar scale) {
+        return this->postScale(scale, scale, scale);
     }
 
-    void setRotateDegreesAbout(SkMScalar x, SkMScalar y, SkMScalar z,
-                               SkMScalar degrees) {
-        this->setRotateAbout(x, y, z, degrees * SK_MScalarPI / 180);
+    void setRotateDegreesAbout(SkScalar x, SkScalar y, SkScalar z, SkScalar degrees) {
+        this->setRotateAbout(x, y, z, degrees * SK_ScalarPI / 180);
     }
 
     /** Rotate about the vector [x,y,z]. If that vector is not unit-length,
         it will be automatically resized.
      */
-    void setRotateAbout(SkMScalar x, SkMScalar y, SkMScalar z,
-                        SkMScalar radians);
+    void setRotateAbout(SkScalar x, SkScalar y, SkScalar z, SkScalar radians);
     /** Rotate about the vector [x,y,z]. Does not check the length of the
         vector, assuming it is unit-length.
      */
-    void setRotateAboutUnit(SkMScalar x, SkMScalar y, SkMScalar z,
-                            SkMScalar radians);
+    void setRotateAboutUnit(SkScalar x, SkScalar y, SkScalar z, SkScalar radians);
 
     void setConcat(const SkMatrix44& a, const SkMatrix44& b);
     inline void preConcat(const SkMatrix44& m) {
@@ -400,17 +320,6 @@ public:
         this->mapScalars(vec, vec);
     }
 
-#ifdef SK_MSCALAR_IS_DOUBLE
-    void mapMScalars(const SkMScalar src[4], SkMScalar dst[4]) const;
-#elif defined SK_MSCALAR_IS_FLOAT
-    inline void mapMScalars(const SkMScalar src[4], SkMScalar dst[4]) const {
-        this->mapScalars(src, dst);
-    }
-#endif
-    inline void mapMScalars(SkMScalar vec[4]) const {
-        this->mapMScalars(vec, vec);
-    }
-
     friend SkVector4 operator*(const SkMatrix44& m, const SkVector4& src) {
         SkVector4 dst;
         m.mapScalars(src.fData, dst.fData);
@@ -438,7 +347,7 @@ public:
         a 90-degree rotation can still end up with 10^-17 of
         "non-axis-aligned" result.
      */
-    bool preserves2dAxisAlignment(SkMScalar epsilon = SK_ScalarNearlyZero) const;
+    bool preserves2dAxisAlignment(SkScalar epsilon = SK_ScalarNearlyZero) const;
 
     void dump() const;
 
@@ -446,50 +355,38 @@ public:
 
 private:
     /* This is indexed by [col][row]. */
-    SkMScalar                       fMat[4][4];
-    mutable std::atomic<unsigned>   fTypeMask;
-
-    static constexpr int kUnknown_Mask = 0x80;
+    SkScalar fMat[4][4];
+    TypeMask fTypeMask;
 
     static constexpr int kAllPublic_Masks = 0xF;
 
     void as3x4RowMajorf(float[]) const;
     void set3x4RowMajorf(const float[]);
 
-    SkMScalar transX() const { return fMat[3][0]; }
-    SkMScalar transY() const { return fMat[3][1]; }
-    SkMScalar transZ() const { return fMat[3][2]; }
+    SkScalar transX() const { return fMat[3][0]; }
+    SkScalar transY() const { return fMat[3][1]; }
+    SkScalar transZ() const { return fMat[3][2]; }
 
-    SkMScalar scaleX() const { return fMat[0][0]; }
-    SkMScalar scaleY() const { return fMat[1][1]; }
-    SkMScalar scaleZ() const { return fMat[2][2]; }
+    SkScalar scaleX() const { return fMat[0][0]; }
+    SkScalar scaleY() const { return fMat[1][1]; }
+    SkScalar scaleZ() const { return fMat[2][2]; }
 
-    SkMScalar perspX() const { return fMat[0][3]; }
-    SkMScalar perspY() const { return fMat[1][3]; }
-    SkMScalar perspZ() const { return fMat[2][3]; }
+    SkScalar perspX() const { return fMat[0][3]; }
+    SkScalar perspY() const { return fMat[1][3]; }
+    SkScalar perspZ() const { return fMat[2][3]; }
 
-    int computeTypeMask() const;
+    void recomputeTypeMask();
 
-    inline void dirtyTypeMask() {
-        fTypeMask.store(kUnknown_Mask, std::memory_order_relaxed);
+    inline void setTypeMask(TypeMask mask) {
+        SkASSERT(0 == (~kAllPublic_Masks & mask));
+        fTypeMask = mask;
     }
 
-    inline void setTypeMask(int mask) {
-        SkASSERT(0 == (~(kAllPublic_Masks | kUnknown_Mask) & mask));
-        fTypeMask.store(mask, std::memory_order_relaxed);
-    }
-
-    /**
-     *  Does not take the time to 'compute' the typemask. Only returns true if
-     *  we already know that this matrix is identity.
-     */
-    inline bool isTriviallyIdentity() const {
-        return 0 == fTypeMask.load(std::memory_order_relaxed);
-    }
-
-    inline const SkMScalar* values() const { return &fMat[0][0]; }
+    inline const SkScalar* values() const { return &fMat[0][0]; }
 
     friend class SkColorSpace;
+    friend class SkCanvas;
+    friend class SkM44;
 };
 
 #endif

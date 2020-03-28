@@ -8,15 +8,14 @@
 #ifndef SkRefCnt_DEFINED
 #define SkRefCnt_DEFINED
 
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
 
-#include <atomic>
-#include <cstddef>
-#include <functional>
-#include <memory>
-#include <ostream>
-#include <type_traits>
-#include <utility>
+#include <atomic>       // std::atomic, std::memory_order_*
+#include <cstddef>      // std::nullptr_t
+#include <iosfwd>       // std::basic_ostream
+#include <memory>       // TODO: unused
+#include <type_traits>  // std::enable_if, std::is_convertible
+#include <utility>      // std::forward, std::swap
 
 /** \class SkRefCntBase
 
@@ -37,23 +36,12 @@ public:
     /** Destruct, asserting that the reference count is 1.
     */
     virtual ~SkRefCntBase() {
-#ifdef SK_DEBUG
-        SkASSERTF(getRefCnt() == 1, "fRefCnt was %d", getRefCnt());
+    #ifdef SK_DEBUG
+        SkASSERTF(this->getRefCnt() == 1, "fRefCnt was %d", this->getRefCnt());
         // illegal value, to catch us if we reuse after delete
         fRefCnt.store(0, std::memory_order_relaxed);
-#endif
+    #endif
     }
-
-#ifdef SK_DEBUG
-    /** Return the reference count. Use only for debugging. */
-    int32_t getRefCnt() const {
-        return fRefCnt.load(std::memory_order_relaxed);
-    }
-
-    void validate() const {
-        SkASSERT(getRefCnt() > 0);
-    }
-#endif
 
     /** May return true if the caller is the only owner.
      *  Ensures that all previous owner's actions are complete.
@@ -71,7 +59,7 @@ public:
     /** Increment the reference count. Must be balanced by a call to unref().
     */
     void ref() const {
-        SkASSERT(getRefCnt() > 0);
+        SkASSERT(this->getRefCnt() > 0);
         // No barrier required.
         (void)fRefCnt.fetch_add(+1, std::memory_order_relaxed);
     }
@@ -81,7 +69,7 @@ public:
         the object needs to have been allocated via new, and not on the stack.
     */
     void unref() const {
-        SkASSERT(getRefCnt() > 0);
+        SkASSERT(this->getRefCnt() > 0);
         // A release here acts in place of all releases we "should" have been doing in ref().
         if (1 == fRefCnt.fetch_add(-1, std::memory_order_acq_rel)) {
             // Like unique(), the acquire is only needed on success, to make sure
@@ -90,23 +78,23 @@ public:
         }
     }
 
-protected:
-    /**
-     *  Allow subclasses to call this if they've overridden internal_dispose
-     *  so they can reset fRefCnt before the destructor is called or if they
-     *  choose not to call the destructor (e.g. using a free list).
-     */
-    void internal_dispose_restore_refcnt_to_1() const {
-        SkASSERT(0 == getRefCnt());
-        fRefCnt.store(1, std::memory_order_relaxed);
-    }
-
 private:
+
+#ifdef SK_DEBUG
+    /** Return the reference count. Use only for debugging. */
+    int32_t getRefCnt() const {
+        return fRefCnt.load(std::memory_order_relaxed);
+    }
+#endif
+
     /**
      *  Called when the ref count goes to 0.
      */
     virtual void internal_dispose() const {
-        this->internal_dispose_restore_refcnt_to_1();
+    #ifdef SK_DEBUG
+        SkASSERT(0 == this->getRefCnt());
+        fRefCnt.store(1, std::memory_order_relaxed);
+    #endif
         delete this;
     }
 
@@ -171,7 +159,12 @@ template <typename Derived>
 class SkNVRefCnt {
 public:
     SkNVRefCnt() : fRefCnt(1) {}
-    ~SkNVRefCnt() { SkASSERTF(1 == getRefCnt(), "NVRefCnt was %d", getRefCnt()); }
+    ~SkNVRefCnt() {
+    #ifdef SK_DEBUG
+        int rc = fRefCnt.load(std::memory_order_relaxed);
+        SkASSERTF(rc == 1, "NVRefCnt was %d", rc);
+    #endif
+    }
 
     // Implementation is pretty much the same as SkRefCntBase. All required barriers are the same:
     //   - unique() needs acquire when it returns true, and no barrier if it returns false;
@@ -189,11 +182,20 @@ public:
     }
     void  deref() const { this->unref(); }
 
+    // This must be used with caution. It is only valid to call this when 'threadIsolatedTestCnt'
+    // refs are known to be isolated to the current thread. That is, it is known that there are at
+    // least 'threadIsolatedTestCnt' refs for which no other thread may make a balancing unref()
+    // call. Assuming the contract is followed, if this returns false then no other thread has
+    // ownership of this. If it returns true then another thread *may* have ownership.
+    bool refCntGreaterThan(int32_t threadIsolatedTestCnt) const {
+        int cnt = fRefCnt.load(std::memory_order_acquire);
+        // If this fails then the above contract has been violated.
+        SkASSERT(cnt >= threadIsolatedTestCnt);
+        return cnt > threadIsolatedTestCnt;
+    }
+
 private:
     mutable std::atomic<int32_t> fRefCnt;
-    int32_t getRefCnt() const {
-        return fRefCnt.load(std::memory_order_relaxed);
-    }
 
     SkNVRefCnt(SkNVRefCnt&&) = delete;
     SkNVRefCnt(const SkNVRefCnt&) = delete;
@@ -351,49 +353,6 @@ template <typename T> inline bool operator!=(const sk_sp<T>& a, std::nullptr_t) 
 }
 template <typename T> inline bool operator!=(std::nullptr_t, const sk_sp<T>& b) /*noexcept*/ {
     return static_cast<bool>(b);
-}
-
-template <typename T, typename U> inline bool operator<(const sk_sp<T>& a, const sk_sp<U>& b) {
-    // Provide defined total order on sk_sp.
-    // http://wg21.cmeerw.net/lwg/issue1297
-    // http://wg21.cmeerw.net/lwg/issue1401 .
-    return std::less<typename std::common_type<T*, U*>::type>()(a.get(), b.get());
-}
-template <typename T> inline bool operator<(const sk_sp<T>& a, std::nullptr_t) {
-    return std::less<T*>()(a.get(), nullptr);
-}
-template <typename T> inline bool operator<(std::nullptr_t, const sk_sp<T>& b) {
-    return std::less<T*>()(nullptr, b.get());
-}
-
-template <typename T, typename U> inline bool operator<=(const sk_sp<T>& a, const sk_sp<U>& b) {
-    return !(b < a);
-}
-template <typename T> inline bool operator<=(const sk_sp<T>& a, std::nullptr_t) {
-    return !(nullptr < a);
-}
-template <typename T> inline bool operator<=(std::nullptr_t, const sk_sp<T>& b) {
-    return !(b < nullptr);
-}
-
-template <typename T, typename U> inline bool operator>(const sk_sp<T>& a, const sk_sp<U>& b) {
-    return b < a;
-}
-template <typename T> inline bool operator>(const sk_sp<T>& a, std::nullptr_t) {
-    return nullptr < a;
-}
-template <typename T> inline bool operator>(std::nullptr_t, const sk_sp<T>& b) {
-    return b < nullptr;
-}
-
-template <typename T, typename U> inline bool operator>=(const sk_sp<T>& a, const sk_sp<U>& b) {
-    return !(a < b);
-}
-template <typename T> inline bool operator>=(const sk_sp<T>& a, std::nullptr_t) {
-    return !(a < nullptr);
-}
-template <typename T> inline bool operator>=(std::nullptr_t, const sk_sp<T>& b) {
-    return !(nullptr < b);
 }
 
 template <typename C, typename CT, typename T>

@@ -8,10 +8,10 @@
 #ifndef SkAndroidCodec_DEFINED
 #define SkAndroidCodec_DEFINED
 
-#include "SkCodec.h"
-#include "SkEncodedImageFormat.h"
-#include "SkStream.h"
-#include "SkTypes.h"
+#include "include/codec/SkCodec.h"
+#include "include/core/SkEncodedImageFormat.h"
+#include "include/core/SkStream.h"
+#include "include/core/SkTypes.h"
 
 /**
  *  Abstract interface defining image codec functionality that is necessary for
@@ -74,6 +74,13 @@ public:
     virtual ~SkAndroidCodec();
 
     const SkImageInfo& getInfo() const { return fInfo; }
+
+    /**
+     * Return the ICC profile of the encoded data.
+     */
+    const skcms_ICCProfile* getICCProfile() const {
+        return fCodec->getEncodedInfo().profile();
+    }
 
     /**
      *  Format of the encoded data.

@@ -7,19 +7,17 @@
 
 // Intentionally NO #pragma once... included multiple times.
 
-// This file is included from skcms.cc with some pre-defined macros:
-//    N:    depth of all vectors, 1,4,8, or 16
-// and inside a namespace, with some types already defined:
-//    F:    a vector of N float
-//    I32:  a vector of N int32_t
-//    U64:  a vector of N uint64_t
-//    U32:  a vector of N uint32_t
-//    U16:  a vector of N uint16_t
-//    U8:   a vector of N uint8_t
+// This file is included from skcms.cc in a namespace with some pre-defines:
+//    - N:    depth of all vectors, 1,4,8, or 16 (preprocessor define)
+//    - V<T>: a template to create a vector of N T's.
 
-#if defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC)
-    // TODO(mtklein): this build supports FP16 compute
-#endif
+using F   = V<Color>;   // Called F for historic reasons... maybe rename C?
+using I32 = V<int32_t>;
+using U64 = V<uint64_t>;
+using U32 = V<uint32_t>;
+using U16 = V<uint16_t>;
+using U8  = V<uint8_t>;
+
 
 #if defined(__GNUC__) && !defined(__clang__)
     // Once again, GCC is kind of weird, not allowing vector = scalar directly.
@@ -43,13 +41,19 @@
 #if !defined(USING_AVX2)     && defined(USING_AVX) && defined(__AVX2__)
     #define  USING_AVX2
 #endif
+#if !defined(USING_AVX512F)  && N == 16 && defined(__AVX512F__)
+    #define  USING_AVX512F
+#endif
 
 // Similar to the AVX+ features, we define USING_NEON and USING_NEON_F16C.
 // This is more for organizational clarity... skcms.cc doesn't force these.
-#if N == 4 && defined(__ARM_NEON)
+#if N > 1 && defined(__ARM_NEON)
     #define USING_NEON
     #if __ARM_FP & 2
         #define USING_NEON_F16C
+    #endif
+    #if defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC) && defined(SKCMS_OPT_INTO_NEON_FP16)
+        #define USING_NEON_FP16
     #endif
 #endif
 
@@ -64,6 +68,12 @@
 // We stifle these warnings... our helpers that return U64 are always inlined.
 #if defined(__SSE__) && defined(__GNUC__) && !defined(__clang__)
     #pragma GCC diagnostic ignored "-Wpsabi"
+#endif
+
+#if defined(__clang__)
+    #define FALLTHROUGH [[clang::fallthrough]]
+#else
+    #define FALLTHROUGH
 #endif
 
 // We tag most helper functions as SI, to enforce good code generation
@@ -98,13 +108,12 @@ SI D cast(const S& v) {
     return (D)v;
 #elif defined(__clang__)
     return __builtin_convertvector(v, D);
-#elif N == 4
-    return D{v[0],v[1],v[2],v[3]};
-#elif N == 8
-    return D{v[0],v[1],v[2],v[3], v[4],v[5],v[6],v[7]};
-#elif N == 16
-    return D{v[0],v[1],v[ 2],v[ 3], v[ 4],v[ 5],v[ 6],v[ 7],
-             v[8],v[9],v[10],v[11], v[12],v[13],v[14],v[15]};
+#else
+    D d;
+    for (int i = 0; i < N; i++) {
+        d[i] = v[i];
+    }
+    return d;
 #endif
 }
 
@@ -117,22 +126,37 @@ SI D bit_pun(const S& v) {
 // When we convert from float to fixed point, it's very common to want to round,
 // and for some reason compilers generate better code when converting to int32_t.
 // To serve both those ends, we use this function to_fixed() instead of direct cast().
-SI I32 to_fixed(F f) {  return cast<I32>(f + 0.5f); }
-
-template <typename T>
-SI T if_then_else(I32 cond, T t, T e) {
-#if N == 1
-    return cond ? t : e;
+#if defined(USING_NEON_FP16)
+    // NEON's got a F16 -> U16 instruction, so this should be fine without going via I16.
+    SI U16 to_fixed(F f) {  return cast<U16>(f + 0.5f); }
 #else
-    return bit_pun<T>( ( cond & bit_pun<I32>(t)) |
-                       (~cond & bit_pun<I32>(e)) );
+    SI U32 to_fixed(F f) {  return (U32)cast<I32>(f + 0.5f); }
 #endif
-}
+
+
+// Sometimes we do something crazy on one branch of a conditonal,
+// like divide by zero or convert a huge float to an integer,
+// but then harmlessly select the other side.  That trips up N==1
+// sanitizer builds, so we make if_then_else() a macro to avoid
+// evaluating the unused side.
+
+#if N == 1
+    #define if_then_else(cond, t, e) ((cond) ? (t) : (e))
+#else
+    template <typename C, typename T>
+    SI T if_then_else(C cond, T t, T e) {
+        return bit_pun<T>( ( cond & bit_pun<C>(t)) |
+                           (~cond & bit_pun<C>(e)) );
+    }
+#endif
+
 
 SI F F_from_Half(U16 half) {
-#if defined(USING_NEON_F16C)
+#if defined(USING_NEON_FP16)
+    return bit_pun<F>(half);
+#elif defined(USING_NEON_F16C)
     return vcvt_f32_f16((float16x4_t)half);
-#elif defined(__AVX512F__)
+#elif defined(USING_AVX512F)
     return (F)_mm512_cvtph_ps((__m256i)half);
 #elif defined(USING_AVX_F16C)
     typedef int16_t __attribute__((vector_size(16))) I16;
@@ -157,9 +181,11 @@ SI F F_from_Half(U16 half) {
     __attribute__((no_sanitize("unsigned-integer-overflow")))
 #endif
 SI U16 Half_from_F(F f) {
-#if defined(USING_NEON_F16C)
+#if defined(USING_NEON_FP16)
+    return bit_pun<U16>(f);
+#elif defined(USING_NEON_F16C)
     return (U16)vcvt_f16_f32(f);
-#elif defined(__AVX512F__)
+#elif defined(USING_AVX512F)
     return (U16)_mm512_cvtps_ph((__m512 )f, _MM_FROUND_CUR_DIRECTION );
 #elif defined(USING_AVX_F16C)
     return (U16)__builtin_ia32_vcvtps2ph256(f, 0x04/*_MM_FROUND_CUR_DIRECTION*/);
@@ -176,7 +202,11 @@ SI U16 Half_from_F(F f) {
 }
 
 // Swap high and low bytes of 16-bit lanes, converting between big-endian and little-endian.
-#if defined(USING_NEON)
+#if defined(USING_NEON_FP16)
+    SI U16 swap_endian_16(U16 v) {
+        return (U16)vrev16q_u8((uint8x16_t) v);
+    }
+#elif defined(USING_NEON)
     SI U16 swap_endian_16(U16 v) {
         return (U16)vrev16_u8((uint8x8_t) v);
     }
@@ -187,7 +217,10 @@ SI U64 swap_endian_16x4(const U64& rgba) {
          | (rgba & 0xff00ff00ff00ff00) >> 8;
 }
 
-#if defined(USING_NEON)
+#if defined(USING_NEON_FP16)
+    SI F min_(F x, F y) { return (F)vminq_f16((float16x8_t)x, (float16x8_t)y); }
+    SI F max_(F x, F y) { return (F)vmaxq_f16((float16x8_t)x, (float16x8_t)y); }
+#elif defined(USING_NEON)
     SI F min_(F x, F y) { return (F)vminq_f32((float32x4_t)x, (float32x4_t)y); }
     SI F max_(F x, F y) { return (F)vmaxq_f32((float32x4_t)x, (float32x4_t)y); }
 #else
@@ -198,10 +231,16 @@ SI U64 swap_endian_16x4(const U64& rgba) {
 SI F floor_(F x) {
 #if N == 1
     return floorf_(x);
+#elif defined(USING_NEON_FP16)
+    return vrndmq_f16(x);
 #elif defined(__aarch64__)
     return vrndmq_f32(x);
-#elif defined(__AVX512F__)
-    return _mm512_floor_ps(x);
+#elif defined(USING_AVX512F)
+    // Clang's _mm512_floor_ps() passes its mask as -1, not (__mmask16)-1,
+    // and integer santizer catches that this implicit cast changes the
+    // value from -1 to 65535.  We'll cast manually to work around it.
+    // Read this as `return _mm512_floor_ps(x)`.
+    return _mm512_mask_floor_ps(x, (__mmask16)-1, x);
 #elif defined(USING_AVX)
     return __builtin_ia32_roundps256(x, 0x01/*_MM_FROUND_FLOOR*/);
 #elif defined(__SSE4_1__)
@@ -218,6 +257,10 @@ SI F floor_(F x) {
 }
 
 SI F approx_log2(F x) {
+#if defined(USING_NEON_FP16)
+    // TODO(mtklein)
+    return x;
+#else
     // The first approximation of log2(x) is its exponent 'e', minus 127.
     I32 bits = bit_pun<I32>(x);
 
@@ -229,15 +272,26 @@ SI F approx_log2(F x) {
     return e - 124.225514990f
              -   1.498030302f*m
              -   1.725879990f/(0.3520887068f + m);
+#endif
+}
+
+SI F approx_log(F x) {
+    const float ln2 = 0.69314718f;
+    return ln2 * approx_log2(x);
 }
 
 SI F approx_exp2(F x) {
+#if defined(USING_NEON_FP16)
+    // TODO(mtklein)
+    return x;
+#else
     F fract = x - floor_(x);
 
     I32 bits = cast<I32>((1.0f * (1<<23)) * (x + 121.274057500f
                                                -   1.490129070f*fract
                                                +  27.728023300f/(4.84252568f - fract)));
     return bit_pun<F>(bits);
+#endif
 }
 
 SI F approx_pow(F x, float y) {
@@ -245,8 +299,18 @@ SI F approx_pow(F x, float y) {
                                              , approx_exp2(approx_log2(x) * y));
 }
 
+SI F approx_exp(F x) {
+    const float log2_e = 1.4426950408889634074f;
+    return approx_exp2(log2_e * x);
+}
+
 // Return tf(x).
 SI F apply_tf(const skcms_TransferFunction* tf, F x) {
+#if defined(USING_NEON_FP16)
+    // TODO(mtklein)
+    (void)tf;
+    return x;
+#else
     // Peel off the sign bit and set x = |x|.
     U32 bits = bit_pun<U32>(x),
         sign = bits & 0x80000000;
@@ -258,6 +322,63 @@ SI F apply_tf(const skcms_TransferFunction* tf, F x) {
 
     // Tack the sign bit back on.
     return bit_pun<F>(sign | bit_pun<U32>(v));
+#endif
+}
+
+SI F apply_pq(const skcms_TransferFunction* tf, F x) {
+#if defined(USING_NEON_FP16)
+    // TODO(mtklein)
+    (void)tf;
+    return x;
+#else
+    U32 bits = bit_pun<U32>(x),
+        sign = bits & 0x80000000;
+    x = bit_pun<F>(bits ^ sign);
+
+    F v = approx_pow(max_(tf->a + tf->b * approx_pow(x, tf->c), F0)
+                       / (tf->d + tf->e * approx_pow(x, tf->c)),
+                     tf->f);
+
+    return bit_pun<F>(sign | bit_pun<U32>(v));
+#endif
+}
+
+SI F apply_hlg(const skcms_TransferFunction* tf, F x) {
+#if defined(USING_NEON_FP16)
+    // TODO(mtklein)
+    (void)tf;
+    return x;
+#else
+    const float R = tf->a, G = tf->b,
+                a = tf->c, b = tf->d, c = tf->e;
+    U32 bits = bit_pun<U32>(x),
+        sign = bits & 0x80000000;
+    x = bit_pun<F>(bits ^ sign);
+
+    F v = if_then_else(x*R <= 1, approx_pow(x*R, G)
+                               , approx_exp((x-c)*a) + b);
+
+    return bit_pun<F>(sign | bit_pun<U32>(v));
+#endif
+}
+
+SI F apply_hlginv(const skcms_TransferFunction* tf, F x) {
+#if defined(USING_NEON_FP16)
+    // TODO(mtklein)
+    (void)tf;
+    return x;
+#else
+    const float R = tf->a, G = tf->b,
+                a = tf->c, b = tf->d, c = tf->e;
+    U32 bits = bit_pun<U32>(x),
+        sign = bits & 0x80000000;
+    x = bit_pun<F>(bits ^ sign);
+
+    F v = if_then_else(x <= 1, R * approx_pow(x, G)
+                             , a * approx_log(x - b) + c);
+
+    return bit_pun<F>(sign | bit_pun<U32>(v));
+#endif
 }
 
 
@@ -342,52 +463,69 @@ SI U8 gather_8(const uint8_t* p, I32 ix) {
     return v;
 }
 
-// Helper for gather_16(), loading the ix'th 16-bit value from p.
-SI uint16_t load_16(const uint8_t* p, int ix) {
-    return load<uint16_t>(p + 2*ix);
-}
-
 SI U16 gather_16(const uint8_t* p, I32 ix) {
+    // Load the i'th 16-bit value from p.
+    auto load_16 = [p](int i) {
+        return load<uint16_t>(p + 2*i);
+    };
 #if N == 1
-    U16 v = load_16(p,ix);
+    U16 v = load_16(ix);
 #elif N == 4
-    U16 v = { load_16(p,ix[0]), load_16(p,ix[1]), load_16(p,ix[2]), load_16(p,ix[3]) };
+    U16 v = { load_16(ix[0]), load_16(ix[1]), load_16(ix[2]), load_16(ix[3]) };
 #elif N == 8
-    U16 v = { load_16(p,ix[0]), load_16(p,ix[1]), load_16(p,ix[2]), load_16(p,ix[3]),
-              load_16(p,ix[4]), load_16(p,ix[5]), load_16(p,ix[6]), load_16(p,ix[7]) };
+    U16 v = { load_16(ix[0]), load_16(ix[1]), load_16(ix[2]), load_16(ix[3]),
+              load_16(ix[4]), load_16(ix[5]), load_16(ix[6]), load_16(ix[7]) };
 #elif N == 16
-    U16 v = { load_16(p,ix[ 0]), load_16(p,ix[ 1]), load_16(p,ix[ 2]), load_16(p,ix[ 3]),
-              load_16(p,ix[ 4]), load_16(p,ix[ 5]), load_16(p,ix[ 6]), load_16(p,ix[ 7]),
-              load_16(p,ix[ 8]), load_16(p,ix[ 9]), load_16(p,ix[10]), load_16(p,ix[11]),
-              load_16(p,ix[12]), load_16(p,ix[13]), load_16(p,ix[14]), load_16(p,ix[15]) };
+    U16 v = { load_16(ix[ 0]), load_16(ix[ 1]), load_16(ix[ 2]), load_16(ix[ 3]),
+              load_16(ix[ 4]), load_16(ix[ 5]), load_16(ix[ 6]), load_16(ix[ 7]),
+              load_16(ix[ 8]), load_16(ix[ 9]), load_16(ix[10]), load_16(ix[11]),
+              load_16(ix[12]), load_16(ix[13]), load_16(ix[14]), load_16(ix[15]) };
 #endif
     return v;
 }
 
-#if !defined(USING_AVX2)
-    // Helpers for gather_24/48(), loading the ix'th 24/48-bit value from p, and 1/2 extra bytes.
-    SI uint32_t load_24_32(const uint8_t* p, int ix) {
-        return load<uint32_t>(p + 3*ix);
-    }
-    SI uint64_t load_48_64(const uint8_t* p, int ix) {
-        return load<uint64_t>(p + 6*ix);
-    }
+SI U32 gather_32(const uint8_t* p, I32 ix) {
+    // Load the i'th 32-bit value from p.
+    auto load_32 = [p](int i) {
+        return load<uint32_t>(p + 4*i);
+    };
+#if N == 1
+    U32 v = load_32(ix);
+#elif N == 4
+    U32 v = { load_32(ix[0]), load_32(ix[1]), load_32(ix[2]), load_32(ix[3]) };
+#elif N == 8
+    U32 v = { load_32(ix[0]), load_32(ix[1]), load_32(ix[2]), load_32(ix[3]),
+              load_32(ix[4]), load_32(ix[5]), load_32(ix[6]), load_32(ix[7]) };
+#elif N == 16
+    U32 v = { load_32(ix[ 0]), load_32(ix[ 1]), load_32(ix[ 2]), load_32(ix[ 3]),
+              load_32(ix[ 4]), load_32(ix[ 5]), load_32(ix[ 6]), load_32(ix[ 7]),
+              load_32(ix[ 8]), load_32(ix[ 9]), load_32(ix[10]), load_32(ix[11]),
+              load_32(ix[12]), load_32(ix[13]), load_32(ix[14]), load_32(ix[15]) };
 #endif
+    // TODO: AVX2 and AVX-512 gathers (c.f. gather_24).
+    return v;
+}
 
 SI U32 gather_24(const uint8_t* p, I32 ix) {
     // First, back up a byte.  Any place we're gathering from has a safe junk byte to read
     // in front of it, either a previous table value, or some tag metadata.
     p -= 1;
 
+    // Load the i'th 24-bit value from p, and 1 extra byte.
+    auto load_24_32 = [p](int i) {
+        return load<uint32_t>(p + 3*i);
+    };
+
     // Now load multiples of 4 bytes (a junk byte, then r,g,b).
 #if N == 1
-    U32 v = load_24_32(p,ix);
+    U32 v = load_24_32(ix);
 #elif N == 4
-    U32 v = { load_24_32(p,ix[0]), load_24_32(p,ix[1]), load_24_32(p,ix[2]), load_24_32(p,ix[3]) };
+    U32 v = { load_24_32(ix[0]), load_24_32(ix[1]), load_24_32(ix[2]), load_24_32(ix[3]) };
 #elif N == 8 && !defined(USING_AVX2)
-    U32 v = { load_24_32(p,ix[0]), load_24_32(p,ix[1]), load_24_32(p,ix[2]), load_24_32(p,ix[3]),
-              load_24_32(p,ix[4]), load_24_32(p,ix[5]), load_24_32(p,ix[6]), load_24_32(p,ix[7]) };
+    U32 v = { load_24_32(ix[0]), load_24_32(ix[1]), load_24_32(ix[2]), load_24_32(ix[3]),
+              load_24_32(ix[4]), load_24_32(ix[5]), load_24_32(ix[6]), load_24_32(ix[7]) };
 #elif N == 8
+    (void)load_24_32;
     // The gather instruction here doesn't need any particular alignment,
     // but the intrinsic takes a const int*.
     const int* p4 = bit_pun<const int*>(p);
@@ -399,6 +537,7 @@ SI U32 gather_24(const uint8_t* p, I32 ix) {
         U32 v = (U32)__builtin_ia32_gathersiv8si(zero, p4, 3*ix, mask, 1);
     #endif
 #elif N == 16
+    (void)load_24_32;
     // The intrinsic is supposed to take const void* now, but it takes const int*, just like AVX2.
     // And AVX-512 swapped the order of arguments.  :/
     const int* p4 = bit_pun<const int*>(p);
@@ -414,18 +553,24 @@ SI U32 gather_24(const uint8_t* p, I32 ix) {
         // As in gather_24(), with everything doubled.
         p -= 2;
 
+        // Load the i'th 48-bit value from p, and 2 extra bytes.
+        auto load_48_64 = [p](int i) {
+            return load<uint64_t>(p + 6*i);
+        };
+
     #if N == 1
-        *v = load_48_64(p,ix);
+        *v = load_48_64(ix);
     #elif N == 4
         *v = U64{
-            load_48_64(p,ix[0]), load_48_64(p,ix[1]), load_48_64(p,ix[2]), load_48_64(p,ix[3]),
+            load_48_64(ix[0]), load_48_64(ix[1]), load_48_64(ix[2]), load_48_64(ix[3]),
         };
     #elif N == 8 && !defined(USING_AVX2)
         *v = U64{
-            load_48_64(p,ix[0]), load_48_64(p,ix[1]), load_48_64(p,ix[2]), load_48_64(p,ix[3]),
-            load_48_64(p,ix[4]), load_48_64(p,ix[5]), load_48_64(p,ix[6]), load_48_64(p,ix[7]),
+            load_48_64(ix[0]), load_48_64(ix[1]), load_48_64(ix[2]), load_48_64(ix[3]),
+            load_48_64(ix[4]), load_48_64(ix[5]), load_48_64(ix[6]), load_48_64(ix[7]),
         };
     #elif N == 8
+        (void)load_48_64;
         typedef int32_t   __attribute__((vector_size(16))) Half_I32;
         typedef long long __attribute__((vector_size(32))) Half_I64;
 
@@ -450,6 +595,7 @@ SI U32 gather_24(const uint8_t* p, I32 ix) {
         store((char*)v +  0, lo);
         store((char*)v + 32, hi);
     #elif N == 16
+        (void)load_48_64;
         const long long int* p8 = bit_pun<const long long int*>(p);
         __m512i lo = _mm512_i32gather_epi64(_mm512_extracti32x8_epi32((__m512i)(6*ix), 0), p8, 1),
                 hi = _mm512_i32gather_epi64(_mm512_extracti32x8_epi32((__m512i)(6*ix), 1), p8, 1);
@@ -468,15 +614,25 @@ SI F F_from_U8(U8 v) {
 SI F F_from_U16_BE(U16 v) {
     // All 16-bit ICC values are big-endian, so we byte swap before converting to float.
     // MSVC catches the "loss" of data here in the portable path, so we also make sure to mask.
-    v = (U16)( ((v<<8)|(v>>8)) & 0xffff );
-    return cast<F>(v) * (1/65535.0f);
+    U16 lo = (v >> 8),
+        hi = (v << 8) & 0xffff;
+    return cast<F>(lo|hi) * (1/65535.0f);
+}
+
+SI U16 U16_from_F(F v) {
+    // 65535 == inf in FP16, so promote to FP32 before converting.
+    return cast<U16>(cast<V<float>>(v) * 65535 + 0.5f);
 }
 
 SI F minus_1_ulp(F v) {
-    return bit_pun<F>( bit_pun<I32>(v) - 1 );
+#if defined(USING_NEON_FP16)
+    return bit_pun<F>( bit_pun<U16>(v) - 1 );
+#else
+    return bit_pun<F>( bit_pun<U32>(v) - 1 );
+#endif
 }
 
-SI F table_8(const skcms_Curve* curve, F v) {
+SI F table(const skcms_Curve* curve, F v) {
     // Clamp the input to [0,1], then scale to a table index.
     F ix = max_(F0, min_(v, F1)) * (float)(curve->table_entries - 1);
 
@@ -489,101 +645,123 @@ SI F table_8(const skcms_Curve* curve, F v) {
     // the same as in 'l' or adjacent.  We have a rough idea that's it'd always be safe
     // to read adjacent entries and perhaps underflow the table by a byte or two
     // (it'd be junk, but always safe to read).  Not sure how to lerp yet.
-    F l = F_from_U8(gather_8(curve->table_8, lo)),
-      h = F_from_U8(gather_8(curve->table_8, hi));
+    F l,h;
+    if (curve->table_8) {
+        l = F_from_U8(gather_8(curve->table_8, lo));
+        h = F_from_U8(gather_8(curve->table_8, hi));
+    } else {
+        l = F_from_U16_BE(gather_16(curve->table_16, lo));
+        h = F_from_U16_BE(gather_16(curve->table_16, hi));
+    }
     return l + (h-l)*t;
 }
 
-SI F table_16(const skcms_Curve* curve, F v) {
-    // All just as in table_8() until the gathers.
-    F ix = max_(F0, min_(v, F1)) * (float)(curve->table_entries - 1);
-
-    I32 lo = cast<I32>(            ix      ),
-        hi = cast<I32>(minus_1_ulp(ix+1.0f));
-    F t = ix - cast<F>(lo);
-
-    // TODO: as above, load l and h simultaneously?
-    // Here we could even use AVX2-style 32-bit gathers.
-    F l = F_from_U16_BE(gather_16(curve->table_16, lo)),
-      h = F_from_U16_BE(gather_16(curve->table_16, hi));
-    return l + (h-l)*t;
-}
-
-// Color lookup tables, by input dimension and bit depth.
-SI void clut_0_8(const skcms_A2B* a2b, I32 ix, I32 stride, F* r, F* g, F* b, F a) {
+SI void sample_clut_8(const skcms_A2B* a2b, I32 ix, F* r, F* g, F* b) {
     U32 rgb = gather_24(a2b->grid_8, ix);
 
     *r = cast<F>((rgb >>  0) & 0xff) * (1/255.0f);
     *g = cast<F>((rgb >>  8) & 0xff) * (1/255.0f);
     *b = cast<F>((rgb >> 16) & 0xff) * (1/255.0f);
-
-    (void)a;
-    (void)stride;
-}
-SI void clut_0_16(const skcms_A2B* a2b, I32 ix, I32 stride, F* r, F* g, F* b, F a) {
-    #if defined(__arm__)
-        // This is up to 2x faster on 32-bit ARM than the #else-case fast path.
-        *r = F_from_U16_BE(gather_16(a2b->grid_16, 3*ix+0));
-        *g = F_from_U16_BE(gather_16(a2b->grid_16, 3*ix+1));
-        *b = F_from_U16_BE(gather_16(a2b->grid_16, 3*ix+2));
-    #else
-        // This strategy is much faster for 64-bit builds, and fine for 32-bit x86 too.
-        U64 rgb;
-        gather_48(a2b->grid_16, ix, &rgb);
-        rgb = swap_endian_16x4(rgb);
-
-        *r = cast<F>((rgb >>  0) & 0xffff) * (1/65535.0f);
-        *g = cast<F>((rgb >> 16) & 0xffff) * (1/65535.0f);
-        *b = cast<F>((rgb >> 32) & 0xffff) * (1/65535.0f);
-    #endif
-    (void)a;
-    (void)stride;
 }
 
-// __attribute__((always_inline)) hits some pathological case in GCC that makes
-// compilation way too slow for my patience.
-#if defined(__clang__)
-    #define MAYBE_SI SI
+SI void sample_clut_16(const skcms_A2B* a2b, I32 ix, F* r, F* g, F* b) {
+#if defined(__arm__)
+    // This is up to 2x faster on 32-bit ARM than the #else-case fast path.
+    *r = F_from_U16_BE(gather_16(a2b->grid_16, 3*ix+0));
+    *g = F_from_U16_BE(gather_16(a2b->grid_16, 3*ix+1));
+    *b = F_from_U16_BE(gather_16(a2b->grid_16, 3*ix+2));
 #else
-    #define MAYBE_SI static inline
+    // This strategy is much faster for 64-bit builds, and fine for 32-bit x86 too.
+    U64 rgb;
+    gather_48(a2b->grid_16, ix, &rgb);
+    rgb = swap_endian_16x4(rgb);
+
+    *r = cast<F>((rgb >>  0) & 0xffff) * (1/65535.0f);
+    *g = cast<F>((rgb >> 16) & 0xffff) * (1/65535.0f);
+    *b = cast<F>((rgb >> 32) & 0xffff) * (1/65535.0f);
+#endif
+}
+
+// GCC 7.2.0 hits an internal compiler error with -finline-functions (or -O3)
+// when targeting MIPS 64, i386, or s390x,  I think attempting to inline clut() into exec_ops().
+#if 1 && defined(__GNUC__) && !defined(__clang__) \
+      && (defined(__mips64) || defined(__i386) || defined(__s390x__))
+    #define MAYBE_NOINLINE __attribute__((noinline))
+#else
+    #define MAYBE_NOINLINE
 #endif
 
-// These are all the same basic approach: handle one dimension, then the rest recursively.
-// We let "I" be the current dimension, and "J" the previous dimension, I-1.  "B" is the bit depth.
-#define DEF_CLUT(I,J,B)                                                                    \
-    MAYBE_SI \
-    void clut_##I##_##B(const skcms_A2B* a2b, I32 ix, I32 stride, F* r, F* g, F* b, F a) { \
-        I32 limit = cast<I32>(F0);                                                         \
-        limit += a2b->grid_points[I-1];                                                    \
-                                                                                           \
-        const F* srcs[] = { r,g,b,&a };                                                    \
-        F src = *srcs[I-1];                                                                \
-                                                                                           \
-        F x = max_(F0, min_(src, F1)) * cast<F>(limit - 1);                                \
-                                                                                           \
-        I32 lo = cast<I32>(            x      ),                                           \
-            hi = cast<I32>(minus_1_ulp(x+1.0f));                                           \
-        F lr = *r, lg = *g, lb = *b,                                                       \
-          hr = *r, hg = *g, hb = *b;                                                       \
-        clut_##J##_##B(a2b, stride*lo + ix, stride*limit, &lr,&lg,&lb,a);                  \
-        clut_##J##_##B(a2b, stride*hi + ix, stride*limit, &hr,&hg,&hb,a);                  \
-                                                                                           \
-        F t = x - cast<F>(lo);                                                             \
-        *r = lr + (hr-lr)*t;                                                               \
-        *g = lg + (hg-lg)*t;                                                               \
-        *b = lb + (hb-lb)*t;                                                               \
+MAYBE_NOINLINE
+static void clut(const skcms_A2B* a2b, F* r, F* g, F* b, F a) {
+    const int dim = (int)a2b->input_channels;
+    assert (0 < dim && dim <= 4);
+
+    // For each of these arrays, think foo[2*dim], but we use foo[8] since we know dim <= 4.
+    I32 index [8];  // Index contribution by dimension, first low from 0, then high from 4.
+    F   weight[8];  // Weight for each contribution, again first low, then high.
+
+    // O(dim) work first: calculate index,weight from r,g,b,a.
+    const F inputs[] = { *r,*g,*b,a };
+    for (int i = dim-1, stride = 1; i >= 0; i--) {
+        // x is where we logically want to sample the grid in the i-th dimension.
+        F x = inputs[i] * (float)(a2b->grid_points[i] - 1);
+
+        // But we can't index at floats.  lo and hi are the two integer grid points surrounding x.
+        I32 lo = cast<I32>(            x      ),   // i.e. trunc(x) == floor(x) here.
+            hi = cast<I32>(minus_1_ulp(x+1.0f));
+        // Notice how we fold in the accumulated stride across previous dimensions here.
+        index[i+0] = lo * stride;
+        index[i+4] = hi * stride;
+        stride *= a2b->grid_points[i];
+
+        // We'll interpolate between those two integer grid points by t.
+        F t = x - cast<F>(lo);  // i.e. fract(x)
+        weight[i+0] = 1-t;
+        weight[i+4] = t;
     }
 
-DEF_CLUT(1,0,8)
-DEF_CLUT(2,1,8)
-DEF_CLUT(3,2,8)
-DEF_CLUT(4,3,8)
+    *r = *g = *b = F0;
 
-DEF_CLUT(1,0,16)
-DEF_CLUT(2,1,16)
-DEF_CLUT(3,2,16)
-DEF_CLUT(4,3,16)
+    // We'll sample 2^dim == 1<<dim table entries per pixel,
+    // in all combinations of low and high in each dimension.
+    for (int combo = 0; combo < (1<<dim); combo++) {  // This loop can be done in any order.
 
+        // Each of these upcoming (combo&N)*K expressions here evaluates to 0 or 4,
+        // where 0 selects the low index contribution and its weight 1-t,
+        // or 4 the high index contribution and its weight t.
+
+        // Since 0<dim≤4, we can always just start off with the 0-th channel,
+        // then handle the others conditionally.
+        I32 ix = index [0 + (combo&1)*4];
+        F    w = weight[0 + (combo&1)*4];
+
+        switch ((dim-1)&3) {  // This lets the compiler know there are no other cases to handle.
+            case 3: ix += index [3 + (combo&8)/2];
+                    w  *= weight[3 + (combo&8)/2];
+                    FALLTHROUGH;
+                    // fall through
+
+            case 2: ix += index [2 + (combo&4)*1];
+                    w  *= weight[2 + (combo&4)*1];
+                    FALLTHROUGH;
+                    // fall through
+
+            case 1: ix += index [1 + (combo&2)*2];
+                    w  *= weight[1 + (combo&2)*2];
+        }
+
+        F R,G,B;
+        if (a2b->grid_8) {
+            sample_clut_8 (a2b,ix, &R,&G,&B);
+        } else {
+            sample_clut_16(a2b,ix, &R,&G,&B);
+        }
+
+        *r += w*R;
+        *g += w*G;
+        *b += w*B;
+    }
+}
 
 static void exec_ops(const Op* ops, const void** args,
                      const char* src, char* dst, int i) {
@@ -617,7 +795,23 @@ static void exec_ops(const Op* ops, const void** args,
 
             case Op_load_888:{
                 const uint8_t* rgb = (const uint8_t*)(src + 3*i);
-            #if defined(USING_NEON)
+            #if defined(USING_NEON_FP16)
+                // See the explanation under USING_NEON below.  This is that doubled up.
+                uint8x16x3_t v = {{ vdupq_n_u8(0), vdupq_n_u8(0), vdupq_n_u8(0) }};
+                v = vld3q_lane_u8(rgb+ 0, v,  0);
+                v = vld3q_lane_u8(rgb+ 3, v,  2);
+                v = vld3q_lane_u8(rgb+ 6, v,  4);
+                v = vld3q_lane_u8(rgb+ 9, v,  6);
+
+                v = vld3q_lane_u8(rgb+12, v,  8);
+                v = vld3q_lane_u8(rgb+15, v, 10);
+                v = vld3q_lane_u8(rgb+18, v, 12);
+                v = vld3q_lane_u8(rgb+21, v, 14);
+
+                r = cast<F>((U16)v.val[0]) * (1/255.0f);
+                g = cast<F>((U16)v.val[1]) * (1/255.0f);
+                b = cast<F>((U16)v.val[2]) * (1/255.0f);
+            #elif defined(USING_NEON)
                 // There's no uint8x4x3_t or vld3 load for it, so we'll load each rgb pixel one at
                 // a time.  Since we're doing that, we might as well load them into 16-bit lanes.
                 // (We'd even load into 32-bit lanes, but that's not possible on ARMv7.)
@@ -649,6 +843,17 @@ static void exec_ops(const Op* ops, const void** args,
                 a = cast<F>((rgba >> 24) & 0xff) * (1/255.0f);
             } break;
 
+            case Op_load_8888_palette8:{
+                const uint8_t* palette = (const uint8_t*) *args++;
+                I32 ix = cast<I32>(load<U8>(src + 1*i));
+                U32 rgba = gather_32(palette, ix);
+
+                r = cast<F>((rgba >>  0) & 0xff) * (1/255.0f);
+                g = cast<F>((rgba >>  8) & 0xff) * (1/255.0f);
+                b = cast<F>((rgba >> 16) & 0xff) * (1/255.0f);
+                a = cast<F>((rgba >> 24) & 0xff) * (1/255.0f);
+            } break;
+
             case Op_load_1010102:{
                 U32 rgba = load<U32>(src + 4*i);
 
@@ -662,7 +867,12 @@ static void exec_ops(const Op* ops, const void** args,
                 uintptr_t ptr = (uintptr_t)(src + 6*i);
                 assert( (ptr & 1) == 0 );                   // src must be 2-byte aligned for this
                 const uint16_t* rgb = (const uint16_t*)ptr; // cast to const uint16_t* to be safe.
-            #if defined(USING_NEON)
+            #if defined(USING_NEON_FP16)
+                uint16x8x3_t v = vld3q_u16(rgb);
+                r = cast<F>((U16)v.val[0]) * (1/65535.0f);
+                g = cast<F>((U16)v.val[1]) * (1/65535.0f);
+                b = cast<F>((U16)v.val[2]) * (1/65535.0f);
+            #elif defined(USING_NEON)
                 uint16x4x3_t v = vld3_u16(rgb);
                 r = cast<F>((U16)v.val[0]) * (1/65535.0f);
                 g = cast<F>((U16)v.val[1]) * (1/65535.0f);
@@ -678,7 +888,13 @@ static void exec_ops(const Op* ops, const void** args,
                 uintptr_t ptr = (uintptr_t)(src + 8*i);
                 assert( (ptr & 1) == 0 );                    // src must be 2-byte aligned for this
                 const uint16_t* rgba = (const uint16_t*)ptr; // cast to const uint16_t* to be safe.
-            #if defined(USING_NEON)
+            #if defined(USING_NEON_FP16)
+                uint16x8x4_t v = vld4q_u16(rgba);
+                r = cast<F>((U16)v.val[0]) * (1/65535.0f);
+                g = cast<F>((U16)v.val[1]) * (1/65535.0f);
+                b = cast<F>((U16)v.val[2]) * (1/65535.0f);
+                a = cast<F>((U16)v.val[3]) * (1/65535.0f);
+            #elif defined(USING_NEON)
                 uint16x4x4_t v = vld4_u16(rgba);
                 r = cast<F>((U16)v.val[0]) * (1/65535.0f);
                 g = cast<F>((U16)v.val[1]) * (1/65535.0f);
@@ -698,7 +914,12 @@ static void exec_ops(const Op* ops, const void** args,
                 uintptr_t ptr = (uintptr_t)(src + 6*i);
                 assert( (ptr & 1) == 0 );                   // src must be 2-byte aligned for this
                 const uint16_t* rgb = (const uint16_t*)ptr; // cast to const uint16_t* to be safe.
-            #if defined(USING_NEON)
+            #if defined(USING_NEON_FP16)
+                uint16x8x3_t v = vld3q_u16(rgb);
+                r = cast<F>(swap_endian_16((U16)v.val[0])) * (1/65535.0f);
+                g = cast<F>(swap_endian_16((U16)v.val[1])) * (1/65535.0f);
+                b = cast<F>(swap_endian_16((U16)v.val[2])) * (1/65535.0f);
+            #elif defined(USING_NEON)
                 uint16x4x3_t v = vld3_u16(rgb);
                 r = cast<F>(swap_endian_16((U16)v.val[0])) * (1/65535.0f);
                 g = cast<F>(swap_endian_16((U16)v.val[1])) * (1/65535.0f);
@@ -718,7 +939,13 @@ static void exec_ops(const Op* ops, const void** args,
                 uintptr_t ptr = (uintptr_t)(src + 8*i);
                 assert( (ptr & 1) == 0 );                    // src must be 2-byte aligned for this
                 const uint16_t* rgba = (const uint16_t*)ptr; // cast to const uint16_t* to be safe.
-            #if defined(USING_NEON)
+            #if defined(USING_NEON_FP16)
+                uint16x8x4_t v = vld4q_u16(rgba);
+                r = cast<F>(swap_endian_16((U16)v.val[0])) * (1/65535.0f);
+                g = cast<F>(swap_endian_16((U16)v.val[1])) * (1/65535.0f);
+                b = cast<F>(swap_endian_16((U16)v.val[2])) * (1/65535.0f);
+                a = cast<F>(swap_endian_16((U16)v.val[3])) * (1/65535.0f);
+            #elif defined(USING_NEON)
                 uint16x4x4_t v = vld4_u16(rgba);
                 r = cast<F>(swap_endian_16((U16)v.val[0])) * (1/65535.0f);
                 g = cast<F>(swap_endian_16((U16)v.val[1])) * (1/65535.0f);
@@ -738,7 +965,12 @@ static void exec_ops(const Op* ops, const void** args,
                 uintptr_t ptr = (uintptr_t)(src + 6*i);
                 assert( (ptr & 1) == 0 );                   // src must be 2-byte aligned for this
                 const uint16_t* rgb = (const uint16_t*)ptr; // cast to const uint16_t* to be safe.
-            #if defined(USING_NEON)
+            #if defined(USING_NEON_FP16)
+                uint16x8x3_t v = vld3q_u16(rgb);
+                U16 R = (U16)v.val[0],
+                    G = (U16)v.val[1],
+                    B = (U16)v.val[2];
+            #elif defined(USING_NEON)
                 uint16x4x3_t v = vld3_u16(rgb);
                 U16 R = (U16)v.val[0],
                     G = (U16)v.val[1],
@@ -757,7 +989,13 @@ static void exec_ops(const Op* ops, const void** args,
                 uintptr_t ptr = (uintptr_t)(src + 8*i);
                 assert( (ptr & 1) == 0 );                    // src must be 2-byte aligned for this
                 const uint16_t* rgba = (const uint16_t*)ptr; // cast to const uint16_t* to be safe.
-            #if defined(USING_NEON)
+            #if defined(USING_NEON_FP16)
+                uint16x8x4_t v = vld4q_u16(rgba);
+                U16 R = (U16)v.val[0],
+                    G = (U16)v.val[1],
+                    B = (U16)v.val[2],
+                    A = (U16)v.val[3];
+            #elif defined(USING_NEON)
                 uint16x4x4_t v = vld4_u16(rgba);
                 U16 R = (U16)v.val[0],
                     G = (U16)v.val[1],
@@ -780,7 +1018,13 @@ static void exec_ops(const Op* ops, const void** args,
                 uintptr_t ptr = (uintptr_t)(src + 12*i);
                 assert( (ptr & 3) == 0 );                   // src must be 4-byte aligned for this
                 const float* rgb = (const float*)ptr;       // cast to const float* to be safe.
-            #if defined(USING_NEON)
+            #if defined(USING_NEON_FP16)
+                float32x4x3_t lo = vld3q_f32(rgb +  0),
+                              hi = vld3q_f32(rgb + 12);
+                r = (F)vcombine_f16(vcvt_f16_f32(lo.val[0]), vcvt_f16_f32(hi.val[0]));
+                g = (F)vcombine_f16(vcvt_f16_f32(lo.val[1]), vcvt_f16_f32(hi.val[1]));
+                b = (F)vcombine_f16(vcvt_f16_f32(lo.val[2]), vcvt_f16_f32(hi.val[2]));
+            #elif defined(USING_NEON)
                 float32x4x3_t v = vld3q_f32(rgb);
                 r = (F)v.val[0];
                 g = (F)v.val[1];
@@ -796,7 +1040,14 @@ static void exec_ops(const Op* ops, const void** args,
                 uintptr_t ptr = (uintptr_t)(src + 16*i);
                 assert( (ptr & 3) == 0 );                   // src must be 4-byte aligned for this
                 const float* rgba = (const float*)ptr;      // cast to const float* to be safe.
-            #if defined(USING_NEON)
+            #if defined(USING_NEON_FP16)
+                float32x4x4_t lo = vld4q_f32(rgba +  0),
+                              hi = vld4q_f32(rgba + 16);
+                r = (F)vcombine_f16(vcvt_f16_f32(lo.val[0]), vcvt_f16_f32(hi.val[0]));
+                g = (F)vcombine_f16(vcvt_f16_f32(lo.val[1]), vcvt_f16_f32(hi.val[1]));
+                b = (F)vcombine_f16(vcvt_f16_f32(lo.val[2]), vcvt_f16_f32(hi.val[2]));
+                a = (F)vcombine_f16(vcvt_f16_f32(lo.val[3]), vcvt_f16_f32(hi.val[3]));
+            #elif defined(USING_NEON)
                 float32x4x4_t v = vld4q_f32(rgba);
                 r = (F)v.val[0];
                 g = (F)v.val[1];
@@ -899,58 +1150,34 @@ static void exec_ops(const Op* ops, const void** args,
             case Op_tf_b:{ b = apply_tf((const skcms_TransferFunction*)*args++, b); } break;
             case Op_tf_a:{ a = apply_tf((const skcms_TransferFunction*)*args++, a); } break;
 
-            case Op_table_8_r: { r = table_8((const skcms_Curve*)*args++, r); } break;
-            case Op_table_8_g: { g = table_8((const skcms_Curve*)*args++, g); } break;
-            case Op_table_8_b: { b = table_8((const skcms_Curve*)*args++, b); } break;
-            case Op_table_8_a: { a = table_8((const skcms_Curve*)*args++, a); } break;
+            case Op_pq_r:{ r = apply_pq((const skcms_TransferFunction*)*args++, r); } break;
+            case Op_pq_g:{ g = apply_pq((const skcms_TransferFunction*)*args++, g); } break;
+            case Op_pq_b:{ b = apply_pq((const skcms_TransferFunction*)*args++, b); } break;
+            case Op_pq_a:{ a = apply_pq((const skcms_TransferFunction*)*args++, a); } break;
 
-            case Op_table_16_r:{ r = table_16((const skcms_Curve*)*args++, r); } break;
-            case Op_table_16_g:{ g = table_16((const skcms_Curve*)*args++, g); } break;
-            case Op_table_16_b:{ b = table_16((const skcms_Curve*)*args++, b); } break;
-            case Op_table_16_a:{ a = table_16((const skcms_Curve*)*args++, a); } break;
+            case Op_hlg_r:{ r = apply_hlg((const skcms_TransferFunction*)*args++, r); } break;
+            case Op_hlg_g:{ g = apply_hlg((const skcms_TransferFunction*)*args++, g); } break;
+            case Op_hlg_b:{ b = apply_hlg((const skcms_TransferFunction*)*args++, b); } break;
+            case Op_hlg_a:{ a = apply_hlg((const skcms_TransferFunction*)*args++, a); } break;
 
-            case Op_clut_1D_8:{
+            case Op_hlginv_r:{ r = apply_hlginv((const skcms_TransferFunction*)*args++, r); } break;
+            case Op_hlginv_g:{ g = apply_hlginv((const skcms_TransferFunction*)*args++, g); } break;
+            case Op_hlginv_b:{ b = apply_hlginv((const skcms_TransferFunction*)*args++, b); } break;
+            case Op_hlginv_a:{ a = apply_hlginv((const skcms_TransferFunction*)*args++, a); } break;
+
+            case Op_table_r: { r = table((const skcms_Curve*)*args++, r); } break;
+            case Op_table_g: { g = table((const skcms_Curve*)*args++, g); } break;
+            case Op_table_b: { b = table((const skcms_Curve*)*args++, b); } break;
+            case Op_table_a: { a = table((const skcms_Curve*)*args++, a); } break;
+
+            case Op_clut: {
                 const skcms_A2B* a2b = (const skcms_A2B*) *args++;
-                clut_1_8(a2b, cast<I32>(F0),cast<I32>(F1), &r,&g,&b,a);
-            } break;
+                clut(a2b, &r,&g,&b,a);
 
-            case Op_clut_1D_16:{
-                const skcms_A2B* a2b = (const skcms_A2B*) *args++;
-                clut_1_16(a2b, cast<I32>(F0),cast<I32>(F1), &r,&g,&b,a);
-            } break;
-
-            case Op_clut_2D_8:{
-                const skcms_A2B* a2b = (const skcms_A2B*) *args++;
-                clut_2_8(a2b, cast<I32>(F0),cast<I32>(F1), &r,&g,&b,a);
-            } break;
-
-            case Op_clut_2D_16:{
-                const skcms_A2B* a2b = (const skcms_A2B*) *args++;
-                clut_2_16(a2b, cast<I32>(F0),cast<I32>(F1), &r,&g,&b,a);
-            } break;
-
-            case Op_clut_3D_8:{
-                const skcms_A2B* a2b = (const skcms_A2B*) *args++;
-                clut_3_8(a2b, cast<I32>(F0),cast<I32>(F1), &r,&g,&b,a);
-            } break;
-
-            case Op_clut_3D_16:{
-                const skcms_A2B* a2b = (const skcms_A2B*) *args++;
-                clut_3_16(a2b, cast<I32>(F0),cast<I32>(F1), &r,&g,&b,a);
-            } break;
-
-            case Op_clut_4D_8:{
-                const skcms_A2B* a2b = (const skcms_A2B*) *args++;
-                clut_4_8(a2b, cast<I32>(F0),cast<I32>(F1), &r,&g,&b,a);
-                // 'a' was really a CMYK K, so our output is actually opaque.
-                a = F1;
-            } break;
-
-            case Op_clut_4D_16:{
-                const skcms_A2B* a2b = (const skcms_A2B*) *args++;
-                clut_4_16(a2b, cast<I32>(F0),cast<I32>(F1), &r,&g,&b,a);
-                // 'a' was really a CMYK K, so our output is actually opaque.
-                a = F1;
+                if (a2b->input_channels == 4) {
+                    // CMYK is opaque.
+                    a = F1;
+                }
             } break;
 
     // Notice, from here on down the store_ ops all return, ending the loop.
@@ -979,7 +1206,23 @@ static void exec_ops(const Op* ops, const void** args,
 
             case Op_store_888: {
                 uint8_t* rgb = (uint8_t*)dst + 3*i;
-            #if defined(USING_NEON)
+            #if defined(USING_NEON_FP16)
+                // See the explanation under USING_NEON below.  This is that doubled up.
+                U16 R = to_fixed(r * 255),
+                    G = to_fixed(g * 255),
+                    B = to_fixed(b * 255);
+
+                uint8x16x3_t v = {{ (uint8x16_t)R, (uint8x16_t)G, (uint8x16_t)B }};
+                vst3q_lane_u8(rgb+ 0, v,  0);
+                vst3q_lane_u8(rgb+ 3, v,  2);
+                vst3q_lane_u8(rgb+ 6, v,  4);
+                vst3q_lane_u8(rgb+ 9, v,  6);
+
+                vst3q_lane_u8(rgb+12, v,  8);
+                vst3q_lane_u8(rgb+15, v, 10);
+                vst3q_lane_u8(rgb+18, v, 12);
+                vst3q_lane_u8(rgb+21, v, 14);
+            #elif defined(USING_NEON)
                 // Same deal as load_888 but in reverse... we'll store using uint8x8x3_t, but
                 // get there via U16 to save some instructions converting to float.  And just
                 // like load_888, we'd prefer to go via U32 but for ARMv7 support.
@@ -1000,34 +1243,41 @@ static void exec_ops(const Op* ops, const void** args,
             } return;
 
             case Op_store_8888: {
-                store(dst + 4*i, cast<U32>(to_fixed(r * 255) <<  0)
-                               | cast<U32>(to_fixed(g * 255) <<  8)
-                               | cast<U32>(to_fixed(b * 255) << 16)
-                               | cast<U32>(to_fixed(a * 255) << 24));
+                store(dst + 4*i, cast<U32>(to_fixed(r * 255)) <<  0
+                               | cast<U32>(to_fixed(g * 255)) <<  8
+                               | cast<U32>(to_fixed(b * 255)) << 16
+                               | cast<U32>(to_fixed(a * 255)) << 24);
             } return;
 
             case Op_store_1010102: {
-                store(dst + 4*i, cast<U32>(to_fixed(r * 1023) <<  0)
-                               | cast<U32>(to_fixed(g * 1023) << 10)
-                               | cast<U32>(to_fixed(b * 1023) << 20)
-                               | cast<U32>(to_fixed(a *    3) << 30));
+                store(dst + 4*i, cast<U32>(to_fixed(r * 1023)) <<  0
+                               | cast<U32>(to_fixed(g * 1023)) << 10
+                               | cast<U32>(to_fixed(b * 1023)) << 20
+                               | cast<U32>(to_fixed(a *    3)) << 30);
             } return;
 
             case Op_store_161616LE: {
                 uintptr_t ptr = (uintptr_t)(dst + 6*i);
                 assert( (ptr & 1) == 0 );                // The dst pointer must be 2-byte aligned
                 uint16_t* rgb = (uint16_t*)ptr;          // for this cast to uint16_t* to be safe.
-            #if defined(USING_NEON)
+            #if defined(USING_NEON_FP16)
+                uint16x8x3_t v = {{
+                    (uint16x8_t)U16_from_F(r),
+                    (uint16x8_t)U16_from_F(g),
+                    (uint16x8_t)U16_from_F(b),
+                }};
+                vst3q_u16(rgb, v);
+            #elif defined(USING_NEON)
                 uint16x4x3_t v = {{
-                    (uint16x4_t)cast<U16>(to_fixed(r * 65535)),
-                    (uint16x4_t)cast<U16>(to_fixed(g * 65535)),
-                    (uint16x4_t)cast<U16>(to_fixed(b * 65535)),
+                    (uint16x4_t)U16_from_F(r),
+                    (uint16x4_t)U16_from_F(g),
+                    (uint16x4_t)U16_from_F(b),
                 }};
                 vst3_u16(rgb, v);
             #else
-                store_3(rgb+0, cast<U16>(to_fixed(r * 65535)));
-                store_3(rgb+1, cast<U16>(to_fixed(g * 65535)));
-                store_3(rgb+2, cast<U16>(to_fixed(b * 65535)));
+                store_3(rgb+0, U16_from_F(r));
+                store_3(rgb+1, U16_from_F(g));
+                store_3(rgb+2, U16_from_F(b));
             #endif
 
             } return;
@@ -1036,12 +1286,20 @@ static void exec_ops(const Op* ops, const void** args,
                 uintptr_t ptr = (uintptr_t)(dst + 8*i);
                 assert( (ptr & 1) == 0 );               // The dst pointer must be 2-byte aligned
                 uint16_t* rgba = (uint16_t*)ptr;        // for this cast to uint16_t* to be safe.
-            #if defined(USING_NEON)
+            #if defined(USING_NEON_FP16)
+                uint16x8x4_t v = {{
+                    (uint16x8_t)U16_from_F(r),
+                    (uint16x8_t)U16_from_F(g),
+                    (uint16x8_t)U16_from_F(b),
+                    (uint16x8_t)U16_from_F(a),
+                }};
+                vst4q_u16(rgba, v);
+            #elif defined(USING_NEON)
                 uint16x4x4_t v = {{
-                    (uint16x4_t)cast<U16>(to_fixed(r * 65535)),
-                    (uint16x4_t)cast<U16>(to_fixed(g * 65535)),
-                    (uint16x4_t)cast<U16>(to_fixed(b * 65535)),
-                    (uint16x4_t)cast<U16>(to_fixed(a * 65535)),
+                    (uint16x4_t)U16_from_F(r),
+                    (uint16x4_t)U16_from_F(g),
+                    (uint16x4_t)U16_from_F(b),
+                    (uint16x4_t)U16_from_F(a),
                 }};
                 vst4_u16(rgba, v);
             #else
@@ -1057,15 +1315,22 @@ static void exec_ops(const Op* ops, const void** args,
                 uintptr_t ptr = (uintptr_t)(dst + 6*i);
                 assert( (ptr & 1) == 0 );                // The dst pointer must be 2-byte aligned
                 uint16_t* rgb = (uint16_t*)ptr;          // for this cast to uint16_t* to be safe.
-            #if defined(USING_NEON)
+            #if defined(USING_NEON_FP16)
+                uint16x8x3_t v = {{
+                    (uint16x8_t)swap_endian_16(U16_from_F(r)),
+                    (uint16x8_t)swap_endian_16(U16_from_F(g)),
+                    (uint16x8_t)swap_endian_16(U16_from_F(b)),
+                }};
+                vst3q_u16(rgb, v);
+            #elif defined(USING_NEON)
                 uint16x4x3_t v = {{
-                    (uint16x4_t)swap_endian_16(cast<U16>(to_fixed(r * 65535))),
-                    (uint16x4_t)swap_endian_16(cast<U16>(to_fixed(g * 65535))),
-                    (uint16x4_t)swap_endian_16(cast<U16>(to_fixed(b * 65535))),
+                    (uint16x4_t)swap_endian_16(cast<U16>(U16_from_F(r))),
+                    (uint16x4_t)swap_endian_16(cast<U16>(U16_from_F(g))),
+                    (uint16x4_t)swap_endian_16(cast<U16>(U16_from_F(b))),
                 }};
                 vst3_u16(rgb, v);
             #else
-                I32 R = to_fixed(r * 65535),
+                U32 R = to_fixed(r * 65535),
                     G = to_fixed(g * 65535),
                     B = to_fixed(b * 65535);
                 store_3(rgb+0, cast<U16>((R & 0x00ff) << 8 | (R & 0xff00) >> 8) );
@@ -1079,12 +1344,20 @@ static void exec_ops(const Op* ops, const void** args,
                 uintptr_t ptr = (uintptr_t)(dst + 8*i);
                 assert( (ptr & 1) == 0 );               // The dst pointer must be 2-byte aligned
                 uint16_t* rgba = (uint16_t*)ptr;        // for this cast to uint16_t* to be safe.
-            #if defined(USING_NEON)
+            #if defined(USING_NEON_FP16)
+                uint16x8x4_t v = {{
+                    (uint16x8_t)swap_endian_16(U16_from_F(r)),
+                    (uint16x8_t)swap_endian_16(U16_from_F(g)),
+                    (uint16x8_t)swap_endian_16(U16_from_F(b)),
+                    (uint16x8_t)swap_endian_16(U16_from_F(a)),
+                }};
+                vst4q_u16(rgba, v);
+            #elif defined(USING_NEON)
                 uint16x4x4_t v = {{
-                    (uint16x4_t)swap_endian_16(cast<U16>(to_fixed(r * 65535))),
-                    (uint16x4_t)swap_endian_16(cast<U16>(to_fixed(g * 65535))),
-                    (uint16x4_t)swap_endian_16(cast<U16>(to_fixed(b * 65535))),
-                    (uint16x4_t)swap_endian_16(cast<U16>(to_fixed(a * 65535))),
+                    (uint16x4_t)swap_endian_16(cast<U16>(U16_from_F(r))),
+                    (uint16x4_t)swap_endian_16(cast<U16>(U16_from_F(g))),
+                    (uint16x4_t)swap_endian_16(cast<U16>(U16_from_F(b))),
+                    (uint16x4_t)swap_endian_16(cast<U16>(U16_from_F(a))),
                 }};
                 vst4_u16(rgba, v);
             #else
@@ -1104,7 +1377,14 @@ static void exec_ops(const Op* ops, const void** args,
                 U16 R = Half_from_F(r),
                     G = Half_from_F(g),
                     B = Half_from_F(b);
-            #if defined(USING_NEON)
+            #if defined(USING_NEON_FP16)
+                uint16x8x3_t v = {{
+                    (uint16x8_t)R,
+                    (uint16x8_t)G,
+                    (uint16x8_t)B,
+                }};
+                vst3q_u16(rgb, v);
+            #elif defined(USING_NEON)
                 uint16x4x3_t v = {{
                     (uint16x4_t)R,
                     (uint16x4_t)G,
@@ -1127,7 +1407,15 @@ static void exec_ops(const Op* ops, const void** args,
                     G = Half_from_F(g),
                     B = Half_from_F(b),
                     A = Half_from_F(a);
-            #if defined(USING_NEON)
+            #if defined(USING_NEON_FP16)
+                uint16x8x4_t v = {{
+                    (uint16x8_t)R,
+                    (uint16x8_t)G,
+                    (uint16x8_t)B,
+                    (uint16x8_t)A,
+                }};
+                vst4q_u16(rgba, v);
+            #elif defined(USING_NEON)
                 uint16x4x4_t v = {{
                     (uint16x4_t)R,
                     (uint16x4_t)G,
@@ -1148,7 +1436,19 @@ static void exec_ops(const Op* ops, const void** args,
                 uintptr_t ptr = (uintptr_t)(dst + 12*i);
                 assert( (ptr & 3) == 0 );                // The dst pointer must be 4-byte aligned
                 float* rgb = (float*)ptr;                // for this cast to float* to be safe.
-            #if defined(USING_NEON)
+            #if defined(USING_NEON_FP16)
+                float32x4x3_t lo = {{
+                    vcvt_f32_f16(vget_low_f16(r)),
+                    vcvt_f32_f16(vget_low_f16(g)),
+                    vcvt_f32_f16(vget_low_f16(b)),
+                }}, hi = {{
+                    vcvt_f32_f16(vget_high_f16(r)),
+                    vcvt_f32_f16(vget_high_f16(g)),
+                    vcvt_f32_f16(vget_high_f16(b)),
+                }};
+                vst3q_f32(rgb +  0, lo);
+                vst3q_f32(rgb + 12, hi);
+            #elif defined(USING_NEON)
                 float32x4x3_t v = {{
                     (float32x4_t)r,
                     (float32x4_t)g,
@@ -1166,7 +1466,21 @@ static void exec_ops(const Op* ops, const void** args,
                 uintptr_t ptr = (uintptr_t)(dst + 16*i);
                 assert( (ptr & 3) == 0 );                // The dst pointer must be 4-byte aligned
                 float* rgba = (float*)ptr;               // for this cast to float* to be safe.
-            #if defined(USING_NEON)
+            #if defined(USING_NEON_FP16)
+                float32x4x4_t lo = {{
+                    vcvt_f32_f16(vget_low_f16(r)),
+                    vcvt_f32_f16(vget_low_f16(g)),
+                    vcvt_f32_f16(vget_low_f16(b)),
+                    vcvt_f32_f16(vget_low_f16(a)),
+                }}, hi = {{
+                    vcvt_f32_f16(vget_high_f16(r)),
+                    vcvt_f32_f16(vget_high_f16(g)),
+                    vcvt_f32_f16(vget_high_f16(b)),
+                    vcvt_f32_f16(vget_high_f16(a)),
+                }};
+                vst4q_f32(rgba +  0, lo);
+                vst4q_f32(rgba + 16, hi);
+            #elif defined(USING_NEON)
                 float32x4x4_t v = {{
                     (float32x4_t)r,
                     (float32x4_t)g,
@@ -1196,12 +1510,11 @@ static void run_program(const Op* program, const void** arguments,
         n -= N;
     }
     if (n > 0) {
-        char tmp_src[4*4*N] = {0},
-             tmp_dst[4*4*N] = {0};
+        char tmp[4*4*N] = {0};
 
-        memcpy(tmp_src, (const char*)src + (size_t)i*src_bpp, (size_t)n*src_bpp);
-        exec_ops(program, arguments, tmp_src, tmp_dst, 0);
-        memcpy((char*)dst + (size_t)i*dst_bpp, tmp_dst, (size_t)n*dst_bpp);
+        memcpy(tmp, (const char*)src + (size_t)i*src_bpp, (size_t)n*src_bpp);
+        exec_ops(program, arguments, tmp, tmp, 0);
+        memcpy((char*)dst + (size_t)i*dst_bpp, tmp, (size_t)n*dst_bpp);
     }
 }
 
@@ -1215,6 +1528,9 @@ static void run_program(const Op* program, const void** arguments,
 #if defined(USING_AVX2)
     #undef  USING_AVX2
 #endif
+#if defined(USING_AVX512F)
+    #undef  USING_AVX512F
+#endif
 
 #if defined(USING_NEON)
     #undef  USING_NEON
@@ -1222,3 +1538,8 @@ static void run_program(const Op* program, const void** arguments,
 #if defined(USING_NEON_F16C)
     #undef  USING_NEON_F16C
 #endif
+#if defined(USING_NEON_FP16)
+    #undef  USING_NEON_FP16
+#endif
+
+#undef FALLTHROUGH

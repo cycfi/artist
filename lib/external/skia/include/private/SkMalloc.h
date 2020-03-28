@@ -11,7 +11,7 @@
 #include <cstddef>
 #include <cstring>
 
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
 
 /*
     memory wrappers to be implemented by the porting layer (platform)
@@ -122,6 +122,24 @@ static inline void* sk_careful_memcpy(void* dst, const void* src, size_t len) {
         memcpy(dst,src,len);
     }
     return dst;
+}
+
+static inline void* sk_careful_memmove(void* dst, const void* src, size_t len) {
+    // When we pass >0 len we had better already be passing valid pointers.
+    // So we just need to skip calling memcpy when len == 0.
+    if (len) {
+        memmove(dst,src,len);
+    }
+    return dst;
+}
+
+static inline int sk_careful_memcmp(const void* a, const void* b, size_t len) {
+    // When we pass >0 len we had better already be passing valid pointers.
+    // So we just need to skip calling memcmp when len == 0.
+    if (len == 0) {
+        return 0;   // we treat zero-length buffers as "equal"
+    }
+    return memcmp(a, b, len);
 }
 
 #endif  // SkMalloc_DEFINED
