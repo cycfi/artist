@@ -113,9 +113,14 @@ namespace cycfi::artist::detail
       hb_buffer_set_script(_buffer, scr);
    }
 
-   void hb_buffer::language(std::string_view lang)
+   void hb_buffer::language(char const* lang)
    {
-      hb_buffer_set_language(_buffer, hb_language_from_string(lang.data(), lang.size()));
+      hb_buffer_set_language(_buffer, hb_language_from_string(lang, -1));
+   }
+
+   char const* hb_buffer::language() const
+   {
+      return hb_language_to_string(hb_buffer_get_language(_buffer));
    }
 
    void hb_buffer::shape(hb_font const& font)
