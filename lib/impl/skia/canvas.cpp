@@ -47,6 +47,8 @@ namespace cycfi::artist
 
       point             _pre_scale = { 1.0, 1.0 };
 
+      static SkPaint&   get_fill_paint(canvas const& cnv);
+
    private:
 
       struct state_info
@@ -114,6 +116,16 @@ namespace cycfi::artist
    {
       if (_stack.size())
          _stack.pop();
+   }
+
+   SkPaint& canvas::canvas_state::get_fill_paint(canvas const& cnv)
+   {
+      return cnv._state->fill_paint();
+   }
+
+   SkPaint& fill_paint(canvas const& cnv)
+   {
+      return canvas::canvas_state::get_fill_paint(cnv);
    }
 
    canvas::canvas(canvas_impl_ptr context_)
@@ -415,7 +427,7 @@ namespace cycfi::artist
          auto width = font.measure_text(std::string_view(f, l-f));
          switch (text_align & 0x1C)
          {
-            case canvas::top:    p.y -= metrics.ascent; break;
+            case canvas::top:    p.y += metrics.ascent; break;
             case canvas::middle: p.y += (metrics.ascent - metrics.descent)/2; break;
             case canvas::bottom: p.y -= metrics.descent; break;
             default: break;

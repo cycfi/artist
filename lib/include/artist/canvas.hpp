@@ -315,10 +315,10 @@ namespace cycfi::artist
       void              save();
       void              restore();
 
-   private:
-
       class canvas_state;
       using canvas_state_ptr = std::unique_ptr<canvas_state>;
+
+   private:
 
       canvas_impl_ptr   _context;
       canvas_state_ptr  _state;

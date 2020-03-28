@@ -10,10 +10,10 @@
 #include <vector>
 #include <SkFont.h>
 #include <SkTextBlob.h>
+#include <SkCanvas.h>
 #include "detail/harfbuzz.hpp"
 #include "linebreak.h"
-
-#include <iostream>
+#include "opaque.hpp"
 
 namespace cycfi::artist
 {
@@ -64,17 +64,23 @@ namespace cycfi::artist
             [&](std::size_t start_line, std::size_t utf8_idx, std::size_t& i)
             {
                auto glyph_idx = _buff.glyph_index(utf8_idx);
-               auto glyph_count = i - glyph_start;
-               std::vector<SkGlyphID> line_glyphs(glyph_count);
-               for (auto i = glyph_start; i != glyph_idx; ++i)
-                  line_glyphs[i - glyph_start] = glyphs_info.glyphs[i].codepoint;
+               auto glyph_count = glyph_idx - glyph_start;
+               if (i == glyphs_info.count-1)
+                  ++glyph_count;
 
-               _lines.push_back(
-                  SkTextBlob::MakeFromPosTextH(
-                     line_glyphs.data(), line_glyphs.size() * sizeof(SkGlyphID)
-                   , positions.data(), y
-                   , *_font.impl()
-                   , SkTextEncoding::kGlyphID)
+               std::vector<SkGlyphID> line_glyphs(glyph_count);
+               for (auto i = 0; i != glyph_count; ++i)
+                  line_glyphs[i] = glyphs_info.glyphs[glyph_start + i].codepoint;
+
+               _rows.push_back(
+                  std::make_pair(
+                     point{ linfo.offset, y }
+                   , SkTextBlob::MakeFromPosTextH(
+                        line_glyphs.data(), line_glyphs.size() * sizeof(SkGlyphID)
+                     , positions.data(), 0
+                     , *_font.impl()
+                     , SkTextEncoding::kGlyphID)
+                  )
                );
 
                positions.clear();
@@ -83,11 +89,6 @@ namespace cycfi::artist
                y += finfo.line_height;
                linfo = glf(y);
                x = linfo.offset;
-
-               auto len = utf8_idx - start_line;
-               if (i == glyphs_info.count-1)
-                  ++len;
-               std::cout << std::string_view(_utf8.begin() + start_line, len) << std::endl;
             };
 
          for (std::size_t i = 0; i != glyphs_info.count; ++i)
@@ -119,13 +120,27 @@ namespace cycfi::artist
          }
       }
 
-      using line_vector = std::vector<sk_sp<SkTextBlob>>;
+      void  draw(canvas& cnv, point p)
+      {
+         auto ctx = cnv.impl();
+         for (auto const& line : _rows)
+         {
+            auto sk_cnv = cnv.impl();
+            sk_cnv->drawTextBlob(
+               line.second
+             , p.x+line.first.x, p.y+line.first.y
+             , fill_paint(cnv)
+            );
+         }
+      }
+
+      using line_vector = std::vector<std::pair<point, sk_sp<SkTextBlob>>>;
 
       font                    _font;
       detail::hb_font         _hb_font;
       std::string_view        _utf8;
       detail::hb_buffer       _buff;
-      line_vector             _lines;
+      line_vector             _rows;
    };
 
    text_layout::text_layout(font const& font_, std::string_view utf8)
@@ -155,6 +170,7 @@ namespace cycfi::artist
 
    void text_layout::draw(canvas& cnv, point p) const
    {
+      _impl->draw(cnv, p);
    }
 }
 
