@@ -7,6 +7,7 @@
 #define ELEMENTS_IMAGE_SEPTEMBER_5_2016
 
 #include <artist/point.hpp>
+#include <artist/resources.hpp>
 #include <string_view>
 #include <memory>
 
@@ -34,7 +35,7 @@ namespace cycfi::artist
    public:
 
       explicit          picture(point size);
-      explicit          picture(std::string_view path);
+      explicit          picture(fs::path const& path_);
                         picture(picture const& rhs) = delete;
                         picture(picture&& rhs) noexcept;
                         ~picture();

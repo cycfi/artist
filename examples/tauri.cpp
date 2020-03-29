@@ -4,7 +4,6 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
 #include "app.hpp"
-#include <map>
 
 using namespace cycfi::artist;
 auto constexpr window_size = point{ 640.0f, 480.0f };
@@ -17,7 +16,7 @@ void background(canvas& cnv)
     cnv.fill();
 }
 
-void basic_tauri(canvas& cnv)
+void logo(canvas& cnv)
 {
     cnv.begin_path();
     cnv.move_to(24.091255, 16.26616);
@@ -45,13 +44,13 @@ void tauri(canvas& cnv)
     cnv.fill_style(bkd_color);
     cnv.stroke_style(bkd_color);
     cnv.shadow_style({ -1, -1 }, 10, colors::light_cyan);
-    basic_tauri(cnv);
+    logo(cnv);
 
     // Shadow
     cnv.fill_style(bkd_color);
     cnv.stroke_style(bkd_color);
     cnv.shadow_style({ 5.0, 5.0 }, 20, rgb(0, 0, 20));
-    basic_tauri(cnv);
+    logo(cnv);
 
     // Gradient
     auto gr = canvas::linear_gradient{ 0, 0, 50, 50 };
@@ -60,7 +59,7 @@ void tauri(canvas& cnv)
 
     cnv.fill_style(gr);
     cnv.stroke_style(gr);
-    basic_tauri(cnv);
+    logo(cnv);
 }
 
 void draw(canvas& cnv)

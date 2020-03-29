@@ -4,7 +4,6 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
 #include "app.hpp"
-#include <map>
 
 using namespace cycfi::artist;
 auto constexpr window_size = point{ 640.0f, 480.0f };
