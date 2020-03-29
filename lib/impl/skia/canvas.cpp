@@ -489,8 +489,8 @@ namespace cycfi::artist
             {
                _context->drawBitmapRect(
                   that,
-                  SkRect{src.left, src.right, src.top, src.bottom },
-                  SkRect{dest.left, dest.right, dest.top, dest.bottom },
+                  SkRect{ src.left, src.top, src.right, src.bottom },
+                  SkRect{ dest.left, dest.top, dest.right, dest.bottom },
                   nullptr
                );
             }
