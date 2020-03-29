@@ -24,13 +24,13 @@ namespace cycfi::artist
     : _impl{ new artist::picture_impl(size) }
    {}
 
-   picture::picture(std::string_view path_)
+   picture::picture(fs::path const& path_)
     : _impl{ new artist::picture_impl(SkBitmap{}) }
    {
-      std::string path{ path_ };
+      auto path = find_file(path_);
       auto fail = [&path]()
       {
-         throw std::runtime_error{ "Error: Failed to load file: " + path };
+         throw std::runtime_error{ "Error: Failed to load file: " + path.string() };
       };
 
       sk_sp<SkData> data{ SkData::MakeFromFileName(path.c_str()) };

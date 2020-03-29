@@ -12,6 +12,7 @@ function(add_example name)
          ${name}.cpp
          host/macos/app.mm
          ${${name}_fonts}
+         ${${name}_images}
       )
       set_target_properties(
          ${name}
@@ -22,6 +23,7 @@ function(add_example name)
       target_link_options(${name} PRIVATE -framework AppKit)
       set_source_files_properties(
          ${${name}_fonts}
+         ${${name}_images}
          PROPERTIES
          MACOSX_PACKAGE_LOCATION Resources
       )
@@ -35,9 +37,14 @@ set(typography_fonts
    ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/OpenSansCondensed-LightItalic.ttf
 )
 
+set(space_fonts
+   ${CMAKE_CURRENT_LIST_DIR}/images/space.jpg
+)
+
 add_example(shapes)
 add_example(typography)
 add_example(rain)
-add_example(transform)
+add_example(tauri)
+add_example(space)
 
 
