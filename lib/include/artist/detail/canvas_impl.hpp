@@ -195,19 +195,19 @@ namespace cycfi::artist
 
    inline void canvas::draw(picture const& pic, struct rect dest)
    {
-      draw(pic, {0, 0, pic.size() }, dest);
+      draw(pic, { 0, 0, pic.size() }, dest);
    }
 
    inline void canvas::draw(picture const& pic, point pos)
    {
-      draw(pic, {0, 0, pic.size() }, {pos, pic.size() });
+      draw(pic, { 0, 0, pic.size() }, { pos, pic.size() });
    }
 
    inline void canvas::draw(picture const& pic, point pos, float scale)
    {
       auto size = pic.size();
       auto scaled = extent{ size.x*scale, size.y*scale };
-      draw(pic, {0, 0, size }, {pos, scaled });
+      draw(pic, { 0, 0, size }, {pos, scaled });
    }
 
    inline void canvas::draw(picture const& pic, float posx, float posy)
