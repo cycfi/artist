@@ -8,17 +8,32 @@
 using namespace cycfi::artist;
 auto constexpr window_size = point{ 640.0f, 480.0f };
 
+auto space = picture{ "space.jpg" };
+auto size = space.size();
+float x_incr = 0.5;
+float y_incr = 0.5;
+float x = 0;
+float y = 0;
+
 void draw(canvas& cnv)
 {
-    // Typically, you don't want to do this when drawing, but
-    // we do it here for the sake of easy demonstration.
-    static auto space = std::make_shared<picture>("space.jpg");
+    cnv.translate(x, y);
+    cnv.draw(space);
+    x += x_incr;
+    y += y_incr;
 
-    cnv.draw(*space);
+    if (x > 0)
+        x_incr = -x_incr;
+    if (y > 0)
+        y_incr = -y_incr;
+    if (x < -(size.x-640))
+        x_incr = -x_incr;
+    if (y < -(size.y-480))
+        y_incr = -y_incr;
 }
 
 int main(int argc, const char* argv[])
 {
-    return run_app(argc, argv, window_size);
+    return run_app(argc, argv, window_size, true);
 }
 

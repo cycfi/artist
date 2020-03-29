@@ -8,6 +8,10 @@
 
 namespace cycfi::artist
 {
+   __attribute__((weak)) void init_paths()
+   {
+   }
+
    std::vector<fs::path> resource_paths;
    std::mutex resource_paths_mutex;
 
@@ -38,7 +42,7 @@ namespace cycfi::artist
       fs::path full_path;
       if (fs::path(file).is_absolute())
       {
-         if (fs::exists(full_path))
+         if (fs::exists(file))
             full_path = file;
       }
       else

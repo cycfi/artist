@@ -34,12 +34,11 @@ namespace cycfi::artist
       _impl = (__bridge_retained picture_impl_ptr) img_;
    }
 
-   picture::picture(std::string_view path_)
+   picture::picture(fs::path const& path_)
    {
-      auto path = [NSString stringWithUTF8String : std::string{path_}.c_str() ];
+      auto fs_path = find_file(path_);
+      auto path = [NSString stringWithUTF8String : fs_path.c_str() ];
       auto img_ = [[NSImage alloc] initWithContentsOfFile : path];
-      if (!img_)
-         img_ = [NSImage imageNamed : path];
       _impl = (__bridge_retained picture_impl_ptr) img_;
    }
 
