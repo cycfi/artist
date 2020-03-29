@@ -77,17 +77,17 @@ void basics(canvas& cnv)
     cnv.fill_preserve();
     cnv.stroke();
 
-     cnv.translate(120, 0);
-     balloon(cnv);
-     cnv.stroke_style(colors::light_gray);
-     cnv.stroke();
+    cnv.translate(120, 0);
+    balloon(cnv);
+    cnv.stroke_style(colors::light_gray);
+    cnv.stroke();
 
-     cnv.translate(-100, 100);
-     heart(cnv);
-     cnv.line_width(2);
-     cnv.stroke_style(color{ 0.8, 0, 0 });
-     cnv.stroke_preserve();
-     cnv.fill();
+    cnv.translate(-100, 100);
+    heart(cnv);
+    cnv.line_width(2);
+    cnv.stroke_style(color{ 0.8, 0, 0 });
+    cnv.stroke_preserve();
+    cnv.fill();
 }
 
 void transformed(canvas& cnv)
@@ -215,11 +215,11 @@ void test_draw(canvas& cnv)
     background(cnv);
     basics(cnv);
     transformed(cnv);
-    // linear_gradient(cnv);
-    // radial_gradient(cnv);
-    // stroke_gradient(cnv);
-    // draw_pixmap(cnv);
-    // line_styles(cnv);
+    linear_gradient(cnv);
+    radial_gradient(cnv);
+    stroke_gradient(cnv);
+    draw_pixmap(cnv);
+    line_styles(cnv);
 }
 
 float diff_pixel(uint32_t a, uint32_t b)
@@ -486,25 +486,25 @@ TEST_CASE("Drawing")
     compare_golden(pm, "shapes_and_images");
 }
 
-// TEST_CASE("Typography")
-// {
-//     picture pm{ window_size };
-//     {
-//         picture_context ctx{pm };
-//         canvas pm_cnv{ ctx.context() };
-//         typography(pm_cnv);
-//     }
-//     compare_golden(pm, "typography");
-// }
+TEST_CASE("Typography")
+{
+    picture pm{ window_size };
+    {
+        picture_context ctx{pm };
+        canvas pm_cnv{ ctx.context() };
+        typography(pm_cnv);
+    }
+    compare_golden(pm, "typography");
+}
 
-// TEST_CASE("Composite")
-// {
-//     picture pm{ window_size };
-//     {
-//         picture_context ctx{pm };
-//         canvas pm_cnv{ ctx.context() };
-//        composite_ops(pm_cnv);
-//     }
-//     compare_golden(pm, "composite_ops");
-// }
+TEST_CASE("Composite")
+{
+    picture pm{ window_size };
+    {
+        picture_context ctx{pm };
+        canvas pm_cnv{ ctx.context() };
+       composite_ops(pm_cnv);
+    }
+    compare_golden(pm, "composite_ops");
+}
 
