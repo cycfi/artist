@@ -352,11 +352,7 @@ public:
       _window =
          [[NSWindow alloc]
             initWithContentRect : NSMakeRect(0, 0, window_size.x, window_size.y)
-            styleMask :
-               NSWindowStyleMaskTitled |
-               NSWindowStyleMaskClosable |
-               NSWindowStyleMaskMiniaturizable |
-               NSWindowStyleMaskResizable
+            styleMask : NSWindowStyleMaskTitled | NSWindowStyleMaskClosable
             backing : NSBackingStoreBuffered
             defer : NO
          ];
