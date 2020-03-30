@@ -336,13 +336,31 @@ namespace cycfi::artist
 
    void canvas::global_composite_operation(composite_op_enum mode)
    {
+      SkBlendMode mode_;
+      switch (mode)
+      {
+         case source_over:       mode_ = SkBlendMode::kSrcOver;   break;
+         case source_atop:       mode_ = SkBlendMode::kSrcATop;   break;
+         case source_in:         mode_ = SkBlendMode::kSrcATop;   break;
+         case source_out:        mode_ = SkBlendMode::kSrcOut;     break;
+         case destination_over:  mode_ = SkBlendMode::kDstOver;   break;
+         case destination_atop:  mode_ = SkBlendMode::kDstATop;   break;
+         case destination_in:    mode_ = SkBlendMode::kDstIn;     break;
+         case destination_out:   mode_ = SkBlendMode::kDstOut;    break;
+         case lighter:           mode_ = SkBlendMode::kLighten;   break;
+         case darker:            mode_ = SkBlendMode::kDarken;    break;
+         case copy:              mode_ = SkBlendMode::kSrc;       break;
+         case xor_:              mode_ = SkBlendMode::kXor;       break;
+      };
+      _state->stroke_paint().setBlendMode(mode_);
+      _state->fill_paint().setBlendMode(mode_);
    }
 
    namespace
    {
       void convert_gradient(
          canvas::gradient const& gr
-       , std::vector<SkColor>& colors_
+       , std::vector<SkColor4f>& colors_
        , std::vector<SkScalar>& pos
       )
       {
@@ -354,7 +372,7 @@ namespace cycfi::artist
                  , ccs.color.green
                  , ccs.color.blue
                  , ccs.color.alpha
-               }.toSkColor()
+               }
             );
             pos.push_back(ccs.offset);
          }
@@ -366,26 +384,30 @@ namespace cycfi::artist
             { gr.start.x, gr.start.y },
             { gr.end.x, gr.end.y }
          };
-         std::vector<SkColor> colors_;
+         std::vector<SkColor4f> colors_;
          std::vector<SkScalar> pos;
          convert_gradient(gr, colors_, pos);
          paint.setShader(
             SkGradientShader::MakeLinear(
-               points, colors_.data(), pos.data(), colors_.size()
+               points, colors_.data()
+             , SkColorSpace::MakeSRGB()->makeLinearGamma()
+             , pos.data(), colors_.size()
              , SkTileMode::kClamp, 0, nullptr
             ));
       }
 
       void set_radial(canvas::radial_gradient const& gr, SkPaint& paint)
       {
-         std::vector<SkColor> colors_;
+         std::vector<SkColor4f> colors_;
          std::vector<SkScalar> pos;
          convert_gradient(gr, colors_, pos);
          paint.setShader(
             SkGradientShader::MakeTwoPointConical(
                { gr.c1.x, gr.c1.y }, gr.c1_radius
              , { gr.c2.x, gr.c2.y }, gr.c2_radius
-             , colors_.data(), pos.data(), colors_.size()
+             , colors_.data()
+             , SkColorSpace::MakeSRGB()->makeLinearGamma()
+             , pos.data(), colors_.size()
              , SkTileMode::kClamp, 0, nullptr
             ));
       }
