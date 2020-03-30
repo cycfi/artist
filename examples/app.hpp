@@ -11,11 +11,13 @@
 
 using cycfi::artist::canvas;
 using cycfi::artist::extent;
+using cycfi::artist::color;
 
 int            run_app(
                   int argc
                 , const char* argv[]
                 , extent window_size
+                , color background_color = cycfi::artist::colors::white
                 , bool animate = false
                );
 

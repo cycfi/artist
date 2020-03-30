@@ -205,6 +205,9 @@ using offscreen_type = std::shared_ptr<picture>;
    auto interface = GrGLMakeNativeInterface();
    sk_sp<GrContext> ctx = GrContext::MakeGL(interface);
 
+   // glClearColor(1.0, 1.0, 1.0, 1.0);
+   // glClear(GL_COLOR_BUFFER_BIT);
+
    GrGLint buffer;
    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &buffer);
    GrGLFramebufferInfo info;
@@ -347,14 +350,21 @@ class window
 {
 public:
 
-   window(extent window_size)
+   window(extent window_size, color bkd)
    {
       _window =
          [[NSWindow alloc]
             initWithContentRect : NSMakeRect(0, 0, window_size.x, window_size.y)
-            styleMask : NSWindowStyleMaskTitled | NSWindowStyleMaskClosable
-            backing : NSBackingStoreBuffered
-            defer : NO
+                      styleMask : NSWindowStyleMaskTitled | NSWindowStyleMaskClosable
+                        backing : NSBackingStoreBuffered
+                          defer : NO
+         ];
+
+      auto color =
+         [NSColor colorWithCalibratedRed : bkd.red
+                                   green : bkd.green
+                                    blue : bkd.blue
+                                   alpha : bkd.alpha
          ];
 
       _content = [[CocoaView alloc] init];
@@ -363,6 +373,7 @@ public:
       [_window cascadeTopLeftFromPoint : NSMakePoint(20, 20)];
       [_window makeKeyAndOrderFront : nil];
       [_window setAppearance : [NSAppearance appearanceNamed : NSAppearanceNameVibrantDark]];
+      [_window setBackgroundColor : color];
    }
 
    void start_animation()
@@ -410,10 +421,16 @@ private:
    id _menubar;
 };
 
-int run_app(int argc, const char* argv[], extent window_size, bool animate)
+int run_app(
+   int argc
+ , const char* argv[]
+ , extent window_size
+ , color background_color
+ , bool animate
+)
 {
    app _app;
-   window _win(window_size);
+   window _win(window_size, background_color);
    if (animate)
       _win.start_animation();
    return _app.run();

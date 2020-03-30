@@ -34,6 +34,6 @@ void draw(canvas& cnv)
 
 int main(int argc, const char* argv[])
 {
-    return run_app(argc, argv, window_size, true);
+    return run_app(argc, argv, window_size, colors::black,true);
 }
 
