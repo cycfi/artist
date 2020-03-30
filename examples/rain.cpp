@@ -68,6 +68,6 @@ void init()
 int main(int argc, const char* argv[])
 {
     init();
-    return run_app(argc, argv, window_size, true);
+    return run_app(argc, argv, window_size, colors::gray[10], true);
 }
 
