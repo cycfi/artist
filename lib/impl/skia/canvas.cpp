@@ -204,6 +204,8 @@ namespace cycfi::artist
 
    void canvas::clip()
    {
+      _context->clipPath(_state->path(), true);
+      _state->path().reset();
    }
 
    void canvas::move_to(point p)
