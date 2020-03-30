@@ -364,14 +364,17 @@ namespace cycfi::artist
        , std::vector<SkScalar>& pos
       )
       {
+         // comp is color compensation to match quartz-2d
+         constexpr auto comp = 1.0f;
+
          for (auto const& ccs : gr.color_space)
          {
             colors_.push_back(
                SkColor4f{
-                  ccs.color.red
-                 , ccs.color.green
-                 , ccs.color.blue
-                 , ccs.color.alpha
+                   std::min(ccs.color.red * comp, 1.0f)
+                 , std::min(ccs.color.green * comp, 1.0f)
+                 , std::min(ccs.color.blue * comp, 1.0f)
+                 , std::min(ccs.color.alpha, 1.0f)
                }
             );
             pos.push_back(ccs.offset);
@@ -390,7 +393,7 @@ namespace cycfi::artist
          paint.setShader(
             SkGradientShader::MakeLinear(
                points, colors_.data()
-             , SkColorSpace::MakeSRGB()->makeLinearGamma()
+             , SkColorSpace::MakeSRGBLinear()
              , pos.data(), colors_.size()
              , SkTileMode::kClamp, 0, nullptr
             ));
