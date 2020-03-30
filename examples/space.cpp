@@ -6,7 +6,7 @@
 #include "app.hpp"
 
 using namespace cycfi::artist;
-auto constexpr window_size = point{ 640.0f, 480.0f };
+auto constexpr window_size = extent{ 640.0f, 480.0f };
 
 auto space = picture{ "space.jpg" };
 auto size = space.size();
