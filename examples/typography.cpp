@@ -7,7 +7,7 @@
 
 using namespace cycfi::artist;
 auto constexpr window_size = point{ 640.0f, 480.0f };
-auto constexpr bkd_color = rgb(54, 52, 55);
+auto constexpr bkd_color = rgb(36, 35, 45);
 
 void background(canvas& cnv)
 {
