@@ -41,10 +41,16 @@ set(space_fonts
    ${CMAKE_CURRENT_LIST_DIR}/images/space.jpg
 )
 
+set(composite_ops_fonts
+   ${CMAKE_CURRENT_LIST_DIR}/images/rgb_blur.png
+   ${CMAKE_CURRENT_LIST_DIR}/images/rgb_circles.png
+)
+
 add_example(shapes)
 add_example(typography)
 add_example(rain)
 add_example(tauri)
 add_example(space)
+add_example(composite_ops)
 
 
