@@ -205,14 +205,14 @@ using offscreen_type = std::shared_ptr<picture>;
    auto interface = GrGLMakeNativeInterface();
    sk_sp<GrContext> ctx = GrContext::MakeGL(interface);
 
-   // glClearColor(1.0, 1.0, 1.0, 1.0);
-   // glClear(GL_COLOR_BUFFER_BIT);
-
    GrGLint buffer;
    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &buffer);
    GrGLFramebufferInfo info;
    info.fFBOID = (GrGLuint) buffer;
    SkColorType colorType = kRGBA_8888_SkColorType;
+
+   glClearColor(0.0, 0.0, 0.0, 0.0);
+   glClear(GL_COLOR_BUFFER_BIT);
 
    auto bounds = [_view bounds];
    auto scale = self.contentsScale;
@@ -425,12 +425,12 @@ int run_app(
    int argc
  , const char* argv[]
  , extent window_size
- , color background_color
+ , color bkd
  , bool animate
 )
 {
    app _app;
-   window _win(window_size, background_color);
+   window _win(window_size, bkd);
    if (animate)
       _win.start_animation();
    return _app.run();
