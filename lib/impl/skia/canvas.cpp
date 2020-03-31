@@ -315,6 +315,7 @@ namespace cycfi::artist
 
    void canvas::miter_limit(float limit)
    {
+      _state->stroke_paint().setStrokeMiter(limit);
    }
 
    void canvas::shadow_style(point offset, float blur, color c)
@@ -387,16 +388,16 @@ namespace cycfi::artist
       )
       {
          // comp is color compensation to match quartz-2d
-         constexpr auto comp = 1.0f;
+         constexpr auto comp = 1.3f;
 
          for (auto const& ccs : gr.color_space)
          {
             colors_.push_back(
                SkColor4f{
-                   std::min(ccs.color.red * comp, 1.0f)
-                 , std::min(ccs.color.green * comp, 1.0f)
-                 , std::min(ccs.color.blue * comp, 1.0f)
-                 , std::min(ccs.color.alpha, 1.0f)
+                  std::min(ccs.color.red * comp, 1.0f)
+                , std::min(ccs.color.green * comp, 1.0f)
+                , std::min(ccs.color.blue * comp, 1.0f)
+                , ccs.color.alpha
                }
             );
             pos.push_back(ccs.offset);
@@ -405,6 +406,7 @@ namespace cycfi::artist
 
       void set_linear(canvas::linear_gradient const& gr, SkPaint& paint)
       {
+         paint.setColor(SkColorSetRGB(0, 0, 0));
          SkPoint points[2] = {
             { gr.start.x, gr.start.y },
             { gr.end.x, gr.end.y }
@@ -415,14 +417,17 @@ namespace cycfi::artist
          paint.setShader(
             SkGradientShader::MakeLinear(
                points, colors_.data()
-             , SkColorSpace::MakeSRGBLinear()
+             , SkColorSpace::MakeSRGB()->makeLinearGamma()
              , pos.data(), colors_.size()
-             , SkTileMode::kClamp, 0, nullptr
+             , SkTileMode::kClamp
+             , SkGradientShader::Flags::kInterpolateColorsInPremul_Flag
+             , nullptr
             ));
       }
 
       void set_radial(canvas::radial_gradient const& gr, SkPaint& paint)
       {
+         paint.setColor(SkColorSetRGB(0, 0, 0));
          std::vector<SkColor4f> colors_;
          std::vector<SkScalar> pos;
          convert_gradient(gr, colors_, pos);
@@ -433,7 +438,9 @@ namespace cycfi::artist
              , colors_.data()
              , SkColorSpace::MakeSRGB()->makeLinearGamma()
              , pos.data(), colors_.size()
-             , SkTileMode::kClamp, 0, nullptr
+             , SkTileMode::kClamp
+             , SkGradientShader::Flags::kInterpolateColorsInPremul_Flag
+             , nullptr
             ));
       }
    }
