@@ -68,14 +68,26 @@ void arc_to(canvas& cnv)
     constexpr auto y = 200;
     constexpr auto r = 40;
 
+    auto make_arc =
+        [](canvas& cnv)
+        {
+            cnv.begin_path();
+            cnv.move_to(x, y);
+            cnv.line_to(x+(80-r), y);
+            cnv.arc_to(x+80, y, x+80, y+20, r);
+            cnv.line_to(x+80, y+80);
+        };
+
     cnv.stroke_style(colors::dodger_blue.opacity(0.6));
     cnv.line_width(10);
-    cnv.begin_path();
-    cnv.move_to(x, y);
-    cnv.line_to(x+(80-r), y);
-    cnv.arc_to(x+80, y, x+80, y+20, r);
-    cnv.line_to(x+80, y+80);
+    make_arc(cnv);
     cnv.stroke();
+
+    cnv.fill_style(colors::dodger_blue.opacity(0.2));
+    make_arc(cnv);
+    cnv.line_to(x, y+80);
+    cnv.close();
+    cnv.fill();
 
     cnv.stroke_style(colors::white);
     cnv.line_width(1);
