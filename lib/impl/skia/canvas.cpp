@@ -339,18 +339,35 @@ namespace cycfi::artist
       SkBlendMode mode_;
       switch (mode)
       {
-         case source_over:       mode_ = SkBlendMode::kSrcOver;   break;
-         case source_atop:       mode_ = SkBlendMode::kSrcATop;   break;
-         case source_in:         mode_ = SkBlendMode::kSrcATop;   break;
-         case source_out:        mode_ = SkBlendMode::kSrcOut;     break;
-         case destination_over:  mode_ = SkBlendMode::kDstOver;   break;
-         case destination_atop:  mode_ = SkBlendMode::kDstATop;   break;
-         case destination_in:    mode_ = SkBlendMode::kDstIn;     break;
-         case destination_out:   mode_ = SkBlendMode::kDstOut;    break;
-         case lighter:           mode_ = SkBlendMode::kLighten;   break;
-         case darker:            mode_ = SkBlendMode::kDarken;    break;
-         case copy:              mode_ = SkBlendMode::kSrc;       break;
-         case xor_:              mode_ = SkBlendMode::kXor;       break;
+         case source_over:       mode_ = SkBlendMode::kSrcOver;      break;
+         case source_atop:       mode_ = SkBlendMode::kSrcATop;      break;
+         case source_in:         mode_ = SkBlendMode::kSrcIn;        break;
+         case source_out:        mode_ = SkBlendMode::kSrcOut;       break;
+
+         case destination_over:  mode_ = SkBlendMode::kDstOver;      break;
+         case destination_atop:  mode_ = SkBlendMode::kDstATop;      break;
+         case destination_in:    mode_ = SkBlendMode::kDstIn;        break;
+         case destination_out:   mode_ = SkBlendMode::kDstOut;       break;
+
+         case lighter:           mode_ = SkBlendMode::kLighten;      break;
+         case darker:            mode_ = SkBlendMode::kDarken;       break;
+         case copy:              mode_ = SkBlendMode::kSrc;          break;
+         case xor_:              mode_ = SkBlendMode::kXor;          break;
+
+         case difference:        mode_ = SkBlendMode::kDifference;   break;
+         case exclusion:         mode_ = SkBlendMode::kExclusion;    break;
+         case multiply:          mode_ = SkBlendMode::kMultiply;     break;
+         case screen:            mode_ = SkBlendMode::kScreen;       break;
+
+         case color_dodge:       mode_ = SkBlendMode::kColorDodge;   break;
+         case color_burn:        mode_ = SkBlendMode::kColorBurn;    break;
+         case soft_light:        mode_ = SkBlendMode::kSoftLight;    break;
+         case hard_light:        mode_ = SkBlendMode::kHardLight;    break;
+
+         case hue:               mode_ = SkBlendMode::kHue;          break;
+         case saturation:        mode_ = SkBlendMode::kSaturation;   break;
+         case color_op:          mode_ = SkBlendMode::kColor;        break;
+         case luminosity:        mode_ = SkBlendMode::kLuminosity;   break;
       };
       _state->stroke_paint().setBlendMode(mode_);
       _state->fill_paint().setBlendMode(mode_);
@@ -518,7 +535,7 @@ namespace cycfi::artist
                   that,
                   SkRect{ src.left, src.top, src.right, src.bottom },
                   SkRect{ dest.left, dest.top, dest.right, dest.bottom },
-                  nullptr
+                  &_state->fill_paint()
                );
             }
          };

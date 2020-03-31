@@ -42,8 +42,8 @@ set(space_fonts
 )
 
 set(composite_ops_fonts
-   ${CMAKE_CURRENT_LIST_DIR}/images/rgb_blur.png
-   ${CMAKE_CURRENT_LIST_DIR}/images/rgb_circles.png
+   ${CMAKE_CURRENT_LIST_DIR}/images/dest.png
+   ${CMAKE_CURRENT_LIST_DIR}/images/src.png
 )
 
 add_example(shapes)

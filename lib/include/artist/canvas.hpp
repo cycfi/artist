@@ -146,14 +146,31 @@ namespace cycfi::artist
          source_atop,
          source_in,
          source_out,
+
          destination_over,
          destination_atop,
          destination_in,
          destination_out,
+
          lighter,
          darker,
          copy,
-         xor_
+         xor_,
+
+         difference,
+         exclusion,
+         multiply,
+         screen,
+
+         color_dodge,
+         color_burn,
+         soft_light,
+         hard_light,
+
+         hue,
+         saturation,
+         color_op,
+         luminosity
       };
 
       void              global_composite_operation(composite_op_enum mode);
