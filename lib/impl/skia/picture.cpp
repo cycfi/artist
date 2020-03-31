@@ -20,7 +20,7 @@
 
 namespace cycfi::artist
 {
-   picture::picture(point size)
+   picture::picture(extent size)
     : _impl{ new artist::picture_impl(size) }
    {}
 
