@@ -270,18 +270,19 @@ namespace cycfi::artist
 
       ///////////////////////////////////////////////////////////////////////////////////
       // Text
-      enum text_alignment
+      enum text_halign     // Horizontal align
       {
-         // Horizontal align
-         left     = 0,        // Default, align text horizontally to left.
-         center   = 1,        // Align text horizontally to center.
-         right    = 2,        // Align text horizontally to right.
+         left,             // Default, align text horizontally to left.
+         center,           // Align text horizontally to center.
+         right             // Align text horizontally to right.
+      };
 
-         // Vertical align
-         baseline = 4,        // Default, align text vertically to baseline.
-         top      = 8,        // Align text vertically to top.
-         middle   = 12,       // Align text vertically to middle.
-         bottom   = 16        // Align text vertically to bottom.
+      enum text_valign     // Vertical align
+      {
+         baseline = 4,     // Default, align text vertically to baseline.
+         top      = 8,     // Align text vertically to top.
+         middle   = 12,    // Align text vertically to middle.
+         bottom   = 16     // Align text vertically to bottom.
       };
 
       struct text_metrics
@@ -295,7 +296,10 @@ namespace cycfi::artist
       void              fill_text(std::string_view utf8, point p);
       void              stroke_text(std::string_view utf8, point p);
       text_metrics      measure_text(std::string_view utf8);
+
       void              text_align(int align);
+      void              text_align(text_halign align);
+      void              text_baseline(text_valign align);
 
       void              fill_text(std::string_view utf8, float x, float y);
       void              stroke_text(std::string_view utf8, float x, float y);

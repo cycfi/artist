@@ -814,6 +814,16 @@ namespace cycfi::artist
       _state->text_align(align);
    }
 
+   void canvas::text_align(text_halign align)
+   {
+      _state->text_align(_state->text_align() | align);
+   }
+
+   void canvas::text_baseline(text_valign align)
+   {
+      _state->text_align(_state->text_align() | align);
+   }
+
    void canvas::draw(picture const& pic, struct rect src, struct rect dest)
    {
       auto  img = (__bridge NSImage*) pic.impl();
