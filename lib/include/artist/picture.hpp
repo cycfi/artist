@@ -34,7 +34,8 @@ namespace cycfi::artist
    {
    public:
 
-      explicit          picture(point size);
+      explicit          picture(float sizex, float sizey);
+      explicit          picture(extent size);
       explicit          picture(fs::path const& path_);
                         picture(picture const& rhs) = delete;
                         picture(picture&& rhs) noexcept;
@@ -83,6 +84,11 @@ namespace cycfi::artist
    ////////////////////////////////////////////////////////////////////////////
    // Inlines
    ////////////////////////////////////////////////////////////////////////////
+   inline picture::picture(float sizex, float sizey)
+    : picture(extent{ sizex, sizey })
+   {
+   }
+
    inline picture::picture(picture&& rhs) noexcept
     : _impl(std::move(rhs._impl))
    {

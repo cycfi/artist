@@ -28,7 +28,7 @@ namespace cycfi::artist
       }
    }
 
-   picture::picture(point size)
+   picture::picture(extent size)
    {
       auto img_ = [[NSImage alloc] initWithSize : NSMakeSize(size.x, size.y)];
       _impl = (__bridge_retained picture_impl_ptr) img_;
