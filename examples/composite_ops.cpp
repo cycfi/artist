@@ -71,7 +71,8 @@ void composite_draw(canvas& cnv, point p, canvas::composite_op_enum mode)
     }
 
     cnv.fill_style(colors::black);
-    cnv.text_align(cnv.center | cnv.bottom);
+    cnv.text_align(cnv.center);
+    cnv.text_baseline(cnv.bottom);
     cnv.fill_text(mode_name(mode), p.x+(xsize/2), p.y+ysize);
 }
 
