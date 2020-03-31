@@ -397,21 +397,38 @@ void typography(canvas& cnv)
 
 char const* mode_name(canvas::composite_op_enum mode)
 {
-    switch (mode)
-    {
-        case canvas::source_over:       return "source_over";
-        case canvas::source_atop:       return "source_atop";
-        case canvas::source_in:         return "source_in";
-        case canvas::source_out:        return "source_out";
-        case canvas::destination_over:  return "destination_over";
-        case canvas::destination_atop:  return "destination_atop";
-        case canvas::destination_in:    return "destination_in";
-        case canvas::destination_out:   return "destination_out";
-        case canvas::lighter:           return "lighter";
-        case canvas::darker:            return "darker";
-        case canvas::copy:              return "copy";
-        case canvas::xor_:              return "xor_";
-    };
+   switch (mode)
+   {
+      case canvas::source_over:       return "source_over";
+      case canvas::source_atop:       return "source_atop";
+      case canvas::source_in:         return "source_in";
+      case canvas::source_out:        return "source_out";
+
+      case canvas::destination_over:  return "destination_over";
+      case canvas::destination_atop:  return "destination_atop";
+      case canvas::destination_in:    return "destination_in";
+      case canvas::destination_out:   return "destination_out";
+
+      case canvas::lighter:           return "lighter";
+      case canvas::darker:            return "darker";
+      case canvas::copy:              return "copy";
+      case canvas::xor_:              return "xor_";
+
+      case canvas::difference:        return "difference";
+      case canvas::exclusion:         return "exclusion";
+      case canvas::multiply:          return "multiply";
+      case canvas::screen:            return "screen";
+
+      case canvas::color_dodge:       return "color_dodge";
+      case canvas::color_burn:        return "color_burn";
+      case canvas::soft_light:        return "soft_light";
+      case canvas::hard_light:        return "hard_light";
+
+      case canvas::hue:               return "hue";
+      case canvas::saturation:        return "saturation";
+      case canvas::color_op:          return "color_op";
+      case canvas::luminosity:        return "luminosity";
+   };
 }
 
 void composite_draw(canvas& cnv, point p, canvas::composite_op_enum mode)
@@ -424,12 +441,23 @@ void composite_draw(canvas& cnv, point p, canvas::composite_op_enum mode)
         cnv.global_composite_operation(cnv.source_over);
         cnv.fill_style(colors::blue);
         cnv.fill_rect(p.x+20, p.y+20, 60, 60);
-        cnv.global_composite_operation(mode);
-        cnv.fill_style(colors::red);
-        cnv.circle(p.x+70, p.y+70, 30);
-        cnv.fill();
     }
 
+    {
+        auto save = cnv.new_state();
+        picture pm{ 110, 110 };
+        {
+            picture_context ctx{ pm };
+            canvas pm_cnv{ ctx.context() };
+            pm_cnv.fill_style(colors::red);
+            pm_cnv.circle(70, 70, 30);
+            pm_cnv.fill();
+        }
+
+        cnv.global_composite_operation(mode);
+        cnv.draw(pm, p);
+    }
+   
     cnv.fill_style(colors::black);
     cnv.text_align(cnv.center);
     cnv.fill_text(mode_name(mode), p.x+60, p.y+110);
