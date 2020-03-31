@@ -252,31 +252,6 @@ namespace cycfi::artist
                return false;
          };
       };
-
-      void composite_op_workaround(
-         CGContextRef ctx, canvas::composite_op_enum mode)
-      {
-         if (needs_workaround(mode))
-         {
-            // This is needed to conform to the html5 canvas specs
-            // (e.g. https://www.w3schools.com/tags/canvas_globalcompositeoperation.asp)
-            // There are still some artifacts with source_out, but this is the best we
-            // can do for now.
-            auto save = CGContextCopyPath(ctx);
-            {
-               CGContextSaveGState(ctx);
-               CGContextAddRect(ctx, CGRectInfinite);
-               CGContextEOClip(ctx);
-               CGContextSetBlendMode(ctx, kCGBlendModeClear);
-               CGContextAddRect(ctx, CGRectInfinite);
-               CGContextFillPath(ctx);
-               CGContextRestoreGState(ctx);
-            }
-
-            CGContextAddPath(ctx, save);
-            CGPathRelease(save);
-         }
-      }
    }
 
    void canvas::fill()
@@ -287,7 +262,6 @@ namespace cycfi::artist
          if constexpr (std::is_same_v<T, color>)
          {
             auto ctx = CGContextRef(_context);
-            composite_op_workaround(ctx, _state->mode());
             CGContextSetRGBFillColor(ctx, style.red, style.green, style.blue, style.alpha);
             CGContextFillPath(ctx);
          }
@@ -337,7 +311,6 @@ namespace cycfi::artist
          if constexpr (std::is_same_v<T, color>)
          {
             auto ctx = CGContextRef(_context);
-            composite_op_workaround(ctx, _state->mode());
             CGContextSetRGBStrokeColor(ctx, style.red, style.green, style.blue, style.alpha);
             CGContextStrokePath(ctx);
          }
@@ -535,14 +508,32 @@ namespace cycfi::artist
          case source_atop:          cg_mode = kCGBlendModeSourceAtop; break;
          case source_in:            cg_mode = kCGBlendModeSourceIn; break;
          case source_out:           cg_mode = kCGBlendModeSourceOut; break;
+
          case destination_over:     cg_mode = kCGBlendModeDestinationOver; break;
          case destination_atop:     cg_mode = kCGBlendModeDestinationAtop; break;
          case destination_in:       cg_mode = kCGBlendModeDestinationIn; break;
          case destination_out:      cg_mode = kCGBlendModeDestinationOut; break;
+
          case lighter:              cg_mode = kCGBlendModePlusLighter; break;
          case darker:               cg_mode = kCGBlendModePlusDarker; break;
          case copy:                 cg_mode = kCGBlendModeCopy; break;
          case xor_:                 cg_mode = kCGBlendModeXOR; break;
+
+         case difference:           cg_mode = kCGBlendModeDifference; break;
+         case exclusion:            cg_mode = kCGBlendModeExclusion; break;
+         case multiply:             cg_mode = kCGBlendModeMultiply; break;
+         case screen:               cg_mode = kCGBlendModeScreen; break;
+
+         case color_dodge:          cg_mode = kCGBlendModeColorDodge; break;
+         case color_burn:           cg_mode = kCGBlendModeColorBurn; break;
+         case soft_light:           cg_mode = kCGBlendModeSoftLight; break;
+         case hard_light:           cg_mode = kCGBlendModeHardLight; break;
+
+         case canvas::hue:          cg_mode = kCGBlendModeHue; break;
+         case canvas::saturation:   cg_mode = kCGBlendModeSaturation; break;
+         case canvas::color_op:     cg_mode = kCGBlendModeColor; break;
+         case canvas::luminosity:   cg_mode = kCGBlendModeLuminosity; break;
+
       };
       CGContextSetBlendMode(CGContextRef(_context), cg_mode);
    }
@@ -836,14 +827,31 @@ namespace cycfi::artist
          case source_atop:          ns_mode = NSCompositingOperationSourceAtop; break;
          case source_in:            ns_mode = NSCompositingOperationSourceIn; break;
          case source_out:           ns_mode = NSCompositingOperationSourceOut; break;
+
          case destination_over:     ns_mode = NSCompositingOperationDestinationOver; break;
          case destination_atop:     ns_mode = NSCompositingOperationDestinationAtop; break;
          case destination_in:       ns_mode = NSCompositingOperationDestinationIn; break;
          case destination_out:      ns_mode = NSCompositingOperationDestinationOut; break;
+
          case lighter:              ns_mode = NSCompositingOperationPlusLighter; break;
          case darker:               ns_mode = NSCompositingOperationPlusDarker; break;
          case copy:                 ns_mode = NSCompositingOperationCopy; break;
          case xor_:                 ns_mode = NSCompositingOperationXOR; break;
+
+         case difference:           ns_mode = NSCompositingOperationDifference; break;
+         case exclusion:            ns_mode = NSCompositingOperationExclusion; break;
+         case multiply:             ns_mode = NSCompositingOperationMultiply; break;
+         case screen:               ns_mode = NSCompositingOperationScreen; break;
+
+         case color_dodge:          ns_mode = NSCompositingOperationColorDodge; break;
+         case color_burn:           ns_mode = NSCompositingOperationColorBurn; break;
+         case soft_light:           ns_mode = NSCompositingOperationSoftLight; break;
+         case hard_light:           ns_mode = NSCompositingOperationHardLight; break;
+
+         case canvas::hue:          ns_mode = NSCompositingOperationHue; break;
+         case canvas::saturation:   ns_mode = NSCompositingOperationSaturation; break;
+         case canvas::color_op:     ns_mode = NSCompositingOperationColor; break;
+         case canvas::luminosity:   ns_mode = NSCompositingOperationLuminosity; break;
       };
 
       [img drawInRect   :  dest_
