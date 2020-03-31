@@ -438,6 +438,11 @@ namespace cycfi::artist
       CGContextAddCurveToPoint(CGContextRef(_context), cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
    }
 
+   void canvas::close()
+   {
+      CGContextClosePath(CGContextRef(_context));
+   }
+
    void canvas::fill_style(color c)
    {
       _state->fill_style(c);

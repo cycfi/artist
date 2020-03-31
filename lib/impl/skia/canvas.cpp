@@ -267,6 +267,11 @@ namespace cycfi::artist
       _state->path().cubicTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
    }
 
+   void canvas::close()
+   {
+      _state->path().close();
+   }
+
    void canvas::fill_style(color c)
    {
       _state->fill_paint().setColor4f({ c.red, c.green, c.blue, c.alpha }, nullptr);
