@@ -8,19 +8,28 @@ include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 
 if (ARTIST_SKIA)
 
+   ############################################################################
+   # Skia
+   ############################################################################
    ExternalProject_Add(skia
       PREFIX "skia_prebuilt"
-      URL https://github.com/cycfi/artist/releases/download/skia-prebuilt/libskia.a.zip
+      URL https://github.com/cycfi/artist/releases/download/skia-prebuilt/macos-libskia.a.zip
       URL_MD5 f6726f24184673db83bfa66d05c6a027
       CONFIGURE_COMMAND ""
       BUILD_COMMAND ""
       INSTALL_COMMAND ""
    )
 
-   add_custom_target(
-      libunibreak
-      COMMAND make release "${CMAKE_CURRENT_LIST_DIR}/external/libunibreak/src"
-      WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/external/libunibreak/src"
+   ############################################################################
+   # libunibreak
+   ############################################################################
+   ExternalProject_Add(libunibreak
+      PREFIX "libunibreak_prebuilt"
+      URL https://github.com/cycfi/artist/releases/download/skia-prebuilt/macos-libunibreak.a.zip
+      URL_MD5 e1ec1a1001427efda2a036d058609a72
+      CONFIGURE_COMMAND ""
+      BUILD_COMMAND ""
+      INSTALL_COMMAND ""
    )
 
    find_package(opengl REQUIRED)
@@ -115,7 +124,7 @@ if (ARTIST_SKIA)
          external/skia/include/effects
          external/skia/src/gpu
          external/skia/modules/skshaper/include
-         external/libunibreak/src/
+         external/libunibreak/include/
    )
    target_compile_definitions(
       artist
@@ -194,10 +203,9 @@ if (ARTIST_SKIA)
       infra
    PRIVATE
       ${CMAKE_CURRENT_BINARY_DIR}/skia_prebuilt/src/skia/libskia.a
-      # ${CMAKE_CURRENT_BINARY_DIR}/libunibreak/src/skia/libskia.a
+      ${CMAKE_CURRENT_BINARY_DIR}/libunibreak_prebuilt/src/libunibreak/libunibreak.a
       ${OPENGL_LIBRARIES}
       harfbuzz::harfbuzz
-      "${CMAKE_CURRENT_LIST_DIR}/external/libunibreak/src/ReleaseDir/libunibreak.a"
    )
 elseif (ARTIST_QUARTZ_2D)
    target_link_libraries(artist PUBLIC
