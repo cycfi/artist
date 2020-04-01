@@ -457,7 +457,7 @@ void composite_draw(canvas& cnv, point p, canvas::composite_op_enum mode)
         cnv.global_composite_operation(mode);
         cnv.draw(pm, p);
     }
-   
+
     cnv.fill_style(colors::black);
     cnv.text_align(cnv.center);
     cnv.fill_text(mode_name(mode), p.x+60, p.y+110);
@@ -497,6 +497,12 @@ void drop_shadow(canvas& cnv)
     cnv.shadow_style({ 20, 20 }, 10, colors::black);
     cnv.fill_style(colors::blue);
     cnv.fill_rect(20, 20, 100, 80);
+}
+
+namespace cycfi::artist
+{
+   void init_paths()
+   {}
 }
 
 ///////////////////////////////////////////////////////////////////////////////

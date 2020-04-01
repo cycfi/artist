@@ -41,5 +41,5 @@ if (ARTIST_SKIA)
 endif()
 
 add_subdirectory(lib)
-# $$$ for now $$$ add_subdirectory(examples)
-# $$$ for now $$$ add_subdirectory(test)
+add_subdirectory(examples)
+add_subdirectory(test)
