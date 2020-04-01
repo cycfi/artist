@@ -4,8 +4,6 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
 #include "harfbuzz.hpp"
-#include <hb.h>
-#include <hb-ot.h>
 #include <SkStream.h>
 #include <SkTypeface.h>
 #include <cmath>
@@ -27,33 +25,28 @@ namespace cycfi::artist::detail
       std::size_t size = asset->getLength();
       if (const void* base = asset->getMemoryBase())
       {
-         _blob = hb_blob_create(
+         _blob = ptr_type(hb_blob_create(
             (char*)base
            , SkToUInt(size)
            , HB_MEMORY_MODE_READONLY
            , asset.release()
            , [](void* p) { delete (SkStreamAsset*)p; }
-         );
+         ));
       }
       else
       {
          void* ptr = size ? std::malloc(size) : nullptr;
          asset->read(ptr, size);
-         _blob = hb_blob_create(
+         _blob = ptr_type(hb_blob_create(
             (char*)ptr
            , SkToUInt(size)
            , HB_MEMORY_MODE_READONLY
            , ptr
            , std::free
-         );
+         ));
       }
-      SkASSERT(_blob);
-      hb_blob_make_immutable(_blob);
-   }
-
-   hb_blob::~hb_blob()
-   {
-      hb_blob_destroy(_blob);
+      SkASSERT(_blob.get());
+      hb_blob_make_immutable(_blob.get());
    }
 
    hb_font::hb_font(SkTypeface* tf)
@@ -67,11 +60,11 @@ namespace cycfi::artist::detail
          hb_face_set_index(face, unsigned(index));
          hb_face_set_upem(face, tf->getUnitsPerEm());
 
-         _font = hb_font_create(face);
-         SkASSERT(_font);
+         _font = ptr_type(hb_font_create(face));
+         SkASSERT(_font.get());
          if (_font)
          {
-            hb_ot_font_set_funcs(_font);
+            hb_ot_font_set_funcs(_font.get());
             int axis_count = tf->getVariationDesignPosition(nullptr, 0);
             if (axis_count > 0)
             {
@@ -79,64 +72,50 @@ namespace cycfi::artist::detail
                if (tf->getVariationDesignPosition(axis_values, axis_count) == axis_count)
                {
                   hb_font_set_variations(
-                     _font
+                     _font.get()
                   , reinterpret_cast<hb_variation_t*>(axis_values.get())
                   , axis_count
                   );
                }
             }
          }
-         else
-         {
-            _font = nullptr;
-         }
          hb_face_destroy(face);
       }
    }
 
-   hb_font::~hb_font()
-   {
-      hb_font_destroy(_font);
-   }
-
    hb_buffer::hb_buffer(std::string_view utf8)
-    : _buffer(hb_buffer_create())
+    : _buffer(ptr_type(hb_buffer_create()))
    {
-      hb_buffer_add_utf8(_buffer, utf8.data(), utf8.size(), 0, utf8.size());
-      _map.insert(_map.begin(), hb_buffer_get_length(_buffer), -1);
-   }
-
-   hb_buffer::~hb_buffer()
-   {
-      hb_buffer_destroy(_buffer);
+      hb_buffer_add_utf8(_buffer.get(), utf8.data(), utf8.size(), 0, utf8.size());
+      _map.insert(_map.begin(), hb_buffer_get_length(_buffer.get()), -1);
    }
 
    void hb_buffer::direction(hb_direction_t dir)
    {
-      hb_buffer_set_direction(_buffer, dir);
+      hb_buffer_set_direction(_buffer.get(), dir);
    }
 
    void hb_buffer::script(hb_script_t scr)
    {
-      hb_buffer_set_script(_buffer, scr);
+      hb_buffer_set_script(_buffer.get(), scr);
    }
 
    void hb_buffer::language(char const* lang)
    {
-      hb_buffer_set_language(_buffer, hb_language_from_string(lang, -1));
+      hb_buffer_set_language(_buffer.get(), hb_language_from_string(lang, -1));
    }
 
    char const* hb_buffer::language() const
    {
-      return hb_language_to_string(hb_buffer_get_language(_buffer));
+      return hb_language_to_string(hb_buffer_get_language(_buffer.get()));
    }
 
    void hb_buffer::shape(hb_font const& font)
    {
-      hb_shape(font.get(), _buffer, nullptr, 0);
+      hb_shape(font.get(), _buffer.get(), nullptr, 0);
 
       unsigned int count;
-      auto glyphs = hb_buffer_get_glyph_infos(_buffer, &count);
+      auto glyphs = hb_buffer_get_glyph_infos(_buffer.get(), &count);
 
       for (auto i = 0; i != count; ++i)
          _map[glyphs[i].cluster] = i;
@@ -145,8 +124,8 @@ namespace cycfi::artist::detail
    hb_buffer::glyphs_info hb_buffer::glyphs() const
    {
       glyphs_info info;
-      info.glyphs = hb_buffer_get_glyph_infos(_buffer, &info.count);
-      info.positions = hb_buffer_get_glyph_positions(_buffer, &info.count);
+      info.glyphs = hb_buffer_get_glyph_infos(_buffer.get(), &info.count);
+      info.positions = hb_buffer_get_glyph_positions(_buffer.get(), &info.count);
       return info;
    }
 
