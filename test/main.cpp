@@ -513,7 +513,7 @@ TEST_CASE("Drawing")
 {
    picture pm{ window_size };
    {
-      picture_context ctx{pm };
+      picture_context ctx{ pm };
       canvas pm_cnv{ ctx.context() };
       test_draw(pm_cnv);
    }
@@ -524,7 +524,7 @@ TEST_CASE("Typography")
 {
    picture pm{ window_size };
    {
-      picture_context ctx{pm };
+      picture_context ctx{ pm };
       canvas pm_cnv{ ctx.context() };
       typography(pm_cnv);
    }
@@ -535,7 +535,7 @@ TEST_CASE("Composite")
 {
    picture pm{ window_size };
    {
-      picture_context ctx{pm };
+      picture_context ctx{ pm };
       canvas pm_cnv{ ctx.context() };
       composite_ops(pm_cnv);
    }
