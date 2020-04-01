@@ -29,7 +29,7 @@ function(add_example name)
       )
    endif()
 
-   target_link_libraries(${name} infra artist)
+   target_link_libraries(${name} artist)
 endfunction()
 
 set(typography_fonts

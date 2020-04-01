@@ -41,7 +41,7 @@ if (APPLE)
    )
 endif()
 
-target_link_libraries(artist_test infra artist)
+target_link_libraries(artist_test artist)
 
 # Copy golden files to the binary dir
 file(
