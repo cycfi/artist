@@ -51,8 +51,6 @@ namespace
       return 0;
    }
 
-   namespace fs = boost::filesystem;
-
    void activate_font(fs::path font_path)
    {
       NSArray* available_fonts = [[NSFontManager sharedFontManager] availableFonts];
