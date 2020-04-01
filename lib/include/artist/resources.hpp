@@ -33,7 +33,7 @@ namespace cycfi::artist
    // init_paths function. It's main purpose is to set the initial paths.
    // This is called solely by library. The client should not call this
    // function.
-   void init_paths();
+   extern void init_paths();
 }
 
 #endif

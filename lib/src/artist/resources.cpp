@@ -8,6 +8,12 @@
 
 namespace cycfi::artist
 {
+#if defined(__GNUC__) || defined(__clang__)
+   __attribute__((weak)) void init_paths()
+   {
+   }
+#endif
+
    std::vector<fs::path> resource_paths;
    std::mutex resource_paths_mutex;
 
