@@ -20,9 +20,9 @@ if (ARTIST_SKIA)
       set(UNIBREAK_LIB_MD5 e1ec1a1001427efda2a036d058609a72)
       set(UNIBREAK_LIB_NAME libunibreak.a)
 
-      set(HARFBUZZ_LIB_URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/macos-harfbuzz.zip)
-      set(HARFBUZZ_LIB_MD5 f6ccdf8a942a52f442404ba43736a41e)
-      set(HARFBUZZ_LIB_NAME harfbuzz.a)
+      set(HARFBUZZ_LIB_URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/macos-libharfbuzz.a.zip)
+      set(HARFBUZZ_LIB_MD5 d267800c2acd66827e4cc2ead2121c28)
+      set(HARFBUZZ_LIB_NAME libharfbuzz.a)
    elseif (MSVC)
       set(SKIA_LIB_URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/windows-skia.zip)
       set(SKIA_LIB_MD5 3b667a31b4a9ba1f6a6f732468cc942e)
@@ -52,18 +52,14 @@ if (ARTIST_SKIA)
    ############################################################################
    # harfbuzz
    ############################################################################
-   if (APPLE)
-      set(HARFBUZZ_LIBRARY harfbuzz::harfbuzz)
-   elseif (MSVC)
-      ExternalProject_Add(harfbuzz
-         PREFIX "harfbuzz_prebuilt"
-         URL ${HARFBUZZ_LIB_URL}
-         URL_MD5 ${HARFBUZZ_LIB_MD5}
-         CONFIGURE_COMMAND ""
-         BUILD_COMMAND ""
-         INSTALL_COMMAND ""
-      )
-   endif()
+   ExternalProject_Add(harfbuzz
+      PREFIX "harfbuzz_prebuilt"
+      URL ${HARFBUZZ_LIB_URL}
+      URL_MD5 ${HARFBUZZ_LIB_MD5}
+      CONFIGURE_COMMAND ""
+      BUILD_COMMAND ""
+      INSTALL_COMMAND ""
+   )
 
    ############################################################################
    # libunibreak
@@ -145,7 +141,7 @@ source_group("Header Files\\artist"
 add_library(artist)
 
 if (ARTIST_SKIA)
-   add_dependencies(artist skia libunibreak)
+   add_dependencies(artist skia harfbuzz libunibreak)
 endif()
 
 target_sources(artist
@@ -153,13 +149,18 @@ target_sources(artist
    PUBLIC ${ARTIST_HEADERS}
 )
 
-target_include_directories(artist PUBLIC include)
+target_include_directories(
+   artist
+   PUBLIC
+      include
+      infra/include
+      external/filesystem/include/
+)
 
 if (ARTIST_SKIA)
    target_include_directories(
       artist
       PUBLIC
-         infra/include
          external/skia
          external/skia/include/core
          external/skia/include/config
@@ -237,7 +238,6 @@ if (ARTIST_SKIA)
       "${CMAKE_CURRENT_BINARY_DIR}/libunibreak_prebuilt/src/libunibreak/${UNIBREAK_LIB_NAME}"
       "${CMAKE_CURRENT_BINARY_DIR}/harfbuzz_prebuilt/src/harfbuzz/${HARFBUZZ_LIB_NAME}"
       ${OPENGL_LIBRARIES}
-      #${HARFBUZZ_LIBRARY}
    )
 endif()
 
