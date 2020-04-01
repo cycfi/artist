@@ -57,7 +57,7 @@ namespace cycfi::artist
 
          std::string brks(_utf8.size(), 0);
          set_linebreaks_utf8(
-            (utf8_t const*)_utf8.begin()
+            (utf8_t const*)_utf8.data()
           , _utf8.size(), _buff.language(), brks.data()
          );
 
