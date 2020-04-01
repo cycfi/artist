@@ -8,6 +8,7 @@ include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 
 if (ARTIST_SKIA)
 
+if (APPLE)
    ExternalProject_Add(skia
       PREFIX "skia_prebuilt"
       URL https://github.com/cycfi/artist/releases/download/skia-prebuilt/libskia.a.zip
@@ -16,15 +17,32 @@ if (ARTIST_SKIA)
       BUILD_COMMAND ""
       INSTALL_COMMAND ""
    )
+   find_package(harfbuzz CONFIG REQUIRED)
+elseif (MSVC)
+   ExternalProject_Add(skia
+      PREFIX "skia_prebuilt"
+      URL https://github.com/cycfi/artist/releases/download/skia-prebuilt/skia.zip
+      URL_MD5 3b667a31b4a9ba1f6a6f732468cc942e
+      CONFIGURE_COMMAND ""
+      BUILD_COMMAND ""
+      INSTALL_COMMAND ""
+   )
+   ExternalProject_Add(harfbuzz_src
+      GIT_REPOSITORY https://github.com/harfbuzz/harfbuzz.git
+      GIT_TAG master
+      PREFIX "harfbuzz_src"
+      UPDATE_COMMAND ""
+      INSTALL_COMMAND ""
+   )
+   set(HARFBUZZ_INCLUDE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/harfbuzz_src/src/harfbuzz_src/src)
+endif()
 
    add_custom_target(
       libunibreak
       COMMAND make release "${CMAKE_CURRENT_LIST_DIR}/external/libunibreak/src"
       WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/external/libunibreak/src"
    )
-
    find_package(opengl REQUIRED)
-   find_package(harfbuzz CONFIG REQUIRED)
 endif()
 
 ###############################################################################
@@ -92,7 +110,11 @@ source_group("Header Files\\artist"
 add_library(artist)
 
 if (ARTIST_SKIA)
-   add_dependencies(artist skia libunibreak)
+   if (APPLE)
+      add_dependencies(artist skia libunibreak)
+   elseif (MSVC)
+      add_dependencies(artist skia harfbuzz_src libunibreak)
+   endif()
 endif()
 
 target_sources(artist
@@ -116,6 +138,7 @@ if (ARTIST_SKIA)
          external/skia/src/gpu
          external/skia/modules/skshaper/include
          external/libunibreak/src/
+         ${HARFBUZZ_INCLUDE_DIRECTORY}
    )
    target_compile_definitions(
       artist
@@ -187,18 +210,28 @@ endif()
 
 ###############################################################################
 # Libraries and linking
-
 if (ARTIST_SKIA)
-   target_link_libraries(artist
-   PUBLIC
-      infra
-   PRIVATE
-      ${CMAKE_CURRENT_BINARY_DIR}/skia_prebuilt/src/skia/libskia.a
-      # ${CMAKE_CURRENT_BINARY_DIR}/libunibreak/src/skia/libskia.a
-      ${OPENGL_LIBRARIES}
-      harfbuzz::harfbuzz
-      "${CMAKE_CURRENT_LIST_DIR}/external/libunibreak/src/ReleaseDir/libunibreak.a"
-   )
+   if (APPLE)
+      target_link_libraries(artist
+      PUBLIC
+         infra
+      PRIVATE
+         ${CMAKE_CURRENT_BINARY_DIR}/skia_prebuilt/src/skia/libskia.a
+         ${OPENGL_LIBRARIES}
+         harfbuzz::harfbuzz
+         "${CMAKE_CURRENT_LIST_DIR}/external/libunibreak/src/ReleaseDir/libunibreak.a"
+      )
+   elseif (WIN32)
+      target_link_libraries(artist
+      PUBLIC
+         infra
+      PRIVATE
+         ${CMAKE_CURRENT_BINARY_DIR}/skia_prebuilt/src/skia/libskia.a
+         # ${CMAKE_CURRENT_BINARY_DIR}/libunibreak/src/skia/libskia.a
+         ${OPENGL_LIBRARIES}
+         #"${CMAKE_CURRENT_LIST_DIR}/external/libunibreak/src/ReleaseDir/libunibreak.a"
+      )
+   endif()
 elseif (ARTIST_QUARTZ_2D)
    target_link_libraries(artist PUBLIC
       infra

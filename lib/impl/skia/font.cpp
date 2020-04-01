@@ -105,7 +105,7 @@ namespace cycfi::artist
 
    float font::measure_text(std::string_view str) const
    {
-      return _ptr->measureText(str.begin(), str.size(), SkTextEncoding::kUTF8);
+      return _ptr->measureText(str.data(), str.size(), SkTextEncoding::kUTF8);
    }
 }
 
