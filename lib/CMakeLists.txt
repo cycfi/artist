@@ -153,13 +153,18 @@ target_sources(artist
    PUBLIC ${ARTIST_HEADERS}
 )
 
-target_include_directories(artist PUBLIC include)
+target_include_directories(
+   artist
+   PUBLIC
+      include
+      infra/include
+      external/filesystem/include/
+)
 
 if (ARTIST_SKIA)
    target_include_directories(
       artist
       PUBLIC
-         infra/include
          external/skia
          external/skia/include/core
          external/skia/include/config
