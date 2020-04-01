@@ -20,13 +20,18 @@ if (APPLE)
       main.cpp
       ${ARTIST_TEST_RESOURCES}
    )
-
    set_target_properties(
       artist_test
       PROPERTIES
       MACOSX_BUNDLE_INFO_PLIST
       ${CMAKE_CURRENT_LIST_DIR}/../resources/macos/plist.in
       )
+elseif (MSVC)
+   add_executable(
+      artist_test
+      main.cpp
+      ${ARTIST_TEST_RESOURCES}
+   )
 endif()
 
 if (APPLE)
@@ -42,6 +47,12 @@ if (APPLE)
 endif()
 
 target_link_libraries(artist_test artist)
+
+if (WIN32)
+   set_property(TARGET artist_test PROPERTY
+      MSVC_RUNTIME_LIBRARY "MultiThreaded"
+   )
+endif()
 
 # Copy golden files to the binary dir
 file(

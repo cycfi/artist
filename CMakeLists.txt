@@ -6,6 +6,7 @@
 cmake_minimum_required(VERSION 3.9.6...3.15.0)
 
 project(artist LANGUAGES C CXX)
+set(CMAKE_CXX_STANDARD 17)
 
 set(DEFAULT_BUILD_TYPE "Release")
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -35,5 +36,5 @@ if (ARTIST_SKIA)
 endif()
 
 add_subdirectory(lib)
-add_subdirectory(examples)
+#add_subdirectory(examples)
 add_subdirectory(test)

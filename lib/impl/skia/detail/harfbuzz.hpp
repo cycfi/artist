@@ -9,8 +9,9 @@
 #include <hb.h>
 #include <hb-ot.h>
 
-struct SkStreamAsset;
-struct SkTypeface;
+class SkStreamAsset;
+class SkTypeface;
+
 
 namespace cycfi::artist::detail
 {
