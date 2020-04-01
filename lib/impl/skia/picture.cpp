@@ -76,7 +76,6 @@ namespace cycfi::artist
             {
                return extent{ float(that.width()), float(that.height()) };
             }
-            return {};
          };
 
       return std::visit(get_size, *_impl);
