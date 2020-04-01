@@ -342,7 +342,7 @@ namespace cycfi::artist
 
    void canvas::global_composite_operation(composite_op_enum mode)
    {
-      SkBlendMode mode_;
+      SkBlendMode mode_ = SkBlendMode::kSrcOver;
       switch (mode)
       {
          case source_over:       mode_ = SkBlendMode::kSrcOver;      break;
