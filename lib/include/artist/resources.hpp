@@ -6,12 +6,10 @@
 #if !defined(ARTIST_RESOURCE_PATHS_JUNE_22_2019)
 #define ARTIST_RESOURCE_PATHS_JUNE_22_2019
 
-#include <boost/filesystem.hpp>
+#include <artist/detail/filesystem.hpp>
 
 namespace cycfi::artist
 {
-   namespace fs = boost::filesystem;
-
    // Resources (e.g. images) that are identified by file names can be
    // absolute or relative paths. For relative paths, a vector of paths is
    // searched, in the order they appear in the vector. Platform code

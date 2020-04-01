@@ -159,6 +159,7 @@ if (ARTIST_SKIA)
          external/skia/src/gpu
          external/skia/modules/skshaper/include
          external/libunibreak/include/
+         external/filesystem/include/
          ${HARFBUZZ_INCLUDE_DIRECTORY}
    )
    target_compile_definitions(
@@ -195,23 +196,6 @@ target_compile_options(artist PRIVATE
     $<$<CXX_COMPILER_ID:Clang>:-Wall -Wpedantic -ftemplate-backtrace-limit=0>
     $<$<CXX_COMPILER_ID:MSVC>:/W4 /wd4244 /wd4305 /wd4996 /wd4267 /wd4018>
 )
-
-###############################################################################
-# Boost
-
-set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.68 REQUIRED COMPONENTS filesystem system date_time regex)
-
-target_link_libraries(
-   artist
-   PUBLIC
-   Boost::boost
-   Boost::filesystem
-   Boost::system
-   Boost::date_time
-   Boost::regex
-)
-target_compile_definitions(artist PRIVATE BOOST_ALL_NO_LIB)
 
 ###############################################################################
 # Global options
