@@ -33,7 +33,7 @@ namespace cycfi::artist
          throw std::runtime_error{ "Error: Failed to load file: " + path.string() };
       };
 
-      sk_sp<SkData> data{ SkData::MakeFromFileName(path.c_str()) };
+      sk_sp<SkData> data{ SkData::MakeFromFileName(path.string().c_str()) };
       std::unique_ptr<SkCodec> codec = SkCodec::MakeFromData(data);
       if (!codec)
          fail();

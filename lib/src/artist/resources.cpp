@@ -8,10 +8,6 @@
 
 namespace cycfi::artist
 {
-   __attribute__((weak)) void init_paths()
-   {
-   }
-
    std::vector<fs::path> resource_paths;
    std::mutex resource_paths_mutex;
 

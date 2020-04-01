@@ -503,7 +503,7 @@ namespace cycfi::artist
       auto text_blob = SkTextBlob::MakeFromText(
          utf8.data(), utf8.size(), *_state->font().impl().get()
       );
-      prepare_text(_state->font(), _state->text_align(), p, utf8.begin(), utf8.end());
+      prepare_text(_state->font(), _state->text_align(), p, utf8.data(), utf8.data()+utf8.size());
       _context->drawTextBlob(text_blob.get(), p.x, p.y, _state->fill_paint());
    }
 
@@ -512,7 +512,7 @@ namespace cycfi::artist
       auto text_blob = SkTextBlob::MakeFromText(
          utf8.data(), utf8.size(), *_state->font().impl().get()
       );
-      prepare_text(_state->font(), _state->text_align(), p, utf8.begin(), utf8.end());
+      prepare_text(_state->font(), _state->text_align(), p, utf8.data(), utf8.data()+ utf8.size());
       _context->drawTextBlob(text_blob.get(), p.x, p.y, _state->stroke_paint());
    }
 
