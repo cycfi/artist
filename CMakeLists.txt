@@ -23,12 +23,6 @@ if (IPO_SUPPORTED)
     message(STATUS "Link-time optimization supported. Will be enabled in Release build type")
 endif()
 
-if (NOT DEFINED CYCFI_INFRA_ROOT)
-  set(CYCFI_INFRA_ROOT ../infra)
-endif()
-
-add_subdirectory(${CYCFI_INFRA_ROOT} "${CMAKE_CURRENT_BINARY_DIR}/infra")
-
 if (APPLE)
   option(ARTIST_QUARTZ_2D "build Artist using quartz 2d on MacOS" ON)
   option(ARTIST_SKIA "build Artist using skia" OFF)

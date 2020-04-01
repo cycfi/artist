@@ -149,6 +149,7 @@ if (ARTIST_SKIA)
    target_include_directories(
       artist
       PUBLIC
+         infra/include
          external/skia
          external/skia/include/core
          external/skia/include/config
@@ -217,17 +218,11 @@ endif()
 # Libraries and linking
 if (ARTIST_SKIA)
    target_link_libraries(artist
-   PUBLIC
-      infra
    PRIVATE
       ${CMAKE_CURRENT_BINARY_DIR}/skia_prebuilt/src/skia/libskia.a
       "${CMAKE_CURRENT_BINARY_DIR}/libunibreak_prebuilt/src/libunibreak/libunibreak.a"
       ${OPENGL_LIBRARIES}
       ${HARFBUZZ_LIBRARY}
-   )
-elseif (ARTIST_QUARTZ_2D)
-   target_link_libraries(artist PUBLIC
-      infra
    )
 endif()
 
