@@ -548,8 +548,9 @@ namespace cycfi::artist
             if constexpr(std::is_same_v<T, sk_sp<SkPicture>>)
             {
                SkMatrix mat;
-               _context->drawPicture(that, &mat, nullptr);
-               // $$$ JDG: Fixme. Compute the matrix $$$
+               mat.setScale(dest.width()/src.width(), dest.height()/src.height());
+               mat.setTranslate(dest.left-src.left, dest.top-src.top);
+               _context->drawPicture(that, &mat, &_state->fill_paint());
             }
             if constexpr(std::is_same_v<T, SkBitmap>)
             {

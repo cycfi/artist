@@ -129,12 +129,32 @@ namespace cycfi::artist
 
    uint32_t* picture::pixels()
    {
-      return nullptr;
+      auto get_pixels =
+         [&](auto const& that) -> uint32_t*
+         {
+            using T = std::decay_t<decltype(that)>;
+            if constexpr(std::is_same_v<T, SkBitmap>)
+               return reinterpret_cast<uint32_t*>(that.getPixels());
+            else
+               return nullptr;
+         };
+
+      return std::visit(get_pixels, *_impl);
    }
 
    uint32_t const* picture::pixels() const
    {
-      return nullptr;
+      auto get_pixels =
+         [&](auto const& that) -> uint32_t const*
+         {
+            using T = std::decay_t<decltype(that)>;
+            if constexpr(std::is_same_v<T, SkBitmap>)
+               return reinterpret_cast<uint32_t const*>(that.getPixels());
+            else
+               return nullptr;
+         };
+
+      return std::visit(get_pixels, *_impl);
    }
 
    extent picture::bitmap_size() const
