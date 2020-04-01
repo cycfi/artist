@@ -3,6 +3,7 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
+#include <infra/support.hpp>
 #include <memory>
 #include <string_view>
 #include <vector>
@@ -12,44 +13,38 @@
 class SkStreamAsset;
 class SkTypeface;
 
-
 namespace cycfi::artist::detail
 {
    class hb_blob
    {
    public:
                            hb_blob(std::unique_ptr<SkStreamAsset> asset);
-                           hb_blob(hb_blob const&) = delete;
-                           ~hb_blob();
-
-      hb_blob_t*           get() const { return _blob; }
+      hb_blob_t*           get() const { return _blob.get(); }
 
    private:
 
-      hb_blob_t* _blob = nullptr;
+      using ptr_type = std::unique_ptr<hb_blob_t, deleter<hb_blob_t, hb_blob_destroy>>;
+
+      ptr_type             _blob;
    };
 
    struct hb_font
    {
    public:
                            hb_font(SkTypeface* tf);
-                           hb_font(hb_font const&) = delete;
-                           ~hb_font();
-
-      hb_font_t*           get() const { return _font; }
+      hb_font_t*           get() const { return _font.get(); }
 
    private:
 
-      hb_font_t* _font = nullptr;
+      using ptr_type = std::unique_ptr<hb_font_t, deleter<hb_font_t, hb_font_destroy>>;
+
+      ptr_type             _font;
    };
 
    class hb_buffer
    {
    public:
                            hb_buffer(std::string_view utf8);
-                           hb_buffer(hb_buffer const&) = delete;
-                           ~hb_buffer();
-
       void                 direction(hb_direction_t dir);
       void                 script(hb_script_t scr);
       void                 language(char const* lang);
@@ -65,12 +60,14 @@ namespace cycfi::artist::detail
       void                 shape(hb_font const& font);
       glyphs_info          glyphs() const;
 
-      hb_buffer_t*         get() const { return _buffer; }
+      hb_buffer_t*         get() const { return _buffer.get(); }
       int                  glyph_index(std::size_t index) const;
 
    private:
 
-      hb_buffer_t*         _buffer = nullptr;
+      using ptr_type = std::unique_ptr<hb_buffer_t, deleter<hb_buffer_t, hb_buffer_destroy>>;
+
+      ptr_type             _buffer;
       std::vector<int>     _map;
    };
 }

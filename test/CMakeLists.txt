@@ -54,6 +54,12 @@ if (WIN32)
    )
 endif()
 
+if (ARTIST_SKIA)
+   set(GOLDEN_PATH golden/skia)
+elseif (ARTIST_QUARTZ_2D)
+   set(GOLDEN_PATH golden/quartz2d)
+endif()
+
 # Copy golden files to the binary dir
 file(
   COPY golden
@@ -70,7 +76,7 @@ file(
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 add_definitions(
-   -DGOLDEN_PATH="${CMAKE_CURRENT_BINARY_DIR}/golden/"
+   -DGOLDEN_PATH="${CMAKE_CURRENT_BINARY_DIR}/${GOLDEN_PATH}/"
    -DRESULTS_PATH="${CMAKE_CURRENT_BINARY_DIR}/results/"
    -DIMAGES_PATH="${CMAKE_CURRENT_BINARY_DIR}/images/"
 )
