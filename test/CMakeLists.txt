@@ -63,17 +63,26 @@ endif()
 # Copy golden files to the binary dir
 file(
   COPY golden
-  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+)
 
 # Copy results folder to the binary dir
 file(
   COPY results
-  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+)
 
 # Copy images folder to the binary dir
 file(
   COPY images
-  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+)
+
+# Copy fonts folder to the binary dir
+file(
+  COPY ../resources/fonts
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/resources
+)
 
 add_definitions(
    -DGOLDEN_PATH="${CMAKE_CURRENT_BINARY_DIR}/${GOLDEN_PATH}/"

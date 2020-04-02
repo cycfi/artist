@@ -168,6 +168,7 @@ if (ARTIST_SKIA)
          external/skia/include/gpu
          external/skia/include/codec
          external/skia/include/effects
+         external/skia/include/ports
          external/skia/src/gpu
          external/skia/modules/skshaper/include
          external/libunibreak/include/
