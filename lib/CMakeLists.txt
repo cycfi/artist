@@ -28,12 +28,12 @@ if (ARTIST_SKIA)
       set(SKIA_LIB_MD5 3b667a31b4a9ba1f6a6f732468cc942e)
       set(SKIA_LIB_NAME skia.lib)
 
-      set(UNIBREAK_LIB_URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/windows-libunibreak.zip)
-      set(UNIBREAK_LIB_MD5 f6ccdf8a942a52f442404ba43736a41e)
-      set(UNIBREAK_LIB_NAME libunibreak.a)
+      set(UNIBREAK_LIB_URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/unibreak.zip)
+      set(UNIBREAK_LIB_MD5 157edb5085ae90d485795c21841c4455)
+      set(UNIBREAK_LIB_NAME unibreak.lib)
 
       set(HARFBUZZ_LIB_URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/windows-harfbuzz.zip)
-      set(HARFBUZZ_LIB_MD5 7ff86cec78b906073082c2da4c095ce3)
+      set(HARFBUZZ_LIB_MD5 48f3f27aca8d1d4a81bda8c3ae6f01ee)
       set(HARFBUZZ_LIB_NAME harfbuzz.lib)
    endif()
 
