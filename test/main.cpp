@@ -291,8 +291,9 @@ void typography(canvas& cnv)
 
    // In the last two cases, the font family 'Open Sans Condensed' already
    // describes the font as condensed, but we still add the font family 'Open
-   // Sans' and styles because the font family is either grouped into 'Open Sans'
-   // family (e.g. Windows), or separated as a distinct family (e.g. MacOS).
+   // Sans' and styles because, depending on platform, the font family 'Open
+   // Sans Condensed' is either grouped into the 'Open Sans' family (e.g.
+   // Windows), or separate as a distinct family (e.g. MacOS).
 
    // Outline
    cnv.font(font_descr{ "Open Sans", 36 }.bold());
