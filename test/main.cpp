@@ -243,8 +243,12 @@ void compare_golden(picture const& pm, std::string name)
    auto golden = picture(get_golden_path() + name + ".png");
    auto result = picture(get_results_path() + name + ".png");
 
-   auto size = result.bitmap_size();
-   CHECK(size == golden.bitmap_size());
+   auto bm_size = result.bitmap_size();
+   CHECK(bm_size == golden.bitmap_size());
+
+   auto size = result.size();
+   CHECK(size.x == Approx(window_size.x));
+   CHECK(size.y == Approx(window_size.y));
 
    auto a = golden.pixels();
    auto b = result.pixels();
@@ -253,7 +257,7 @@ void compare_golden(picture const& pm, std::string name)
    REQUIRE(b != nullptr);
 
    auto diff = 0;
-   for (auto i = 0; i != (size.x * size.y); ++i)
+   for (auto i = 0; i != (bm_size.x * bm_size.y); ++i)
       diff += diff_pixel(a[i], b[i]);
    CHECK(diff == 0);
 }
