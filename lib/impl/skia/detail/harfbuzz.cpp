@@ -87,7 +87,7 @@ namespace cycfi::artist::detail
     : _buffer(ptr_type(hb_buffer_create()))
    {
       hb_buffer_add_utf8(_buffer.get(), utf8.data(), utf8.size(), 0, utf8.size());
-      _map.insert(_map.begin(), hb_buffer_get_length(_buffer.get()), -1);
+      _map.insert(_map.begin(), utf8.size(), -1);
    }
 
    void hb_buffer::direction(hb_direction_t dir)
