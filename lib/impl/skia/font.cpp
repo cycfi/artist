@@ -8,6 +8,15 @@
 #include <SkFont.h>
 #include <sstream>
 #include <SkFontMetrics.h>
+#include <SkFontMgr.h>
+#include <artist/detail/filesystem.hpp>
+
+# if defined(_WIN32)
+# include <Windows.h>
+# include "sysinfoapi.h"
+# include "tchar.h"
+# include <SkTypeface_win.h>
+# endif
 
 namespace cycfi::artist
 {
@@ -35,14 +44,59 @@ namespace cycfi::artist
    }
 
    using namespace font_constants;
+   sk_sp<SkFontMgr> font_manager;
+
+#if defined(_WIN32)
+// In Windows, we have to manually load the application fonts:
+
+   struct init_fonts
+   {
+      init_fonts()
+      {
+         auto fonts_path = fs::current_path() / "resources/fonts";
+
+         // Load the user fonts from the app's font folder.
+         for (fs::directory_iterator it{ fonts_path }; it != fs::directory_iterator{}; ++it)
+         {
+            std::wstring s = it->path().wstring().c_str();
+            AddFontResource(it->path().wstring().c_str());
+         }
+      }
+   };
+
+   void load_user_fonts()
+   {
+      static init_fonts init;
+   }
+
+#endif
 
    font::font()
     : _ptr(std::make_shared<SkFont>())
    {
+#if defined(_WIN32)
+      load_user_fonts();
+#endif
    }
 
    font::font(font_descr descr)
    {
+
+       auto ix = SkFontMgr::RefDefault()->countFamilies();
+
+#if defined(_WIN32)
+      load_user_fonts();
+#endif
+
+      if (!font_manager)
+      {
+#if defined(_WIN32)
+         font_manager = SkFontMgr_New_DirectWrite();
+#else
+         font_manager = SkFontMgr::RefDefault();
+#endif
+      }
+
       int stretch = int(descr._stretch) / 10;
       SkFontStyle style(
          descr._weight * 10
@@ -59,8 +113,8 @@ namespace cycfi::artist
       while (getline(str, family, ','))
       {
          trim(family);
-         auto face = SkTypeface::MakeFromName(family.c_str(), style);
-         if (face != default_face)
+         auto face = sk_sp<SkTypeface>(font_manager->matchFamilyStyle(family.c_str(), style));
+         if (face && face != default_face)
          {
             _ptr = std::make_shared<SkFont>(face, descr._size);
             break;

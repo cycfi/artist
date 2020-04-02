@@ -283,12 +283,12 @@ void typography(canvas& cnv)
 
    // Condensed
    // In this case, the font already describes the condensed 'stretch'
-   cnv.font(font_descr{ "Open Sans Condensed", 36 });
+   cnv.font(font_descr{ "Open Sans Condensed, Open Sans", 36 }.condensed());
    cnv.fill_text("Condensed", 430, 40);
 
    // Condensed Italic
    // In this case, the font already describes the condensed 'stretch'
-   cnv.font(font_descr{ "Open Sans Condensed", 36 }.italic());
+   cnv.font(font_descr{ "Open Sans Condensed, Open Sans", 36 }.italic().condensed());
    cnv.fill_text("Condensed Italic", 20, 115);
 
    // Outline
