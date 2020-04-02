@@ -158,7 +158,17 @@ namespace cycfi::artist
 
    extent picture::bitmap_size() const
    {
-      return {};
+      auto get_size =
+         [&](auto const& that) -> extent
+         {
+            using T = std::decay_t<decltype(that)>;
+            if constexpr(std::is_same_v<T, SkBitmap>)
+               return extent{ float(that.width()), float(that.height()) };
+            else
+               return {};
+         };
+
+      return std::visit(get_size, *_impl);
    }
 
    struct picture_context::state
