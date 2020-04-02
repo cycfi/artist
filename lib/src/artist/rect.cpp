@@ -3,7 +3,6 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#include <infra/support.hpp>
 #include <artist/rect.hpp>
 #include <algorithm>
 
@@ -92,10 +91,10 @@ namespace cycfi::artist
 
    rect clip(rect r, rect encl)
    {
-      clamp_min(r.left, encl.left);
-      clamp_min(r.top, encl.top);
-      clamp_max(r.right, encl.right);
-      clamp_max(r.bottom, encl.bottom);
+      r.left = std::max(r.left, encl.left);
+      r.top = std::max(r.top, encl.top);
+      r.right = std::min(r.right, encl.right);
+      r.bottom = std::min(r.bottom, encl.bottom);
       return r;
    }
 }
