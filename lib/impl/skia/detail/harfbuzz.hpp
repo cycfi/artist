@@ -3,7 +3,6 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#include <infra/support.hpp>
 #include <memory>
 #include <string_view>
 #include <vector>
@@ -15,6 +14,12 @@ class SkTypeface;
 
 namespace cycfi::artist::detail
 {
+   template <typename T, void(&delete_)(T*)>
+   struct deleter
+   {
+      void operator()(T* p) { delete_(p); }
+   };
+
    class hb_blob
    {
    public:

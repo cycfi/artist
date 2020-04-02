@@ -4,7 +4,7 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
 #define CATCH_CONFIG_MAIN
-#include <infra/catch.hpp>
+#include "catch.hpp"
 #include "paths.hpp"
 
 using namespace cycfi::artist;
