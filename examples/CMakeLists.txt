@@ -28,20 +28,19 @@ function(add_example name)
          MACOSX_PACKAGE_LOCATION Resources
       )
    endif()
-
    target_link_libraries(${name} artist)
+
 endfunction()
 
-set(typography_fonts
-   ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/OpenSansCondensed-Light.ttf
-   ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/OpenSansCondensed-LightItalic.ttf
+file(
+   GLOB typography_fonts ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/*.*
 )
 
-set(space_fonts
+set(space_images
    ${CMAKE_CURRENT_LIST_DIR}/images/space.jpg
 )
 
-set(composite_ops_fonts
+set(composite_ops_images
    ${CMAKE_CURRENT_LIST_DIR}/images/dest.png
    ${CMAKE_CURRENT_LIST_DIR}/images/src.png
 )
