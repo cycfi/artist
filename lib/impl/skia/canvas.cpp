@@ -479,7 +479,6 @@ namespace cycfi::artist
       )
       {
          auto metrics = font.metrics();
-         auto line_height = metrics.ascent + metrics.descent + metrics.leading;
          auto width = font.measure_text(std::string_view(f, l-f));
          switch (text_align & 0x1C)
          {

@@ -75,7 +75,7 @@ namespace cycfi::artist
             };
 
          auto justify =
-            [&](std::size_t glyph_idx, std::size_t glyph_count, bool must_break)
+            [&](std::size_t glyph_idx, bool must_break)
             {
                if (finfo.justify && !must_break)
                {
@@ -102,18 +102,18 @@ namespace cycfi::artist
             };
 
          auto new_line =
-            [&](std::size_t start_line, std::size_t utf8_idx, std::size_t& i, bool must_break)
+            [&](std::size_t utf8_idx, std::size_t& i, bool must_break)
             {
                auto glyph_idx = _buff.glyph_index(utf8_idx);
-               auto glyph_count = glyph_idx - glyph_start;
-               justify(glyph_idx, glyph_count, must_break);
+               justify(glyph_idx, must_break);
 
+               auto glyph_count = glyph_idx - glyph_start;
                if (i == glyphs_info.count-1)
                   ++glyph_count;
 
                std::vector<SkGlyphID> line_glyphs(glyph_count);
-               for (auto i = 0; i != glyph_count; ++i)
-                  line_glyphs[i] = glyphs_info.glyphs[glyph_start + i].codepoint;
+               for (auto j = 0; j != glyph_count; ++j)
+                  line_glyphs[j] = glyphs_info.glyphs[glyph_start + j].codepoint;
 
                _rows.push_back(
                   std::make_pair(
@@ -142,8 +142,7 @@ namespace cycfi::artist
             if (auto idx = glyphs_info.glyphs[i].cluster; brks[idx] == LINEBREAK_MUSTBREAK)
             {
                // We must break now
-               auto start_line = glyphs_info.glyphs[glyph_start].cluster;
-               new_line(start_line, idx, i, true);
+               new_line(idx, i, true);
             }
             else if (x > linfo.width)
             {
@@ -156,7 +155,7 @@ namespace cycfi::artist
                auto pos = brks_line.find_last_of(char(LINEBREAK_ALLOWBREAK), brks_len-1);
 
                if (pos != brks_line.npos)
-                  new_line(start_line, pos + start_line, i, false);
+                  new_line(pos + start_line, i, false);
                else
                   ; // deal with the case where we have to forcefully break the line
             }
@@ -165,7 +164,6 @@ namespace cycfi::artist
 
       void  draw(canvas& cnv, point p)
       {
-         auto ctx = cnv.impl();
          for (auto const& line : _rows)
          {
             auto sk_cnv = cnv.impl();
@@ -197,7 +195,7 @@ namespace cycfi::artist
 
    void text_layout::flow(float width, bool justify)
    {
-      auto line_info_f = [this, width](float y)
+      auto line_info_f = [this, width](float /*y*/)
       {
          return line_info{ 0, width };
       };
