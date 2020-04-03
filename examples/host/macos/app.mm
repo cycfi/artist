@@ -51,19 +51,6 @@ namespace
       return 0;
    }
 
-   void activate_font(fs::path font_path)
-   {
-      NSArray* available_fonts = [[NSFontManager sharedFontManager] availableFonts];
-      if (![available_fonts containsObject : [NSString stringWithUTF8String : font_path.stem().c_str()]])
-      {
-         auto furl = [NSURL fileURLWithPath : [NSString stringWithUTF8String : font_path.c_str()]];
-         assert(furl);
-
-         CFErrorRef error = nullptr;
-         CTFontManagerRegisterFontsForURL((__bridge CFURLRef) furl, kCTFontManagerScopeProcess, &error);
-      }
-   }
-
    void get_resource_path(char resource_path[])
    {
       CFBundleRef main_bundle = get_current_bundle();
@@ -82,13 +69,6 @@ namespace cycfi::artist
       char resource_path[PATH_MAX];
       get_resource_path(resource_path);
       add_search_path(resource_path);
-
-      // Load the user fonts from the Resource folder. Normally this is automatically
-      // done on application startup, but for plugins, we need to explicitly load
-      // the user fonts ourself.
-      for (fs::directory_iterator it{ resource_path }; it != fs::directory_iterator{}; ++it)
-         if (it->path().extension() == ".ttf")
-            activate_font(it->path());
    }
 }
 
