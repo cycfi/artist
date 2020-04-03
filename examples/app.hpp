@@ -12,6 +12,8 @@
 using cycfi::artist::canvas;
 using cycfi::artist::extent;
 using cycfi::artist::color;
+using cycfi::artist::point;
+using duration = std::chrono::duration<double>;
 
 int            run_app(
                   int argc
@@ -23,5 +25,6 @@ int            run_app(
 
 void           stop_app();
 void           draw(canvas& cnv);
+void           print_elapsed(canvas& cnv, point br);
 
 #endif

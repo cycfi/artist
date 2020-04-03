@@ -32,42 +32,44 @@ float dots_vel[total];
 
 float random_size()
 {
-    return float(std::rand()) / (RAND_MAX);
+   return float(std::rand()) / (RAND_MAX);
 }
 
 void draw(canvas& cnv)
 {
-    cnv.fill_style(repaint_color);
-    cnv.fill_rect({ 0, 0, window_size });
-    for (auto i = 0; i < total; ++i)
-    {
-        auto current_y = dots[i] - 1;
-        dots[i] += dots_vel[i] += accelleration;
-        cnv.fill_style(hsl(portion * i, 0.8, 0.5));
-        cnv.fill_rect({
-            float(i)
-           , current_y
-           , float(i+1)
-           , (current_y + dots_vel[i] + 1) * 1.1f
-        });
+   cnv.fill_style(repaint_color);
+   cnv.fill_rect({ 0, 0, window_size });
+   for (auto i = 0; i < total; ++i)
+   {
+      auto current_y = dots[i] - 1;
+      dots[i] += dots_vel[i] += accelleration;
+      cnv.fill_style(hsl(portion * i, 0.8, 0.5));
+      cnv.fill_rect({
+         float(i)
+         , current_y
+         , float(i+1)
+         , (current_y + dots_vel[i] + 1) * 1.1f
+      });
 
-        if (dots[i] > h && random_size() < .01)
-            dots[i] = dots_vel[i] = 0;
-    }
+      if (dots[i] > h && random_size() < .01)
+         dots[i] = dots_vel[i] = 0;
+   }
+
+   print_elapsed(cnv, window_size);
 }
 
 void init()
 {
-    for (auto i = 0; i < total; ++i)
-    {
-        dots[i] = h;
-        dots_vel[i] = 10;
-    }
+   for (auto i = 0; i < total; ++i)
+   {
+      dots[i] = h;
+      dots_vel[i] = 10;
+   }
 }
 
 int main(int argc, const char* argv[])
 {
-    init();
-    return run_app(argc, argv, window_size, colors::gray[10], true);
+   init();
+   return run_app(argc, argv, window_size, colors::gray[10], true);
 }
 

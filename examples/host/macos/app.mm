@@ -7,6 +7,7 @@
 #include <dlfcn.h>
 #include <string>
 #include <stdexcept>
+#include <chrono>
 #include "../../app.hpp"
 #include <artist/resources.hpp>
 
@@ -29,6 +30,9 @@
 #include <OpenGL/gl.h>
 
 using namespace cycfi::artist;
+
+// rendering elapsed time
+float elapsed_ = 0;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helper utils
@@ -175,6 +179,7 @@ using offscreen_type = std::shared_ptr<picture>;
                  displayTime : (const CVTimeStamp*) timeStamp
 {
    _refresh = false;
+   auto start = std::chrono::high_resolution_clock::now();
 
    [context makeCurrentContext];
 
@@ -210,6 +215,8 @@ using offscreen_type = std::shared_ptr<picture>;
 
    [context flushBuffer];
    CGLUnlockContext(context.CGLContextObj);
+   auto stop = std::chrono::high_resolution_clock::now();
+   elapsed_ = std::chrono::duration<double>{ stop - start }.count();
 }
 
 @end
@@ -246,6 +253,8 @@ using offscreen_type = std::shared_ptr<picture>;
 - (void) drawRect : (NSRect) dirty
 {
 #if defined(ARTIST_QUARTZ_2D)
+
+   auto start = std::chrono::high_resolution_clock::now();
    auto ctx = NSGraphicsContext.currentContext.CGContext;
 
    if (_first && _task)
@@ -272,6 +281,10 @@ using offscreen_type = std::shared_ptr<picture>;
       auto cnv = canvas{ (canvas_impl_ptr) ctx };
       draw(cnv);
    }
+
+   auto stop = std::chrono::high_resolution_clock::now();
+   elapsed_ = std::chrono::duration<double>{ stop - start }.count();
+
 #endif
 }
 
@@ -414,4 +427,31 @@ int run_app(
 void stop_app()
 {
    [NSApp terminate : nil];
+}
+
+void print_elapsed(canvas& cnv, point br)
+{
+   static font open_sans = font_descr{ "Open Sans", 12 };
+   static int i = 0;
+   static float t_elapsed = 0;
+   static float c_elapsed = 0;
+
+   if (++i == 30)
+   {
+      i = 0;
+      c_elapsed = t_elapsed / 30;
+      t_elapsed = 0;
+   }
+   else
+   {
+      t_elapsed += elapsed_;
+   }
+
+   if (c_elapsed)
+   {
+      cnv.fill_style(rgba(220, 220, 220, 200));
+      cnv.font(open_sans);
+      cnv.text_align(cnv.right | cnv.bottom);
+      cnv.fill_text(std::to_string(1 / c_elapsed) + " fps", { br.x, br.y });
+   }
 }
