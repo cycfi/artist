@@ -36,5 +36,5 @@ if (ARTIST_SKIA)
 endif()
 
 add_subdirectory(lib)
-#add_subdirectory(examples)
+add_subdirectory(examples)
 add_subdirectory(test)

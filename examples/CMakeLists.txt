@@ -14,13 +14,16 @@ function(add_example name)
          ${${name}_fonts}
          ${${name}_images}
       )
+
       set_target_properties(
          ${name}
          PROPERTIES
          MACOSX_BUNDLE_INFO_PLIST
          ${CMAKE_CURRENT_LIST_DIR}/../resources/macos/plist.in
       )
+
       target_link_options(${name} PRIVATE -framework AppKit)
+
       set_source_files_properties(
          ${${name}_fonts}
          ${${name}_images}
@@ -30,18 +33,18 @@ function(add_example name)
    endif()
 
    target_link_libraries(${name} artist)
+
 endfunction()
 
-set(typography_fonts
-   ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/OpenSansCondensed-Light.ttf
-   ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/OpenSansCondensed-LightItalic.ttf
+file(
+   GLOB typography_fonts ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/*.*
 )
 
-set(space_fonts
+set(space_images
    ${CMAKE_CURRENT_LIST_DIR}/images/space.jpg
 )
 
-set(composite_ops_fonts
+set(composite_ops_images
    ${CMAKE_CURRENT_LIST_DIR}/images/dest.png
    ${CMAKE_CURRENT_LIST_DIR}/images/src.png
 )

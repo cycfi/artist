@@ -3,66 +3,60 @@
 #
 #  Distributed under the MIT License (https://opensource.org/licenses/MIT)
 ###############################################################################
-
 project(artist_test)
 
-set(ARTIST_TEST_RESOURCES
-   ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/OpenSansCondensed-Light.ttf
-   ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/OpenSansCondensed-LightItalic.ttf
-)
-
-###############################################################################
-# The executable App
-
 if (APPLE)
+   file(
+      GLOB ARTIST_FONTS ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/*.*
+   )
    add_executable(
       artist_test MACOSX_BUNDLE
       main.cpp
-      ${ARTIST_TEST_RESOURCES}
+      ${ARTIST_FONTS}
    )
    set_target_properties(
       artist_test
       PROPERTIES
       MACOSX_BUNDLE_INFO_PLIST
       ${CMAKE_CURRENT_LIST_DIR}/../resources/macos/plist.in
-      )
-elseif (MSVC)
-   add_executable(
-      artist_test
-      main.cpp
-      ${ARTIST_TEST_RESOURCES}
    )
-endif()
-
-if (APPLE)
+   set_source_files_properties(
+      ${ARTIST_FONTS}
+      PROPERTIES
+      MACOSX_PACKAGE_LOCATION Resources
+   )
    target_link_options(artist_test PRIVATE -framework AppKit)
 endif()
 
-if (APPLE)
-   set_source_files_properties(
-      ${ARTIST_TEST_RESOURCES}
-      PROPERTIES
-      MACOSX_PACKAGE_LOCATION Resources
+if (MSVC)
+   add_executable(
+      artist_test
+      main.cpp
+   )
+   set_property(TARGET artist_test PROPERTY
+      MSVC_RUNTIME_LIBRARY "MultiThreaded"
+   )
+   file(
+      COPY ../resources/fonts
+      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/resources
    )
 endif()
 
 target_link_libraries(artist_test artist)
 
-if (WIN32)
-   set_property(TARGET artist_test PROPERTY
-      MSVC_RUNTIME_LIBRARY "MultiThreaded"
-   )
+if (ARTIST_SKIA)
+   set(GOLDEN_PATH macos_golden/skia)
+elseif (ARTIST_QUARTZ_2D)
+   set(GOLDEN_PATH macos_golden/quartz2d)
 endif()
 
-if (ARTIST_SKIA)
-   set(GOLDEN_PATH golden/skia)
-elseif (ARTIST_QUARTZ_2D)
-   set(GOLDEN_PATH golden/quartz2d)
+if (APPLE)
+   set(GOLDEN_DIR macos_golden)
 endif()
 
 # Copy golden files to the binary dir
 file(
-  COPY golden
+  COPY macos_golden
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
 )
 
@@ -76,12 +70,6 @@ file(
 file(
   COPY images
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-)
-
-# Copy fonts folder to the binary dir
-file(
-  COPY ../resources/fonts
-  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/resources
 )
 
 add_definitions(
