@@ -189,9 +189,6 @@ using offscreen_type = std::shared_ptr<picture>;
    info.fFBOID = (GrGLuint) buffer;
    SkColorType colorType = kRGBA_8888_SkColorType;
 
-   glClearColor(0.0, 0.0, 0.0, 0.0);
-   glClear(GL_COLOR_BUFFER_BIT);
-
    auto bounds = [_view bounds];
    auto scale = self.contentsScale;
    auto size = point{ float(bounds.size.width*scale), float(bounds.size.height*scale) };
