@@ -44,21 +44,35 @@ endif()
 
 target_link_libraries(artist_test artist)
 
-if (ARTIST_SKIA)
-   set(GOLDEN_PATH macos_golden/skia)
-elseif (ARTIST_QUARTZ_2D)
-   set(GOLDEN_PATH macos_golden/quartz2d)
-endif()
-
 if (APPLE)
+   if (ARTIST_SKIA)
+      set(GOLDEN_PATH macos_golden/skia)
+   elseif (ARTIST_QUARTZ_2D)
+      set(GOLDEN_PATH macos_golden/quartz2d)
+   endif()
+
    set(GOLDEN_DIR macos_golden)
+
+   # Copy golden files to the binary dir
+   file(
+   COPY macos_golden
+   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+   )
 endif()
 
-# Copy golden files to the binary dir
-file(
-  COPY macos_golden
-  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-)
+if (MSVC)
+   if (ARTIST_SKIA)
+      set(GOLDEN_PATH windows_golden/skia)
+   endif()
+
+   set(GOLDEN_DIR windows_golden)
+
+   # Copy golden files to the binary dir
+   file(
+   COPY windows_golden
+   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+   )
+endif()
 
 # Copy results folder to the binary dir
 file(
