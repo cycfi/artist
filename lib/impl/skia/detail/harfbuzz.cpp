@@ -117,7 +117,7 @@ namespace cycfi::artist::detail
       unsigned int count;
       auto glyphs = hb_buffer_get_glyph_infos(_buffer.get(), &count);
 
-      for (auto i = 0; i != count; ++i)
+      for (unsigned int i = 0; i != count; ++i)
          _map[glyphs[i].cluster] = i;
    }
 

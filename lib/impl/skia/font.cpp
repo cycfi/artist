@@ -93,9 +93,6 @@ namespace cycfi::artist
 
    font::font(font_descr descr)
    {
-
-       auto ix = SkFontMgr::RefDefault()->countFamilies();
-
 #if defined(_WIN32)
       load_user_fonts();
 #endif

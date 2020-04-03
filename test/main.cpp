@@ -436,6 +436,8 @@ char const* mode_name(canvas::composite_op_enum mode)
       case canvas::saturation:        return "saturation";
       case canvas::color_op:          return "color_op";
       case canvas::luminosity:        return "luminosity";
+
+      default: return "";
    };
 }
 
