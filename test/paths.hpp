@@ -9,6 +9,11 @@
 #include <artist/canvas.hpp>
 #include <string>
 
+inline std::string get_fonts_path()
+{
+   return FONTS_PATH;
+}
+
 inline std::string get_images_path()
 {
    return IMAGES_PATH;

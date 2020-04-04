@@ -113,6 +113,16 @@ source_group("Header Files\\artist"
 
 add_library(artist)
 
+if (NOT MSVC)
+   find_package(PkgConfig REQUIRED)
+endif()
+
+# Additional dependencies
+if (ARTIST_SKIA AND UNIX AND NOT APPLE)
+   pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
+   target_link_libraries(artist PUBLIC PkgConfig::fontconfig)
+endif()
+
 if (ARTIST_SKIA)
    add_dependencies(artist prebuilt_binaries)
 endif()
