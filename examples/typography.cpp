@@ -40,14 +40,18 @@ void typography(canvas& cnv)
    cnv.fill_text("Italic", { 345, 40 });
 
    // Condensed
-   // In this case, the font already describes the condensed 'stretch'
-   cnv.font(font_descr{ "Open Sans Condensed", 36 });
-   cnv.fill_text("Condensed", { 430, 40 });
+   cnv.font(font_descr{ "Open Sans Condensed, Open Sans", 36 }.condensed());
+   cnv.fill_text("Condensed", 430, 40);
 
    // Condensed Italic
-   // In this case, the font already describes the condensed 'stretch'
-   cnv.font(font_descr{ "Open Sans Condensed", 36 }.italic());
-   cnv.fill_text("Condensed Italic", { 20, 115 });
+   cnv.font(font_descr{ "Open Sans Condensed, Open Sans", 36 }.italic().condensed());
+   cnv.fill_text("Condensed Italic", 20, 115);
+
+   // In the last two cases, the font family 'Open Sans Condensed' already
+   // describes the font as condensed, but we still add the font family 'Open
+   // Sans' and styles because, depending on platform, the font family 'Open
+   // Sans Condensed' is either grouped into the 'Open Sans' family (e.g.
+   // Windows), or separate as a distinct family (e.g. MacOS).
 
    // Outline
    cnv.font(font_descr{ "Open Sans", 36 }.bold());

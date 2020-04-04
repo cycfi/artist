@@ -69,7 +69,7 @@ void arc_to(canvas& cnv)
    constexpr auto r = 40;
 
    auto make_arc =
-      [](canvas& cnv)
+      [=](canvas& cnv)
       {
          cnv.begin_path();
          cnv.move_to(x, y);

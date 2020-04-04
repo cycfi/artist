@@ -12,66 +12,39 @@ if (ARTIST_SKIA)
    # Prebuilt binaries
    ############################################################################
    if (APPLE)
-      set(SKIA_LIB_URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/macos-libskia.a.zip)
-      set(SKIA_LIB_MD5 f6726f24184673db83bfa66d05c6a027)
-      set(SKIA_LIB_NAME libskia.a)
 
-      set(UNIBREAK_LIB_URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/macos-libunibreak.a.zip)
-      set(UNIBREAK_LIB_MD5 e1ec1a1001427efda2a036d058609a72)
-      set(UNIBREAK_LIB_NAME libunibreak.a)
+      ExternalProject_Add(prebuilt_binaries
+         PREFIX "macos"
+         URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/macos.zip
+         URL_MD5 3fc049d75f2524a47f6d64a9770b2b55
+         CONFIGURE_COMMAND ""
+         BUILD_COMMAND ""
+         INSTALL_COMMAND ""
+      )
 
-      set(HARFBUZZ_LIB_URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/macos-libharfbuzz.a.zip)
-      set(HARFBUZZ_LIB_MD5 d267800c2acd66827e4cc2ead2121c28)
-      set(HARFBUZZ_LIB_NAME libharfbuzz.a)
+      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/macos/src/prebuilt_binaries)
+      set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
+      set(UNIBREAK_LIBRARY ${ARTIST_BINARIES}/libunibreak.a)
+      set(HARFBUZZ_LIBRARY ${ARTIST_BINARIES}/libharfbuzz.a)
+
    elseif (MSVC)
-      set(SKIA_LIB_URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/windows-skia.zip)
-      set(SKIA_LIB_MD5 3b667a31b4a9ba1f6a6f732468cc942e)
-      set(SKIA_LIB_NAME skia.lib)
 
-      set(UNIBREAK_LIB_URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/unibreak.zip)
-      set(UNIBREAK_LIB_MD5 157edb5085ae90d485795c21841c4455)
-      set(UNIBREAK_LIB_NAME unibreak.lib)
+      ExternalProject_Add(prebuilt_binaries
+         PREFIX "windows-x64"
+         URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/windows-x64.zip
+         URL_MD5 5456bc759153dbc84f44ffb0d824bcbd
+         CONFIGURE_COMMAND ""
+         BUILD_COMMAND ""
+         INSTALL_COMMAND ""
+      )
 
-      set(HARFBUZZ_LIB_URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/windows-harfbuzz.zip)
-      set(HARFBUZZ_LIB_MD5 48f3f27aca8d1d4a81bda8c3ae6f01ee)
-      set(HARFBUZZ_LIB_NAME harfbuzz.lib)
+      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows-x64/src/prebuilt_binaries)
+      set(SKIA_LIBRARY ${ARTIST_BINARIES}/skia.lib)
+      set(UNIBREAK_LIBRARY ${ARTIST_BINARIES}/unibreak.lib)
+      set(HARFBUZZ_LIBRARY ${ARTIST_BINARIES}/harfbuzz.lib)
+      set(FONTCONFIG_LIBRARY ${ARTIST_BINARIES}/fontconfig.lib)
+
    endif()
-
-   ############################################################################
-   # Skia
-   ############################################################################
-   ExternalProject_Add(skia
-      PREFIX "skia_prebuilt"
-      URL ${SKIA_LIB_URL}
-      URL_MD5 ${SKIA_LIB_MD5}
-      CONFIGURE_COMMAND ""
-      BUILD_COMMAND ""
-      INSTALL_COMMAND ""
-   )
-
-   ############################################################################
-   # harfbuzz
-   ############################################################################
-   ExternalProject_Add(harfbuzz
-      PREFIX "harfbuzz_prebuilt"
-      URL ${HARFBUZZ_LIB_URL}
-      URL_MD5 ${HARFBUZZ_LIB_MD5}
-      CONFIGURE_COMMAND ""
-      BUILD_COMMAND ""
-      INSTALL_COMMAND ""
-   )
-
-   ############################################################################
-   # libunibreak
-   ############################################################################
-   ExternalProject_Add(libunibreak
-      PREFIX "libunibreak_prebuilt"
-      URL ${UNIBREAK_LIB_URL}
-      URL_MD5 ${UNIBREAK_LIB_MD5}
-      CONFIGURE_COMMAND ""
-      BUILD_COMMAND ""
-      INSTALL_COMMAND ""
-   )
 
    find_package(opengl REQUIRED)
 endif()
@@ -141,7 +114,7 @@ source_group("Header Files\\artist"
 add_library(artist)
 
 if (ARTIST_SKIA)
-   add_dependencies(artist skia harfbuzz libunibreak)
+   add_dependencies(artist prebuilt_binaries)
 endif()
 
 target_sources(artist
@@ -174,6 +147,7 @@ if (ARTIST_SKIA)
          external/libunibreak/include/
          external/filesystem/include/
          external/harfbuzz/include/
+         external/fontconfig/include/
    )
    target_compile_definitions(
       artist
@@ -232,12 +206,14 @@ endif()
 
 ###############################################################################
 # Libraries and linking
+
 if (ARTIST_SKIA)
    target_link_libraries(artist
    PRIVATE
-      "${CMAKE_CURRENT_BINARY_DIR}/skia_prebuilt/src/skia/${SKIA_LIB_NAME}"
-      "${CMAKE_CURRENT_BINARY_DIR}/libunibreak_prebuilt/src/libunibreak/${UNIBREAK_LIB_NAME}"
-      "${CMAKE_CURRENT_BINARY_DIR}/harfbuzz_prebuilt/src/harfbuzz/${HARFBUZZ_LIB_NAME}"
+      "${SKIA_LIBRARY}"
+      "${UNIBREAK_LIBRARY}"
+      "${HARFBUZZ_LIBRARY}"
+      "${FONTCONFIG_LIBRARY}"
       ${OPENGL_LIBRARIES}
    )
 endif()
