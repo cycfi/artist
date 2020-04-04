@@ -10,15 +10,19 @@
 #include <SkFontMetrics.h>
 #include <SkFontMgr.h>
 #include <artist/detail/filesystem.hpp>
-#include <fontconfig/fontconfig.h>
+
+#if !defined(__APPLE__)
+# define ARTIST_USE_FONT_CONFIG
+# include <fontconfig/fontconfig.h>
+# include <map>
+# include <mutex>
+#endif
 
 # if defined(_WIN32)
 # include <Windows.h>
 # include "sysinfoapi.h"
 # include "tchar.h"
 # include <SkTypeface_win.h>
-# include <map>
-# include <mutex>
 # define ARTIST_USE_FONT_CONFIG
 # endif
 
@@ -45,7 +49,12 @@ namespace cycfi::artist
          ltrim(s);
          rtrim(s);
       }
+   }
 
+#if defined(ARTIST_USE_FONT_CONFIG)
+
+   namespace
+   {
       inline float lerp(float a, float b, float f)
       {
          return (a * (1.0 - f)) + (b * f);
@@ -64,6 +73,7 @@ namespace cycfi::artist
       {
          std::string    full_name;
          std::string    file;
+         int            index    = 0;
          uint8_t        weight   = font_constants::weight_normal;
          uint8_t        slant    = font_constants::slant_normal;
          uint8_t        stretch  = font_constants::stretch_normal;
@@ -122,34 +132,42 @@ namespace cycfi::artist
       void init_font_map()
       {
          FcConfig* config = FcInitLoadConfigAndFonts();
-         auto app_fonts_path = fs::current_path() / "resources/fonts";
-         FcConfigAppFontAddDir(config, (FcChar8 const*)app_fonts_path.string().c_str());
 
-#ifdef _WIN32
+         auto app_fonts_path = fs::current_path() / "resources/fonts";
+#if defined(_WIN32)
          TCHAR windir[MAX_PATH];
          GetWindowsDirectory(windir, MAX_PATH);
          auto system_fonts_path = fs::path(windir) / "fonts";
          FcConfigAppFontAddDir(config, (FcChar8 const*)system_fonts_path.string().c_str());
 #endif
-
+         FcConfigAppFontAddDir(config, (FcChar8 const*)app_fonts_path.string().c_str());
          FcPattern*     pat = FcPatternCreate();
          FcObjectSet*   os = FcObjectSetBuild(
                                  FC_FAMILY, FC_FULLNAME, FC_WIDTH, FC_WEIGHT
-                               , FC_SLANT, FC_FILE, nullptr);
+                               , FC_SLANT, FC_FILE, FC_INDEX, nullptr);
          FcFontSet*     fs = FcFontList(config, pat, os);
 
          for (int i=0; fs && i < fs->nfont; ++i)
          {
             FcPattern* font = fs->fonts[i];
             FcChar8 *file, *family, *full_name;
+            int index;
             if (FcPatternGetString(font, FC_FILE, 0, &file) == FcResultMatch &&
                FcPatternGetString(font, FC_FAMILY, 0, &family) == FcResultMatch &&
-               FcPatternGetString(font, FC_FULLNAME, 0, &full_name) == FcResultMatch
+               FcPatternGetString(font, FC_FULLNAME, 0, &full_name) == FcResultMatch &&
+               FcPatternGetInteger(font, FC_INDEX, 0, &index) == FcResultMatch
             )
             {
+               if (std::string(((char const*)family)).find("Lucida Grande") != std::string::npos)
+               {
+                  auto foo = []{};
+                  foo();
+               }
+
                font_entry entry;
                entry.full_name = (const char*) full_name;
                entry.file = (const char*) file;
+               entry.index = index;
 
                int weight;
                if (FcPatternGetInteger(font, FC_WEIGHT, 0, &weight) == FcResultMatch)
@@ -219,9 +237,8 @@ namespace cycfi::artist
          }
          return nullptr;
       }
-
-#endif
    }
+#endif // ARTIST_USE_FONT_CONFIG
 
    font::font()
     : _ptr(std::make_shared<SkFont>())
@@ -230,15 +247,33 @@ namespace cycfi::artist
 
    font::font(font_descr descr)
    {
-      if (!font_manager)
+#if defined(ARTIST_USE_FONT_CONFIG)
+
+      auto match_ptr = match(descr);
+      if (match_ptr)
       {
-#if defined(_WIN32)
-         font_manager = SkFontMgr_New_DirectWrite();
-#else
-         font_manager = SkFontMgr::RefDefault();
-#endif
+         auto [skia_font_map, skia_font_map_mutex] = get_skia_font_map();
+         std::lock_guard<std::mutex> lock(skia_font_map_mutex);
+         if (auto it = skia_font_map.find(match_ptr->full_name); it != skia_font_map.end())
+         {
+            _ptr = std::make_shared<SkFont>(it->second, descr._size);
+         }
+         else
+         {
+            auto face = SkTypeface::MakeFromFile(match_ptr->file.c_str(), match_ptr->index);
+            _ptr = std::make_shared<SkFont>(face, descr._size);
+            if (_ptr)
+               skia_font_map[match_ptr->full_name] = face;
+         }
+      }
+      else
+      {
+         _ptr = nullptr;
       }
 
+#else // ARTIST_USE_FONT_CONFIG
+
+      using namespace font_constants;
       int stretch = int(descr._stretch) / 10;
       SkFontStyle style(
          descr._weight * 10
@@ -255,7 +290,7 @@ namespace cycfi::artist
       while (getline(str, family, ','))
       {
          trim(family);
-         auto face = sk_sp<SkTypeface>(font_manager->matchFamilyStyle(family.c_str(), style));
+         auto face = SkTypeface::MakeFromName(family.c_str(), style);
          if (face && face != default_face)
          {
             _ptr = std::make_shared<SkFont>(face, descr._size);
@@ -264,6 +299,8 @@ namespace cycfi::artist
       }
       if (!_ptr)
          _ptr = std::make_shared<SkFont>(default_face, descr._size);
+
+#endif // ARTIST_USE_FONT_CONFIG
    }
 
    font::font(font const& rhs)

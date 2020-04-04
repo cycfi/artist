@@ -513,6 +513,12 @@ namespace cycfi::artist
 {
    void init_paths()
    {}
+
+   // This is declared in font.hpp
+   fs::path get_user_fonts_directory()
+   {
+      return get_fonts_path();
+   }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
