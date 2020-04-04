@@ -14,11 +14,17 @@ namespace cycfi::artist
    }
 #endif
 
-   std::vector<fs::path> resource_paths;
-   std::mutex resource_paths_mutex;
+   std::pair<std::vector<fs::path>&, std::mutex&>
+   get_resource_paths()
+   {
+      static std::vector<fs::path> resource_paths;
+      static std::mutex resource_paths_mutex;
+      return { resource_paths, resource_paths_mutex };
+   }
 
    void add_search_path(fs::path const& path, bool search_first)
    {
+      auto [resource_paths, resource_paths_mutex] = get_resource_paths();
       std::lock_guard<std::mutex> guard(resource_paths_mutex);
       if (search_first)
          resource_paths.insert(resource_paths.begin(), path);
@@ -49,6 +55,7 @@ namespace cycfi::artist
       }
       else
       {
+         auto [resource_paths, resource_paths_mutex] = get_resource_paths();
          std::lock_guard<std::mutex> guard(resource_paths_mutex);
          for (auto const& path : resource_paths)
          {

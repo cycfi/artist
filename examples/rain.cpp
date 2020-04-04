@@ -13,7 +13,7 @@ using namespace cycfi::artist;
 // https://onaircode.com/awesome-html5-canvas-examples-source-code/
 ///////////////////////////////////////////////////////////////////////////////
 
-#if defined(ARTIST_SKIA)
+#if defined(ARTIST_SKIA) && !defined(_WIN32)
 constexpr auto persistence = 0.15;
 #else
 constexpr auto persistence = 0.04;
