@@ -68,6 +68,20 @@ set(composite_ops_images
    ${CMAKE_CURRENT_LIST_DIR}/images/src.png
 )
 
+if (MSVC)
+   set(FONTCONFIG_DLL ${CMAKE_CURRENT_BINARY_DIR}/../lib/windows-x64/src/prebuilt_binaries/fontconfig.dll)
+   file(COPY ${FONTCONFIG_DLL} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+
+   set(ICONV_DLL ${CMAKE_CURRENT_BINARY_DIR}/../lib/windows-x64/src/prebuilt_binaries/libiconv.dll)
+   file(COPY ${ICONV_DLL} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+
+   set(XML2 ${CMAKE_CURRENT_BINARY_DIR}/../lib/windows-x64/src/prebuilt_binaries/libxml2.dll)
+   file(COPY ${XML2} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+
+   set(FREETYPE_DLL ${CMAKE_CURRENT_BINARY_DIR}/../lib/windows-x64/src/prebuilt_binaries/freetype.dll)
+   file(COPY ${FREETYPE_DLL} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+endif()
+
 add_example(shapes)
 add_example(typography)
 add_example(rain)
