@@ -32,7 +32,7 @@ if (ARTIST_SKIA)
       ExternalProject_Add(prebuilt_binaries
          PREFIX "windows-x64"
          URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/windows-x64.zip
-         URL_MD5 5456bc759153dbc84f44ffb0d824bcbd
+         URL_MD5 19b779f825dbf574971b60ec8d962509
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
          INSTALL_COMMAND ""
@@ -101,7 +101,7 @@ source_group("Source Files\\artist"
    ${ARTIST_SOURCES}
 )
 
-source_group("Source Files\\canvas_host"
+source_group("Source Files\\impl"
    FILES
    ${ARTIST_IMPL}
 )
