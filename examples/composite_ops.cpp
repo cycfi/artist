@@ -11,13 +11,6 @@ constexpr auto ysize = 170.0f;
 auto constexpr window_size = point{ (xsize*4)*2, (ysize*3)+10 };
 auto constexpr bkd_color = colors::white;
 
-void background(canvas& cnv)
-{
-   cnv.rect({ { 0, 0 }, window_size });
-   cnv.fill_style(bkd_color);
-   cnv.fill();
-}
-
 char const* mode_name(canvas::composite_op_enum mode)
 {
    switch (mode)
@@ -116,21 +109,13 @@ void composite_ops(canvas& cnv)
 
 void draw(canvas& cnv)
 {
-   // checkered(cnv, { 0, 0 }, 640.0f, 128);
-   // composite_draw(cnv);
-
-   // background(cnv);
-   composite_ops(cnv);
-
-   // picture pm{ window_size };
-   // {
-   //     picture_context ctx{pm };
-   //     canvas pm_cnv{ ctx.context() };
-   //     composite_ops(pm_cnv);
-   // }
-
-   // background(cnv);
-   // cnv.draw(pm);
+   picture pm{ window_size };
+   {
+      picture_context ctx{ pm };
+      canvas pm_cnv{ ctx.context() };
+      composite_ops(pm_cnv);
+   }
+   cnv.draw(pm);
 }
 
 int main(int argc, const char* argv[])
