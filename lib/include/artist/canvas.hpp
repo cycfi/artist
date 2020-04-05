@@ -9,7 +9,7 @@
 #include <artist/color.hpp>
 #include <artist/rect.hpp>
 #include <artist/circle.hpp>
-#include <artist/picture.hpp>
+#include <artist/image.hpp>
 #include <artist/font.hpp>
 #include <artist/text_layout.hpp>
 
@@ -309,12 +309,12 @@ namespace cycfi::artist
       ///////////////////////////////////////////////////////////////////////////////////
       // Pixmaps
 
-      void              draw(picture const& pic, struct rect src, struct rect dest);
-      void              draw(picture const& pic, struct rect dest);
-      void              draw(picture const& pic, point pos = { 0, 0 });
-      void              draw(picture const& pic, point pos, float scale);
-      void              draw(picture const& pic, float posx, float posy);
-      void              draw(picture const& pic, float posx, float posy, float scale);
+      void              draw(image const& pic, struct rect src, struct rect dest);
+      void              draw(image const& pic, struct rect dest);
+      void              draw(image const& pic, point pos = {0, 0 });
+      void              draw(image const& pic, point pos, float scale);
+      void              draw(image const& pic, float posx, float posy);
+      void              draw(image const& pic, float posx, float posy, float scale);
 
       ///////////////////////////////////////////////////////////////////////////////////
       // States

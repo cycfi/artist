@@ -24,27 +24,27 @@ namespace cycfi::artist
 
    using canvas_impl_ptr = canvas_impl*;
 
-   class picture_impl;
-   using picture_impl_ptr = picture_impl*;
+   class image_impl;
+   using image_impl_ptr = image_impl*;
 
    ////////////////////////////////////////////////////////////////////////////
    // picture
    ////////////////////////////////////////////////////////////////////////////
-   class picture
+   class image
    {
    public:
 
-      explicit          picture(float sizex, float sizey);
-      explicit          picture(extent size);
-      explicit          picture(fs::path const& path_);
-                        picture(picture const& rhs) = delete;
-                        picture(picture&& rhs) noexcept;
-                        ~picture();
+      explicit          image(float sizex, float sizey);
+      explicit          image(extent size);
+      explicit          image(fs::path const& path_);
+                        image(image const& rhs) = delete;
+                        image(image&& rhs) noexcept;
+                        ~image();
 
-      picture&          operator=(picture const& rhs) = delete;
-      picture&          operator=(picture&& rhs) noexcept;
+      image&            operator=(image const& rhs) = delete;
+      image&            operator=(image&& rhs) noexcept;
 
-      picture_impl_ptr  impl() const;
+      image_impl_ptr    impl() const;
       extent            size() const;
       void              save_png(std::string_view path) const;
 
@@ -54,48 +54,48 @@ namespace cycfi::artist
 
    private:
 
-      picture_impl_ptr  _impl;
+      image_impl_ptr  _impl;
    };
 
-   using pixmap_ptr = std::shared_ptr<picture>;
+   using pixmap_ptr = std::shared_ptr<image>;
 
    ////////////////////////////////////////////////////////////////////////////
-   // picture_context allows drawing into a picture
+   // offscreen_image allows drawing into a picture
    ////////////////////////////////////////////////////////////////////////////
-   class picture_context
+   class offscreen_image
    {
    public:
 
-      explicit          picture_context(picture& pict);
-                        ~picture_context();
-      picture_context&   operator=(picture_context const& rhs) = delete;
+      explicit          offscreen_image(image& img);
+                        ~offscreen_image();
+      offscreen_image&  operator=(offscreen_image const& rhs) = delete;
 
       canvas_impl_ptr   context() const;
 
    private:
-                        picture_context(picture_context const&) = delete;
+                        offscreen_image(offscreen_image const&) = delete;
 
       struct state;
 
-      picture&          _picture;
+      image&            _image;
       state*            _state = nullptr;
    };
 
    ////////////////////////////////////////////////////////////////////////////
    // Inlines
    ////////////////////////////////////////////////////////////////////////////
-   inline picture::picture(float sizex, float sizey)
-    : picture(extent{ sizex, sizey })
+   inline image::image(float sizex, float sizey)
+    : image(extent{sizex, sizey })
    {
    }
 
-   inline picture::picture(picture&& rhs) noexcept
+   inline image::image(image&& rhs) noexcept
     : _impl(std::move(rhs._impl))
    {
       rhs._impl = nullptr;
    }
 
-   inline picture& picture::operator=(picture&& rhs) noexcept
+   inline image& image::operator=(image&& rhs) noexcept
    {
       if (this != &rhs)
       {

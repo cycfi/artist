@@ -11,7 +11,7 @@
 
 namespace cycfi::artist
 {
-   class picture_impl : public std::variant<extent, sk_sp<SkPicture>, SkBitmap>
+   class image_impl : public std::variant<extent, sk_sp<SkPicture>, SkBitmap>
    {
       using base_type = std::variant<extent, sk_sp<SkPicture>, SkBitmap>;
       using base_type::base_type;

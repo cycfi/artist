@@ -829,9 +829,9 @@ namespace cycfi::artist
       _state->text_align(_state->text_align() | align);
    }
 
-   void canvas::draw(picture const& pic, struct rect src, struct rect dest)
+   void canvas::draw(image const& img_, struct rect src, struct rect dest)
    {
-      auto  img = (__bridge NSImage*) pic.impl();
+      auto  img = (__bridge NSImage*) img_.impl();
       auto  src_ = NSRect{ { src.left, [img size].height - src.bottom }, { src.width(), src.height() } };
       auto  dest_ = NSRect{ { dest.left, dest.top }, { dest.width(), dest.height() } };
 

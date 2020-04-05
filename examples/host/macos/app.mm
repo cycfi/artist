@@ -79,7 +79,7 @@ namespace cycfi::artist
 //=======================================================================
 
 @class OpenGLLayer;
-using offscreen_type = std::shared_ptr<picture>;
+using offscreen_type = std::shared_ptr<image>;
 
 @interface CocoaView : NSView
 {
@@ -260,7 +260,7 @@ using offscreen_type = std::shared_ptr<picture>;
    if (_first && _task)
    {
       _first = false;
-      _offscreen = std::make_shared<picture>(
+      _offscreen = std::make_shared<image>(
          extent{ float(self.bounds.size.width), float(self.bounds.size.height) }
       );
    }
@@ -270,7 +270,7 @@ using offscreen_type = std::shared_ptr<picture>;
       auto cnv = canvas{ (canvas_impl_ptr) ctx };
       {
          // Do offscreen rendering
-         picture_context ctx{ *_offscreen };
+         offscreen_image ctx{ *_offscreen };
          canvas offscreen_cnv{ ctx.context() };
          draw(offscreen_cnv);
       }

@@ -47,8 +47,8 @@ char const* mode_name(canvas::composite_op_enum mode)
    };
 }
 
-picture dest{ "dest.png" };
-picture src{ "src.png" };
+image dest{"dest.png" };
+image src{"src.png" };
 
 void composite_draw(canvas& cnv, point p, canvas::composite_op_enum mode)
 {
@@ -109,13 +109,13 @@ void composite_ops(canvas& cnv)
 
 void draw(canvas& cnv)
 {
-   picture pm{ window_size };
+   image img{window_size };
    {
-      picture_context ctx{ pm };
+      offscreen_image ctx{ img };
       canvas pm_cnv{ ctx.context() };
       composite_ops(pm_cnv);
    }
-   cnv.draw(pm);
+   cnv.draw(img);
 }
 
 int main(int argc, const char* argv[])
