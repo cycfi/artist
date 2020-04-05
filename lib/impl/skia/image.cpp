@@ -3,7 +3,7 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#include <artist/picture.hpp>
+#include <artist/image.hpp>
 
 #include "SkBitmap.h"
 #include "SkCodec.h"
@@ -20,12 +20,12 @@
 
 namespace cycfi::artist
 {
-   picture::picture(extent size)
-    : _impl{ new artist::picture_impl(size) }
+   image::image(extent size)
+    : _impl{ new artist::image_impl(size) }
    {}
 
-   picture::picture(fs::path const& path_)
-    : _impl{ new artist::picture_impl(SkBitmap{}) }
+   image::image(fs::path const& path_)
+    : _impl{ new artist::image_impl(SkBitmap{}) }
    {
       auto path = find_file(path_);
       auto fail = [&path]()
@@ -47,17 +47,17 @@ namespace cycfi::artist
          fail();
    }
 
-   picture::~picture()
+   image::~image()
    {
       delete _impl;
    }
 
-   picture_impl_ptr picture::impl() const
+    image_impl_ptr image::impl() const
    {
       return _impl;
    }
 
-   extent picture::size() const
+   extent image::size() const
    {
       auto get_size =
          [](auto const& that) -> extent
@@ -81,7 +81,7 @@ namespace cycfi::artist
       return std::visit(get_size, *_impl);
    }
 
-   void picture::save_png(std::string_view path_) const
+   void image::save_png(std::string_view path_) const
    {
       std::string path{ path_ };
       auto fail = [&path]()
@@ -126,7 +126,7 @@ namespace cycfi::artist
       out.write(png->data(), png->size());
    }
 
-   uint32_t* picture::pixels()
+   uint32_t* image::pixels()
    {
       auto get_pixels =
          [&](auto const& that) -> uint32_t*
@@ -141,7 +141,7 @@ namespace cycfi::artist
       return std::visit(get_pixels, *_impl);
    }
 
-   uint32_t const* picture::pixels() const
+   uint32_t const* image::pixels() const
    {
       auto get_pixels =
          [&](auto const& that) -> uint32_t const*
@@ -156,7 +156,7 @@ namespace cycfi::artist
       return std::visit(get_pixels, *_impl);
    }
 
-   extent picture::bitmap_size() const
+   extent image::bitmap_size() const
    {
       auto get_size =
          [&](auto const& that) -> extent
@@ -171,27 +171,27 @@ namespace cycfi::artist
       return std::visit(get_size, *_impl);
    }
 
-   struct picture_context::state
+   struct offscreen_image::state
    {
       SkPictureRecorder recorder;
       SkCanvas* recording_canvas;
    };
 
-   picture_context::picture_context(picture& pict)
-    : _picture{ pict }
-    , _state{ new picture_context::state{} }
+   offscreen_image::offscreen_image(image& img)
+    : _image{ img }
+    , _state{ new offscreen_image::state{} }
    {
-      auto size = pict.size();
+      auto size = _image.size();
       _state->recording_canvas = _state->recorder.beginRecording(size.x, size.y);
    }
 
-   picture_context::~picture_context()
+   offscreen_image::~offscreen_image()
    {
-      *(_picture.impl()) = _state->recorder.finishRecordingAsPicture();
+      *(_image.impl()) = _state->recorder.finishRecordingAsPicture();
       delete _state;
    }
 
-   canvas_impl_ptr picture_context::context() const
+   canvas_impl_ptr offscreen_image::context() const
    {
       return _state->recording_canvas;
    }

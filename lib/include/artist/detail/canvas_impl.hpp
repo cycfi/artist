@@ -193,29 +193,29 @@ namespace cycfi::artist
       global_composite_operation(mode);
    }
 
-   inline void canvas::draw(picture const& pic, struct rect dest)
+   inline void canvas::draw(image const& pic, struct rect dest)
    {
       draw(pic, { 0, 0, pic.size() }, dest);
    }
 
-   inline void canvas::draw(picture const& pic, point pos)
+   inline void canvas::draw(image const& pic, point pos)
    {
       draw(pic, { 0, 0, pic.size() }, { pos, pic.size() });
    }
 
-   inline void canvas::draw(picture const& pic, point pos, float scale)
+   inline void canvas::draw(image const& pic, point pos, float scale)
    {
       auto size = pic.size();
       auto scaled = extent{ size.x*scale, size.y*scale };
       draw(pic, { 0, 0, size }, {pos, scaled });
    }
 
-   inline void canvas::draw(picture const& pic, float posx, float posy)
+   inline void canvas::draw(image const& pic, float posx, float posy)
    {
       draw(pic, { posx, posy });
    }
 
-   inline void canvas::draw(picture const& pic, float posx, float posy, float scale)
+   inline void canvas::draw(image const& pic, float posx, float posy, float scale)
    {
       draw(pic, { posx, posy }, scale);
    }

@@ -3,7 +3,7 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#include <artist/picture.hpp>
+#include <artist/image.hpp>
 #include <Quartz/Quartz.h>
 #include <string>
 #include <stdexcept>
@@ -28,37 +28,37 @@ namespace cycfi::artist
       }
    }
 
-   picture::picture(extent size)
+   image::image(extent size)
    {
       auto img_ = [[NSImage alloc] initWithSize : NSMakeSize(size.x, size.y)];
-      _impl = (__bridge_retained picture_impl_ptr) img_;
+      _impl = (__bridge_retained image_impl_ptr) img_;
    }
 
-   picture::picture(fs::path const& path_)
+   image::image(fs::path const& path_)
    {
       auto fs_path = find_file(path_);
       auto path = [NSString stringWithUTF8String : fs_path.c_str() ];
       auto img_ = [[NSImage alloc] initWithContentsOfFile : path];
-      _impl = (__bridge_retained picture_impl_ptr) img_;
+      _impl = (__bridge_retained image_impl_ptr) img_;
    }
 
-   picture::~picture()
+   image::~image()
    {
       CFBridgingRelease(_impl);
    }
 
-   picture_impl_ptr picture::impl() const
+   image_impl_ptr image::impl() const
    {
       return _impl;
    }
 
-   extent picture::size() const
+   extent image::size() const
    {
       auto size_ = [(__bridge NSImage*) _impl size];
       return { float(size_.width), float(size_.height) };
    }
 
-   void picture::save_png(std::string_view path_) const
+   void image::save_png(std::string_view path_) const
    {
       auto path = [NSString stringWithUTF8String : std::string{path_}.c_str() ];
       auto image = (__bridge NSImage*) _impl;
@@ -73,17 +73,17 @@ namespace cycfi::artist
       [data writeToFile : path atomically : YES];
    }
 
-   uint32_t* picture::pixels()
+   uint32_t* image::pixels()
    {
       return get_pixels((__bridge NSImage*) _impl);
    }
 
-   uint32_t const* picture::pixels() const
+   uint32_t const* image::pixels() const
    {
       return get_pixels((__bridge NSImage*) _impl);
    }
 
-   extent picture::bitmap_size() const
+   extent image::bitmap_size() const
    {
       auto bm = get_bitmap((__bridge NSImage*) _impl);
       auto pixels_wide = [bm pixelsWide];
@@ -91,18 +91,18 @@ namespace cycfi::artist
       return { float(pixels_wide), float(pixels_high) };
    }
 
-   picture_context::picture_context(picture& pict)
-    : _picture(pict)
+   offscreen_image::offscreen_image(image& pict)
+    : _image(pict)
    {
-      [((__bridge NSImage*) _picture.impl()) lockFocusFlipped : YES];
+      [((__bridge NSImage*) _image.impl()) lockFocusFlipped : YES];
    }
 
-   picture_context::~picture_context()
+    offscreen_image::~offscreen_image()
    {
-      [((__bridge NSImage*) _picture.impl()) unlockFocus];
+      [((__bridge NSImage*) _image.impl()) unlockFocus];
    }
 
-   canvas_impl_ptr picture_context::context() const
+   canvas_impl_ptr offscreen_image::context() const
    {
       return (canvas_impl_ptr) NSGraphicsContext.currentContext.CGContext;
    }

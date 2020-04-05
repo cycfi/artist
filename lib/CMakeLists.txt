@@ -62,7 +62,7 @@ set(ARTIST_HEADERS
    include/artist/circle.hpp
    include/artist/color.hpp
    include/artist/font.hpp
-   include/artist/picture.hpp
+        include/artist/image.hpp
    include/artist/point.hpp
    include/artist/rect.hpp
    include/artist/text_layout.hpp
@@ -73,7 +73,7 @@ if (APPLE)
    if (ARTIST_QUARTZ_2D)
       set(ARTIST_IMPL
          impl/macos/quartz2d/canvas.mm
-         impl/macos/quartz2d/picture.mm
+              impl/macos/quartz2d/image.mm
          impl/macos/quartz2d/font.mm
          impl/macos/quartz2d/text_layout.mm
       )
@@ -89,7 +89,7 @@ endif()
 if (ARTIST_SKIA)
    set(ARTIST_IMPL
       impl/skia/canvas.cpp
-      impl/skia/picture.cpp
+           impl/skia/image.cpp
       impl/skia/font.cpp
       impl/skia/text_layout.cpp
       impl/skia/detail/harfbuzz.cpp

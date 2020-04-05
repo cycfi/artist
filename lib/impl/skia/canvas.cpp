@@ -535,7 +535,7 @@ namespace cycfi::artist
       _state->text_align() |= align;
    }
 
-   void canvas::draw(picture const& pic, struct rect src, struct rect dest)
+   void canvas::draw(image const& pic, struct rect src, struct rect dest)
    {
       auto draw_picture =
          [&](auto const& that)

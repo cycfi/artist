@@ -151,7 +151,7 @@ void stroke_gradient(canvas& cnv)
 
 void draw_pixmap(canvas& cnv)
 {
-   picture pm{get_images_path() + "logo.png" };
+   image pm{get_images_path() + "logo.png" };
    auto x = 250.0f, y = 120.0f;
    cnv.draw(pm, x, y, 0.4);
 }
@@ -237,11 +237,11 @@ float diff_pixel(uint32_t a, uint32_t b)
    return float(a1-b1) + float(a2-b2) + float(a3-b3) + float(a4-b4);
 }
 
-void compare_golden(picture const& pm, std::string name)
+void compare_golden(image const& pm, std::string name)
 {
    pm.save_png(get_results_path() + name + ".png");
-   auto golden = picture(get_golden_path() + name + ".png");
-   auto result = picture(get_results_path() + name + ".png");
+   auto golden = image(get_golden_path() + name + ".png");
+   auto result = image(get_results_path() + name + ".png");
 
    auto bm_size = result.bitmap_size();
    CHECK(bm_size == golden.bitmap_size());
@@ -455,9 +455,9 @@ void composite_draw(canvas& cnv, point p, canvas::composite_op_enum mode)
 
    {
       auto save = cnv.new_state();
-      picture pm{ 110, 110 };
+      image pm{110, 110 };
       {
-         picture_context ctx{ pm };
+         offscreen_image ctx{ pm };
          canvas pm_cnv{ ctx.context() };
          pm_cnv.fill_style(colors::red);
          pm_cnv.circle(70, 70, 30);
@@ -527,9 +527,9 @@ namespace cycfi::artist
 
 TEST_CASE("Drawing")
 {
-   picture pm{ window_size };
+   image pm{window_size };
    {
-      picture_context ctx{ pm };
+      offscreen_image ctx{ pm };
       canvas pm_cnv{ ctx.context() };
       test_draw(pm_cnv);
    }
@@ -538,9 +538,9 @@ TEST_CASE("Drawing")
 
 TEST_CASE("Typography")
 {
-   picture pm{ window_size };
+   image pm{window_size };
    {
-      picture_context ctx{ pm };
+      offscreen_image ctx{ pm };
       canvas pm_cnv{ ctx.context() };
       typography(pm_cnv);
    }
@@ -549,9 +549,9 @@ TEST_CASE("Typography")
 
 TEST_CASE("Composite")
 {
-   picture pm{ window_size };
+   image pm{window_size };
    {
-      picture_context ctx{ pm };
+      offscreen_image ctx{ pm };
       canvas pm_cnv{ ctx.context() };
       composite_ops(pm_cnv);
    }
