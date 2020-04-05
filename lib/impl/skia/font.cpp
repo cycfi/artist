@@ -134,12 +134,6 @@ namespace cycfi::artist
          FcConfig* config = FcInitLoadConfigAndFonts();
 
          auto app_fonts_path = fs::current_path() / "resources/fonts";
-#if defined(_WIN32)
-         TCHAR windir[MAX_PATH];
-         GetWindowsDirectory(windir, MAX_PATH);
-         auto system_fonts_path = fs::path(windir) / "fonts";
-         FcConfigAppFontAddDir(config, (FcChar8 const*)system_fonts_path.string().c_str());
-#endif
          FcConfigAppFontAddDir(config, (FcChar8 const*)app_fonts_path.string().c_str());
          FcPattern*     pat = FcPatternCreate();
          FcObjectSet*   os = FcObjectSetBuild(
@@ -266,12 +260,11 @@ namespace cycfi::artist
                skia_font_map[match_ptr->full_name] = face;
          }
       }
-      else
-      {
-         _ptr = nullptr;
-      }
 
-#else // ARTIST_USE_FONT_CONFIG
+      if (_ptr)
+         return;
+
+#endif
 
       using namespace font_constants;
       int stretch = int(descr._stretch) / 10;
@@ -299,8 +292,6 @@ namespace cycfi::artist
       }
       if (!_ptr)
          _ptr = std::make_shared<SkFont>(default_face, descr._size);
-
-#endif // ARTIST_USE_FONT_CONFIG
    }
 
    font::font(font const& rhs)
