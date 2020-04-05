@@ -1,3 +1,8 @@
+/*=============================================================================
+   Copyright (c) 2016-2020 Joel de Guzman
+
+   Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
+=============================================================================*/
 #include "../../app.hpp"
 
 #include <SDKDDKVer.h>
@@ -27,10 +32,7 @@
 #include <iostream>
 
 using namespace cycfi::artist;
-
-// rendering elapsed time
-float elapsed_ = 0;
-
+float elapsed_ = 0;  // rendering elapsed time
 constexpr unsigned IDT_TIMER1 = 100;
 
 class window
@@ -51,101 +53,97 @@ private:
    extent      _size;
    bool        _animate;
 
-   HGLRC       RC;			// Rendering Context
-   HDC	      DC;				// Device Context
-   HWND        WND;			// Window
+   HGLRC       RC;         // Rendering Context
+   HDC         DC;         // Device Context
+   HWND        WND;        // Window
 };
 
 window::window(extent size, color bkd, bool animate)
  : _size{ size }
  , _animate{ animate }
 {
+   auto error = [](char const* msg){ throw std::runtime_error(msg); };
    auto style = WS_CAPTION | WS_SYSMENU | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
 
    LPTSTR windowClass = MAKEINTATOM(registerClass(nullptr));
    if (windowClass == 0)
-      throw std::runtime_error("Error: registerClass() failed.");
+      error("Error: registerClass() failed.");
 
    // create temporary window
-   HWND fakeWND = CreateWindow(
-      windowClass, L"Fake window",
+   HWND temp_window = CreateWindow(
+      windowClass, L"",
       style,
-      0, 0,						   // position x, y
-      1, 1,						   // width, height
-      nullptr, nullptr,	      // parent window, menu
-      nullptr, nullptr);      // instance, param
+      0, 0,                // position x, y
+      1, 1,                // width, height
+      nullptr, nullptr,    // parent window, menu
+      nullptr, nullptr     // instance, param
+   );
 
-   auto dpi = GetDpiForWindow(fakeWND);
-   auto scale = dpi / 96.0; // $$$
+   auto dpi = GetDpiForWindow(temp_window);
+   auto scale = dpi / 96.0;
    size.x *= scale;
    size.y *= scale;
 
-   HDC fakeDC = GetDC(fakeWND);	// Device Context
+   HDC temp_dc = GetDC(temp_window); // Device Context
 
-   PIXELFORMATDESCRIPTOR fakePFD;
-   ZeroMemory(&fakePFD, sizeof(fakePFD));
-   fakePFD.nSize = sizeof(fakePFD);
-   fakePFD.nVersion = 1;
-   fakePFD.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-   fakePFD.iPixelType = PFD_TYPE_RGBA;
-   fakePFD.cColorBits = 32;
-   fakePFD.cAlphaBits = 8;
-   fakePFD.cDepthBits = 24;
+   PIXELFORMATDESCRIPTOR temp_PFD;
+   ZeroMemory(&temp_PFD, sizeof(temp_PFD));
+   temp_PFD.nSize = sizeof(temp_PFD);
+   temp_PFD.nVersion = 1;
+   temp_PFD.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+   temp_PFD.iPixelType = PFD_TYPE_RGBA;
+   temp_PFD.cColorBits = 32;
+   temp_PFD.cAlphaBits = 8;
+   temp_PFD.cDepthBits = 24;
 
-   const int fakePFDID = ChoosePixelFormat(fakeDC, &fakePFD);
-   if (fakePFDID == 0)
-      throw std::runtime_error("Error: ChoosePixelFormat() failed.");
+   int const temp_PFDID = ChoosePixelFormat(temp_dc, &temp_PFD);
+   if (temp_PFDID == 0)
+      error("Error: ChoosePixelFormat() failed.");
 
-   if (!SetPixelFormat(fakeDC, fakePFDID, &fakePFD))
-      throw std::runtime_error("Error: SetPixelFormat() failed.");
+   if (!SetPixelFormat(temp_dc, temp_PFDID, &temp_PFD))
+      error("Error: SetPixelFormat() failed.");
 
-   HGLRC fakeRC = wglCreateContext(fakeDC);	// Rendering Contex
+   HGLRC temp_RC = wglCreateContext(temp_dc);   // Rendering Contex
 
-   if (fakeRC == nullptr)
-      throw std::runtime_error("Error: wglCreateContext() failed.");
+   if (temp_RC == nullptr)
+      error("Error: wglCreateContext() failed.");
 
-   if (!wglMakeCurrent(fakeDC, fakeRC))
-      throw std::runtime_error("Error: wglMakeCurrent() failed.");
+   if (!wglMakeCurrent(temp_dc, temp_RC))
+      error("Error: wglMakeCurrent() failed.");
 
-   // get pointers to functions (or init opengl loader here)
-
-   PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = nullptr;
-   wglChoosePixelFormatARB = reinterpret_cast<PFNWGLCHOOSEPIXELFORMATARBPROC>(wglGetProcAddress("wglChoosePixelFormatARB"));
+   // Get pointers to functions (or init opengl loader here)
+   auto wglChoosePixelFormatARB =
+      reinterpret_cast<PFNWGLCHOOSEPIXELFORMATARBPROC>(wglGetProcAddress("wglChoosePixelFormatARB"));
    if (wglChoosePixelFormatARB == nullptr)
-      throw std::runtime_error("Error: wglGetProcAddress() failed.");
+      error("Error: wglGetProcAddress() failed.");
 
-   PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = nullptr;
-   wglCreateContextAttribsARB = reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(wglGetProcAddress("wglCreateContextAttribsARB"));
+   auto wglCreateContextAttribsARB =
+      reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(wglGetProcAddress("wglCreateContextAttribsARB"));
    if (wglCreateContextAttribsARB == nullptr)
-      throw std::runtime_error("Error: wglGetProcAddress() failed.");
-
+      error("Error: wglGetProcAddress() failed.");
 
    RECT rect = { 0, 0, LONG(size.x), LONG(size.y) };
-
    AdjustWindowRectExForDpi(&rect, style, false, WS_EX_APPWINDOW, dpi);
-
-   // AdjustWindowRect(&rect, style, false);
    size.x = rect.right - rect.left;
    size.y = rect.bottom - rect.top;
 
    RECT primaryDisplaySize;
-   SystemParametersInfo(SPI_GETWORKAREA, 0, &primaryDisplaySize, 0);	// system taskbar and application desktop toolbars not included
-   auto posX = (primaryDisplaySize.right - size.x) / 2;
-   auto posY = (primaryDisplaySize.bottom - size.y) / 2;
+   SystemParametersInfo(SPI_GETWORKAREA, 0, &primaryDisplaySize, 0);
+   auto pos_x = (primaryDisplaySize.right - size.x) / 2;
+   auto pos_y = (primaryDisplaySize.bottom - size.y) / 2;
 
-   // create a new window and context
-
+   // Create a new window and context
    WND = CreateWindow(
-      windowClass, L"OpenGL window",	// class name, window name
-      style,							// styles
-       posX, posY,		// posx, posy. If x is set to CW_USEDEFAULT y is ignored
-      size.x, size.y,	// width, height
-      NULL, NULL,						// parent window, menu
-      nullptr, NULL);				// instance, param
+      windowClass, L"OpenGL Window",   // class name, window name
+      style,                           // styles
+      pos_x, pos_y,                    // pos_x, pos_y
+      size.x, size.y,                  // width, height
+      nullptr, nullptr,                // parent window, menu
+      nullptr, nullptr);               // instance, param
 
    DC = GetDC(WND);
 
-   const int pixelAttribs[] = {
+   int const pixel_attribs[] = {
       WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
       WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
       WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
@@ -160,39 +158,37 @@ window::window(extent size, color bkd, bool animate)
       0
    };
 
-   int pixelFormatID; UINT numFormats;
-   const bool status = wglChoosePixelFormatARB(DC, pixelAttribs, NULL, 1, &pixelFormatID, &numFormats);
+   int pixel_format_id;
+   UINT numFormats;
+   bool const status = wglChoosePixelFormatARB(
+      DC, pixel_attribs, nullptr, 1, &pixel_format_id, &numFormats);
 
    if (status == false || numFormats == 0)
-      throw std::runtime_error("Error: wglChoosePixelFormatARB() failed.");
+      error("Error: wglChoosePixelFormatARB() failed.");
 
    PIXELFORMATDESCRIPTOR PFD;
-   DescribePixelFormat(DC, pixelFormatID, sizeof(PFD), &PFD);
-   SetPixelFormat(DC, pixelFormatID, &PFD);
+   DescribePixelFormat(DC, pixel_format_id, sizeof(PFD), &PFD);
+   SetPixelFormat(DC, pixel_format_id, &PFD);
 
-   const int major_min = 4, minor_min = 0;
-   const int contextAttribs[] = {
+   int const major_min = 4, minor_min = 0;
+   int const context_attribs[] = {
       WGL_CONTEXT_MAJOR_VERSION_ARB, major_min,
       WGL_CONTEXT_MINOR_VERSION_ARB, minor_min,
       WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
-      //WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_DEBUG_BIT_ARB,
       0
    };
 
-   RC = wglCreateContextAttribsARB(DC, 0, contextAttribs);
+   RC = wglCreateContextAttribsARB(DC, 0, context_attribs);
    if (RC == nullptr)
-      throw std::runtime_error("Error: wglCreateContextAttribsARB() failed.");
+      error("Error: wglCreateContextAttribsARB() failed.");
 
-   // delete temporary context and window
-
-   wglMakeCurrent(NULL, NULL);
-   wglDeleteContext(fakeRC);
-   ReleaseDC(fakeWND, fakeDC);
-   DestroyWindow(fakeWND);
+   // Delete temporary context and window
+   wglMakeCurrent(nullptr, nullptr);
+   wglDeleteContext(temp_RC);
+   ReleaseDC(temp_window, temp_dc);
+   DestroyWindow(temp_window);
    if (!wglMakeCurrent(DC, RC))
-      throw std::runtime_error("Error: wglMakeCurrent() failed.");
-
-   // init opengl loader here (extra safe version)
+      error("Error: wglMakeCurrent() failed.");
 
    SetBkColor(DC, RGB(bkd.red*255, bkd.green*255, bkd.blue*255));
    glClearColor(bkd.red, bkd.green, bkd.blue, bkd.alpha);
@@ -204,25 +200,22 @@ window::window(extent size, color bkd, bool animate)
    if (animate)
       SetTimer(WND, IDT_TIMER1, 16, (TIMERPROC) nullptr);
 
-   SetWindowText(WND, L"Hello Skia");
+   SetWindowText(WND, L"Artist");
    ShowWindow(WND, SW_SHOW);
 }
 
 window::~window()
 {
-   wglMakeCurrent(NULL, NULL);
+   wglMakeCurrent(nullptr, nullptr);
    if (RC)
       wglDeleteContext(RC);
    if (DC)
       ReleaseDC(WND, DC);
    if (WND)
       DestroyWindow(WND);
-
    if (_animate)
       KillTimer(WND, IDT_TIMER1);
 }
-
-void foo() {}
 
 LRESULT CALLBACK handle_event(
    HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -232,14 +225,6 @@ LRESULT CALLBACK handle_event(
 
    switch (message)
    {
-      case WM_DPICHANGED:
-         {
-            RECT bounds;
-            GetClientRect(hWnd, &bounds);
-            foo();
-         }
-         break;
-
       case WM_TIMER:
          if (wParam == IDT_TIMER1)
          {
@@ -281,19 +266,16 @@ ATOM window::registerClass(HINSTANCE hInstance)
    wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
    wcex.lpfnWndProc = handle_event;
    wcex.hInstance = hInstance;
-   wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
+   wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
    wcex.lpszClassName = L"Core";
-
    return RegisterClassEx(&wcex);
 }
 
 void window::render()
 {
-   // glClearColor(0.0f, 0.0f, 1.0f, 1.0f);	// rgb(33,150,243)
-   // glClear(GL_COLOR_BUFFER_BIT);
-
+   auto error = [](char const* msg) { throw std::runtime_error(msg); };
    auto dpi = GetDpiForWindow(WND);
-   auto scale = dpi / 96.0; // $$$
+   auto scale = dpi / 96.0;
 
    PAINTSTRUCT ps;
    HDC hdc = BeginPaint(WND, &ps);
@@ -315,29 +297,12 @@ void window::render()
       kBottomLeft_GrSurfaceOrigin, colorType, nullptr, nullptr));
 
    if (!surface)
-      throw std::runtime_error("Error: SkSurface::MakeRenderTarget returned null");
+      error("Error: SkSurface::MakeRenderTarget returned null");
 
    SkCanvas* gpu_canvas = surface->getCanvas();
-
-   //if (_bkd_color.alpha > 0)
-   //   gpu_canvas->clear(SkColorSetARGB(_bkd_color.alpha, _bkd_color.red, _bkd_color.green, _bkd_color.blue));
-
-
    auto cnv = canvas{ gpu_canvas };
-
-   //gpu_canvas->saveLayer(nullptr, nullptr);
    cnv.pre_scale({ float(scale), float(scale) });
    draw(cnv);
-
-   // SkCanvas* canvas = surface->getCanvas();
-
-
-   // SkPaint paint;
-   // paint.setColor(SK_ColorBLUE);
-
-   // SkRect rect = SkRect::MakeXYWH(10, 10, 128, 128);
-   // canvas->drawRect(rect, paint);
-
    gpu_canvas->flush();
 
    EndPaint(WND, &ps);
@@ -350,7 +315,7 @@ void window::swapBuffers()
 
 void window::destroy()
 {
-   wglMakeCurrent(NULL, NULL);
+   wglMakeCurrent(nullptr, nullptr);
    if (RC)
       wglDeleteContext(RC);
    if (DC)
@@ -387,7 +352,7 @@ int run_app(
    float acc = 0;
    while (active)
    {
-      while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+      while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
       {
          if (msg.message == WM_QUIT)
             active = false;
@@ -406,29 +371,29 @@ void stop_app()
 
 void print_elapsed(canvas& cnv, point br)
 {
-    static font open_sans = font_descr{ "Open Sans", 12 };
-    static int i = 0;
-    static float t_elapsed = 0;
-    static float c_elapsed = 0;
+   static font open_sans = font_descr{ "Open Sans", 12 };
+   static int i = 0;
+   static float t_elapsed = 0;
+   static float c_elapsed = 0;
 
-    if (++i == 30)
-    {
-        i = 0;
-        c_elapsed = t_elapsed / 30;
-        t_elapsed = 0;
-    }
-    else
-    {
-        t_elapsed += elapsed_;
-    }
+   if (++i == 30)
+   {
+      i = 0;
+      c_elapsed = t_elapsed / 30;
+      t_elapsed = 0;
+   }
+   else
+   {
+      t_elapsed += elapsed_;
+   }
 
-    if (c_elapsed)
-    {
-        cnv.fill_style(rgba(220, 220, 220, 200));
-        cnv.font(open_sans);
-        cnv.text_align(cnv.right | cnv.bottom);
-        cnv.fill_text(std::to_string(1 / c_elapsed) + " fps", { br.x, br.y });
-    }
+   if (c_elapsed)
+   {
+      cnv.fill_style(rgba(220, 220, 220, 200));
+      cnv.font(open_sans);
+      cnv.text_align(cnv.right | cnv.bottom);
+      cnv.fill_text(std::to_string(1 / c_elapsed) + " fps", { br.x, br.y });
+   }
 }
 
 
