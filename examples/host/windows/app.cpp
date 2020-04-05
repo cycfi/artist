@@ -325,6 +325,7 @@ void window::render()
 
    auto cnv = canvas{ gpu_canvas };
 
+   //gpu_canvas->saveLayer(nullptr, nullptr);
    cnv.pre_scale({ float(scale), float(scale) });
    draw(cnv);
 
