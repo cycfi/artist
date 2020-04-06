@@ -137,7 +137,8 @@ target_include_directories(
    PUBLIC
       include
       infra/include
-      external/filesystem/include/
+   PRIVATE
+      infra/external/filesystem/include/
 )
 
 if (ARTIST_SKIA)

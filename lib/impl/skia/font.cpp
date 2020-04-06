@@ -9,7 +9,7 @@
 #include <sstream>
 #include <SkFontMetrics.h>
 #include <SkFontMgr.h>
-#include <artist/detail/filesystem.hpp>
+#include <infra/filesystem.hpp>
 
 #if !defined(__APPLE__)
 # define ARTIST_USE_FONT_CONFIG
