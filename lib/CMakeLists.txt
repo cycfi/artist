@@ -32,7 +32,7 @@ if (ARTIST_SKIA)
       ExternalProject_Add(prebuilt_binaries
          PREFIX "windows-x64"
          URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/windows-x64.zip
-         URL_MD5 19b779f825dbf574971b60ec8d962509
+         URL_MD5 0439e698f71acfeedc025816a8191894
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
          INSTALL_COMMAND ""
