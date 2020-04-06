@@ -6,7 +6,7 @@
 #if !defined(ARTIST_RESOURCE_PATHS_JUNE_22_2019)
 #define ARTIST_RESOURCE_PATHS_JUNE_22_2019
 
-#include <artist/detail/filesystem.hpp>
+#include <infra/filesystem.hpp>
 
 namespace cycfi::artist
 {
