@@ -62,7 +62,7 @@ set(ARTIST_HEADERS
    include/artist/circle.hpp
    include/artist/color.hpp
    include/artist/font.hpp
-        include/artist/image.hpp
+   include/artist/image.hpp
    include/artist/point.hpp
    include/artist/rect.hpp
    include/artist/text_layout.hpp
