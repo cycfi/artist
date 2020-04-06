@@ -137,7 +137,6 @@ target_include_directories(
    PUBLIC
       include
       infra/include
-   PRIVATE
       infra/external/filesystem/include/
 )
 
