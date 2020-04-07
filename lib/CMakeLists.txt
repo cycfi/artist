@@ -67,12 +67,12 @@ if (ARTIST_SKIA)
 
    elseif (UNIX)
 
+      find_package(Threads)
       find_package(PkgConfig REQUIRED)
-      pkg_check_modules(gtk2 REQUIRED IMPORTED_TARGET gtk+-2.0)
-      pkg_check_modules(gtkgl REQUIRED IMPORTED_TARGET gtkglext-x11-1.0)
       pkg_check_modules(libunibreak REQUIRED IMPORTED_TARGET libunibreak)
       pkg_check_modules(harfbuzz REQUIRED IMPORTED_TARGET harfbuzz)
       pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
+      pkg_check_modules(freetype2 REQUIRED IMPORTED_TARGET freetype2)
 
       ExternalProject_Add(prebuilt_binaries
          PREFIX "linux-x64"
@@ -89,11 +89,11 @@ if (ARTIST_SKIA)
       set(ARTIST_DEPEPENDENCIES
          "${SKIA_LIBRARY}"
          ${CMAKE_DL_LIBS}
-         PkgConfig::gtk2
-         PkgConfig::gtkgl
          PkgConfig::libunibreak
          PkgConfig::harfbuzz
          PkgConfig::fontconfig
+         PkgConfig::freetype2
+         Threads::Threads
       )
 
    endif()
