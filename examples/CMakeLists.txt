@@ -5,6 +5,12 @@
 ###############################################################################
 project(examples)
 
+if (UNIX)
+   find_package(PkgConfig REQUIRED)
+   pkg_check_modules(gtk2 REQUIRED IMPORTED_TARGET gtk+-2.0)
+   pkg_check_modules(gtkgl REQUIRED IMPORTED_TARGET gtkglext-x11-1.0)
+endif()
+
 function(add_example name)
    if (APPLE)
       add_executable(
@@ -27,9 +33,8 @@ function(add_example name)
          PROPERTIES
          MACOSX_PACKAGE_LOCATION Resources
       )
-   endif()
 
-   if (MSVC)
+   elseif (MSVC)
       add_executable(
          ${name}
          ${name}.cpp
@@ -38,6 +43,24 @@ function(add_example name)
       set_property(TARGET ${name} PROPERTY
          MSVC_RUNTIME_LIBRARY "MultiThreaded"
       )
+      target_link_options(${name} PRIVATE
+         /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup shcore.lib
+      )
+
+   elseif (UNIX)
+      add_executable(
+         ${name}
+         ${name}.cpp
+         host/linux/app.cpp
+      )
+      target_link_libraries(
+         ${name}
+         PkgConfig::gtk2
+         PkgConfig::gtkgl
+      )
+   endif()
+
+   if (UNIX OR MSVC)
       file(
          COPY ${${name}_fonts}
          DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/resources/fonts
@@ -45,9 +68,6 @@ function(add_example name)
       file(
          COPY ${${name}_images}
          DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/resources/images
-      )
-      target_link_options(${name} PRIVATE
-         /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup shcore.lib
       )
    endif()
 
@@ -82,11 +102,11 @@ if (MSVC)
    file(COPY ${FREETYPE_DLL} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 endif()
 
-#add_example(shapes)
-#add_example(typography)
-#add_example(rain)
-#add_example(tauri)
-#add_example(space)
-#add_example(composite_ops)
+add_example(shapes)
+add_example(typography)
+add_example(rain)
+add_example(tauri)
+add_example(space)
+add_example(composite_ops)
 
 

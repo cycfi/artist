@@ -35,7 +35,7 @@ void draw(canvas& cnv)
    print_elapsed(cnv, window_size);
 }
 
-int main(int argc, const char* argv[])
+int main(int argc, char const* argv[])
 {
    return run_app(argc, argv, window_size, colors::black,true);
 }

@@ -9,6 +9,10 @@
 #include <artist/canvas.hpp>
 #include <string>
 
+#include <gtk/gtk.h>
+#include <gtk/gtkgl.h>
+#include <GL/gl.h>
+
 using cycfi::artist::canvas;
 using cycfi::artist::extent;
 using cycfi::artist::color;
@@ -17,7 +21,7 @@ using duration = std::chrono::duration<double>;
 
 int            run_app(
                   int argc
-                , const char* argv[]
+                , char const* argv[]
                 , extent window_size
                 , color background_color = cycfi::artist::colors::white
                 , bool animate = false
