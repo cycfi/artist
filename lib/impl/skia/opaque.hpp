@@ -11,10 +11,17 @@
 
 namespace cycfi::artist
 {
-   class image_impl : public std::variant<extent, sk_sp<SkPicture>, SkBitmap>
+   using image_impl_variant = std::variant<extent, sk_sp<SkPicture>, SkBitmap>;
+
+   class image_impl : public image_impl_variant
    {
-      using base_type = std::variant<extent, sk_sp<SkPicture>, SkBitmap>;
+   public:
+
+      using base_type = image_impl_variant;
       using base_type::base_type;
+
+      base_type&        base() { return *this; }
+      base_type const&  base() const { return *this; }
    };
 
    class canvas;

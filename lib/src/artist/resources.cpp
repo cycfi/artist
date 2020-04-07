@@ -5,6 +5,7 @@
 =============================================================================*/
 #include <artist/resources.hpp>
 #include <mutex>
+#include <vector>
 
 namespace cycfi::artist
 {

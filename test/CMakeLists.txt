@@ -6,6 +6,7 @@
 project(artist_test)
 
 if (APPLE)
+
    file(
       GLOB ARTIST_FONTS ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/*.*
    )
@@ -26,9 +27,9 @@ if (APPLE)
       MACOSX_PACKAGE_LOCATION Resources
    )
    target_link_options(artist_test PRIVATE -framework AppKit)
-endif()
 
-if (MSVC)
+elseif (MSVC)
+
    add_executable(
       artist_test
       main.cpp
@@ -40,6 +41,18 @@ if (MSVC)
       COPY ../resources/fonts
       DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/resources
    )
+
+elseif (UNIX)
+
+   add_executable(
+      artist_test
+      main.cpp
+   )
+   file(
+      COPY ../resources/fonts
+      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/resources
+   )
+
 endif()
 
 target_link_libraries(artist_test artist)
@@ -55,12 +68,11 @@ if (APPLE)
 
    # Copy golden files to the binary dir
    file(
-   COPY macos_golden
-   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+      COPY macos_golden
+      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
    )
-endif()
 
-if (MSVC)
+elseif (MSVC)
    if (ARTIST_SKIA)
       set(GOLDEN_PATH windows_golden/skia)
    endif()
@@ -69,9 +81,23 @@ if (MSVC)
 
    # Copy golden files to the binary dir
    file(
-   COPY windows_golden
-   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+      COPY windows_golden
+      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
    )
+
+elseif (UNIX)
+   if (ARTIST_SKIA)
+      set(GOLDEN_PATH linux_golden/skia)
+   endif()
+
+   set(GOLDEN_DIR linux_golden)
+
+   # Copy golden files to the binary dir
+   file(
+      COPY linux_golden
+      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+   )
+
 endif()
 
 # Copy results folder to the binary dir

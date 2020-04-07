@@ -562,6 +562,6 @@ namespace cycfi::artist
             }
          };
 
-      return std::visit(draw_picture, *pic.impl());
+      return std::visit(draw_picture, pic.impl()->base());
    }
 }
