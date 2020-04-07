@@ -7,6 +7,7 @@
 #define ELEMENTS_FONT_FEBRUARY_11_2020
 
 #include <string_view>
+#include <infra/filesystem.hpp>
 #include <memory>
 
 #if defined(ARTIST_SKIA)
@@ -22,7 +23,6 @@ namespace cycfi::artist
    struct font_impl;
    using font_impl_ptr = font_impl*;
 #endif
-
 
    namespace font_constants
    {
@@ -343,6 +343,10 @@ namespace cycfi::artist
       auto m = metrics();
       return m.ascent + m.descent + m.leading;
    }
+
+#ifdef __APPLE__
+   fs::path get_user_fonts_directory();
+#endif
 }
 
 #endif

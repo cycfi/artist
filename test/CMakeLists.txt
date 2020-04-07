@@ -7,25 +7,28 @@ project(artist_test)
 
 if (APPLE)
 
-   file(
-      GLOB ARTIST_FONTS ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/*.*
-   )
    add_executable(
       artist_test MACOSX_BUNDLE
       main.cpp
-      ${ARTIST_FONTS}
    )
-   set_target_properties(
-      artist_test
-      PROPERTIES
-      MACOSX_BUNDLE_INFO_PLIST
-      ${CMAKE_CURRENT_LIST_DIR}/../resources/macos/plist.in
-   )
-   set_source_files_properties(
-      ${ARTIST_FONTS}
-      PROPERTIES
-      MACOSX_PACKAGE_LOCATION Resources
-   )
+
+   if (ARTIST_QUARTZ_2D)
+      file(
+         GLOB ARTIST_FONTS ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/*.*
+      )
+      set_target_properties(
+         artist_test
+         PROPERTIES
+         MACOSX_BUNDLE_INFO_PLIST
+         ${CMAKE_CURRENT_LIST_DIR}/../resources/macos/plist.in
+      )
+      set_source_files_properties(
+         ${ARTIST_FONTS}
+         PROPERTIES
+         MACOSX_PACKAGE_LOCATION Resources
+      )
+   endif()
+
    target_link_options(artist_test PRIVATE -framework AppKit)
 
 elseif (MSVC)
@@ -37,10 +40,6 @@ elseif (MSVC)
    set_property(TARGET artist_test PROPERTY
       MSVC_RUNTIME_LIBRARY "MultiThreaded"
    )
-   file(
-      COPY ../resources/fonts
-      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/resources
-   )
 
 elseif (UNIX)
 
@@ -48,12 +47,13 @@ elseif (UNIX)
       artist_test
       main.cpp
    )
-   file(
-      COPY ../resources/fonts
-      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/resources
-   )
 
 endif()
+
+file(
+   COPY ../resources/fonts
+   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/resources
+)
 
 target_link_libraries(artist_test artist)
 
@@ -130,6 +130,6 @@ add_definitions(
    -DGOLDEN_PATH="${CMAKE_CURRENT_BINARY_DIR}/${GOLDEN_PATH}/"
    -DRESULTS_PATH="${CMAKE_CURRENT_BINARY_DIR}/results/"
    -DIMAGES_PATH="${CMAKE_CURRENT_BINARY_DIR}/images/"
-   -DFONTS_PATH="${CMAKE_CURRENT_BINARY_DIR}/fonts/"
+   -DFONTS_PATH="${CMAKE_CURRENT_BINARY_DIR}/resources/fonts/"
 )
 

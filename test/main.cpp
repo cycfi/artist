@@ -8,6 +8,7 @@
 #include "paths.hpp"
 
 using namespace cycfi::artist;
+using namespace font_constants;
 
 auto constexpr window_size = point{ 640.0f, 480.0f };
 auto constexpr bkd_color = rgba(54, 52, 55, 255);
@@ -326,10 +327,16 @@ void typography(canvas& cnv)
       cnv.stroke_text("Outline Gradient", 20, 190);
    }
 
+#if defined(__APPLE__) // CoreText supports ligatures right out of the box, but only for some fonts
    cnv.font(font_descr{ "Lucida Grande", 52 }.bold());
-   cnv.fill_style(rgba(220, 220, 220, 200));
-   cnv.fill_text("fi", 500, 190);
+#else
+   cnv.font(font_descr{ "Open Sans", 52 }.bold());
+#endif
 
+   cnv.fill_style(rgba(220, 220, 220, 200));
+   cnv.fill_text("fi fl", 500, 190);
+
+   cnv.font(font_descr{ "Open Sans", 52 }.weight(semi_bold));
    {
       auto state = cnv.new_state();
 

@@ -76,6 +76,14 @@ namespace cycfi::artist
       get_resource_path(resource_path);
       add_search_path(resource_path);
    }
+
+   // This is declared in font.hpp
+   fs::path get_user_fonts_directory()
+   {
+      char resource_path[PATH_MAX];
+      get_resource_path(resource_path);
+      return fs::path(resource_path);
+   }
 }
 
 //=======================================================================
