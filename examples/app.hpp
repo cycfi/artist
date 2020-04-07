@@ -10,7 +10,6 @@
 #include <string>
 
 #include <gtk/gtk.h>
-#include <gtk/gtkgl.h>
 #include <GL/gl.h>
 
 using cycfi::artist::canvas;

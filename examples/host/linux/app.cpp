@@ -8,143 +8,47 @@
 using namespace cycfi::artist;
 float elapsed_ = 0;  // rendering elapsed time
 
-#include <math.h>
-
-float boxv[][3] = {
-        { -0.5, -0.5, -0.5 },
-        {  0.5, -0.5, -0.5 },
-        {  0.5,  0.5, -0.5 },
-        { -0.5,  0.5, -0.5 },
-        { -0.5, -0.5,  0.5 },
-        {  0.5, -0.5,  0.5 },
-        {  0.5,  0.5,  0.5 },
-        { -0.5,  0.5,  0.5 }
-};
-#define ALPHA 0.5
-
-static float ang = 30.;
-
-static gboolean
-expose(GtkWidget *da, GdkEventExpose *event, gpointer user_data)
+namespace
 {
-   GdkGLContext*  glcontext = gtk_widget_get_gl_context(da);
-   GdkGLDrawable* gldrawable = gtk_widget_get_gl_drawable(da);
+   void close_window(void)
+   {
+   }
 
-   // g_print(" :: expose\n");
+   gboolean render(GtkGLArea* area, GdkGLContext* context)
+   {
+      // inside this function it's safe to use GL; the given
+      // [gdk.GLContext.GLContext|gdk.GLContext] has been made current to the drawable
+      // surface used by the [gtk.GLArea.GLArea|gtk.GLArea] and the viewport has
+      // already been set to be the size of the allocation
 
-   if (!gdk_gl_drawable_gl_begin(gldrawable, glcontext))
-      g_assert_not_reached();
+      // we can start by clearing the buffer
+      glClearColor(0, 0, 1, 1);
+      glClear(GL_COLOR_BUFFER_BIT);
 
-   // draw in here
-   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-   glPushMatrix();
+      // draw your object
 
-   glRotatef(ang, 1, 0, 1);
-   // glRotatef(ang, 0, 1, 0);
-   // glRotatef(ang, 0, 0, 1);
+      // we completed our drawing; the draw commands will be
+      // flushed at the end of the signal emission chain, and
+      // the buffers will be drawn on the window
+      return true;
+   }
 
-   glShadeModel(GL_FLAT);
+   void activate(GtkApplication* app, gpointer user_data)
+   {
+      auto* window = gtk_application_window_new(app);
+      gtk_window_set_title(GTK_WINDOW (window), "Drawing Area");
 
-   glBegin(GL_LINES);
-   glColor3f(1., 0., 0.);
-   glVertex3f(0., 0., 0.);
-   glVertex3f(1., 0., 0.);
-   glEnd();
+      g_signal_connect(window, "destroy", G_CALLBACK(close_window), nullptr);
 
-   glBegin(GL_LINES);
-   glColor3f(0., 1., 0.);
-   glVertex3f(0., 0., 0.);
-   glVertex3f(0., 1., 0.);
-   glEnd();
+      // create a GtkGLArea instance
+      auto* gl_area = gtk_gl_area_new();
+      gtk_container_add(GTK_CONTAINER(window), gl_area);
 
-   glBegin(GL_LINES);
-   glColor3f(0., 0., 1.);
-   glVertex3f(0., 0., 0.);
-   glVertex3f(0., 0., 1.);
-   glEnd();
+      // connect to the "render" signal
+      g_signal_connect(gl_area, "render", G_CALLBACK(render), nullptr);
 
-   glBegin(GL_LINES);
-   glColor3f(1., 1., 1.);
-   glVertex3fv(boxv[0]);
-   glVertex3fv(boxv[1]);
-
-   glVertex3fv(boxv[1]);
-   glVertex3fv(boxv[2]);
-
-   glVertex3fv(boxv[2]);
-   glVertex3fv(boxv[3]);
-
-   glVertex3fv(boxv[3]);
-   glVertex3fv(boxv[0]);
-
-   glVertex3fv(boxv[4]);
-   glVertex3fv(boxv[5]);
-
-   glVertex3fv(boxv[5]);
-   glVertex3fv(boxv[6]);
-
-   glVertex3fv(boxv[6]);
-   glVertex3fv(boxv[7]);
-
-   glVertex3fv(boxv[7]);
-   glVertex3fv(boxv[4]);
-
-   glVertex3fv(boxv[0]);
-   glVertex3fv(boxv[4]);
-
-   glVertex3fv(boxv[1]);
-   glVertex3fv(boxv[5]);
-
-   glVertex3fv(boxv[2]);
-   glVertex3fv(boxv[6]);
-
-   glVertex3fv(boxv[3]);
-   glVertex3fv(boxv[7]);
-   glEnd();
-
-   glPopMatrix();
-
-   if (gdk_gl_drawable_is_double_buffered(gldrawable))
-      gdk_gl_drawable_swap_buffers(gldrawable);
-   else
-      glFlush();
-
-   gdk_gl_drawable_gl_end(gldrawable);
-
-   return true;
-}
-
-static gboolean
-configure(GtkWidget* da, GdkEventConfigure* event, gpointer user_data)
-{
-   GdkGLContext*  glcontext = gtk_widget_get_gl_context(da);
-   GdkGLDrawable* gldrawable = gtk_widget_get_gl_drawable(da);
-
-   if (!gdk_gl_drawable_gl_begin(gldrawable, glcontext))
-      g_assert_not_reached();
-
-   glLoadIdentity();
-   glViewport(0, 0, da->allocation.width, da->allocation.height);
-   glOrtho(-10,10,-10,10,-20050,10000);
-   glEnable(GL_BLEND);
-   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-   glScalef(10., 10., 10.);
-   gdk_gl_drawable_gl_end(gldrawable);
-   return true;
-}
-
-static gboolean
-rotate(gpointer user_data)
-{
-   GtkWidget *da = GTK_WIDGET(user_data);
-
-   ang++;
-
-   gdk_window_invalidate_rect(da->window, &da->allocation, FALSE);
-   gdk_window_process_updates(da->window, FALSE);
-
-   return true;
+      gtk_widget_show_all(window);
+   }
 }
 
 int run_app(
@@ -155,51 +59,16 @@ int run_app(
  , bool animate
 )
 {
-   gtk_init(&argc, const_cast<char***>(&argv));
-   gtk_gl_init(&argc, const_cast<char***>(&argv));
+   auto* app = gtk_application_new("org.gtk.example", G_APPLICATION_FLAGS_NONE);
+   g_signal_connect(app, "activate", G_CALLBACK(activate), nullptr);
+   int status = g_application_run(G_APPLICATION(app), argc, const_cast<char**>(argv));
+   g_object_unref(app);
 
-   auto* window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-   gtk_window_set_default_size(
-      GTK_WINDOW(window), window_size.x, window_size.y);
-   auto* da = gtk_drawing_area_new();
-
-   gtk_container_add(GTK_CONTAINER(window), da);
-   g_signal_connect_swapped(
-      window, "destroy", G_CALLBACK(gtk_main_quit), nullptr);
-   gtk_widget_set_events(da, GDK_EXPOSURE_MASK);
-
-   gtk_widget_show(window);
-
-   // prepare GL
-   auto* glconfig = gdk_gl_config_new_by_mode(
-      GdkGLConfigMode(
-         GDK_GL_MODE_RGB |
-         GDK_GL_MODE_DEPTH |
-         GDK_GL_MODE_DOUBLE
-      ));
-
-   if (!glconfig)
-      g_assert_not_reached();
-
-   if (!gtk_widget_set_gl_capability(
-      da, glconfig, nullptr, true, GDK_GL_RGBA_TYPE))
-      g_assert_not_reached();
-
-   g_signal_connect(
-      da, "configure-event", G_CALLBACK(configure), nullptr);
-   g_signal_connect(
-      da, "expose-event", G_CALLBACK(expose), nullptr);
-
-   gtk_widget_show_all(window);
-   g_timeout_add(1000 / 60, rotate, da);
-
-   gtk_main();
-   return 0;
+   return status;
 }
 
 void stop_app()
 {
-   gtk_main_quit();
 }
 
 void print_elapsed(canvas& cnv, point br)
