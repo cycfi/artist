@@ -11,19 +11,15 @@
 #include <SkFontMgr.h>
 #include <infra/filesystem.hpp>
 
-#if !defined(__APPLE__)
-# define ARTIST_USE_FONT_CONFIG
 # include <fontconfig/fontconfig.h>
 # include <map>
 # include <mutex>
-#endif
 
 # if defined(_WIN32)
 # include <Windows.h>
 # include "sysinfoapi.h"
 # include "tchar.h"
 # include <SkTypeface_win.h>
-# define ARTIST_USE_FONT_CONFIG
 # endif
 
 namespace cycfi::artist
@@ -50,8 +46,6 @@ namespace cycfi::artist
          rtrim(s);
       }
    }
-
-#if defined(ARTIST_USE_FONT_CONFIG)
 
    namespace
    {
@@ -131,9 +125,13 @@ namespace cycfi::artist
 
       void init_font_map()
       {
-         FcConfig* config = FcInitLoadConfigAndFonts();
+         FcConfig* config = FcInitLoadConfig();
 
+#if defined(__APPLE__)
+         auto app_fonts_path = get_user_fonts_directory();
+#else
          auto app_fonts_path = fs::current_path() / "resources/fonts";
+#endif
          FcConfigAppFontAddDir(config, (FcChar8 const*)app_fonts_path.string().c_str());
          FcPattern*     pat = FcPatternCreate();
          FcObjectSet*   os = FcObjectSetBuild(
@@ -152,12 +150,6 @@ namespace cycfi::artist
                FcPatternGetInteger(font, FC_INDEX, 0, &index) == FcResultMatch
             )
             {
-               if (std::string(((char const*)family)).find("Lucida Grande") != std::string::npos)
-               {
-                  auto foo = []{};
-                  foo();
-               }
-
                font_entry entry;
                entry.full_name = (const char*) full_name;
                entry.file = (const char*) file;
@@ -223,6 +215,8 @@ namespace cycfi::artist
                   {
                      min = diff;
                      best_match = j;
+                     if (diff == 0)
+                        break;
                   }
                }
                if (best_match != i->second.end())
@@ -232,7 +226,6 @@ namespace cycfi::artist
          return nullptr;
       }
    }
-#endif // ARTIST_USE_FONT_CONFIG
 
    font::font()
     : _ptr(std::make_shared<SkFont>())
@@ -241,8 +234,6 @@ namespace cycfi::artist
 
    font::font(font_descr descr)
    {
-#if defined(ARTIST_USE_FONT_CONFIG)
-
       auto match_ptr = match(descr);
       if (match_ptr)
       {
@@ -263,8 +254,6 @@ namespace cycfi::artist
 
       if (_ptr)
          return;
-
-#endif
 
       using namespace font_constants;
       int stretch = int(descr._stretch) / 10;

@@ -13,6 +13,9 @@ if (ARTIST_SKIA)
    ############################################################################
    if (APPLE)
 
+      find_package(PkgConfig REQUIRED)
+      pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
+
       ExternalProject_Add(prebuilt_binaries
          PREFIX "macos"
          URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/macos.zip
@@ -32,7 +35,7 @@ if (ARTIST_SKIA)
          "${SKIA_LIBRARY}"
          "${UNIBREAK_LIBRARY}"
          "${HARFBUZZ_LIBRARY}"
-         "${FONTCONFIG_LIBRARY}"
+         PkgConfig::fontconfig
          ${OPENGL_LIBRARIES}
       )
 
