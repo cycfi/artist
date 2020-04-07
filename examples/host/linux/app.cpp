@@ -33,10 +33,18 @@ namespace
       return true;
    }
 
+   float get_scale(GtkWidget* widget)
+   {
+      auto gdk_win = gtk_widget_get_window(widget);
+      return 1.0f / gdk_window_get_scale_factor(gdk_win);
+   }
+
    void activate(GtkApplication* app, gpointer user_data)
    {
       auto* window = gtk_application_window_new(app);
       gtk_window_set_title(GTK_WINDOW (window), "Drawing Area");
+
+      auto scale = get_scale(window);
 
       g_signal_connect(window, "destroy", G_CALLBACK(close_window), nullptr);
 
@@ -59,7 +67,7 @@ int run_app(
  , bool animate
 )
 {
-   auto* app = gtk_application_new("org.gtk.example", G_APPLICATION_FLAGS_NONE);
+   auto* app = gtk_application_new("org.gtk-skia.example", G_APPLICATION_FLAGS_NONE);
    g_signal_connect(app, "activate", G_CALLBACK(activate), nullptr);
    int status = g_application_run(G_APPLICATION(app), argc, const_cast<char**>(argv));
    g_object_unref(app);
