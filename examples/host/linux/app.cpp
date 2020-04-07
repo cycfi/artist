@@ -8,8 +8,6 @@
 using namespace cycfi::artist;
 float elapsed_ = 0;  // rendering elapsed time
 
-///// --->
-
 #include <math.h>
 
 float boxv[][3] = {
@@ -173,10 +171,12 @@ int run_app(
    gtk_widget_show(window);
 
    // prepare GL
-   auto* glconfig = gdk_gl_config_new_by_mode(GdkGLConfigMode(
-           GDK_GL_MODE_RGB |
-           GDK_GL_MODE_DEPTH |
-           GDK_GL_MODE_DOUBLE));
+   auto* glconfig = gdk_gl_config_new_by_mode(
+      GdkGLConfigMode(
+         GDK_GL_MODE_RGB |
+         GDK_GL_MODE_DEPTH |
+         GDK_GL_MODE_DOUBLE
+      ));
 
    if (!glconfig)
       g_assert_not_reached();
