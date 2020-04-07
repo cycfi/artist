@@ -52,7 +52,7 @@ namespace cycfi::artist
       delete _impl;
    }
 
-    image_impl_ptr image::impl() const
+   image_impl_ptr image::impl() const
    {
       return _impl;
    }
@@ -78,7 +78,7 @@ namespace cycfi::artist
             }
          };
 
-      return std::visit(get_size, *_impl);
+      return std::visit(get_size, _impl->base());
    }
 
    void image::save_png(std::string_view path_) const
@@ -110,7 +110,7 @@ namespace cycfi::artist
             }
          };
 
-      std::visit(draw_picture, *_impl);
+      std::visit(draw_picture, _impl->base());
 
       // Make a PNG encoded image using the canvas
       sk_sp<SkImage> image(surface->makeImageSnapshot());
@@ -138,7 +138,7 @@ namespace cycfi::artist
                return nullptr;
          };
 
-      return std::visit(get_pixels, *_impl);
+      return std::visit(get_pixels, _impl->base());
    }
 
    uint32_t const* image::pixels() const
@@ -153,7 +153,7 @@ namespace cycfi::artist
                return nullptr;
          };
 
-      return std::visit(get_pixels, *_impl);
+      return std::visit(get_pixels, _impl->base());
    }
 
    extent image::bitmap_size() const
@@ -168,7 +168,7 @@ namespace cycfi::artist
                return {};
          };
 
-      return std::visit(get_size, *_impl);
+      return std::visit(get_size, _impl->base());
    }
 
    struct offscreen_image::state

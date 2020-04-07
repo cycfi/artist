@@ -82,11 +82,11 @@ if (MSVC)
    file(COPY ${FREETYPE_DLL} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 endif()
 
-add_example(shapes)
-add_example(typography)
-add_example(rain)
-add_example(tauri)
-add_example(space)
-add_example(composite_ops)
+#add_example(shapes)
+#add_example(typography)
+#add_example(rain)
+#add_example(tauri)
+#add_example(space)
+#add_example(composite_ops)
 
 

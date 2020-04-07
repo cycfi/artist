@@ -26,6 +26,15 @@ if (ARTIST_SKIA)
       set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
       set(UNIBREAK_LIBRARY ${ARTIST_BINARIES}/libunibreak.a)
       set(HARFBUZZ_LIBRARY ${ARTIST_BINARIES}/libharfbuzz.a)
+      find_package(opengl REQUIRED)
+
+      set(ARTIST_DEPEPENDENCIES
+         "${SKIA_LIBRARY}"
+         "${UNIBREAK_LIBRARY}"
+         "${HARFBUZZ_LIBRARY}"
+         "${FONTCONFIG_LIBRARY}"
+         ${OPENGL_LIBRARIES}
+      )
 
    elseif (MSVC)
 
@@ -43,10 +52,49 @@ if (ARTIST_SKIA)
       set(UNIBREAK_LIBRARY ${ARTIST_BINARIES}/unibreak.lib)
       set(HARFBUZZ_LIBRARY ${ARTIST_BINARIES}/harfbuzz.lib)
       set(FONTCONFIG_LIBRARY ${ARTIST_BINARIES}/fontconfig.lib)
+      find_package(opengl REQUIRED)
+
+      set(ARTIST_DEPEPENDENCIES
+         "${SKIA_LIBRARY}"
+         "${UNIBREAK_LIBRARY}"
+         "${HARFBUZZ_LIBRARY}"
+         "${FONTCONFIG_LIBRARY}"
+         ${OPENGL_LIBRARIES}
+      )
+
+   elseif (UNIX)
+
+      find_package(PkgConfig REQUIRED)
+      pkg_check_modules(gtk2 REQUIRED IMPORTED_TARGET gtk+-2.0)
+      pkg_check_modules(gtkgl REQUIRED IMPORTED_TARGET gtkglext-x11-1.0)
+      pkg_check_modules(libunibreak REQUIRED IMPORTED_TARGET libunibreak)
+      pkg_check_modules(harfbuzz REQUIRED IMPORTED_TARGET harfbuzz)
+      pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
+
+      ExternalProject_Add(prebuilt_binaries
+         PREFIX "linux-x64"
+         URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/linux-x64.zip
+         URL_MD5 2032e39233c9b627550fc0b5558fe335
+         CONFIGURE_COMMAND ""
+         BUILD_COMMAND ""
+         INSTALL_COMMAND ""
+      )
+
+      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/linux-x64/src/prebuilt_binaries)
+      set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
+
+      set(ARTIST_DEPEPENDENCIES
+         "${SKIA_LIBRARY}"
+         ${CMAKE_DL_LIBS}
+         PkgConfig::gtk2
+         PkgConfig::gtkgl
+         PkgConfig::libunibreak
+         PkgConfig::harfbuzz
+         PkgConfig::fontconfig
+      )
 
    endif()
 
-   find_package(opengl REQUIRED)
 endif()
 
 ###############################################################################
@@ -221,10 +269,7 @@ if (ARTIST_SKIA)
    target_link_libraries(artist
    PRIVATE
       "${SKIA_LIBRARY}"
-      "${UNIBREAK_LIBRARY}"
-      "${HARFBUZZ_LIBRARY}"
-      "${FONTCONFIG_LIBRARY}"
-      ${OPENGL_LIBRARIES}
+      "${ARTIST_DEPEPENDENCIES}"
    )
 endif()
 
