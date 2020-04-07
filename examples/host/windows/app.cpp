@@ -336,7 +336,7 @@ namespace cycfi::artist
 
 int run_app(
    int argc
- , const char* argv[]
+ , char const* argv[]
  , extent window_size
  , color bkd
  , bool animate

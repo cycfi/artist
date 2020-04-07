@@ -167,7 +167,7 @@ void draw(canvas& cnv)
    typography(cnv);
 }
 
-int main(int argc, const char* argv[])
+int main(int argc, char const* argv[])
 {
    return run_app(argc, argv, window_size);
 }
