@@ -6,9 +6,9 @@
 project(examples)
 
 if (UNIX)
+   find_package(OpenGL REQUIRED COMPONENTS OpenGL)
    find_package(PkgConfig REQUIRED)
-   pkg_check_modules(gtk2 REQUIRED IMPORTED_TARGET gtk+-2.0)
-   pkg_check_modules(gtkgl REQUIRED IMPORTED_TARGET gtkglext-x11-1.0)
+   pkg_check_modules(gtk3 REQUIRED IMPORTED_TARGET gtk+-3.0)
 endif()
 
 function(add_example name)
@@ -55,8 +55,8 @@ function(add_example name)
       )
       target_link_libraries(
          ${name}
-         PkgConfig::gtk2
-         PkgConfig::gtkgl
+         PkgConfig::gtk3
+         OpenGL::OpenGL
       )
    endif()
 
