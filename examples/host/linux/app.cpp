@@ -6,55 +6,41 @@
 #include "../../app.hpp"
 #include <GL/glx.h> // $$$
 
-# include "GrContext.h"
-# include "gl/GrGLInterface.h"
-# include "SkImage.h"
-# include "SkSurface.h"
-
+#include "GrContext.h"
+#include "gl/GrGLInterface.h"
+#include "SkImage.h"
+#include "SkSurface.h"
 #include <chrono>
-//#include <iostream>
-
-// # include "SkBitmap.h"
-// # include "SkData.h"
-// # include "SkImage.h"
-// # include "SkPicture.h"
-// # include "SkSurface.h"
-// # include "SkCanvas.h"
-// # include "SkPath.h"
-// # include "GrBackendSurface.h"
 
 using namespace cycfi::artist;
 float elapsed_ = 0;  // rendering elapsed time
 
 namespace
 {
-   extent _size = {};
-   float  _scale = 1.0;
-   bool   _animate = false;
+   extent   _size = {};
+   float    _scale = 1.0;
+   bool     _animate = false;
+   color    _bkd = colors::white;
+   bool     _first_time = true;
+   guint    _timer_id = 0;
 
    void close_window()
    {
+      if (_timer_id)
+         g_source_remove(_timer_id);
    }
-
-//   float get_scale(GtkWidget* widget)
-//   {
-//      //auto gdk_win = gtk_widget_get_window(widget);
-//      return 1.0f / gdk_window_get_scale_factor(widget);
-//   }
 
    gboolean render(GtkGLArea* area, GdkGLContext* context)
    {
       auto start = std::chrono::steady_clock::now();
       auto error = [](char const* msg) { throw std::runtime_error(msg); };
 
-      // inside this function it's safe to use GL; the given
-      // [gdk.GLContext.GLContext|gdk.GLContext] has been made current to the drawable
-      // surface used by the [gtk.GLArea.GLArea|gtk.GLArea] and the viewport has
-      // already been set to be the size of the allocation
-
-      // we can start by clearing the buffer
-      glClearColor(1, 1, 1, 1);
-      glClear(GL_COLOR_BUFFER_BIT);
+      if (_first_time)
+      {
+         glClearColor(_bkd.red, _bkd.green, _bkd.blue, _bkd.alpha);
+         glClear(GL_COLOR_BUFFER_BIT);
+         _first_time = false;
+      }
 
       auto xface = GrGLMakeNativeInterface();
       sk_sp<GrContext> ctx = GrContext::MakeGL(xface);
@@ -83,9 +69,6 @@ namespace
       auto stop = std::chrono::steady_clock::now();
       elapsed_ = std::chrono::duration<double>{ stop - start }.count();
 
-      // we completed our drawing; the draw commands will be
-      // flushed at the end of the signal emission chain, and
-      // the buffers will be drawn on the window
       return true;
    }
 
@@ -93,19 +76,19 @@ namespace
    {
       GtkWidget* da = GTK_WIDGET(user_data);
       gtk_widget_queue_draw(da);
-
-      // auto w = gtk_widget_get_window(da);
-      // gtk_widget_get_window(drawing_area);
-      // gdk_window_invalidate_rect(w, &da->allocation, false);
-      // gdk_window_process_updates(w, false);
       return true;
    }
 
+   // $$$ TODO: Investigate $$$
+   // Somehow, this prevents us from having linker errors
+   // Without this, we get undefined reference to `glXGetCurrentContext'
+   auto proc = &glXGetProcAddress;
+
    void activate(GtkApplication* app, gpointer user_data)
    {
-      // $$$ Somehow, this prevents us from having linker errors $$$
-      // $$$ Without this, we get undefined reference to `glXGetCurrentContext' $$$
-      static auto proc = &glXGetProcAddress;
+      auto error = [](char const* msg) { throw std::runtime_error(msg); };
+      if (!proc)
+         error("Error: glXGetProcAddress is null");
 
       extent const& p = *reinterpret_cast<extent const*>(user_data);
       auto* window = gtk_application_window_new(app);
@@ -117,22 +100,16 @@ namespace
       auto* gl_area = gtk_gl_area_new();
       gtk_container_add(GTK_CONTAINER(window), gl_area);
 
-      // connect to the "render" signal
-      //if (_animate)
-         g_signal_connect(gl_area, "render", G_CALLBACK(render), nullptr);
+      g_signal_connect(gl_area, "render", G_CALLBACK(render), nullptr);
 
-      //auto win = GTK_WINDOW(window);
       gtk_window_resize(GTK_WINDOW(window), p.x, p.y);
-
-
       gtk_widget_show_all(window);
 
       auto w = gtk_widget_get_window(GTK_WIDGET(window));
-      auto scale = gdk_window_get_scale_factor(w); //get_scale(window);
-      _scale = scale;
+      _scale = gdk_window_get_scale_factor(w);
 
       if (_animate)
-         g_timeout_add (1000 / 60, animate, gl_area);
+         _timer_id = g_timeout_add(1000 / 60, animate, gl_area);
    }
 }
 
@@ -156,6 +133,7 @@ int run_app(
 {
    _size = window_size;
    _animate = animate;
+   _bkd = background_color;
 
    auto* app = gtk_application_new("org.gtk-skia.example", G_APPLICATION_FLAGS_NONE);
    g_signal_connect(app, "activate", G_CALLBACK(activate), &window_size);
@@ -163,10 +141,6 @@ int run_app(
    g_object_unref(app);
 
    return status;
-}
-
-void stop_app()
-{
 }
 
 void print_elapsed(canvas& cnv, point br)
