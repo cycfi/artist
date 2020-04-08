@@ -178,6 +178,7 @@ namespace cycfi::artist
 
    void canvas::close_path()
    {
+      _state->path().close();
    }
 
    void canvas::fill()
@@ -265,11 +266,6 @@ namespace cycfi::artist
    void canvas::bezier_curve_to(point cp1, point cp2, point end)
    {
       _state->path().cubicTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
-   }
-
-   void canvas::close()
-   {
-      _state->path().close();
    }
 
    void canvas::fill_style(color c)
