@@ -29,7 +29,6 @@
 
 #include <stdexcept>
 #include <chrono>
-#include <iostream>
 
 using namespace cycfi::artist;
 float elapsed_ = 0;  // rendering elapsed time

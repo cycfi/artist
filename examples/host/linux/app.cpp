@@ -11,6 +11,9 @@
 # include "SkImage.h"
 # include "SkSurface.h"
 
+#include <chrono>
+//#include <iostream>
+
 // # include "SkBitmap.h"
 // # include "SkData.h"
 // # include "SkImage.h"
@@ -41,6 +44,7 @@ namespace
 
    gboolean render(GtkGLArea* area, GdkGLContext* context)
    {
+      auto start = std::chrono::steady_clock::now();
       auto error = [](char const* msg) { throw std::runtime_error(msg); };
 
       // inside this function it's safe to use GL; the given
@@ -48,9 +52,9 @@ namespace
       // surface used by the [gtk.GLArea.GLArea|gtk.GLArea] and the viewport has
       // already been set to be the size of the allocation
 
-      // // we can start by clearing the buffer
-      // glClearColor(0, 0, 1, 1);
-      // glClear(GL_COLOR_BUFFER_BIT);
+      // we can start by clearing the buffer
+      glClearColor(1, 1, 1, 1);
+      glClear(GL_COLOR_BUFFER_BIT);
 
       auto xface = GrGLMakeNativeInterface();
       sk_sp<GrContext> ctx = GrContext::MakeGL(xface);
@@ -76,9 +80,24 @@ namespace
       cnv.pre_scale({ _scale, _scale });
       draw(cnv);
 
+      auto stop = std::chrono::steady_clock::now();
+      elapsed_ = std::chrono::duration<double>{ stop - start }.count();
+
       // we completed our drawing; the draw commands will be
       // flushed at the end of the signal emission chain, and
       // the buffers will be drawn on the window
+      return true;
+   }
+
+   gboolean animate(gpointer user_data)
+   {
+      GtkWidget* da = GTK_WIDGET(user_data);
+      gtk_widget_queue_draw(da);
+
+      // auto w = gtk_widget_get_window(da);
+      // gtk_widget_get_window(drawing_area);
+      // gdk_window_invalidate_rect(w, &da->allocation, false);
+      // gdk_window_process_updates(w, false);
       return true;
    }
 
@@ -111,6 +130,19 @@ namespace
       auto w = gtk_widget_get_window(GTK_WIDGET(window));
       auto scale = gdk_window_get_scale_factor(w); //get_scale(window);
       _scale = scale;
+
+      if (_animate)
+         g_timeout_add (1000 / 60, animate, gl_area);
+   }
+}
+
+namespace cycfi::artist
+{
+   void init_paths()
+   {
+      add_search_path(fs::current_path() / "resources");
+      add_search_path(fs::current_path() / "resources/fonts");
+      add_search_path(fs::current_path() / "resources/images");
    }
 }
 
