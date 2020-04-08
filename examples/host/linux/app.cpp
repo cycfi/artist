@@ -4,7 +4,9 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
 #include "../../app.hpp"
-#include <GL/glx.h> // $$$
+#include <gtk/gtk.h>
+#include <GL/gl.h>
+#include <GL/glx.h>
 
 #include "GrContext.h"
 #include "gl/GrGLInterface.h"
