@@ -9,9 +9,6 @@
 #include <artist/canvas.hpp>
 #include <string>
 
-#include <gtk/gtk.h>
-#include <GL/gl.h>
-
 using cycfi::artist::canvas;
 using cycfi::artist::extent;
 using cycfi::artist::color;
