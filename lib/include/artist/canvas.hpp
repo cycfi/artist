@@ -11,6 +11,7 @@
 #include <artist/circle.hpp>
 #include <artist/image.hpp>
 #include <artist/font.hpp>
+#include <artist/path.hpp>
 #include <artist/text_layout.hpp>
 
 #include <vector>
@@ -64,7 +65,9 @@ namespace cycfi::artist
       void              fill_preserve();
       void              stroke();
       void              stroke_preserve();
+
       void              clip();
+      void              clip(path const& p);
       bool              hit_test(point p) const;
       struct rect       fill_extent() const;
 
@@ -79,6 +82,7 @@ namespace cycfi::artist
       void              rect(struct rect r);
       void              round_rect(struct rect r, float radius);
       void              circle(struct circle c);
+      void              path(class path const& p);
 
       void              quadratic_curve_to(point cp, point end);
       void              bezier_curve_to(point cp1, point cp2, point end);
@@ -244,13 +248,8 @@ namespace cycfi::artist
 
       ///////////////////////////////////////////////////////////////////////////////////
       // Fill Rule
-      enum fill_rule_enum
-      {
-         fill_winding,
-         fill_odd_even
-      };
 
-      void              fill_rule(fill_rule_enum rule);
+      void              fill_rule(path::fill_rule_enum rule);
 
       ///////////////////////////////////////////////////////////////////////////////////
       // Rectangles

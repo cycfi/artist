@@ -127,6 +127,7 @@ if (APPLE)
               impl/macos/quartz2d/image.mm
          impl/macos/quartz2d/font.mm
          impl/macos/quartz2d/text_layout.mm
+         impl/macos/quartz2d/path.mm
       )
    endif()
 elseif (UNIX)
