@@ -48,6 +48,7 @@ function(add_example name)
       )
 
    elseif (UNIX)
+
       add_executable(
          ${name}
          ${name}.cpp
@@ -56,7 +57,7 @@ function(add_example name)
       target_link_libraries(
          ${name}
          PkgConfig::gtk3
-         OpenGL::OpenGL
+         OpenGL::GL
       )
    endif()
 
