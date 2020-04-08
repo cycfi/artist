@@ -434,11 +434,6 @@ int run_app(
    return _app.run();
 }
 
-void stop_app()
-{
-   [NSApp terminate : nil];
-}
-
 void print_elapsed(canvas& cnv, point br)
 {
    static font open_sans = font_descr{ "Open Sans", 12 };

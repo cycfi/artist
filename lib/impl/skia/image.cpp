@@ -28,9 +28,9 @@ namespace cycfi::artist
     : _impl{ new artist::image_impl(SkBitmap{}) }
    {
       auto path = find_file(path_);
-      auto fail = [&path]()
+      auto fail = [&path_]()
       {
-         throw std::runtime_error{ "Error: Failed to load file: " + path.string() };
+         throw std::runtime_error{ "Error: Failed to load file: " + path_.string() };
       };
 
       sk_sp<SkData> data{ SkData::MakeFromFileName(path.string().c_str()) };

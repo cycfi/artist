@@ -26,7 +26,6 @@ int            run_app(
                 , bool animate = false
                );
 
-void           stop_app();
 void           draw(canvas& cnv);
 void           print_elapsed(canvas& cnv, point br);
 

@@ -11,19 +11,10 @@
 #include "gl/glext.h"
 #include "gl/wglext.h"
 
-# include "GrContext.h"
-# include "gl/GrGLInterface.h"
-# include "SkImage.h"
-# include "SkSurface.h"
-
-# include "SkBitmap.h"
-# include "SkData.h"
-# include "SkImage.h"
-# include "SkPicture.h"
-# include "SkSurface.h"
-# include "SkCanvas.h"
-# include "SkPath.h"
-# include "GrBackendSurface.h"
+#include "GrContext.h"
+#include "gl/GrGLInterface.h"
+#include "SkImage.h"
+#include "SkSurface.h"
 
 #include <ShellScalingAPI.h>
 
@@ -361,11 +352,6 @@ int run_app(
    }
 
    return msg.wParam;
-}
-
-void stop_app()
-{
-   PostQuitMessage(0);
 }
 
 void print_elapsed(canvas& cnv, point br)
