@@ -86,7 +86,7 @@ void arc_to(canvas& cnv)
    cnv.fill_style(colors::dodger_blue.opacity(0.2));
    make_arc(cnv);
    cnv.line_to(x, y+80);
-   cnv.close();
+   cnv.close_path();
    cnv.fill();
 
    cnv.stroke_style(colors::white);
