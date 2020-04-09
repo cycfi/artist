@@ -55,28 +55,22 @@ namespace cycfi::artist
       )
       {
          // Ported from canvg (https://code.google.com/p/canvg/)
-         float cx, cy, dx, dy, d;
-         float x1p, y1p, cxp, cyp, s, sa, sb;
-         float ux, uy, vx, vy, a1, da;
-         float x, y, tanx, tany, a, px = 0, py = 0, ptanx = 0, ptany = 0, t[6];
-         float sinrx, cosrx;
-         int i, ndivs;
-         float hda, kappa;
 
-         float rx = fabsf(radius.x);            // x radius
-         float ry = fabsf(radius.y);            // y radius
-         float rotx = rotx_ / 180.0f * pi;	   // x rotation angle
-         bool fa = large_arc;	                  // Large arc
-         bool fs = sweep;	                     // Sweep direction
-         float x1 = p.x;							   // start point
-         float y1 = p.y;
-         float x2 = end.x;
-         float y2 = end.y;
+         float rx    = fabsf(radius.x);         // x radius
+         float ry    = fabsf(radius.y);         // y radius
+         float rotx  = rotx_ / 180.0f * pi;	   // x rotation angle
+         bool  fa    = large_arc;	            // Large arc
+         bool  fs    = sweep;	                  // Sweep direction
+         float x1    = p.x;							// start point
+         float y1    = p.y;
+         float x2    = end.x;
+         float y2    = end.y;
 
-         dx = x1 - x2;
-         dy = y1 - y2;
-         d = sqrtf(dx*dx + dy*dy);
-         if (d < 1e-6f || rx < 1e-6f || ry < 1e-6f) {
+         float dx = x1 - x2;
+         float dy = y1 - y2;
+         float d = sqrtf(dx*dx + dy*dy);
+         if (d < 1e-6f || rx < 1e-6f || ry < 1e-6f)
+         {
             // The arc degenerates to a line
             path_.line_to(x2, y2);
             p.x = x2;
@@ -84,43 +78,44 @@ namespace cycfi::artist
             return;
          }
 
-         sinrx = sinf(rotx);
-         cosrx = cosf(rotx);
+         float sinrx = sinf(rotx);
+         float cosrx = cosf(rotx);
 
          // Convert to center point parameterization.
          // http://www.w3.org/TR/SVG11/implnote.html#ArcImplementationNotes
          // 1) Compute x1', y1'
-         x1p = cosrx * dx / 2.0f + sinrx * dy / 2.0f;
-         y1p = -sinrx * dx / 2.0f + cosrx * dy / 2.0f;
+         float x1p = cosrx * dx / 2.0f + sinrx * dy / 2.0f;
+         float y1p = -sinrx * dx / 2.0f + cosrx * dy / 2.0f;
          d = sqr(x1p)/sqr(rx) + sqr(y1p)/sqr(ry);
-         if (d > 1) {
+         if (d > 1)
+         {
             d = sqrtf(d);
             rx *= d;
             ry *= d;
          }
          // 2) Compute cx', cy'
-         s = 0.0f;
-         sa = sqr(rx)*sqr(ry) - sqr(rx)*sqr(y1p) - sqr(ry)*sqr(x1p);
-         sb = sqr(rx)*sqr(y1p) + sqr(ry)*sqr(x1p);
+         float s = 0.0f;
+         float sa = sqr(rx)*sqr(ry) - sqr(rx)*sqr(y1p) - sqr(ry)*sqr(x1p);
+         float sb = sqr(rx)*sqr(y1p) + sqr(ry)*sqr(x1p);
          if (sa < 0.0f) sa = 0.0f;
          if (sb > 0.0f)
             s = sqrtf(sa / sb);
          if (fa == fs)
             s = -s;
-         cxp = s * rx * y1p / ry;
-         cyp = s * -ry * x1p / rx;
+         float cxp = s * rx * y1p / ry;
+         float cyp = s * -ry * x1p / rx;
 
          // 3) Compute cx,cy from cx',cy'
-         cx = (x1 + x2)/2.0f + cosrx*cxp - sinrx*cyp;
-         cy = (y1 + y2)/2.0f + sinrx*cxp + cosrx*cyp;
+         float cx = (x1 + x2)/2.0f + cosrx*cxp - sinrx*cyp;
+         float cy = (y1 + y2)/2.0f + sinrx*cxp + cosrx*cyp;
 
          // 4) Calculate theta1, and delta theta.
-         ux = (x1p - cxp) / rx;
-         uy = (y1p - cyp) / ry;
-         vx = (-x1p - cxp) / rx;
-         vy = (-y1p - cyp) / ry;
-         a1 = vecang(1.0f,0.0f, ux,uy);	// Initial angle
-         da = vecang(ux,uy, vx,vy);		// Delta angle
+         float ux = (x1p - cxp) / rx;
+         float uy = (y1p - cyp) / ry;
+         float vx = (-x1p - cxp) / rx;
+         float vy = (-y1p - cyp) / ry;
+         float a1 = vecang(1.0f,0.0f, ux,uy);	// Initial angle
+         float da = vecang(ux,uy, vx,vy);		// Delta angle
 
          // if (vecrat(ux,uy,vx,vy) <= -1.0f) da = pi;
          // if (vecrat(ux,uy,vx,vy) >= 1.0f) da = 0;
@@ -131,23 +126,27 @@ namespace cycfi::artist
             da += 2 * pi;
 
          // Approximate the arc using cubic spline segments.
-         t[0] = cosrx; t[1] = sinrx;
-         t[2] = -sinrx; t[3] = cosrx;
-         t[4] = cx; t[5] = cy;
+         float t[6] = { cosrx, sinrx, -sinrx, cosrx, cx, cy };
 
          // Split arc into max 90 degree segments.
-         // The loop assumes an iteration per end point (including start and end), this +1.
-         ndivs = (int)(fabsf(da) / (pi*0.5f) + 1.0f);
-         hda = (da / (float)ndivs) / 2.0f;
-         kappa = fabsf(4.0f / 3.0f * (1.0f - cosf(hda)) / sinf(hda));
+         // The loop assumes an iteration per end point
+         // (including start and end), this +1.
+         int ndivs = int(fabsf(da) / (pi*0.5f) + 1.0f);
+         float hda = (da / (float)ndivs) / 2.0f;
+         float kappa = fabsf(4.0f / 3.0f * (1.0f - cosf(hda)) / sinf(hda));
          if (da < 0.0f)
             kappa = -kappa;
 
-         for (i = 0; i <= ndivs; i++) {
-            a = a1 + da * ((float)i/(float)ndivs);
+         float px = 0, py = 0;
+         float ptanx = 0, ptany = 0;
+         for (int i = 0; i <= ndivs; i++)
+         {
+            float a = a1 + da * ((float)i/(float)ndivs);
             dx = cosf(a);
             dy = sinf(a);
+            float x, y;
             xform_point(&x, &y, dx*rx, dy*ry, t); // position
+            float tanx, tany;
             xform_vec(&tanx, &tany, -dy*rx * kappa, dx*ry * kappa, t); // tangent
             if (i > 0)
                path_.bezier_curve_to(px+ptanx, py+ptany, x-tanx, y-tany, x, y);
@@ -156,7 +155,6 @@ namespace cycfi::artist
             ptanx = tanx;
             ptany = tany;
          }
-
          p.x = x2;
          p.y = y2;
       }
@@ -372,11 +370,12 @@ namespace cycfi::artist
          };
 
       // Note: Why are we converting to string and not just iterate over the
-      // characters in the string_view directly? Well, unfortunately, because
-      // std::stof requires a null-terminated string which only
+      // characters in the string_view directly? Well, unfortunately, that's
+      // because std::stof requires a null-terminated string which only
       // std::string.c_str() can provide. There is no guarantee that a
-      // std::string_view is null-terminated. I wish I could just use
-      // Boost.Spirit!
+      // std::string_view is null-terminated and std::stof can read past the
+      // string-view's end which is undefined behavior. I wish I could just
+      // use Boost.Spirit!
       auto str = std::string{ svg_def.data(), svg_def.end() };
       auto s = str.c_str();
 
