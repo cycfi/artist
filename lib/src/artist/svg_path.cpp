@@ -261,7 +261,7 @@ namespace cycfi::artist
             {
                this->bezier_curve_to(cp1, cp2, end);
                p = prev_qp = end;
-               prev_cp = cp2.reflect(p);
+               prev_cp = p.reflect(cp2);
             }
          };
 
@@ -277,7 +277,7 @@ namespace cycfi::artist
             {
                this->bezier_curve_to(prev_cp, cp2, end);
                p = prev_qp = end;
-               prev_cp = cp2.reflect(p);
+               prev_cp = p.reflect(cp2);
             }
          };
 
@@ -293,7 +293,7 @@ namespace cycfi::artist
             {
                this->quadratic_curve_to(cp, end);
                p = prev_cp = end;
-               prev_qp = cp.reflect(p);
+               prev_qp = p.reflect(cp);
             }
          };
 
@@ -307,7 +307,7 @@ namespace cycfi::artist
             {
                this->quadratic_curve_to(prev_qp, end);
                p = prev_cp = end;
-               prev_qp = prev_qp.reflect(p);
+               prev_qp = p.reflect(prev_qp);
             }
          };
 
