@@ -14,7 +14,7 @@ namespace cycfi::artist
    namespace
    {
       // Arc calculation code based on canvg (https://code.google.com/p/canvg/)
-      // Ported to C++ from C port by Mikko Mononen:
+      // Ported to C++ by Joel de Gzman from C port by Mikko Mononen:
       // https://github.com/memononen/nanosvg/blob/master/src/nanosvg.h
       // Copyright (c) 2013-14 Mikko Mononen memon@inside.org
 
@@ -23,16 +23,16 @@ namespace cycfi::artist
       float sqr(float x) { return x*x; }
       float vmag(float x, float y) { return sqrtf(x*x + y*y); }
 
-      void xform_point(float* dx, float* dy, float x, float y, float* t)
+      void xform_point(float& dx, float& dy, float x, float y, float* t)
       {
-         *dx = x*t[0] + y*t[2] + t[4];
-         *dy = x*t[1] + y*t[3] + t[5];
+         dx = x*t[0] + y*t[2] + t[4];
+         dy = x*t[1] + y*t[3] + t[5];
       }
 
-      void xform_vec(float* dx, float* dy, float x, float y, float* t)
+      void xform_vec(float& dx, float& dy, float x, float y, float* t)
       {
-         *dx = x*t[0] + y*t[2];
-         *dy = x*t[1] + y*t[3];
+         dx = x*t[0] + y*t[2];
+         dy = x*t[1] + y*t[3];
       }
 
       float vecrat(float ux, float uy, float vx, float vy)
@@ -145,9 +145,9 @@ namespace cycfi::artist
             dx = cosf(a);
             dy = sinf(a);
             float x, y;
-            xform_point(&x, &y, dx*rx, dy*ry, t); // position
+            xform_point(x, y, dx*rx, dy*ry, t); // position
             float tanx, tany;
-            xform_vec(&tanx, &tany, -dy*rx * kappa, dx*ry * kappa, t); // tangent
+            xform_vec(tanx, tany, -dy*rx * kappa, dx*ry * kappa, t); // tangent
             if (i > 0)
                path_.bezier_curve_to(px+ptanx, py+ptany, x-tanx, y-tany, x, y);
             px = x;
@@ -360,7 +360,7 @@ namespace cycfi::artist
                case 'Q': quadratic_curve_to_(s, abs); break;
                case 'T': shorthand_quadratic_curve_to_(s, abs); break;
                case 'A': arc_(s, abs); break;
-               case 'Z': case 'z': close(); break;
+               case 'Z': close(); break;
 
                default:
                   throw std::runtime_error{
@@ -371,15 +371,15 @@ namespace cycfi::artist
 
       // Note: Why are we converting to string and not just iterate over the
       // characters in the string_view directly? Well, unfortunately, that's
-      // because std::stof requires a null-terminated string which only
+      // because std::strtof requires a null-terminated string which only
       // std::string.c_str() can provide. There is no guarantee that a
-      // std::string_view is null-terminated and std::stof can read past the
-      // string-view's end which is undefined behavior. I wish I could just
-      // use Boost.Spirit!
+      // std::string_view is null-terminated and std::strtof can read past
+      // the string-view's end which is undefined behavior. I wish I could
+      // just use Boost.Spirit!
       auto str = std::string{ svg_def.data(), svg_def.end() };
       auto s = str.c_str();
-
       bool abs; char cmd;
+
       while (*s)
       {
          skip_to_next(s);

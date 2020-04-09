@@ -100,7 +100,6 @@ using offscreen_type = std::shared_ptr<image>;
    NSTimer*       _task;
 
 #if defined(ARTIST_QUARTZ_2D)
-
    bool           _first;
    offscreen_type _offscreen;
 #endif
