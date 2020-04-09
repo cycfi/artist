@@ -13,6 +13,8 @@
 
 #if defined(ARTIST_QUARTZ_2D)
 using path_impl = struct CGPath;
+#elif defined(ARTIST_SKIA)
+using path_impl = class SkPath;
 #endif
 
 namespace cycfi::artist
