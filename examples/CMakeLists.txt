@@ -109,5 +109,6 @@ add_example(rain)
 add_example(tauri)
 add_example(space)
 add_example(composite_ops)
+add_example(paths)
 
 
