@@ -106,6 +106,7 @@ endif()
 set(ARTIST_SOURCES
    src/artist/rect.cpp
    src/artist/resources.cpp
+   src/artist/svg_path.cpp
 )
 
 set(ARTIST_HEADERS

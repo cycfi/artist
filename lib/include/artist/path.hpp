@@ -26,7 +26,7 @@ namespace cycfi::artist
                         path(rect r);
                         path(rect r, float radius);
                         path(circle c);
-                        path(std::string_view def);
+                        path(std::string_view svg_def);
                         path(path const& rhs);
                         path(path&& rhs) = default;
 

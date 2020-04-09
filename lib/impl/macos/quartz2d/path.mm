@@ -18,11 +18,6 @@ namespace cycfi::artist
       CGPathRelease(_impl);
    }
 
-   path::path(std::string_view svg_def)
-    : path()
-   {
-   }
-
    path::path(path const& rhs)
     : _impl(CGPathCreateMutableCopy(rhs.impl()))
    {
