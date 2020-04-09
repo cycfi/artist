@@ -145,6 +145,7 @@ if (ARTIST_SKIA)
            impl/skia/image.cpp
       impl/skia/font.cpp
       impl/skia/text_layout.cpp
+      impl/skia/path.cpp
       impl/skia/detail/harfbuzz.cpp
    )
 endif()
