@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <string>
+#include <stdexcept>
 
 namespace cycfi::artist
 {
@@ -376,7 +377,7 @@ namespace cycfi::artist
       // std::string_view is null-terminated and std::strtof can read past
       // the string-view's end which is undefined behavior. I wish I could
       // just use Boost.Spirit!
-      auto str = std::string{ svg_def.data(), svg_def.end() };
+      auto str = std::string{ svg_def.data(), svg_def.size() };
       auto s = str.c_str();
       bool abs; char cmd;
 
