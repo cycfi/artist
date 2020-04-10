@@ -38,7 +38,7 @@ function(add_example name)
       add_executable(
          ${name}
          ${name}.cpp
-         host/windows/app.cpp
+         host/windows/skia_app.cpp
       )
       set_property(TARGET ${name} PROPERTY
          MSVC_RUNTIME_LIBRARY "MultiThreaded"
