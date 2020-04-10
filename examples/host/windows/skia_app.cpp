@@ -5,6 +5,10 @@
 =============================================================================*/
 #include "../../app.hpp"
 
+#ifndef UNICODE
+#define UNICODE
+#endif
+
 #include <SDKDDKVer.h>
 #include <windows.h>
 #include <gl/gl.h>
