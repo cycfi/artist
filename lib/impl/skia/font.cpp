@@ -125,7 +125,8 @@ namespace cycfi::artist
 
       void init_font_map()
       {
-         FcConfig* config = FcInitLoadConfig();
+         FcInit();
+         FcConfig* config = FcConfigCreate();
 
 #if defined(__APPLE__)
          auto app_fonts_path = get_user_fonts_directory();
@@ -183,6 +184,8 @@ namespace cycfi::artist
          }
          if (fs)
             FcFontSetDestroy(fs);
+         if (config)
+            FcConfigDestroy(config);
       }
 
       font_entry const* match(font_descr descr)

@@ -157,113 +157,103 @@ namespace cycfi::artist
          p.x = x2;
          p.y = y2;
       }
-   }
 
-   path::path(std::string_view svg_def)
-    : path()
-   {
-      point p, prev_cp, prev_qp;
-
-      auto skip_to_next =
-         [](auto& s) -> void
+      void skip_to_next(char const*& s)
+      {
+         for (char c = *s; (c = *s) != 0; ++s)
          {
-            for (char c = *s; (c = *s) != 0; ++s)
-            {
-               if (!std::isspace(c) && c != ',')
-                  break;
-            }
-         };
+            if (!std::isspace(c) && c != ',')
+               break;
+         }
+      }
 
-      auto coord =
-         [&](char const*& s, float& coord, bool abs = false, float base = 0) -> bool
-         {
-            skip_to_next(s);
-            char* end;
-            coord = std::strtof(s, &end);
-            if (s == end)
-               return false;
-            s = end;
-            if (!abs)
-               coord += base;
-            return true;
-         };
+      bool coord(char const*& s, float& coord, bool abs = false, float base = 0)
+      {
+         skip_to_next(s);
+         char* end;
+         coord = std::strtof(s, &end);
+         if (s == end)
+            return false;
+         s = end;
+         if (!abs)
+            coord += base;
+         return true;
+      }
 
-      auto flag =
-         [&](auto& s, bool& flag_) -> bool
-         {
-            skip_to_next(s);
-            char* end;
-            flag_ = std::strtol(s, &end, 10) != 0;
-            if (s == end)
-               return false;
-            s = end;
-            return true;
-         };
+      bool flag(char const*& s, bool& flag_)
+      {
+         skip_to_next(s);
+         char* end;
+         flag_ = std::strtol(s, &end, 10) != 0;
+         if (s == end)
+            return false;
+         s = end;
+         return true;
+      };
 
-      auto move_to_ =
-         [&](auto& s, bool abs) -> void
+      struct path_builder
+      {
+         path& _path;
+         point p, prev_cp, prev_qp;
+
+         void move_to(char const*& s, bool abs)
          {
             point m;
             if (coord(s, m.x, abs, p.x) && coord(s, m.y, abs, p.y))
             {
-               this->move_to(m);
+               _path.move_to(m);
                p = prev_qp = prev_cp = m;
             }
-         };
+         }
 
-      auto line_to_ =
-         [&](auto& s, bool abs) -> void
+         void line_to(char const*& s, bool abs)
          {
             point l;
             if (coord(s, l.x, abs, p.x) && coord(s, l.y, abs, p.y))
             {
-               this->line_to(l);
+               _path.line_to(l);
                p = prev_qp = prev_cp = l;
             }
-         };
+         }
 
-      auto line_to_h =
-         [&](auto& s, bool abs) -> void
+         void line_to_h(char const*& s, bool abs)
          {
             float lx;
             if (coord(s, lx, abs, p.x))
             {
-               this->line_to(lx, p.y);
+               _path.line_to(lx, p.y);
                p.x = prev_qp.x = prev_cp.x = lx;
             }
-         };
+         }
 
-      auto line_to_v =
-         [&](auto& s, bool abs) -> void
+         void line_to_v(char const*& s, bool abs)
          {
             float ly;
             if (coord(s, ly, abs, p.y))
             {
-               this->line_to(p.x, ly);
+               _path.line_to(p.x, ly);
                p.y = prev_qp.y = prev_cp.y = ly;
             }
-         };
+         }
 
-      auto bezier_curve_to_ =
-         [&](auto& s, bool abs) -> void
-         {
-            point cp1, cp2, end;
-            if (
-               coord(s, cp1.x, abs, p.x) &&
-               coord(s, cp1.y, abs, p.y) &&
-               coord(s, cp2.x, abs, p.x) &&
-               coord(s, cp2.y, abs, p.y) &&
-               coord(s, end.x, abs, p.x) &&
-               coord(s, end.y, abs, p.y))
+         void bezier_curve_to(char const*& s, bool abs)
             {
-               this->bezier_curve_to(cp1, cp2, end);
-               p = prev_qp = end;
-               prev_cp = p.reflect(cp2);
+               point cp1, cp2, end;
+               if (
+                  coord(s, cp1.x, abs, p.x) &&
+                  coord(s, cp1.y, abs, p.y) &&
+                  coord(s, cp2.x, abs, p.x) &&
+                  coord(s, cp2.y, abs, p.y) &&
+                  coord(s, end.x, abs, p.x) &&
+                  coord(s, end.y, abs, p.y))
+               {
+                  _path.bezier_curve_to(cp1, cp2, end);
+                  p = prev_qp = end;
+                  prev_cp = p.reflect(cp2);
+               }
             }
-         };
 
-      auto shorthand_bezier_curve_to_ =
-         [&](auto& s, bool abs) -> void
+         void shorthand_bezier_curve_to(char const*& s, bool abs)
          {
             point cp2, end;
             if (
@@ -272,14 +262,13 @@ namespace cycfi::artist
                coord(s, end.x, abs, p.x) &&
                coord(s, end.y, abs, p.y))
             {
-               this->bezier_curve_to(prev_cp, cp2, end);
+               _path.bezier_curve_to(prev_cp, cp2, end);
                p = prev_qp = end;
                prev_cp = p.reflect(cp2);
             }
-         };
+         }
 
-      auto quadratic_curve_to_ =
-         [&](auto& s, bool abs) -> void
+         void quadratic_curve_to(char const*& s, bool abs)
          {
             point cp, end;
             if (
@@ -288,28 +277,26 @@ namespace cycfi::artist
                coord(s, end.x, abs, p.x) &&
                coord(s, end.y, abs, p.y))
             {
-               this->quadratic_curve_to(cp, end);
+               _path.quadratic_curve_to(cp, end);
                p = prev_cp = end;
                prev_qp = p.reflect(cp);
             }
-         };
+         }
 
-      auto shorthand_quadratic_curve_to_ =
-         [&](auto& s, bool abs) -> void
+         void shorthand_quadratic_curve_to(char const*& s, bool abs)
          {
             point end;
             if (
                coord(s, end.x, abs, p.x) &&
                coord(s, end.y, abs, p.y))
             {
-               this->quadratic_curve_to(prev_qp, end);
+               _path.quadratic_curve_to(prev_qp, end);
                p = prev_cp = end;
                prev_qp = p.reflect(prev_qp);
             }
-         };
+         }
 
-      auto arc_ =
-         [&](auto& s, bool abs) -> void
+         void arc(char const*& s, bool abs)
          {
             point radius, end;
             float rotx;
@@ -323,12 +310,11 @@ namespace cycfi::artist
                coord(s, end.x, abs, p.x) &&
                coord(s, end.y, abs, p.y))
             {
-               arc_to_curve(*this, p, radius, rotx, large_arc, sweep, end);
+               arc_to_curve(_path, p, radius, rotx, large_arc, sweep, end);
             }
-         };
+         }
 
-      auto command =
-         [&](char const*& s, char& cmd, bool& abs) -> void
+         void command(char const*& s, char& cmd, bool& abs)
          {
             auto c = std::toupper(*s);
             switch (c)
@@ -343,31 +329,35 @@ namespace cycfi::artist
                   ++s;
                }
             }
-         };
+         }
 
-      auto dispatch =
-         [&](char const*& s, char cmd, bool abs)
+         void dispatch(char const*& s, char cmd, bool abs)
          {
             switch (cmd)
             {
-               case 'M': move_to_(s, abs); break;
-               case 'L': line_to_(s, abs); break;
+               case 'M': move_to(s, abs); break;
+               case 'L': line_to(s, abs); break;
                case 'H': line_to_h(s, abs); break;
                case 'V': line_to_v(s, abs); break;
-               case 'C': bezier_curve_to_(s, abs); break;
-               case 'S': shorthand_bezier_curve_to_(s, abs); break;
-               case 'Q': quadratic_curve_to_(s, abs); break;
-               case 'T': shorthand_quadratic_curve_to_(s, abs); break;
-               case 'A': arc_(s, abs); break;
-               case 'Z': close(); break;
+               case 'C': bezier_curve_to(s, abs); break;
+               case 'S': shorthand_bezier_curve_to(s, abs); break;
+               case 'Q': quadratic_curve_to(s, abs); break;
+               case 'T': shorthand_quadratic_curve_to(s, abs); break;
+               case 'A': arc(s, abs); break;
+               case 'Z': _path.close(); break;
 
                default:
                   throw std::runtime_error{
                      std::string{ "Error: Invalid SVG path syntax here: " } + s
                   };
             }
-         };
+         }
+      };
+   }
 
+   path::path(std::string_view svg_def)
+    : path()
+   {
       // Note: Why are we converting to string and not just iterate over the
       // characters in the string_view directly? Well, unfortunately, that's
       // because std::strtof requires a null-terminated string which only
@@ -379,11 +369,12 @@ namespace cycfi::artist
       auto s = str.c_str();
       bool abs; char cmd;
 
+      path_builder builder{ *this };
       while (*s)
       {
          skip_to_next(s);
-         command(s, cmd, abs);
-         dispatch(s, cmd, abs);
+         builder.command(s, cmd, abs);
+         builder.dispatch(s, cmd, abs);
       }
    }
 }
