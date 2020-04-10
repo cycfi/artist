@@ -6,6 +6,7 @@
 #include "app.hpp"
 
 using namespace cycfi::artist;
+using cycfi::pi;
 auto constexpr window_size = point{ 640.0f, 480.0f };
 auto constexpr bkd_color = rgb(44, 42, 45);
 
