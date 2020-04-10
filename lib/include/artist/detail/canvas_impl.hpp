@@ -6,10 +6,6 @@
 #if !defined(ELEMENTS_DETAIL_CANVAS_IMPL_MAY_3_2016)
 #define ELEMENTS_DETAIL_CANVAS_IMPL_MAY_3_2016
 
-#ifndef M_PI
-# define M_PI 3.14159265358979323846
-#endif
-
 namespace cycfi::artist
 {
    ////////////////////////////////////////////////////////////////////////////
@@ -100,7 +96,7 @@ namespace cycfi::artist
 #if !defined(ARTIST_SKIA)
    inline void canvas::circle(struct circle c)
    {
-      arc(point{ c.cx, c.cy }, c.radius, 0.0, 2 * M_PI);
+      arc(point{ c.cx, c.cy }, c.radius, 0.0, 2 * pi);
    }
 #endif
 

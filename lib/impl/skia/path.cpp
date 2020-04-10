@@ -3,6 +3,7 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
+#include <infra/support.hpp>
 #include <artist/path.hpp>
 #include <SkPath.h>
 
@@ -91,8 +92,8 @@ namespace cycfi::artist
       float start_angle, float end_angle,
       bool ccw)
    {
-      auto start = start_angle * 180 / M_PI;
-      auto sweep = (end_angle - start_angle) * 180 / M_PI;
+      auto start = start_angle * 180 / pi;
+      auto sweep = (end_angle - start_angle) * 180 / pi;
       if (!ccw)
          sweep = -sweep;
 
