@@ -11,7 +11,7 @@
 
 #define CATCH_CONFIG_MAIN
 #include <infra/catch.hpp>
-#include "paths.hpp"
+#include "app_paths.hpp"
 
 using namespace cycfi::artist;
 using namespace font_constants;
