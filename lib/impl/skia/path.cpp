@@ -16,7 +16,8 @@ namespace cycfi::artist
 
    path::~path()
    {
-      delete _impl;
+      if (_impl)
+         delete _impl;
    }
 
    path::path(path const& rhs)
@@ -24,10 +25,26 @@ namespace cycfi::artist
    {
    }
 
+   path::path(path&& rhs)
+    : _impl(rhs._impl)
+   {
+      rhs._impl = nullptr;
+   }
+
    path& path::operator=(path const& rhs)
    {
       if (this != &rhs)
          *_impl = *rhs._impl;
+      return *this;
+   }
+
+   path& path::operator=(path&& rhs)
+   {
+      if (this != &rhs)
+      {
+         _impl = rhs._impl;
+         rhs._impl = nullptr;
+      }
       return *this;
    }
 

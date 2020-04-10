@@ -31,10 +31,10 @@ namespace cycfi::artist
                         path(circle c);
                         path(std::string_view svg_def);
                         path(path const& rhs);
-                        path(path&& rhs) = default;
+                        path(path&& rhs);
 
       path&             operator=(path const& rhs);
-      path&             operator=(path&& rhs) = default;
+      path&             operator=(path&& rhs);
 
       bool              operator==(path const& rhs) const;
       bool              operator!=(path const& rhs) const;
