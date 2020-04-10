@@ -23,6 +23,7 @@ namespace cycfi::artist
 
       constexpr point   move(float dx, float dy) const;
       constexpr point   move_to(float x, float y) const;
+      constexpr point   reflect(point p) const;
 
       float             x;
       float             y;
@@ -78,6 +79,11 @@ namespace cycfi::artist
       r.x = x_;
       r.y = y_;
       return r;
+   }
+
+   inline constexpr point point::reflect(point p) const
+   {
+      return { x + (x - p.x), y + (y - p.y) };
    }
 }
 

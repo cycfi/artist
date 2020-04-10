@@ -106,6 +106,7 @@ endif()
 set(ARTIST_SOURCES
    src/artist/rect.cpp
    src/artist/resources.cpp
+   src/artist/svg_path.cpp
 )
 
 set(ARTIST_HEADERS
@@ -127,6 +128,7 @@ if (APPLE)
               impl/macos/quartz2d/image.mm
          impl/macos/quartz2d/font.mm
          impl/macos/quartz2d/text_layout.mm
+         impl/macos/quartz2d/path.mm
       )
    endif()
 elseif (UNIX)
@@ -143,6 +145,7 @@ if (ARTIST_SKIA)
            impl/skia/image.cpp
       impl/skia/font.cpp
       impl/skia/text_layout.cpp
+      impl/skia/path.cpp
       impl/skia/detail/harfbuzz.cpp
    )
 endif()

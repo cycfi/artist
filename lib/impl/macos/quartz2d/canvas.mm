@@ -47,8 +47,14 @@ namespace cycfi::artist
       mode_enum         mode() const;
       void              mode(mode_enum mode_);
 
+      using fill_rule_enum = path::fill_rule_enum;
+
+      fill_rule_enum    fill_rule() const                { return _fill_rule; }
+      void              fill_rule(fill_rule_enum rule)   { _fill_rule = rule; }
+
       void              save();
       void              restore();
+
 
    private:
 
@@ -70,6 +76,7 @@ namespace cycfi::artist
       state_info const* current() const { return _stack.top().get(); }
 
       state_info_stack  _stack;
+      fill_rule_enum    _fill_rule = fill_rule_enum::fill_winding;
    };
 
    namespace
@@ -254,6 +261,11 @@ namespace cycfi::artist
       };
    }
 
+   void canvas::fill_rule(path::fill_rule_enum rule)
+   {
+      _state->fill_rule(rule);
+   }
+
    void canvas::fill()
    {
       auto apply_fill = [this](auto const& style)
@@ -263,7 +275,10 @@ namespace cycfi::artist
          {
             auto ctx = CGContextRef(_context);
             CGContextSetRGBFillColor(ctx, style.red, style.green, style.blue, style.alpha);
-            CGContextFillPath(ctx);
+            if (_state->fill_rule() == path::fill_winding)
+               CGContextFillPath(ctx);
+            else
+               CGContextEOFillPath(ctx);
          }
          else if constexpr (std::is_same_v<T, linear_gradient>)
          {
@@ -359,7 +374,10 @@ namespace cycfi::artist
 
    void canvas::clip()
    {
-      CGContextClip(CGContextRef(_context));
+      if (_state->fill_rule() == path::fill_winding)
+         CGContextClip(CGContextRef(_context));
+      else
+         CGContextEOClip(CGContextRef(_context));
    }
 
    void canvas::move_to(point p)
@@ -426,6 +444,11 @@ namespace cycfi::artist
          detail::round_rect(*this, r, radius);
       else
          rect(r);
+   }
+
+   void canvas::path(class path const& p)
+   {
+      CGContextAddPath(CGContextRef(_context), p.impl());
    }
 
    void canvas::quadratic_curve_to(point cp, point end)

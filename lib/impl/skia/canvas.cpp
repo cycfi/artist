@@ -251,12 +251,15 @@ namespace cycfi::artist
       _state->path().addRoundRect({ r.left, r.top, r.right, r.bottom }, radius, radius);
    }
 
-#if defined(ARTIST_SKIA)
    void canvas::circle(struct circle c)
    {
       _state->path().addCircle(c.cx, c.cy, c.radius);
    }
-#endif
+
+   void canvas::path(class path const& p)
+   {
+      _state->path() = *p.impl();
+   }
 
    void canvas::quadratic_curve_to(point cp, point end)
    {
