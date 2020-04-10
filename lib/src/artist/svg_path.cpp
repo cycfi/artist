@@ -19,8 +19,6 @@ namespace cycfi::artist
       // https://github.com/memononen/nanosvg/blob/master/src/nanosvg.h
       // Copyright (c) 2013-14 Mikko Mononen memon@inside.org
 
-      constexpr auto pi = 3.14159265358979323846264338327f;
-
       float sqr(float x) { return x*x; }
       float vmag(float x, float y) { return sqrtf(x*x + y*y); }
 

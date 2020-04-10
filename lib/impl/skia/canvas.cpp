@@ -3,6 +3,7 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
+#include <infra/support.hpp>
 #include <artist/canvas.hpp>
 #include <stack>
 #include "opaque.hpp"
@@ -151,7 +152,7 @@ namespace cycfi::artist
 
    void canvas::rotate(float rad)
    {
-      _context->rotate(rad * (180.0/M_PI));
+      _context->rotate(rad * (180.0/pi));
    }
 
    void canvas::scale(point p)
@@ -230,8 +231,8 @@ namespace cycfi::artist
       bool ccw
    )
    {
-      auto start = start_angle * 180 / M_PI;
-      auto sweep = (end_angle - start_angle) * 180 / M_PI;
+      auto start = start_angle * 180 / pi;
+      auto sweep = (end_angle - start_angle) * 180 / pi;
       if (!ccw)
          sweep = -sweep;
 

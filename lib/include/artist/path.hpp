@@ -6,6 +6,7 @@
 #if !defined(ELEMENTS_PATH_APRIL_8_2020)
 #define ELEMENTS_PATH_APRIL_8_2020
 
+#include <infra/support.hpp>
 #include <artist/rect.hpp>
 #include <artist/circle.hpp>
 #include <string_view>
@@ -167,7 +168,7 @@ namespace cycfi::artist
 #if !defined(ARTIST_SKIA)
    inline void path::add(circle c)
    {
-      arc(point{ c.cx, c.cy }, c.radius, 0.0, 2 * M_PI);
+      arc(point{ c.cx, c.cy }, c.radius, 0.0, 2 * pi);
    }
 #endif
 

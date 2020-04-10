@@ -6,6 +6,7 @@
 #if !defined(ELEMENTS_TEST_APP_MARCH_12_2020)
 #define ELEMENTS_TEST_APP_MARCH_12_2020
 
+#include <infra/support.hpp>
 #include <artist/canvas.hpp>
 #include <string>
 

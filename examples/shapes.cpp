@@ -57,7 +57,7 @@ void circles_and_arcs(canvas& cnv)
 
       cnv.line_width((ri+1)/2);
       cnv.stroke_style(colors::light_sky_blue.opacity(0.8));
-      cnv.arc(cx, cy, radius, 0.0f, M_PI + (M_PI * ((i+1)/7.0f)), true);
+      cnv.arc(cx, cy, radius, 0.0f, pi + (pi * ((i+1)/7.0f)), true);
       cnv.stroke();
    }
 }
