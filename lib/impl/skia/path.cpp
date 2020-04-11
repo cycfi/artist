@@ -66,7 +66,7 @@ namespace cycfi::artist
    rect path::bounds() const
    {
       auto const& r = _impl->getBounds();
-      return { r.left(), r.top(), r.right(), r.bottom() };
+      return rect{ r.fLeft, r.fTop, r.fRight, r.fBottom };
    }
 
    void path::close()
