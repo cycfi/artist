@@ -256,16 +256,27 @@ if (APPLE)
    )
    target_compile_options(artist PUBLIC "-fobjc-arc")
 elseif (WIN32)
-   target_compile_definitions(artist PUBLIC
-      WIN32_LEAN_AND_MEAN
-      NOMINMAX
-      _UNICODE
+   target_compile_definitions(artist
+      PUBLIC
+         WIN32_LEAN_AND_MEAN
+         NOMINMAX
+         _UNICODE
    )
    set_property(TARGET artist PROPERTY
       MSVC_RUNTIME_LIBRARY "MultiThreaded"
    )
-
 endif()
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+   set(DEBUG_FLAG true)
+else()
+   set(DEBUG_FLAG false)
+endif()
+
+target_compile_definitions(artist
+   PUBLIC
+      ARTIST_DEBUG=${DEBUG_FLAG}
+)
 
 ###############################################################################
 # Libraries and linking
