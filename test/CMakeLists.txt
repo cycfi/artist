@@ -75,6 +75,7 @@ if (APPLE)
 elseif (MSVC)
    if (ARTIST_SKIA)
       set(GOLDEN_PATH windows_golden/skia)
+      add_dependencies(artist_test dlls)
    endif()
 
    set(GOLDEN_DIR windows_golden)
@@ -83,6 +84,35 @@ elseif (MSVC)
    file(
       COPY windows_golden
       DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+   )
+
+   add_custom_command(
+      TARGET artist_test
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+         "${FONTCONFIG_DLL}"
+         $<TARGET_FILE_DIR:artist_test>
+   )
+   add_custom_command(
+      TARGET artist_test
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+         "${ICONV_DLL}"
+         $<TARGET_FILE_DIR:artist_test>
+   )
+   add_custom_command(
+      TARGET artist_test
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+         "${XML2_DLL}"
+         $<TARGET_FILE_DIR:artist_test>
+   )
+   add_custom_command(
+      TARGET artist_test
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+         "${FREETYPE_DLL}"
+         $<TARGET_FILE_DIR:artist_test>
    )
 
 elseif (UNIX)
@@ -111,20 +141,6 @@ file(
   COPY images
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
 )
-
-if (MSVC)
-   set(FONTCONFIG_DLL ${CMAKE_CURRENT_BINARY_DIR}/../lib/windows-x64/src/prebuilt_binaries/fontconfig.dll)
-   file(COPY ${FONTCONFIG_DLL} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
-
-   set(ICONV_DLL ${CMAKE_CURRENT_BINARY_DIR}/../lib/windows-x64/src/prebuilt_binaries/libiconv.dll)
-   file(COPY ${ICONV_DLL} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
-
-   set(XML2 ${CMAKE_CURRENT_BINARY_DIR}/../lib/windows-x64/src/prebuilt_binaries/libxml2.dll)
-   file(COPY ${XML2} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
-
-   set(FREETYPE_DLL ${CMAKE_CURRENT_BINARY_DIR}/../lib/windows-x64/src/prebuilt_binaries/freetype.dll)
-   file(COPY ${FREETYPE_DLL} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
-endif()
 
 add_definitions(
    -DGOLDEN_PATH="${CMAKE_CURRENT_BINARY_DIR}/${GOLDEN_PATH}/"
