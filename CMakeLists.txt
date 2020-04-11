@@ -3,7 +3,8 @@
 #
 #  Distributed under the MIT License (https://opensource.org/licenses/MIT)
 ###############################################################################
-cmake_minimum_required(VERSION 3.9.6...3.15.0)
+cmake_minimum_required(VERSION 3.7.2...3.15.0)
+include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 
 project(artist LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
@@ -33,6 +34,21 @@ endif()
 
 if (ARTIST_SKIA)
   set(ARTIST_QUARTZ_2D OFF)
+endif()
+
+if (ARTIST_SKIA AND MSVC)
+   ExternalProject_Add(dlls
+      PREFIX "windows-x64-dll"
+      URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/windows-x64-dll.zip
+      URL_MD5 4c07a5aa4bfddff268535244196f900f
+      CONFIGURE_COMMAND ""
+      BUILD_COMMAND ""
+      INSTALL_COMMAND ""
+   )
+   set(FONTCONFIG_DLL ${CMAKE_CURRENT_BINARY_DIR}/windows-x64-dll/src/dlls/fontconfig.dll)
+   set(ICONV_DLL ${CMAKE_CURRENT_BINARY_DIR}/windows-x64-dll/src/dlls/libiconv.dll)
+   set(XML2_DLL ${CMAKE_CURRENT_BINARY_DIR}/windows-x64-dll/src/dlls/libxml2.dll)
+   set(FREETYPE_DLL ${CMAKE_CURRENT_BINARY_DIR}/windows-x64-dll/src/dlls/freetype.dll)
 endif()
 
 add_subdirectory(lib)

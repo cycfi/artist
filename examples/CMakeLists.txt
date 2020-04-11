@@ -46,7 +46,36 @@ function(add_example name)
       target_link_options(${name} PRIVATE
          /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup shcore.lib
       )
+      add_dependencies(${name} dlls)
 
+      add_custom_command(
+         TARGET ${name}
+         POST_BUILD
+         COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${FONTCONFIG_DLL}"
+            $<TARGET_FILE_DIR:${name}>
+      )
+      add_custom_command(
+         TARGET ${name}
+         POST_BUILD
+         COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${ICONV_DLL}"
+            $<TARGET_FILE_DIR:${name}>
+      )
+      add_custom_command(
+         TARGET ${name}
+         POST_BUILD
+         COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${XML2_DLL}"
+            $<TARGET_FILE_DIR:${name}>
+      )
+      add_custom_command(
+         TARGET ${name}
+         POST_BUILD
+         COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${FREETYPE_DLL}"
+            $<TARGET_FILE_DIR:${name}>
+      )
    elseif (UNIX)
 
       add_executable(
@@ -88,20 +117,6 @@ set(composite_ops_images
    ${CMAKE_CURRENT_LIST_DIR}/images/dest.png
    ${CMAKE_CURRENT_LIST_DIR}/images/src.png
 )
-
-if (MSVC)
-   set(FONTCONFIG_DLL ${CMAKE_CURRENT_BINARY_DIR}/../lib/windows-x64/src/prebuilt_binaries/fontconfig.dll)
-   file(COPY ${FONTCONFIG_DLL} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
-
-   set(ICONV_DLL ${CMAKE_CURRENT_BINARY_DIR}/../lib/windows-x64/src/prebuilt_binaries/libiconv.dll)
-   file(COPY ${ICONV_DLL} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
-
-   set(XML2 ${CMAKE_CURRENT_BINARY_DIR}/../lib/windows-x64/src/prebuilt_binaries/libxml2.dll)
-   file(COPY ${XML2} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
-
-   set(FREETYPE_DLL ${CMAKE_CURRENT_BINARY_DIR}/../lib/windows-x64/src/prebuilt_binaries/freetype.dll)
-   file(COPY ${FREETYPE_DLL} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
-endif()
 
 add_example(shapes)
 add_example(typography)

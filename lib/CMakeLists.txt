@@ -4,7 +4,6 @@
 #  Distributed under the MIT License (https://opensource.org/licenses/MIT)
 ###############################################################################
 cmake_minimum_required(VERSION 3.7.2...3.15.0)
-include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 
 if (ARTIST_SKIA)
 
@@ -44,7 +43,7 @@ if (ARTIST_SKIA)
       ExternalProject_Add(prebuilt_binaries
          PREFIX "windows-x64"
          URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/windows-x64.zip
-         URL_MD5 fe3d6ff587ccfbde30b2a06b6cae3a12
+         URL_MD5 69c3e3d54a065491f9a1915ece4c2a72
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
          INSTALL_COMMAND ""
