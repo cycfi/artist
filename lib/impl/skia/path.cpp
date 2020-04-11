@@ -63,11 +63,14 @@ namespace cycfi::artist
       return _impl->contains(p.x, p.y);
    }
 
-   rect path::bounds() const
-   {
-      auto const& r = _impl->getBounds();
-      return rect{ r.fLeft, r.fTop, r.fRight, r.fBottom };
-   }
+// See comments at the bottom of path.hpp
+#if !defined(_WIN32)
+  rect path::bounds() const
+  {
+     auto const& r = _impl->getBounds();
+     return rect{ r.fLeft, r.fTop, r.fRight, r.fBottom };
+  }
+#endif
 
    void path::close()
    {

@@ -190,4 +190,26 @@ namespace cycfi::artist
 #endif
 }
 
+
+// The following may seem like crazy code! It is a workaround
+// over MSVC seemingly producing bad code if this is defined in
+// the cpp file that causes a really odd crash EVEN IF THIS MEMBER
+// FUNCTION IS NEVER EVER CALLED!!! Alas, I can't seem to reproduce
+// this compiler bug to file a report. Happens only in debug mode.
+// It took 2 days to track this. What a !@#$ waste of time, Microsoft!!!
+
+#if defined(ARTIST_SKIA) && defined(_WIN32)
+#include <SkPath.h>
+
+namespace cycfi::artist
+{
+   inline rect path::bounds() const
+   {
+      auto const& r = _impl->getBounds();
+      return rect{ r.fLeft, r.fTop, r.fRight, r.fBottom };
+   }
+}
+
+#endif
+
 #endif
