@@ -320,7 +320,11 @@ namespace cycfi::artist
 
    void canvas::shadow_style(point offset, float blur, color c)
    {
-      constexpr auto blur_factor = 0.4f;
+      // The blur effect is now defined by css3-background and by HTML
+      // to be a Gaussian blur with the standard deviation (σ) equal
+      // to half the given blur radius, with allowance for reasonable
+      // approximation error.
+      constexpr auto blur_factor = 0.5f;
 
       auto matrix = _context->getTotalMatrix();
       auto scx = matrix.getScaleX() / _state->_pre_scale.x;
