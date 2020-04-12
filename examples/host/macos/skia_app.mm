@@ -13,7 +13,6 @@
 #include "../../app.hpp"
 #include <artist/resources.hpp>
 
-#if defined(ARTIST_SKIA)
 # include "GrContext.h"
 # include "gl/GrGLInterface.h"
 # include "SkImage.h"
@@ -27,7 +26,6 @@
 # include "SkCanvas.h"
 # include "SkPath.h"
 # include "GrBackendSurface.h"
-#endif
 
 #include <OpenGL/gl.h>
 
@@ -93,24 +91,14 @@ using offscreen_type = std::shared_ptr<image>;
 
 @interface CocoaView : NSView
 {
-#if defined(ARTIST_SKIA)
    OpenGLLayer*   _layer;
-#endif
-
    NSTimer*       _task;
-
-#if defined(ARTIST_QUARTZ_2D)
-   bool           _first;
-   offscreen_type _offscreen;
-#endif
 }
 
 -(void) start;
 -(void) start_animation;
 
 @end
-
-#if defined(ARTIST_SKIA)
 
 @interface OpenGLLayer : NSOpenGLLayer
 {
@@ -124,11 +112,7 @@ using offscreen_type = std::shared_ptr<image>;
 
 @end
 
-#endif // ARTIST_SKIA
-
 //=======================================================================
-
-#if defined(ARTIST_SKIA)
 
 @implementation OpenGLLayer
 
@@ -230,8 +214,6 @@ using offscreen_type = std::shared_ptr<image>;
 
 @end
 
-#endif // ARTIST_SKIA
-
 //=======================================================================
 
 @implementation CocoaView
@@ -243,7 +225,6 @@ using offscreen_type = std::shared_ptr<image>;
 
 - (void) start
 {
-#if defined(ARTIST_SKIA)
    // Enable retina-support
    self.wantsBestResolutionOpenGLSurface = YES;
 
@@ -251,53 +232,11 @@ using offscreen_type = std::shared_ptr<image>;
    [self setWantsLayer : YES];
 
    self.layer.opaque = YES;
-#endif
-
-#if defined(ARTIST_QUARTZ_2D)
-   _first = true;
-   _task = nullptr;
-#endif
 }
 
 - (void) drawRect : (NSRect) dirty
 {
-#if defined(ARTIST_QUARTZ_2D)
-
-   auto start = std::chrono::high_resolution_clock::now();
-   auto ctx = NSGraphicsContext.currentContext.CGContext;
-
-   if (_first && _task)
-   {
-      _first = false;
-      _offscreen = std::make_shared<image>(
-         extent{ float(self.bounds.size.width), float(self.bounds.size.height) }
-      );
-   }
-
-   if (_task)
-   {
-      auto cnv = canvas{ (canvas_impl_ptr) ctx };
-      {
-         // Do offscreen rendering
-         offscreen_image ctx{ *_offscreen };
-         canvas offscreen_cnv{ ctx.context() };
-         draw(offscreen_cnv);
-      }
-      cnv.draw(*_offscreen);
-   }
-   else
-   {
-      auto cnv = canvas{ (canvas_impl_ptr) ctx };
-      draw(cnv);
-   }
-
-   auto stop = std::chrono::high_resolution_clock::now();
-   elapsed_ = std::chrono::duration<double>{ stop - start }.count();
-
-#endif
 }
-
-#if defined(ARTIST_SKIA)
 
 - (CALayer*) makeBackingLayer
 {
@@ -311,8 +250,6 @@ using offscreen_type = std::shared_ptr<image>;
    self.layer.contentsScale = self.window.backingScaleFactor;
 }
 
-#endif // ARTIST_SKIA
-
 -(BOOL) isFlipped
 {
    return YES;
@@ -320,13 +257,7 @@ using offscreen_type = std::shared_ptr<image>;
 
 - (void) on_tick : (id) sender
 {
-#if defined(ARTIST_QUARTZ_2D)
-   [self setNeedsDisplay : YES];
-#endif
-
-#if defined(ARTIST_SKIA)
    [_layer refresh];
-#endif
 }
 
 -(void) start_animation

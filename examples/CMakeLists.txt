@@ -13,20 +13,30 @@ endif()
 
 function(add_example name)
    if (APPLE)
+
+      if (ARTIST_SKIA)
+         set(MAIN_APP skia_app.mm)
+      else()
+         set(MAIN_APP quartz2d_app.mm)
+      endif()
+
       add_executable(
          ${name} MACOSX_BUNDLE
          ${name}.cpp
-         host/macos/app.mm
+            host/macos/${MAIN_APP}
          ${${name}_fonts}
          ${${name}_images}
       )
+
       set_target_properties(
          ${name}
          PROPERTIES
          MACOSX_BUNDLE_INFO_PLIST
          ${CMAKE_CURRENT_LIST_DIR}/../resources/macos/plist.in
       )
+
       target_link_options(${name} PRIVATE -framework AppKit)
+
       set_source_files_properties(
          ${${name}_fonts}
          ${${name}_images}
@@ -35,17 +45,21 @@ function(add_example name)
       )
 
    elseif (MSVC)
+
       add_executable(
          ${name}
          ${name}.cpp
          host/windows/skia_app.cpp
       )
+
       set_property(TARGET ${name} PROPERTY
          MSVC_RUNTIME_LIBRARY "MultiThreaded"
       )
+
       target_link_options(${name} PRIVATE
          /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup shcore.lib
       )
+
       add_dependencies(${name} dlls)
 
       add_custom_command(
@@ -55,6 +69,7 @@ function(add_example name)
             "${FONTCONFIG_DLL}"
             $<TARGET_FILE_DIR:${name}>
       )
+
       add_custom_command(
          TARGET ${name}
          POST_BUILD
@@ -62,6 +77,7 @@ function(add_example name)
             "${ICONV_DLL}"
             $<TARGET_FILE_DIR:${name}>
       )
+
       add_custom_command(
          TARGET ${name}
          POST_BUILD
@@ -69,6 +85,7 @@ function(add_example name)
             "${XML2_DLL}"
             $<TARGET_FILE_DIR:${name}>
       )
+
       add_custom_command(
          TARGET ${name}
          POST_BUILD
@@ -76,29 +93,35 @@ function(add_example name)
             "${FREETYPE_DLL}"
             $<TARGET_FILE_DIR:${name}>
       )
+
    elseif (UNIX)
 
       add_executable(
          ${name}
          ${name}.cpp
-         host/linux/app.cpp
+         host/linux/skia_app.cpp
       )
+
       target_link_libraries(
          ${name}
          PkgConfig::gtk3
          OpenGL::GL
       )
+
    endif()
 
    if (UNIX OR MSVC)
+
       file(
          COPY ${${name}_fonts}
          DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/resources/fonts
       )
+
       file(
          COPY ${${name}_images}
          DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/resources/images
       )
+
    endif()
 
    target_link_libraries(${name} artist)
