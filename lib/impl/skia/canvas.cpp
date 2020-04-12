@@ -6,7 +6,7 @@
 #include <infra/support.hpp>
 #include <artist/canvas.hpp>
 #include <stack>
-#include "opaque.hpp"
+#include "detail/image_impl.hpp"
 
 #include <SkBitmap.h>
 #include <SkData.h>

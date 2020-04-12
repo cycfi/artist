@@ -138,13 +138,18 @@ elseif (UNIX)
 elseif (WIN32 AND ARTIST_DIRECT_2D)
 
    set(ARTIST_IMPL
+      impl/direct2d/canvas.cpp
+      impl/direct2d/image.cpp
+      impl/direct2d/font.cpp
+      impl/direct2d/text_layout.cpp
+      impl/direct2d/path.cpp
    )
 
 elseif (ARTIST_SKIA)
 
    set(ARTIST_IMPL
       impl/skia/canvas.cpp
-           impl/skia/image.cpp
+      impl/skia/image.cpp
       impl/skia/font.cpp
       impl/skia/text_layout.cpp
       impl/skia/path.cpp

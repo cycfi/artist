@@ -14,7 +14,7 @@
 #include <SkCanvas.h>
 #include "detail/harfbuzz.hpp"
 #include "linebreak.h"
-#include "opaque.hpp"
+#include "detail/image_impl.hpp"
 
 namespace cycfi::artist
 {

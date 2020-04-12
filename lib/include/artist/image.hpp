@@ -18,7 +18,7 @@ using canvas_impl = SkCanvas;
 
 namespace cycfi::artist
 {
-#if defined(ARTIST_QUARTZ_2D)
+#if defined(ARTIST_QUARTZ_2D) || defined(ARTIST_DIRECT_2D)
    struct canvas_impl;
 #endif
 

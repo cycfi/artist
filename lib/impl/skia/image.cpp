@@ -14,7 +14,7 @@
 #include "SkCanvas.h"
 #include "SkPictureRecorder.h"
 
-#include "opaque.hpp"
+#include "detail/image_impl.hpp"
 #include <stdexcept>
 #include <string>
 

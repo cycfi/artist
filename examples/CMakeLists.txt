@@ -133,7 +133,7 @@ function(add_example name)
 
    endif()
 
-   # target_link_libraries(${name} artist)
+   target_link_libraries(${name} artist)
 
 endfunction()
 

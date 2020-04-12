@@ -6,7 +6,6 @@
 #include <infra/support.hpp>
 #include <artist/canvas.hpp>
 #include <stack>
-#include "opaque.hpp"
 
 namespace cycfi::artist
 {

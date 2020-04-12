@@ -43,7 +43,6 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 class DemoApp
 {
 public:
-               DemoApp();
                ~DemoApp();
 
    HRESULT     Initialize();
@@ -66,32 +65,22 @@ private:
 
 private:
 
-   HWND m_hwnd;
-   ID2D1Factory *m_pD2DFactory;
-   IWICImagingFactory *m_pWICFactory;
-   IDWriteFactory *m_pDWriteFactory;
-   ID2D1HwndRenderTarget *m_pRenderTarget;
-   IDWriteTextFormat *m_pTextFormat;
-   ID2D1SolidColorBrush *m_pBlackBrush;
+   HWND                    _hwnd = nullptr;
+   ID2D1Factory*           _pD2DFactory = nullptr;
+   IWICImagingFactory*     _pWICFactory = nullptr;
+   IDWriteFactory*         _pDWriteFactory = nullptr;
+   ID2D1HwndRenderTarget*  _pRenderTarget = nullptr;
+   IDWriteTextFormat*      _pTextFormat = nullptr;
+   ID2D1SolidColorBrush*   _pBlackBrush = nullptr;
 };
-
-DemoApp::DemoApp() :
-   m_hwnd(nullptr),
-   m_pD2DFactory(nullptr),
-   m_pDWriteFactory(nullptr),
-   m_pRenderTarget(nullptr),
-   m_pTextFormat(nullptr),
-   m_pBlackBrush(nullptr)
-{
-}
 
 DemoApp::~DemoApp()
 {
-   SafeRelease(&m_pD2DFactory);
-   SafeRelease(&m_pDWriteFactory);
-   SafeRelease(&m_pRenderTarget);
-   SafeRelease(&m_pTextFormat);
-   SafeRelease(&m_pBlackBrush);
+   SafeRelease(&_pD2DFactory);
+   SafeRelease(&_pDWriteFactory);
+   SafeRelease(&_pRenderTarget);
+   SafeRelease(&_pTextFormat);
+   SafeRelease(&_pBlackBrush);
 }
 
 HRESULT DemoApp::Initialize()
@@ -110,9 +99,9 @@ HRESULT DemoApp::Initialize()
       wcex.cbClsExtra    = 0;
       wcex.cbWndExtra    = sizeof(LONG_PTR);
       wcex.hInstance     = HINST_THISCOMPONENT;
-      wcex.hbrBackground = NULL;
-      wcex.lpszMenuName  = NULL;
-      wcex.hCursor       = LoadCursor(NULL, IDC_ARROW);
+      wcex.hbrBackground = nullptr;
+      wcex.lpszMenuName  = nullptr;
+      wcex.hCursor       = LoadCursor(nullptr, IDC_ARROW);
       wcex.lpszClassName = L"D2DDemoApp";
 
       RegisterClassEx(&wcex);
@@ -122,9 +111,9 @@ HRESULT DemoApp::Initialize()
       // Because the CreateWindow function takes its size in pixels, we
       // obtain the system DPI and use it to scale the window size.
       FLOAT dpiX, dpiY;
-      m_pD2DFactory->GetDesktopDpi(&dpiX, &dpiY);
+      _pD2DFactory->GetDesktopDpi(&dpiX, &dpiY);
 
-      m_hwnd = CreateWindow(
+      _hwnd = CreateWindow(
          L"D2DDemoApp",
          L"Direct2D Demo Application",
          WS_OVERLAPPEDWINDOW,
@@ -132,17 +121,17 @@ HRESULT DemoApp::Initialize()
          CW_USEDEFAULT,
          static_cast<UINT>(ceil(640.f * dpiX / 96.f)),
          static_cast<UINT>(ceil(480.f * dpiY / 96.f)),
-         NULL,
-         NULL,
+         nullptr,
+         nullptr,
          HINST_THISCOMPONENT,
          this
          );
-      hr = m_hwnd ? S_OK : E_FAIL;
+      hr = _hwnd ? S_OK : E_FAIL;
       if (SUCCEEDED(hr))
       {
-         ShowWindow(m_hwnd, SW_SHOWNORMAL);
+         ShowWindow(_hwnd, SW_SHOWNORMAL);
 
-         UpdateWindow(m_hwnd);
+         UpdateWindow(_hwnd);
       }
    }
 
@@ -154,41 +143,39 @@ HRESULT DemoApp::CreateDeviceIndependentResources()
    static const WCHAR msc_fontName[] = L"Verdana";
    static const FLOAT msc_fontSize = 50;
    HRESULT hr;
-   ID2D1GeometrySink *pSink = NULL;
+   ID2D1GeometrySink *pSink = nullptr;
 
    // Create a Direct2D factory.
-   hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_pD2DFactory);
+   hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &_pD2DFactory);
 
    if (SUCCEEDED(hr))
    {
       // Create a DirectWrite factory.
       hr = DWriteCreateFactory(
          DWRITE_FACTORY_TYPE_SHARED,
-         __uuidof(m_pDWriteFactory),
-         reinterpret_cast<IUnknown **>(&m_pDWriteFactory)
-         );
+         __uuidof(_pDWriteFactory),
+         reinterpret_cast<IUnknown**>(&_pDWriteFactory)
+      );
    }
    if (SUCCEEDED(hr))
    {
       // Create a DirectWrite text format object.
-      hr = m_pDWriteFactory->CreateTextFormat(
+      hr = _pDWriteFactory->CreateTextFormat(
          msc_fontName,
-         NULL,
+         nullptr,
          DWRITE_FONT_WEIGHT_NORMAL,
          DWRITE_FONT_STYLE_NORMAL,
          DWRITE_FONT_STRETCH_NORMAL,
          msc_fontSize,
          L"", //locale
-         &m_pTextFormat
-         );
+         &_pTextFormat
+      );
    }
    if (SUCCEEDED(hr))
    {
       // Center the text horizontally and vertically.
-      m_pTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-
-      m_pTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-
+      _pTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+      _pTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
    }
 
    SafeRelease(&pSink);
@@ -200,11 +187,10 @@ HRESULT DemoApp::CreateDeviceResources()
 {
    HRESULT hr = S_OK;
 
-   if (!m_pRenderTarget)
+   if (!_pRenderTarget)
    {
-
       RECT rc;
-      GetClientRect(m_hwnd, &rc);
+      GetClientRect(_hwnd, &rc);
 
       D2D1_SIZE_U size = D2D1::SizeU(
          rc.right - rc.left,
@@ -212,36 +198,34 @@ HRESULT DemoApp::CreateDeviceResources()
          );
 
       // Create a Direct2D render target.
-      hr = m_pD2DFactory->CreateHwndRenderTarget(
+      hr = _pD2DFactory->CreateHwndRenderTarget(
          D2D1::RenderTargetProperties(),
-         D2D1::HwndRenderTargetProperties(m_hwnd, size),
-         &m_pRenderTarget
-         );
+         D2D1::HwndRenderTargetProperties(_hwnd, size),
+         &_pRenderTarget
+      );
       if (SUCCEEDED(hr))
       {
          // Create a black brush.
-         hr = m_pRenderTarget->CreateSolidColorBrush(
-               D2D1::ColorF(D2D1::ColorF::Black),
-               &m_pBlackBrush
-               );
+         hr = _pRenderTarget->CreateSolidColorBrush(
+            D2D1::ColorF(D2D1::ColorF::Black),
+            &_pBlackBrush
+         );
       }
-
    }
-
    return hr;
 }
 
 void DemoApp::DiscardDeviceResources()
 {
-   SafeRelease(&m_pRenderTarget);
-   SafeRelease(&m_pBlackBrush);
+   SafeRelease(&_pRenderTarget);
+   SafeRelease(&_pBlackBrush);
 }
 
 void DemoApp::RunMessageLoop()
 {
    MSG msg;
 
-   while (GetMessage(&msg, NULL, 0, 0))
+   while (GetMessage(&msg, nullptr, 0, 0))
    {
       TranslateMessage(&msg);
       DispatchMessage(&msg);
@@ -254,28 +238,28 @@ HRESULT DemoApp::OnRender()
 
    hr = CreateDeviceResources();
 
-   if (SUCCEEDED(hr) && !(m_pRenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
+   if (SUCCEEDED(hr) && !(_pRenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
    {
       static const WCHAR sc_helloWorld[] = L"Hello, World!";
 
       // Retrieve the size of the render target.
-      D2D1_SIZE_F renderTargetSize = m_pRenderTarget->GetSize();
+      D2D1_SIZE_F renderTargetSize = _pRenderTarget->GetSize();
 
-      m_pRenderTarget->BeginDraw();
+      _pRenderTarget->BeginDraw();
 
-      m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+      _pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
-      m_pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
+      _pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
 
-      m_pRenderTarget->DrawText(
+      _pRenderTarget->DrawText(
          sc_helloWorld,
          ARRAYSIZE(sc_helloWorld) - 1,
-         m_pTextFormat,
+         _pTextFormat,
          D2D1::RectF(0, 0, renderTargetSize.width, renderTargetSize.height),
-         m_pBlackBrush
+         _pBlackBrush
          );
 
-      hr = m_pRenderTarget->EndDraw();
+      hr = _pRenderTarget->EndDraw();
 
       if (hr == D2DERR_RECREATE_TARGET)
       {
@@ -289,7 +273,7 @@ HRESULT DemoApp::OnRender()
 
 void DemoApp::OnResize(UINT width, UINT height)
 {
-   if (m_pRenderTarget)
+   if (_pRenderTarget)
    {
       D2D1_SIZE_U size;
       size.width = width;
@@ -298,7 +282,7 @@ void DemoApp::OnResize(UINT width, UINT height)
       // Note: This method can fail, but it's okay to ignore the
       // error here -- it will be repeated on the next call to
       // EndDraw.
-      m_pRenderTarget->Resize(size);
+      _pRenderTarget->Resize(size);
    }
 }
 
