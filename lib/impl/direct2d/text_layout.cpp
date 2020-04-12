@@ -10,6 +10,10 @@
 
 namespace cycfi::artist
 {
+   struct text_layout::impl
+   {
+   };
+
    text_layout::text_layout(font const& font_, std::string_view utf8)
    {
    }

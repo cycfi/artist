@@ -66,9 +66,9 @@ namespace cycfi::artist
    {
    }
 
-   void path::add(struct circle c)
-   {
-   }
+//   void path::add(struct circle c)
+//   {
+//   }
 
    void path::move_to(point p)
    {

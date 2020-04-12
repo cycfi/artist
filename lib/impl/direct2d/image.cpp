@@ -20,6 +20,7 @@ namespace cycfi::artist
 
    image_impl_ptr image::impl() const
    {
+      return nullptr;
    }
 
    extent image::size() const
@@ -47,6 +48,7 @@ namespace cycfi::artist
    }
 
    offscreen_image::offscreen_image(image& img)
+    : _image(img)
    {
    }
 
@@ -56,6 +58,7 @@ namespace cycfi::artist
 
    canvas_impl_ptr offscreen_image::context() const
    {
+      return nullptr;
    }
 }
 

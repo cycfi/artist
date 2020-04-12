@@ -29,6 +29,7 @@ namespace cycfi::artist
 
    font& font::operator=(font const& rhs)
    {
+      return *this;
    }
 
    font& font::operator=(font&& rhs) noexcept

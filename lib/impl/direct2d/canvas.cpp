@@ -9,6 +9,10 @@
 
 namespace cycfi::artist
 {
+   struct canvas::canvas_state
+   {
+   };
+
    canvas::~canvas()
    {
    }
@@ -93,9 +97,9 @@ namespace cycfi::artist
    {
    }
 
-   void canvas::circle(struct circle c)
-   {
-   }
+//   void canvas::circle(struct circle c)
+//   {
+//   }
 
    void canvas::path(class path const& p)
    {
