@@ -5,6 +5,7 @@
 =============================================================================*/
 #include <infra/support.hpp>
 #include <artist/canvas.hpp>
+#include <canvas_impl.hpp>
 #include <stack>
 
 namespace cycfi::artist

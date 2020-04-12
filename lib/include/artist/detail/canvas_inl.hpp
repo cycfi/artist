@@ -3,8 +3,8 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#if !defined(ELEMENTS_DETAIL_CANVAS_IMPL_MAY_3_2016)
-#define ELEMENTS_DETAIL_CANVAS_IMPL_MAY_3_2016
+#if !defined(ELEMENTS_DETAIL_CANVAS_INL_MAY_3_2016)
+#define ELEMENTS_DETAIL_CANVAS_INL_MAY_3_2016
 
 namespace cycfi::artist
 {

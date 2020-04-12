@@ -69,7 +69,6 @@ namespace cycfi::artist
       void              clip();
       void              clip(path const& p);
       bool              hit_test(point p) const;
-      struct rect       fill_extent() const;
 
       void              move_to(point p);
       void              line_to(point p);
@@ -345,5 +344,5 @@ namespace cycfi::artist
    };
 }
 
-#include <artist/detail/canvas_impl.hpp>
+#include <artist/detail/canvas_inl.hpp>
 #endif

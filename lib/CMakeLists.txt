@@ -124,7 +124,7 @@ if (APPLE AND ARTIST_QUARTZ_2D)
 
    set(ARTIST_IMPL
       impl/macos/quartz2d/canvas.mm
-            impl/macos/quartz2d/image.mm
+      impl/macos/quartz2d/image.mm
       impl/macos/quartz2d/font.mm
       impl/macos/quartz2d/text_layout.mm
       impl/macos/quartz2d/path.mm
@@ -239,6 +239,12 @@ elseif (ARTIST_DIRECT_2D)
       artist
       PUBLIC
          ARTIST_DIRECT_2D
+   )
+
+   target_include_directories(
+      artist
+      PUBLIC
+         impl/direct2d
    )
 
 endif()
