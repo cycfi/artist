@@ -12,6 +12,7 @@ if (UNIX AND NOT APPLE)
 endif()
 
 function(add_example name)
+
    if (APPLE)
 
       if (ARTIST_SKIA)
@@ -44,7 +45,7 @@ function(add_example name)
          MACOSX_PACKAGE_LOCATION Resources
       )
 
-   elseif (MSVC)
+   elseif (WIN32 AND ARTIST_SKIA)
 
       add_executable(
          ${name}
@@ -94,6 +95,14 @@ function(add_example name)
             $<TARGET_FILE_DIR:${name}>
       )
 
+   elseif (WIN32 AND ARTIST_DIRECT_2D)
+
+      add_executable(
+         ${name}
+         # ${name}.cpp
+         host/windows/direct2d_app.cpp
+      )
+
    elseif (UNIX)
 
       add_executable(
@@ -110,7 +119,7 @@ function(add_example name)
 
    endif()
 
-   if (UNIX OR MSVC)
+   if (UNIX OR WIN32)
 
       file(
          COPY ${${name}_fonts}
@@ -124,7 +133,7 @@ function(add_example name)
 
    endif()
 
-   target_link_libraries(${name} artist)
+   # target_link_libraries(${name} artist)
 
 endfunction()
 

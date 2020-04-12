@@ -58,6 +58,7 @@ file(
 target_link_libraries(artist_test artist)
 
 if (APPLE)
+
    if (ARTIST_SKIA)
       set(GOLDEN_PATH macos_golden/skia)
    elseif (ARTIST_QUARTZ_2D)
@@ -73,6 +74,7 @@ if (APPLE)
    )
 
 elseif (MSVC)
+
    if (ARTIST_SKIA)
       set(GOLDEN_PATH windows_golden/skia)
       add_dependencies(artist_test dlls)
@@ -116,6 +118,7 @@ elseif (MSVC)
    )
 
 elseif (UNIX)
+
    if (ARTIST_SKIA)
       set(GOLDEN_PATH linux_golden/skia)
    endif()

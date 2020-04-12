@@ -120,25 +120,28 @@ set(ARTIST_HEADERS
    include/artist/resources.hpp
 )
 
-if (APPLE)
-   if (ARTIST_QUARTZ_2D)
-      set(ARTIST_IMPL
-         impl/macos/quartz2d/canvas.mm
-              impl/macos/quartz2d/image.mm
-         impl/macos/quartz2d/font.mm
-         impl/macos/quartz2d/text_layout.mm
-         impl/macos/quartz2d/path.mm
-      )
-   endif()
-elseif (UNIX)
-   set(ARTIST_IMPL
-   )
-elseif (WIN32)
-   set(ARTIST_IMPL
-   )
-endif()
+if (APPLE AND ARTIST_QUARTZ_2D)
 
-if (ARTIST_SKIA)
+   set(ARTIST_IMPL
+      impl/macos/quartz2d/canvas.mm
+            impl/macos/quartz2d/image.mm
+      impl/macos/quartz2d/font.mm
+      impl/macos/quartz2d/text_layout.mm
+      impl/macos/quartz2d/path.mm
+   )
+
+elseif (UNIX)
+
+   set(ARTIST_IMPL
+   )
+
+elseif (WIN32 AND ARTIST_DIRECT_2D)
+
+   set(ARTIST_IMPL
+   )
+
+elseif (ARTIST_SKIA)
+
    set(ARTIST_IMPL
       impl/skia/canvas.cpp
            impl/skia/image.cpp
@@ -147,6 +150,7 @@ if (ARTIST_SKIA)
       impl/skia/path.cpp
       impl/skia/detail/harfbuzz.cpp
    )
+
 endif()
 
 source_group("Source Files\\artist"
@@ -215,16 +219,23 @@ if (ARTIST_SKIA)
    target_compile_definitions(
       artist
       PUBLIC
-      ARTIST_SKIA
+         ARTIST_SKIA
    )
-endif()
 
-if (ARTIST_QUARTZ_2D)
+elseif (ARTIST_QUARTZ_2D)
    target_compile_definitions(
       artist
       PUBLIC
          ARTIST_QUARTZ_2D
    )
+
+elseif (ARTIST_DIRECT_2D)
+   target_compile_definitions(
+      artist
+      PUBLIC
+         ARTIST_DIRECT_2D
+   )
+
 endif()
 
 target_compile_features(artist PUBLIC cxx_std_17)
@@ -251,32 +262,26 @@ target_compile_options(artist PRIVATE
 # Global options
 
 if (APPLE)
+
    target_compile_definitions(artist PRIVATE
       ARTIST_CLASS_PREFIX=${ARTIST_CLASS_PREFIX}
    )
    target_compile_options(artist PUBLIC "-fobjc-arc")
+
 elseif (WIN32)
+
    target_compile_definitions(artist
       PUBLIC
          WIN32_LEAN_AND_MEAN
          NOMINMAX
          _UNICODE
    )
+
    set_property(TARGET artist PROPERTY
       MSVC_RUNTIME_LIBRARY "MultiThreaded"
    )
-endif()
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-   set(DEBUG_FLAG true)
-else()
-   set(DEBUG_FLAG false)
 endif()
-
-target_compile_definitions(artist
-   PUBLIC
-      ARTIST_DEBUG=${DEBUG_FLAG}
-)
 
 ###############################################################################
 # Libraries and linking
@@ -289,6 +294,4 @@ if (ARTIST_SKIA)
    )
 endif()
 
-if (UNIX OR (WIN32 AND NOT MSVC))
-endif()
 
