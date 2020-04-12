@@ -10,6 +10,7 @@
 #include <windows.h>
 #pragma comment(lib, "dwrite")
 #pragma comment(lib, "d2d1.lib")
+#pragma comment(lib, "shcore.lib")
 
 // C RunTime Header Files
 #include <stdlib.h>
@@ -22,6 +23,7 @@
 #include <d2d1helper.h>
 #include <dwrite.h>
 #include <wincodec.h>
+#include <ShellScalingAPI.h>
 
 template<class Interface>
 inline void SafeRelease(Interface** ppInterfaceToRelease)
@@ -375,6 +377,8 @@ LRESULT CALLBACK DemoApp::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 
 int main(int argc, char const* argv[])
 {
+   SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE);
+
    // Ignore the return value because we want to run the program
    // even in the unlikely event that HeapSetInformation fails.
    HeapSetInformation(nullptr, HeapEnableTerminationOnCorruption, nullptr, 0);
