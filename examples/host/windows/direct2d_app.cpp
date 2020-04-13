@@ -11,6 +11,8 @@
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "shcore.lib")
 
+#include "../../app.hpp"
+#include <canvas_impl.hpp>
 #include <canvas_impl.hpp>
 #include <ShellScalingAPI.h>
 
@@ -21,10 +23,18 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
 namespace ca = cycfi::artist;
 
+struct state : ca::canvas_state_impl
+{
+   virtual void            update(ca::d2d_canvas& cnv);
+   virtual void            discard();
+
+   ID2D1SolidColorBrush*   _pBlackBrush = nullptr;
+};
+
 class app
 {
 public:
-               app();
+               app(extent size, color bkd, bool animate);
                ~app();
 
    void        run();
@@ -32,9 +42,7 @@ public:
 private:
 
    HRESULT     create_device_independent_resources();
-   HRESULT     create_device_resources();
-   void        discard_device_resources();
-   HRESULT     render();
+   void        render();
    void        resize(UINT width, UINT height);
 
    static LRESULT CALLBACK WndProc(
@@ -49,18 +57,29 @@ private:
    using canvas_impl_ptr = std::unique_ptr<ca::canvas_impl>;
 
    canvas_impl_ptr         _canvas;
+   state                   _state;
 
-   ID2D1Factory*           _factory = nullptr;
    IWICImagingFactory*     _pWICFactory = nullptr;
    IDWriteFactory*         _pDWriteFactory = nullptr;
    IDWriteTextFormat*      _pTextFormat = nullptr;
-   ID2D1SolidColorBrush*   _pBlackBrush = nullptr;
 };
 
-app::app()
+void state::update(ca::d2d_canvas& cnv)
 {
-   // Initialize device-indpendent resources, such
-   // as the Direct2D factory.
+   // Create a black brush.
+   cnv.CreateSolidColorBrush(
+      D2D1::ColorF(D2D1::ColorF::Black),
+      &_pBlackBrush
+   );
+}
+
+void state::discard()
+{
+   ca::release(_pBlackBrush);
+}
+
+app::app(extent size, color bkd, bool animate)
+{
    auto hr = create_device_independent_resources();
    if (SUCCEEDED(hr))
    {
@@ -83,7 +102,7 @@ app::app()
       // Because the CreateWindow function takes its size in pixels, we
       // obtain the system DPI and use it to scale the window size.
       FLOAT dpiX, dpiY;
-      _factory->GetDesktopDpi(&dpiX, &dpiY);
+      ca::get_factory().GetDesktopDpi(&dpiX, &dpiY);
 
       auto hwnd = CreateWindow(
          L"D2DDemoApp",
@@ -91,8 +110,8 @@ app::app()
          WS_OVERLAPPEDWINDOW,
          CW_USEDEFAULT,
          CW_USEDEFAULT,
-         static_cast<UINT>(ceil(640.f * dpiX / 96.f)),
-         static_cast<UINT>(ceil(480.f * dpiY / 96.f)),
+         static_cast<UINT>(ceil(size.x * dpiX / 96.f)),
+         static_cast<UINT>(ceil(size.y * dpiY / 96.f)),
          nullptr,
          nullptr,
          HINST_THISCOMPONENT,
@@ -102,7 +121,8 @@ app::app()
 
       if (SUCCEEDED(hr))
       {
-         _canvas = std::make_unique<ca::canvas_impl>(hwnd, _factory);
+         _canvas = std::make_unique<ca::canvas_impl>(hwnd, bkd);
+         _canvas->state(&_state);
          ShowWindow(_canvas->hwnd(), SW_SHOWNORMAL);
          UpdateWindow(_canvas->hwnd());
       }
@@ -114,10 +134,8 @@ app::app()
 
 app::~app()
 {
-   ca::release(_factory);
    ca::release(_pDWriteFactory);
    ca::release(_pTextFormat);
-   ca::release(_pBlackBrush);
    CoUninitialize();
 }
 
@@ -125,18 +143,14 @@ HRESULT app::create_device_independent_resources()
 {
    static const WCHAR msc_fontName[] = L"Verdana";
    static const FLOAT msc_fontSize = 50;
-   ID2D1GeometrySink *pSink = nullptr;
+   // ID2D1GeometrySink *pSink = nullptr;
 
-   HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, &_factory);
-   if (SUCCEEDED(hr))
-   {
-      // Create a DirectWrite factory.
-      hr = DWriteCreateFactory(
-         DWRITE_FACTORY_TYPE_SHARED,
-         __uuidof(_pDWriteFactory),
-         reinterpret_cast<IUnknown **>(&_pDWriteFactory)
-      );
-   }
+   // Create a DirectWrite factory.
+   auto hr = DWriteCreateFactory(
+      DWRITE_FACTORY_TYPE_SHARED,
+      __uuidof(_pDWriteFactory),
+      reinterpret_cast<IUnknown **>(&_pDWriteFactory)
+   );
 
    if (SUCCEEDED(hr))
    {
@@ -159,28 +173,9 @@ HRESULT app::create_device_independent_resources()
       _pTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
    }
 
-   ca::release(pSink);
+   // ca::release(pSink);
 
    return hr;
-}
-
-HRESULT app::create_device_resources()
-{
-   if (_canvas->update())
-   {
-      // Create a black brush.
-      return _canvas->render_target()->CreateSolidColorBrush(
-         D2D1::ColorF(D2D1::ColorF::Black),
-         &_pBlackBrush
-      );
-   }
-   return S_OK;
-}
-
-void app::discard_device_resources()
-{
-   _canvas->discard();
-   ca::release(_pBlackBrush);
 }
 
 void app::run()
@@ -194,49 +189,29 @@ void app::run()
    }
 }
 
-HRESULT app::render()
+void app::render()
 {
-   HRESULT hr;
-
-   hr = create_device_resources();
-   auto render_target = _canvas->render_target();
-
-   if (SUCCEEDED(hr) && !(render_target->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
-   {
-      static const WCHAR sc_helloWorld[] = L"Hello, World!";
-
-      // Retrieve the size of the render target.
-      auto size = render_target->GetSize();
-
-      render_target->BeginDraw();
-
-      render_target->SetTransform(D2D1::Matrix3x2F::Identity());
-
-      render_target->Clear(D2D1::ColorF(D2D1::ColorF::White));
-
-      render_target->DrawText(
-         sc_helloWorld,
-         ARRAYSIZE(sc_helloWorld) - 1,
-         _pTextFormat,
-         D2D1::RectF(0, 0, size.width, size.height),
-         _pBlackBrush
-         );
-
-      hr = render_target->EndDraw();
-
-      if (hr == D2DERR_RECREATE_TARGET)
+   _canvas->render(
+      [this](auto& canvas)
       {
-         hr = S_OK;
-         discard_device_resources();
+         static const WCHAR sc_helloWorld[] = L"Hello, World!";
+         auto size = canvas.GetSize();
+         canvas.SetTransform(D2D1::Matrix3x2F::Identity());
+         canvas.Clear(D2D1::ColorF(D2D1::ColorF::White));
+         canvas.DrawText(
+            sc_helloWorld,
+            ARRAYSIZE(sc_helloWorld) - 1,
+            _pTextFormat,
+            D2D1::RectF(0, 0, size.width, size.height),
+            _state._pBlackBrush
+         );
       }
-   }
-
-   return hr;
+   );
 }
 
 void app::resize(UINT width, UINT height)
 {
-   if (_canvas->render_target())
+   if (_canvas->canvas())
    {
       D2D1_SIZE_U size;
       size.width = width;
@@ -245,7 +220,7 @@ void app::resize(UINT width, UINT height)
       // Note: This method can fail, but it's okay to ignore the
       // error here -- it will be repeated on the next call to
       // EndDraw.
-      _canvas->render_target()->Resize(size);
+      _canvas->canvas()->Resize(size);
    }
 }
 
@@ -322,7 +297,13 @@ LRESULT CALLBACK app::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
    return result;
 }
 
-int main(int argc, char const* argv[])
+int run_app(
+   int argc
+ , char const* argv[]
+ , extent window_size
+ , color bkd
+ , bool animate
+)
 {
    SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE);
 
@@ -332,7 +313,7 @@ int main(int argc, char const* argv[])
 
    if (SUCCEEDED(CoInitialize(nullptr)))
    {
-      app _app;
+      app _app{ window_size, bkd, animate };
       _app.run();
    }
    return 0;

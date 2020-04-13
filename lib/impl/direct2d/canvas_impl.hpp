@@ -12,9 +12,7 @@
 #include <d2d1helper.h>
 #include <dwrite.h>
 #include <wincodec.h>
-#include <variant>
-#include <functional>
-#include <stdexcept>
+#include <memory>
 
 namespace cycfi::artist
 {
@@ -28,7 +26,7 @@ namespace cycfi::artist
       }
    }
 
-   using d2d_render_target = ID2D1HwndRenderTarget;
+   using d2d_canvas = ID2D1HwndRenderTarget;
    using d2d_factory = ID2D1Factory;
 
    // using d2d_color = ID2D1SolidColorBrush;
@@ -41,41 +39,72 @@ namespace cycfi::artist
    //  , std::pair<canvas::radial_gradient, d2d_radial_gradient>
    // >;
 
+   d2d_factory& get_factory();
+
+   struct canvas_state_impl
+   {
+      virtual void         update(d2d_canvas& cnv) = 0;
+      virtual void         discard() = 0;
+   };
+
    struct canvas_impl
    {
    public:
-                           canvas_impl(HWND hwnd, d2d_factory* factory);
+                           canvas_impl(HWND hwnd, color bkd);
                            ~canvas_impl();
 
-      bool                 update();
-      void                 discard();
+                           template <typename Renderer>
+      void                 render(Renderer&& draw);
+
       HWND                 hwnd() const;
-      d2d_render_target*   render_target() const;
-      d2d_factory*         factory() const;
+      d2d_canvas*          canvas() const;
 
-      using update_function = std::function<void(canvas_impl const&)>;
-
-      update_function      on_update;
+      void                 state(canvas_state_impl* state);
+      canvas_state_impl*   state() const;
 
    private:
 
+      bool                 update();
+      void                 discard();
+
       HWND                 _hwnd = nullptr;
-      d2d_factory*         _factory = nullptr;
-      d2d_render_target*   _render_target = nullptr;
+      d2d_canvas*          _d2d_canvas = nullptr;
+      D2D1::ColorF         _bkd;
+      canvas_state_impl*   _state = nullptr;
    };
 
    ////////////////////////////////////////////////////////////////////////////
    // Inlines
    ////////////////////////////////////////////////////////////////////////////
-   inline canvas_impl::canvas_impl(HWND hwnd, d2d_factory* factory)
-    : _factory{ factory }
-    , _hwnd{ hwnd }
+   namespace detail
+   {
+      struct release_factory
+      {
+         void operator()(d2d_factory* ptr)
+         {
+            release(ptr);
+         }
+      };
+   }
+
+   inline d2d_factory& get_factory()
+   {
+      using unique_ptr = std::unique_ptr<d2d_factory, detail::release_factory>;
+      static d2d_factory* ptr = nullptr;
+      D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, &ptr);
+      static auto factory_ptr = unique_ptr(ptr);
+      return *ptr;
+   }
+
+   inline canvas_impl::canvas_impl(HWND hwnd, color bkd)
+    : _hwnd{ hwnd }
+    , _bkd{ bkd.red, bkd.green, bkd.blue, bkd.alpha }
    {
    }
 
    inline canvas_impl::~canvas_impl()
    {
-      release(_render_target);
+      release(_d2d_canvas);
    }
 
    inline HWND canvas_impl::hwnd() const
@@ -83,19 +112,29 @@ namespace cycfi::artist
       return _hwnd;
    }
 
-   inline d2d_render_target* canvas_impl::render_target() const
+   inline d2d_canvas* canvas_impl::canvas() const
    {
-      return _render_target;
+      return _d2d_canvas;
    };
 
-   inline d2d_factory* canvas_impl::factory() const
+   template <typename Renderer>
+   void canvas_impl::render(Renderer&& draw)
    {
-      return _factory;
+      update();
+
+      if (!(_d2d_canvas->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
+      {
+         _d2d_canvas->BeginDraw();
+         draw(*_d2d_canvas);
+         auto hr = _d2d_canvas->EndDraw();
+         if (hr == D2DERR_RECREATE_TARGET)
+            discard();
+      }
    }
 
    inline bool canvas_impl::update()
    {
-      if (!_render_target)
+      if (!_d2d_canvas)
       {
          RECT rc;
          GetClientRect(_hwnd, &rc);
@@ -106,23 +145,35 @@ namespace cycfi::artist
          );
 
          // Create a Direct2D render target.
-         auto hr = _factory->CreateHwndRenderTarget(
+         auto hr = get_factory().CreateHwndRenderTarget(
             D2D1::RenderTargetProperties(),
             D2D1::HwndRenderTargetProperties(_hwnd, size),
-            &_render_target
+            &_d2d_canvas
          );
 
-         if (SUCCEEDED(hr) && on_update)
-            on_update(*this);
+         if (SUCCEEDED(hr) && _state)
+            _state->update(*_d2d_canvas);
 
          return true;
       }
       return false;
    }
 
-   void canvas_impl::discard()
+   inline void canvas_impl::discard()
    {
-      release(_render_target);
+      if (_state)
+         _state->discard();
+      release(_d2d_canvas);
+   }
+
+   inline void canvas_impl::state(canvas_state_impl* state)
+   {
+      _state = state;
+   }
+
+   inline canvas_state_impl* canvas_impl::state() const
+   {
+      return _state;
    }
 }
 

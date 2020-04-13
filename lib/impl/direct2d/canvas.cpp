@@ -10,7 +10,7 @@
 
 namespace cycfi::artist
 {
-   struct canvas::canvas_state
+   class canvas::canvas_state
    {
    };
 

@@ -24,7 +24,7 @@ function(add_example name)
       add_executable(
          ${name} MACOSX_BUNDLE
          ${name}.cpp
-            host/macos/${MAIN_APP}
+         host/macos/${MAIN_APP}
          ${${name}_fonts}
          ${${name}_images}
       )
@@ -99,8 +99,16 @@ function(add_example name)
 
       add_executable(
          ${name}
-         # ${name}.cpp
+         ${name}.cpp
          host/windows/direct2d_app.cpp
+      )
+
+      set_property(TARGET ${name} PROPERTY
+         MSVC_RUNTIME_LIBRARY "MultiThreaded"
+      )
+
+      target_link_options(${name} PRIVATE
+         /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup shcore.lib
       )
 
    elseif (UNIX)
