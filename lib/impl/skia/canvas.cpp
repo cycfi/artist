@@ -35,7 +35,7 @@ namespace cycfi::artist
          color    _color;
       };
 
-      canvas_state();
+                        canvas_state();
 
       SkPath&           path();
       SkPaint&          fill_paint();

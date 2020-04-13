@@ -10,9 +10,55 @@
 
 namespace cycfi::artist
 {
-   class canvas::canvas_state
+   class canvas::canvas_state : canvas_state_impl
    {
+   public:
+
+      using d2d_paint = ID2D1SolidColorBrush; // for now
+
+      virtual void      update(d2d_canvas& cnv);
+      virtual void      discard();
+
+      artist::path&     path();
+      void              fill_paint(color c);
+
+   private:
+
+      artist::path      _path;            // for now
+      color             _fill_color;      // for now
+      d2d_paint*        _fill_paint;      // for now
    };
+
+   void canvas::canvas_state::update(d2d_canvas& cnv)
+   {
+      if (!_fill_paint)
+      {
+         cnv.CreateSolidColorBrush(
+            D2D1::ColorF(
+              _fill_color.red
+            , _fill_color.green
+            , _fill_color.blue
+            , _fill_color.alpha)
+            , &_fill_paint
+         );
+      }
+   }
+
+   void canvas::canvas_state::discard()
+   {
+      release(_fill_paint);
+   }
+
+   artist::path& canvas::canvas_state::path()
+   {
+      return _path;
+   }
+
+   void canvas::canvas_state::fill_paint(color c)
+   {
+      _fill_color = c;
+      release(_fill_paint);
+   }
 
    canvas::~canvas()
    {
@@ -92,6 +138,7 @@ namespace cycfi::artist
 
    void canvas::rect(struct rect r)
    {
+      _state->path().add(r);
    }
 
    void canvas::round_rect(struct rect r, float radius)
@@ -116,6 +163,7 @@ namespace cycfi::artist
 
    void canvas::fill_style(color c)
    {
+      _state->fill_paint(c);
    }
 
    void canvas::stroke_style(color c)

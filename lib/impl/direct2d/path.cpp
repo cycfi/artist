@@ -5,32 +5,46 @@
 =============================================================================*/
 #include <infra/support.hpp>
 #include <artist/path.hpp>
+#include <path_impl.hpp>
+#include <vector>
 
 namespace cycfi::artist
 {
    path::path()
+    : _impl{ new path_impl }
    {
    }
 
    path::~path()
    {
+      delete _impl;
    }
 
    path::path(path const& rhs)
+    : _impl{ new path_impl{ *rhs._impl } }
    {
    }
 
    path::path(path&& rhs)
+    : _impl{ rhs._impl }
    {
+      rhs._impl = nullptr;
    }
 
    path& path::operator=(path const& rhs)
    {
+      if (this != &rhs)
+         *_impl = *rhs._impl;
       return *this;
    }
 
    path& path::operator=(path&& rhs)
    {
+      if (this != &rhs)
+      {
+         _impl = rhs._impl;
+         rhs._impl = nullptr;
+      }
       return *this;
    }
 
@@ -60,6 +74,11 @@ namespace cycfi::artist
 
    void path::add(rect r)
    {
+      ID2D1RectangleGeometry* geom = nullptr;
+      get_factory().CreateRectangleGeometry(
+         { r.left, r.top, r.right, r.bottom }, &geom
+      );
+      _impl->_geometries.push_back(geom);
    }
 
    void path::add(rect r, float radius)

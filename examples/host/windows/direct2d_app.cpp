@@ -13,7 +13,6 @@
 
 #include "../../app.hpp"
 #include <canvas_impl.hpp>
-#include <canvas_impl.hpp>
 #include <ShellScalingAPI.h>
 
 #ifndef HINST_THISCOMPONENT

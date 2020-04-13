@@ -13,15 +13,16 @@
 #include <dwrite.h>
 #include <wincodec.h>
 #include <memory>
+#include <stdexcept>
 
 namespace cycfi::artist
 {
    template <class Interface>
    inline void release(Interface*& ptr)
    {
-      if (ptr != nullptr)
+      if (ptr)
       {
-         (ptr)->Release();
+         ptr->Release();
          ptr = nullptr;
       }
    }
@@ -64,7 +65,10 @@ namespace cycfi::artist
 
    private:
 
-      bool                 update();
+                           canvas_impl(canvas_impl const&) = delete;
+      canvas_impl&         operator=(canvas_impl const&) = delete;
+
+      void                 update();
       void                 discard();
 
       HWND                 _hwnd = nullptr;
@@ -132,7 +136,7 @@ namespace cycfi::artist
       }
    }
 
-   inline bool canvas_impl::update()
+   inline void canvas_impl::update()
    {
       if (!_d2d_canvas)
       {
@@ -151,12 +155,12 @@ namespace cycfi::artist
             &_d2d_canvas
          );
 
-         if (SUCCEEDED(hr) && _state)
-            _state->update(*_d2d_canvas);
-
-         return true;
+         if (!SUCCEEDED(hr))
+            throw std::runtime_error{ "Error: Failed to create RenderTarget." };
       }
-      return false;
+
+      if (_state)
+         _state->update(*_d2d_canvas);
    }
 
    inline void canvas_impl::discard()
