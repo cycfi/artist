@@ -15,8 +15,6 @@ namespace cycfi::artist
    {
    public:
 
-      using d2d_paint = ID2D1SolidColorBrush; // for now
-
       virtual void      update(d2d_canvas& cnv);
       virtual void      discard();
 
@@ -34,16 +32,7 @@ namespace cycfi::artist
    void canvas::canvas_state::update(d2d_canvas& cnv)
    {
       if (!_fill_paint)
-      {
-         cnv.CreateSolidColorBrush(
-            D2D1::ColorF(
-               _fill_color.red
-             , _fill_color.green
-             , _fill_color.blue
-             , _fill_color.alpha)
-          , &_fill_paint
-         );
-      }
+         _fill_paint = make_paint(_fill_color, cnv);
    }
 
    void canvas::canvas_state::discard()
@@ -62,15 +51,7 @@ namespace cycfi::artist
       {
          _fill_color = c;
          release(_fill_paint);
-
-         cnv.CreateSolidColorBrush(
-            D2D1::ColorF(
-               _fill_color.red
-             , _fill_color.green
-             , _fill_color.blue
-             , _fill_color.alpha)
-          , &_fill_paint
-         );
+         _fill_paint = make_paint(_fill_color, cnv);
       }
    }
 

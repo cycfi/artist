@@ -17,37 +17,26 @@
 
 namespace cycfi::artist
 {
-   template <class Interface>
-   inline void release(Interface*& ptr)
-   {
-      if (ptr)
-      {
-         ptr->Release();
-         ptr = nullptr;
-      }
-   }
-
    using d2d_canvas = ID2D1HwndRenderTarget;
    using d2d_factory = ID2D1Factory;
 
-   // using d2d_color = ID2D1SolidColorBrush;
-   // using d2d_linear_gradient = ID2D1LinearGradientBrush;
-   // using d2d_radial_gradient = ID2D1RadialGradientBrush;
-
-   // using fill_brush = std::variant<
-   //    std::pair<color, d2d_color*>
-   //  , std::pair<canvas::linear_gradient, d2d_linear_gradient*>
-   //  , std::pair<canvas::radial_gradient, d2d_radial_gradient>
-   // >;
-
+   ////////////////////////////////////////////////////////////////////////////
+   // The main factory (singleton)
+   ////////////////////////////////////////////////////////////////////////////
    d2d_factory& get_factory();
 
+   ////////////////////////////////////////////////////////////////////////////
+   // Abstract canvas state implementation
+   ////////////////////////////////////////////////////////////////////////////
    struct canvas_state_impl
    {
       virtual void         update(d2d_canvas& cnv) = 0;
       virtual void         discard() = 0;
    };
 
+   ////////////////////////////////////////////////////////////////////////////
+   // Main (low-level) canvas implementation
+   ////////////////////////////////////////////////////////////////////////////
    struct canvas_impl
    {
    public:
@@ -78,39 +67,41 @@ namespace cycfi::artist
    };
 
    ////////////////////////////////////////////////////////////////////////////
+   // Low-level D2D types
+   ////////////////////////////////////////////////////////////////////////////
+   using d2d_paint = ID2D1SolidColorBrush;
+
+   ////////////////////////////////////////////////////////////////////////////
+   // Low-level utilities
+   ////////////////////////////////////////////////////////////////////////////
+   template <class Interface>
+   inline void release(Interface*& ptr);
+
+   d2d_paint* make_brush(color c);
+
+   ////////////////////////////////////////////////////////////////////////////
    // Inlines
    ////////////////////////////////////////////////////////////////////////////
-   namespace detail
+   template <class Interface>
+   inline void release(Interface*& ptr)
    {
-      struct release_factory
+      if (ptr)
       {
-         void operator()(d2d_factory* ptr)
-         {
-            release(ptr);
-         }
-      };
+         ptr->Release();
+         ptr = nullptr;
+      }
    }
 
-   inline d2d_factory& get_factory()
+   inline d2d_paint* make_paint(color c, d2d_canvas& cnv)
    {
-      using unique_ptr = std::unique_ptr<d2d_factory, detail::release_factory>;
-
-      struct factory_maker
-      {
-         factory_maker()
-         {
-            D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, &ptr);
-         }
-
-         ~factory_maker()
-         {
-            release(ptr);
-         }
-
-         d2d_factory* ptr = nullptr;
-      };
-      static factory_maker maker;
-      return *maker.ptr;
+      d2d_paint* ptr = nullptr;
+      auto hr = cnv.CreateSolidColorBrush(
+         D2D1::ColorF(c.red, c.green, c.blue, c.alpha)
+       , &ptr
+      );
+      if (!SUCCEEDED(hr))
+         throw std::runtime_error{ "Error: CreateSolidColorBrush Fail." };
+      return ptr;
    }
 
    inline canvas_impl::canvas_impl(HWND hwnd, color bkd)
@@ -147,33 +138,6 @@ namespace cycfi::artist
          if (hr == D2DERR_RECREATE_TARGET)
             discard();
       }
-   }
-
-   inline void canvas_impl::update()
-   {
-      if (!_d2d_canvas)
-      {
-         RECT rc;
-         GetClientRect(_hwnd, &rc);
-
-         D2D1_SIZE_U size = D2D1::SizeU(
-            rc.right - rc.left,
-            rc.bottom - rc.top
-         );
-
-         // Create a Direct2D render target.
-         auto hr = get_factory().CreateHwndRenderTarget(
-            D2D1::RenderTargetProperties(),
-            D2D1::HwndRenderTargetProperties(_hwnd, size),
-            &_d2d_canvas
-         );
-
-         if (!SUCCEEDED(hr))
-            throw std::runtime_error{ "Error: Failed to create RenderTarget." };
-      }
-
-      if (_state)
-         _state->update(*_d2d_canvas);
    }
 
    inline void canvas_impl::discard()

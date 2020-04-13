@@ -139,6 +139,7 @@ elseif (WIN32 AND ARTIST_DIRECT_2D)
 
    set(ARTIST_IMPL
       impl/direct2d/canvas.cpp
+      impl/direct2d/canvas_impl.cpp
       impl/direct2d/image.cpp
       impl/direct2d/font.cpp
       impl/direct2d/text_layout.cpp
