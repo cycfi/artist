@@ -22,14 +22,6 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
 namespace ca = cycfi::artist;
 
-struct state : ca::canvas_state_impl
-{
-   virtual void            update(ca::d2d_canvas& cnv);
-   virtual void            discard();
-
-   ID2D1SolidColorBrush*   _pBlackBrush = nullptr;
-};
-
 class app
 {
 public:
@@ -40,7 +32,7 @@ public:
 
 private:
 
-   HRESULT     create_device_independent_resources();
+   // HRESULT     create_device_independent_resources();
    void        render();
    void        resize(UINT width, UINT height);
 
@@ -54,77 +46,64 @@ private:
 private:
 
    using canvas_impl_ptr = std::unique_ptr<ca::canvas_impl>;
+   using canvas_ptr = std::unique_ptr<ca::canvas>;
 
-   canvas_impl_ptr         _canvas;
-   state                   _state;
+   canvas_impl_ptr         _canvas_impl;
+   canvas_ptr              _canvas;
+   // state                   _state;
 
-   IWICImagingFactory*     _pWICFactory = nullptr;
-   IDWriteFactory*         _pDWriteFactory = nullptr;
-   IDWriteTextFormat*      _pTextFormat = nullptr;
+   // IWICImagingFactory*     _pWICFactory = nullptr;
+   // IDWriteFactory*         _pDWriteFactory = nullptr;
+   // IDWriteTextFormat*      _pTextFormat = nullptr;
 };
-
-void state::update(ca::d2d_canvas& cnv)
-{
-   // Create a black brush.
-   cnv.CreateSolidColorBrush(
-      D2D1::ColorF(D2D1::ColorF::Black),
-      &_pBlackBrush
-   );
-}
-
-void state::discard()
-{
-   ca::release(_pBlackBrush);
-}
 
 app::app(extent size, color bkd, bool animate)
 {
-   auto hr = create_device_independent_resources();
+   auto hr = S_OK;
+
+   // Register the window class.
+   WNDCLASSEX wcex = { sizeof(WNDCLASSEX) };
+   wcex.style         = CS_HREDRAW | CS_VREDRAW;
+   wcex.lpfnWndProc   = app::WndProc;
+   wcex.cbClsExtra    = 0;
+   wcex.cbWndExtra    = sizeof(LONG_PTR);
+   wcex.hInstance     = HINST_THISCOMPONENT;
+   wcex.hbrBackground = nullptr;
+   wcex.lpszMenuName  = nullptr;
+   wcex.hCursor       = LoadCursor(nullptr, IDC_ARROW);
+   wcex.lpszClassName = L"D2DDemoApp";
+
+   RegisterClassEx(&wcex);
+
+   // Create the application window.
+   //
+   // Because the CreateWindow function takes its size in pixels, we
+   // obtain the system DPI and use it to scale the window size.
+   FLOAT dpiX, dpiY;
+   ca::get_factory().GetDesktopDpi(&dpiX, &dpiY);
+
+   auto hwnd = CreateWindow(
+      L"D2DDemoApp",
+      L"Direct2D Demo Application",
+      WS_OVERLAPPEDWINDOW,
+      CW_USEDEFAULT,
+      CW_USEDEFAULT,
+      static_cast<UINT>(ceil(size.x * dpiX / 96.f)),
+      static_cast<UINT>(ceil(size.y * dpiY / 96.f)),
+      nullptr,
+      nullptr,
+      HINST_THISCOMPONENT,
+      this
+      );
+   hr = hwnd ? S_OK : E_FAIL;
+
    if (SUCCEEDED(hr))
    {
-      // Register the window class.
-      WNDCLASSEX wcex = { sizeof(WNDCLASSEX) };
-      wcex.style         = CS_HREDRAW | CS_VREDRAW;
-      wcex.lpfnWndProc   = app::WndProc;
-      wcex.cbClsExtra    = 0;
-      wcex.cbWndExtra    = sizeof(LONG_PTR);
-      wcex.hInstance     = HINST_THISCOMPONENT;
-      wcex.hbrBackground = nullptr;
-      wcex.lpszMenuName  = nullptr;
-      wcex.hCursor       = LoadCursor(nullptr, IDC_ARROW);
-      wcex.lpszClassName = L"D2DDemoApp";
+      _canvas_impl = std::make_unique<ca::canvas_impl>(hwnd, bkd);
+      _canvas = std::make_unique<ca::canvas>(_canvas_impl.get());
 
-      RegisterClassEx(&wcex);
-
-      // Create the application window.
-      //
-      // Because the CreateWindow function takes its size in pixels, we
-      // obtain the system DPI and use it to scale the window size.
-      FLOAT dpiX, dpiY;
-      ca::get_factory().GetDesktopDpi(&dpiX, &dpiY);
-
-      auto hwnd = CreateWindow(
-         L"D2DDemoApp",
-         L"Direct2D Demo Application",
-         WS_OVERLAPPEDWINDOW,
-         CW_USEDEFAULT,
-         CW_USEDEFAULT,
-         static_cast<UINT>(ceil(size.x * dpiX / 96.f)),
-         static_cast<UINT>(ceil(size.y * dpiY / 96.f)),
-         nullptr,
-         nullptr,
-         HINST_THISCOMPONENT,
-         this
-         );
-      hr = hwnd ? S_OK : E_FAIL;
-
-      if (SUCCEEDED(hr))
-      {
-         _canvas = std::make_unique<ca::canvas_impl>(hwnd, bkd);
-         _canvas->state(&_state);
-         ShowWindow(_canvas->hwnd(), SW_SHOWNORMAL);
-         UpdateWindow(_canvas->hwnd());
-      }
+      ShowWindow(_canvas_impl->hwnd(), SW_SHOWNORMAL);
+      UpdateWindow(_canvas_impl->hwnd());
    }
 
    if (!SUCCEEDED(hr))
@@ -133,11 +112,12 @@ app::app(extent size, color bkd, bool animate)
 
 app::~app()
 {
-   ca::release(_pDWriteFactory);
-   ca::release(_pTextFormat);
+   // ca::release(_pDWriteFactory);
+   // ca::release(_pTextFormat);
    CoUninitialize();
 }
 
+/*
 HRESULT app::create_device_independent_resources()
 {
    static const WCHAR msc_fontName[] = L"Verdana";
@@ -176,6 +156,7 @@ HRESULT app::create_device_independent_resources()
 
    return hr;
 }
+*/
 
 void app::run()
 {
@@ -190,27 +171,31 @@ void app::run()
 
 void app::render()
 {
-   _canvas->render(
-      [this](auto& canvas)
+   _canvas_impl->render(
+      [this](auto&)
       {
-         static const WCHAR sc_helloWorld[] = L"Hello, World!";
-         auto size = canvas.GetSize();
-         canvas.SetTransform(D2D1::Matrix3x2F::Identity());
-         canvas.Clear(D2D1::ColorF(D2D1::ColorF::White));
-         canvas.DrawText(
-            sc_helloWorld,
-            ARRAYSIZE(sc_helloWorld) - 1,
-            _pTextFormat,
-            D2D1::RectF(0, 0, size.width, size.height),
-            _state._pBlackBrush
-         );
+         draw(*_canvas);
+
+
+
+         // static const WCHAR sc_helloWorld[] = L"Hello, World!";
+         // auto size = canvas.GetSize();
+         // canvas.SetTransform(D2D1::Matrix3x2F::Identity());
+         // canvas.Clear(D2D1::ColorF(D2D1::ColorF::White));
+         // canvas.DrawText(
+         //    sc_helloWorld,
+         //    ARRAYSIZE(sc_helloWorld) - 1,
+         //    _pTextFormat,
+         //    D2D1::RectF(0, 0, size.width, size.height),
+         //    _state._pBlackBrush
+         // );
       }
    );
 }
 
 void app::resize(UINT width, UINT height)
 {
-   if (_canvas->canvas())
+   if (_canvas_impl->canvas())
    {
       D2D1_SIZE_U size;
       size.width = width;
@@ -219,7 +204,7 @@ void app::resize(UINT width, UINT height)
       // Note: This method can fail, but it's okay to ignore the
       // error here -- it will be repeated on the next call to
       // EndDraw.
-      _canvas->canvas()->Resize(size);
+      _canvas_impl->canvas()->Resize(size);
    }
 }
 

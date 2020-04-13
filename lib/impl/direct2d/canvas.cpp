@@ -6,11 +6,12 @@
 #include <infra/support.hpp>
 #include <artist/canvas.hpp>
 #include <canvas_impl.hpp>
+#include <path_impl.hpp>
 #include <stack>
 
 namespace cycfi::artist
 {
-   class canvas::canvas_state : canvas_state_impl
+   class canvas::canvas_state : public canvas_state_impl
    {
    public:
 
@@ -20,7 +21,8 @@ namespace cycfi::artist
       virtual void      discard();
 
       artist::path&     path();
-      void              fill_paint(color c);
+      void              fill_paint(color c, d2d_canvas& cnv);
+      void              fill(d2d_canvas& cnv);
 
    private:
 
@@ -35,10 +37,10 @@ namespace cycfi::artist
       {
          cnv.CreateSolidColorBrush(
             D2D1::ColorF(
-              _fill_color.red
-            , _fill_color.green
-            , _fill_color.blue
-            , _fill_color.alpha)
+              0//_fill_color.red
+            , 0//_fill_color.green
+            , 1//_fill_color.blue
+            , 1)//_fill_color.alpha)
             , &_fill_paint
          );
       }
@@ -54,10 +56,42 @@ namespace cycfi::artist
       return _path;
    }
 
-   void canvas::canvas_state::fill_paint(color c)
+   void canvas::canvas_state::fill_paint(color c, d2d_canvas& cnv)
    {
-      _fill_color = c;
-      release(_fill_paint);
+      // if (c != _fill_color)
+      // {
+      //    _fill_color = c;
+      //    release(_fill_paint);
+
+      //    cnv.CreateSolidColorBrush(
+      //       D2D1::ColorF(
+      //          _fill_color.red
+      //        , _fill_color.green
+      //        , _fill_color.blue
+      //        , _fill_color.alpha)
+      //     , &_fill_paint
+      //    );
+      // }
+   }
+
+   void canvas::canvas_state::fill(d2d_canvas& cnv)
+   {
+      // for now
+      if (_path.impl()->_geometries.size())
+      {
+         cnv.FillGeometry(
+            _path.impl()->_geometries[0]
+          , _fill_paint
+          , nullptr
+         );
+      }
+   }
+
+   canvas::canvas(canvas_impl_ptr context_)
+    : _context{ context_ }
+    , _state{ std::make_unique<canvas_state>() }
+   {
+      _context->state(_state.get());
    }
 
    canvas::~canvas()
@@ -98,6 +132,7 @@ namespace cycfi::artist
 
    void canvas::fill()
    {
+      _state->fill(*_context->canvas());
    }
 
    void canvas::fill_preserve()
@@ -163,7 +198,7 @@ namespace cycfi::artist
 
    void canvas::fill_style(color c)
    {
-      _state->fill_paint(c);
+      _state->fill_paint(c, *_context->canvas());
    }
 
    void canvas::stroke_style(color c)
