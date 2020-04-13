@@ -37,11 +37,11 @@ namespace cycfi::artist
       {
          cnv.CreateSolidColorBrush(
             D2D1::ColorF(
-              0//_fill_color.red
-            , 0//_fill_color.green
-            , 1//_fill_color.blue
-            , 1)//_fill_color.alpha)
-            , &_fill_paint
+               _fill_color.red
+             , _fill_color.green
+             , _fill_color.blue
+             , _fill_color.alpha)
+          , &_fill_paint
          );
       }
    }
@@ -58,20 +58,20 @@ namespace cycfi::artist
 
    void canvas::canvas_state::fill_paint(color c, d2d_canvas& cnv)
    {
-      // if (c != _fill_color)
-      // {
-      //    _fill_color = c;
-      //    release(_fill_paint);
+      if (c != _fill_color)
+      {
+         _fill_color = c;
+         release(_fill_paint);
 
-      //    cnv.CreateSolidColorBrush(
-      //       D2D1::ColorF(
-      //          _fill_color.red
-      //        , _fill_color.green
-      //        , _fill_color.blue
-      //        , _fill_color.alpha)
-      //     , &_fill_paint
-      //    );
-      // }
+         cnv.CreateSolidColorBrush(
+            D2D1::ColorF(
+               _fill_color.red
+             , _fill_color.green
+             , _fill_color.blue
+             , _fill_color.alpha)
+          , &_fill_paint
+         );
+      }
    }
 
    void canvas::canvas_state::fill(d2d_canvas& cnv)

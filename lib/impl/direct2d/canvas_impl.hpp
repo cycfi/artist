@@ -94,10 +94,23 @@ namespace cycfi::artist
    inline d2d_factory& get_factory()
    {
       using unique_ptr = std::unique_ptr<d2d_factory, detail::release_factory>;
-      static d2d_factory* ptr = nullptr;
-      D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, &ptr);
-      static auto factory_ptr = unique_ptr(ptr);
-      return *ptr;
+
+      struct factory_maker
+      {
+         factory_maker()
+         {
+            D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, &ptr);
+         }
+
+         ~factory_maker()
+         {
+            release(ptr);
+         }
+
+         d2d_factory* ptr = nullptr;
+      };
+      static factory_maker maker;
+      return *maker.ptr;
    }
 
    inline canvas_impl::canvas_impl(HWND hwnd, color bkd)
