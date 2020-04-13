@@ -14,13 +14,8 @@ namespace cycfi::artist
 {
    struct path_impl
    {
-      std::vector<ID2D1Geometry*> _geometries;
+      std::vector<d2d_geometry*> _geometries;
    };
-
-
-
-
-
 
 
 

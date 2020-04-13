@@ -65,6 +65,7 @@ namespace cycfi::artist
           , _fill_paint
           , nullptr
          );
+         _path.impl()->_geometries.clear();
       }
    }
 

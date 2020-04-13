@@ -27,17 +27,17 @@ void rectangles(canvas& cnv)
    cnv.fill_style(colors::red);
    cnv.fill();
 
-   cnv.rect(x, y, 150, 100);
-   cnv.stroke_style(colors::navajo_white.opacity(0.5));
-   cnv.stroke();
+   // cnv.rect(x, y, 150, 100);
+   // cnv.stroke_style(colors::navajo_white.opacity(0.5));
+   // cnv.stroke();
 
-   cnv.round_rect(x+30, y+30, 150, 100, 10);
-   cnv.fill_style(colors::blue.opacity(0.5));
-   cnv.fill();
+   // cnv.round_rect(x+30, y+30, 150, 100, 10);
+   // cnv.fill_style(colors::blue.opacity(0.5));
+   // cnv.fill();
 
-   cnv.round_rect(x+30, y+30, 150, 100, 10);
-   cnv.stroke_style(colors::honeydew.opacity(0.5));
-   cnv.stroke();
+   // cnv.round_rect(x+30, y+30, 150, 100, 10);
+   // cnv.stroke_style(colors::honeydew.opacity(0.5));
+   // cnv.stroke();
 }
 
 void circles_and_arcs(canvas& cnv)
@@ -301,7 +301,7 @@ void radial_gradient(canvas& cnv)
 void draw(canvas& cnv)
 {
    background(cnv);
-   // rectangles(cnv);
+   rectangles(cnv);
    // circles_and_arcs(cnv);
    // arc_to(cnv);
    // line_caps(cnv);

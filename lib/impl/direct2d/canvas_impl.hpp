@@ -70,19 +70,24 @@ namespace cycfi::artist
    // Low-level D2D types
    ////////////////////////////////////////////////////////////////////////////
    using d2d_paint = ID2D1SolidColorBrush;
+   using d2d_geometry = ID2D1Geometry;
+   using d2d_geometry_group = ID2D1GeometryGroup;
 
    ////////////////////////////////////////////////////////////////////////////
    // Low-level utilities
    ////////////////////////////////////////////////////////////////////////////
-   template <class Interface>
+   template <typename Interface>
    inline void release(Interface*& ptr);
 
    d2d_paint* make_brush(color c);
 
+   template <typename Container>
+   d2d_geometry_group* make_group(Container const& c);
+
    ////////////////////////////////////////////////////////////////////////////
    // Inlines
    ////////////////////////////////////////////////////////////////////////////
-   template <class Interface>
+   template <typename Interface>
    inline void release(Interface*& ptr)
    {
       if (ptr)
@@ -102,6 +107,21 @@ namespace cycfi::artist
       if (!SUCCEEDED(hr))
          throw std::runtime_error{ "Error: CreateSolidColorBrush Fail." };
       return ptr;
+   }
+
+   template <typename Container>
+   inline d2d_geometry_group* make_group(Container const& c)
+   {
+      d2d_geometry_group* group = nullptr;
+      auto hr = get_factory().CreateGeometryGroup(
+         D2D1_FILL_MODE_ALTERNATE // for now
+       , const_cast<d2d_geometry**>(c.data())
+       , c.size()
+       , &group
+      );
+      if (!SUCCEEDED(hr))
+         throw std::runtime_error{ "Error: CreateGeometryGroup Fail." };
+      return group;
    }
 
    inline canvas_impl::canvas_impl(HWND hwnd, color bkd)
