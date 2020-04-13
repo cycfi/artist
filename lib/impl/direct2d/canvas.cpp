@@ -58,14 +58,14 @@ namespace cycfi::artist
    void canvas::canvas_state::fill(d2d_canvas& cnv)
    {
       // for now
-      if (_path.impl()->_geometries.size())
+      if (!_path.impl()->empty())
       {
          cnv.FillGeometry(
-            _path.impl()->_geometries[0]
+            _path.impl()->compute_fill()
           , _fill_paint
           , nullptr
          );
-         _path.impl()->_geometries.clear();
+         _path.impl()->clear();
       }
    }
 
@@ -258,5 +258,10 @@ namespace cycfi::artist
 
    void canvas::draw(image const& pic, struct rect src, struct rect dest)
    {
+   }
+
+   void canvas::fill_rule(path::fill_rule_enum rule)
+   {
+      _state->path().fill_rule(rule);
    }
 }

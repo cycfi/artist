@@ -25,6 +25,6 @@ int            run_app(
                );
 
 void           draw(canvas& cnv);
-//void           print_elapsed(canvas& cnv, point br);
+void           print_elapsed(canvas& cnv, point br);
 
 #endif

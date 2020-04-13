@@ -72,6 +72,7 @@ namespace cycfi::artist
    using d2d_paint = ID2D1SolidColorBrush;
    using d2d_geometry = ID2D1Geometry;
    using d2d_geometry_group = ID2D1GeometryGroup;
+   using d2d_fill_mode = D2D1_FILL_MODE;
 
    ////////////////////////////////////////////////////////////////////////////
    // Low-level utilities
@@ -110,11 +111,13 @@ namespace cycfi::artist
    }
 
    template <typename Container>
-   inline d2d_geometry_group* make_group(Container const& c)
+   inline d2d_geometry_group* make_group(
+      Container const& c, d2d_fill_mode mode
+   )
    {
       d2d_geometry_group* group = nullptr;
       auto hr = get_factory().CreateGeometryGroup(
-         D2D1_FILL_MODE_ALTERNATE // for now
+         mode
        , const_cast<d2d_geometry**>(c.data())
        , c.size()
        , &group

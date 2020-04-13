@@ -568,4 +568,12 @@ namespace cycfi::artist
 
       return std::visit(draw_picture, pic.impl()->base());
    }
+
+   void canvas::fill_rule(path::fill_rule_enum rule)
+   {
+      SkPathFillType type =
+         rule == path::fill_winding?
+         SkPathFillType::kWinding : SkPathFillType::kEvenOdd;
+      _state->path().setFillType(type);
+   }
 }

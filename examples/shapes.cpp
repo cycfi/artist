@@ -24,16 +24,18 @@ void rectangles(canvas& cnv)
    cnv.line_width(2);
 
    cnv.rect(x, y, 150, 100);
-   cnv.fill_style(colors::red);
-   cnv.fill();
+   // cnv.fill_style(colors::red);
+   // cnv.fill();
+
+   cnv.fill_rule(path::fill_odd_even);
 
    // cnv.rect(x, y, 150, 100);
-   // cnv.stroke_style(colors::navajo_white.opacity(0.5));
+   cnv.stroke_style(colors::navajo_white.opacity(0.5));
    // cnv.stroke();
 
-   // cnv.round_rect(x+30, y+30, 150, 100, 10);
-   // cnv.fill_style(colors::blue.opacity(0.5));
-   // cnv.fill();
+   cnv.round_rect(x+30, y+30, 150, 100, 10);
+   cnv.fill_style(colors::blue.opacity(0.5));
+   cnv.fill();
 
    // cnv.round_rect(x+30, y+30, 150, 100, 10);
    // cnv.stroke_style(colors::honeydew.opacity(0.5));

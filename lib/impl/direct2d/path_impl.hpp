@@ -14,8 +14,56 @@ namespace cycfi::artist
 {
    struct path_impl
    {
-      std::vector<d2d_geometry*> _geometries;
+   public:
+
+                        ~path_impl();
+
+      bool              empty() const;
+      void              add(d2d_geometry* geom);
+      void              clear();
+      d2d_geometry*     compute_fill();
+      void              fill_rule(d2d_fill_mode mode);
+
+   private:
+
+      using geometry_vector = std::vector<d2d_geometry*>;
+
+      geometry_vector   _geometries;
+      d2d_fill_mode     _mode;
    };
+
+   inline path_impl::~path_impl()
+   {
+      for (auto& g : _geometries)
+         release(g);
+   }
+
+   inline bool path_impl::empty() const
+   {
+      return _geometries.empty();
+   }
+
+   inline void path_impl::add(d2d_geometry* geom)
+   {
+      _geometries.push_back(geom);
+   }
+
+   inline d2d_geometry* path_impl::compute_fill()
+   {
+      return _geometries[0]; // for now
+   }
+
+   inline void path_impl::clear()
+   {
+      for (auto& g : _geometries)
+         release(g);
+      _geometries.clear();
+   }
+
+   inline void path_impl::fill_rule(d2d_fill_mode mode)
+   {
+      _mode = mode;
+   }
 
 
 

@@ -78,7 +78,7 @@ namespace cycfi::artist
       get_factory().CreateRectangleGeometry(
          { r.left, r.top, r.right, r.bottom }, &geom
       );
-      _impl->_geometries.push_back(geom);
+      _impl->add(geom);
    }
 
    void path::add(rect r, float radius)
@@ -114,5 +114,13 @@ namespace cycfi::artist
 
    void path::bezier_curve_to(point cp1, point cp2, point end)
    {
+   }
+
+   void path::fill_rule(path::fill_rule_enum rule)
+   {
+      _impl->fill_rule(
+         rule == fill_winding?
+         D2D1_FILL_MODE_WINDING : D2D1_FILL_MODE_ALTERNATE
+      );
    }
 }
