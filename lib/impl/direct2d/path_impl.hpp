@@ -41,6 +41,7 @@ namespace cycfi::artist
    ////////////////////////////////////////////////////////////////////////////
    d2d_rect*         make_rect(rect r);
    d2d_round_rect*   make_round_rect(rect r, float radius);
+   d2d_ellipse*      make_round_rect(circle c);
 
    ////////////////////////////////////////////////////////////////////////////
    // Inlines
@@ -109,6 +110,17 @@ namespace cycfi::artist
       );
       if (!SUCCEEDED(hr))
          throw std::runtime_error{ "Error: CreateRoundedRectangleGeometry Fail." };
+      return geom;
+   }
+
+   inline d2d_ellipse* make_circle(circle c)
+   {
+      d2d_ellipse* geom = nullptr;
+      auto hr = get_factory().CreateEllipseGeometry(
+         { { c.cx, c.cy }, c.radius, c.radius }, &geom
+      );
+      if (!SUCCEEDED(hr))
+         throw std::runtime_error{ "Error: CreateEllipseGeometry Fail." };
       return geom;
    }
 

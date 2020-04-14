@@ -167,7 +167,7 @@ namespace cycfi::artist
       bezier_curve_to({ cp1x, cp1y }, { cp2x, cp2y }, { x, y });
    }
 
-#if !defined(ARTIST_SKIA)
+#if !defined(ARTIST_SKIA) && !defined(ARTIST_DIRECT_2D)
    inline void path::add(circle c)
    {
       arc(point{ c.cx, c.cy }, c.radius, 0.0, 2 * pi);

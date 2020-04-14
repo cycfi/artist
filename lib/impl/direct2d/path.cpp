@@ -82,9 +82,10 @@ namespace cycfi::artist
       _impl->add(make_round_rect(r, radius));
    }
 
-//   void path::add(struct circle c)
-//   {
-//   }
+   void path::add(struct circle c)
+   {
+      _impl->add(make_circle(c));
+   }
 
    void path::move_to(point p)
    {

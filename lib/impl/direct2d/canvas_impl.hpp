@@ -75,6 +75,7 @@ namespace cycfi::artist
    using d2d_fill_mode = D2D1_FILL_MODE;
    using d2d_rect = ID2D1RectangleGeometry;
    using d2d_round_rect = ID2D1RoundedRectangleGeometry;
+   using d2d_ellipse = ID2D1EllipseGeometry;
 
    ////////////////////////////////////////////////////////////////////////////
    // Low-level utilities

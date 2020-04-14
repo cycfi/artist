@@ -202,9 +202,10 @@ namespace cycfi::artist
       _state->path().add(r, radius);
    }
 
-//   void canvas::circle(struct circle c)
-//   {
-//   }
+   void canvas::circle(struct circle c)
+   {
+      _state->path().add(c);
+   }
 
    void canvas::path(class path const& p)
    {
