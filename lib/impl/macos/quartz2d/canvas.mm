@@ -404,9 +404,14 @@ namespace cycfi::artist
       bool ccw
    )
    {
+      // Note: For the clockwise, specify 0 to create a clockwise arc or 1
+      // to create a counterclockwise arc. This is actually reversed from the
+      // actual values because: "In a flipped coordinate system (the default
+      // for UIView drawing methods in iOS), specifying a clockwise arc results
+      // in a counterclockwise arc after the transformation is applied."
       CGContextAddArc(
          CGContextRef(_context),
-         p.x, p.y, radius, start_angle, end_angle, !ccw
+         p.x, p.y, radius, start_angle, end_angle, ccw? 1 : 0
       );
    }
 

@@ -112,23 +112,11 @@ namespace cycfi::artist
          mode == path_impl::stroke_mode?
          D2D1_FIGURE_BEGIN_HOLLOW : D2D1_FIGURE_BEGIN_FILLED
          ;
-      // sink->BeginFigure({ 0, 0 }, flag);
-
-      // d2d_arc_segment arc;
-      // arc.point = { p.x, p.y };
-      // arc.size = { radius, radius };
-      // arc.rotationAngle = (end_angle - start_angle) * 180 / pi;
-      // arc.sweepDirection = ccw? d2d_ccw : d2d_cw;
-      // arc.arcSize = ((end_angle - start_angle) > (2 * pi))?
-      //    d2d_arc_large : d2d_arc_small;
-      // sink->AddArc(arc);
 
       auto startx = p.x + (radius * std::cos(start_angle));
       auto starty = p.y + (radius * std::sin(start_angle));
       auto endx = p.x + (radius * std::cos(end_angle));
       auto endy = p.y + (radius * std::sin(end_angle));
-
-
 
       sink->BeginFigure({ startx, starty }, flag);
 
