@@ -56,5 +56,25 @@ namespace cycfi::artist
             clear();
       }
    }
+
+   void path_impl::add(
+      point p, float radius
+    , float start_angle, float end_angle
+    , bool ccw
+   )
+   {
+      auto el = pe_arc{ p, radius, start_angle, end_angle, ccw };
+      _elements.push_back(el);
+
+      auto path = make_path();
+      auto sink = start(path);
+      make_arc(sink, el);
+      stop(sink);
+      add(path);
+   }
+
+   void make_arc(d2d_path_sink* sink, pe_arc const& arc)
+   {
+   }
 }
 

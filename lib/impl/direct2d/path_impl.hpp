@@ -12,12 +12,26 @@
 
 namespace cycfi::artist
 {
-   struct pe_round_rect { rect r; float radius; };
+   struct pe_round_rect
+   {
+      rect  r;
+      float radius;
+   };
+
+   struct pe_arc
+   {
+      point p;
+      float radius;
+      float start_angle;
+      float end_angle;
+      bool  ccw;
+   };
 
    using path_element = std::variant<
       rect
     , pe_round_rect
     , circle
+    , pe_arc
    >;
 
    struct path_impl
@@ -39,16 +53,24 @@ namespace cycfi::artist
       void                 add(rect r, float radius);
       void                 add(circle c);
 
+      void                 add(
+                              point p, float radius
+                            , float start_angle, float end_angle
+                            , bool ccw
+                           );
+
       void                 fill(
                               d2d_canvas& cnv
                             , d2d_paint* paint
-                            , bool preserve);
+                            , bool preserve
+                           );
 
       void                 stroke(
                               d2d_canvas& cnv
                             , d2d_paint* paint
                             , float line_width
-                            , bool preserve);
+                            , bool preserve
+                           );
 
    private:
 
@@ -66,9 +88,11 @@ namespace cycfi::artist
    d2d_rect*               make_rect(rect r);
    d2d_round_rect*         make_round_rect(rect r, float radius);
    d2d_ellipse*            make_circle(circle c);
+
    d2d_path*               make_path();
-   d2d_path_builder*       start(d2d_path* path);
-   void                    stop(d2d_path_builder* builder);
+   d2d_path_sink*          start(d2d_path* path);
+   void                    stop(d2d_path_sink* sink);
+   void                    make_arc(d2d_path_sink* sink, pe_arc const& arc);
 
    ////////////////////////////////////////////////////////////////////////////
    // Inlines
@@ -157,20 +181,21 @@ namespace cycfi::artist
       return geom;
    }
 
-   inline d2d_path_builder* start(d2d_path* path)
+   inline d2d_path_sink* start(d2d_path* path)
    {
-      d2d_path_builder* builder = nullptr;
-      auto hr = path->Open(&builder);
+      d2d_path_sink* sink = nullptr;
+      auto hr = path->Open(&sink);
       if (!SUCCEEDED(hr))
          throw std::runtime_error{ "Error: ID2D1PathGeometry::Open Fail." };
-      return builder;
+      return sink;
    }
 
-   inline void stop(d2d_path_builder* builder)
+   inline void stop(d2d_path_sink* sink)
    {
-      auto hr = builder->Close();
+      auto hr = sink->Close();
       if (!SUCCEEDED(hr))
          throw std::runtime_error{ "Error: ID2D1GeometrySink::Close Fail." };
+      release(sink);
    }
 }
 

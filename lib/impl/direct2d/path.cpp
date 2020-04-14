@@ -104,6 +104,7 @@ namespace cycfi::artist
       float start_angle, float end_angle,
       bool ccw)
    {
+      _impl->add(p, radius, start_angle, end_angle, ccw);
    }
 
    void path::quadratic_curve_to(point cp, point end)
