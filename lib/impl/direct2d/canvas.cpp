@@ -176,6 +176,7 @@ namespace cycfi::artist
       bool ccw
    )
    {
+      _state->path().arc(p, radius, start_angle, end_angle, ccw);
    }
 
    void canvas::rect(struct rect r)

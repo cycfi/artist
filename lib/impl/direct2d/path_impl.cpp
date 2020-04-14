@@ -56,7 +56,6 @@ namespace cycfi::artist
    {
       if (!empty())
       {
-         clear();
          auto mode = stroke_mode;
          for (auto const& gen : _generators)
          {
@@ -75,15 +74,73 @@ namespace cycfi::artist
     , bool ccw
    )
    {
-//      auto path = make_path();
-//      auto sink = start(path);
-//      //make_arc(sink, el);
-//      stop(sink);
-//      add(path);
+      if (start_angle == std::fmod(end_angle, 2 * pi))
+      {
+         add(circle{ p, radius });
+         return;
+      }
+
+      auto gen =
+         [=](auto mode)
+         {
+            auto path = make_path();
+            auto sink = start(path);
+            make_arc(
+               sink, p, radius
+             , start_angle, end_angle
+             , ccw, mode
+            );
+            stop(sink);
+            return path;
+         };
+
+      add_gen(gen);
    }
 
-//   void make_arc(d2d_path_sink* sink, pe_arc const& arc)
-//   {
-//   }
+  void make_arc(
+      d2d_path_sink* sink
+    , point p, float radius
+    , float start_angle, float end_angle
+    , bool ccw
+    , path_impl::fill_type mode
+   )
+   {
+      if (mode != path_impl::stroke_mode)
+         sink->SetFillMode(d2d_fill_mode(mode));
+
+      d2d_figure_begin flag =
+         mode == path_impl::stroke_mode?
+         D2D1_FIGURE_BEGIN_HOLLOW : D2D1_FIGURE_BEGIN_FILLED
+         ;
+      // sink->BeginFigure({ 0, 0 }, flag);
+
+      // d2d_arc_segment arc;
+      // arc.point = { p.x, p.y };
+      // arc.size = { radius, radius };
+      // arc.rotationAngle = (end_angle - start_angle) * 180 / pi;
+      // arc.sweepDirection = ccw? d2d_ccw : d2d_cw;
+      // arc.arcSize = ((end_angle - start_angle) > (2 * pi))?
+      //    d2d_arc_large : d2d_arc_small;
+      // sink->AddArc(arc);
+
+      auto startx = p.x + (radius * std::cos(start_angle));
+      auto starty = p.y + (radius * std::sin(start_angle));
+      auto endx = p.x + (radius * std::cos(end_angle));
+      auto endy = p.y + (radius * std::sin(end_angle));
+
+
+
+      sink->BeginFigure({ startx, starty }, flag);
+
+      d2d_arc_segment arc;
+      arc.point = { endx, endy };
+      arc.size = { radius, radius };
+      arc.rotationAngle = (end_angle - start_angle) * 180 / pi;
+      arc.sweepDirection = ccw? d2d_ccw : d2d_cw;
+      arc.arcSize = d2d_arc_large;
+      sink->AddArc(arc);
+
+      sink->EndFigure(D2D1_FIGURE_END_OPEN);
+   }
 }
 

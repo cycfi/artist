@@ -114,8 +114,8 @@ namespace cycfi::artist
    {
       auto start = start_angle * 180 / pi;
       auto sweep = (end_angle - start_angle) * 180 / pi;
-      if (!ccw)
-         sweep = -sweep;
+      if (ccw)
+         sweep = -std::abs(sweep);
 
        _impl->addArc(
          { p.x-radius, p.y-radius, p.x+radius, p.y+radius },
