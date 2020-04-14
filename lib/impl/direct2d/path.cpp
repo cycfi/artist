@@ -74,17 +74,17 @@ namespace cycfi::artist
 
    void path::add(rect r)
    {
-      _impl->add(make_rect(r));
+      _impl->add(r);
    }
 
    void path::add(rect r, float radius)
    {
-      _impl->add(make_round_rect(r, radius));
+      _impl->add(r, radius);
    }
 
    void path::add(struct circle c)
    {
-      _impl->add(make_circle(c));
+      _impl->add(c);
    }
 
    void path::move_to(point p)

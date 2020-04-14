@@ -82,27 +82,13 @@ namespace cycfi::artist
    void canvas::canvas_state::fill(d2d_canvas& cnv, bool preserve)
    {
       // for now
-      if (!_path.impl()->empty())
-      {
-         cnv.FillGeometry(
-            _path.impl()->compute_fill()
-          , _fill_paint
-          , nullptr
-         );
-         if (!preserve)
-            _path.impl()->clear();
-      }
+      _path.impl()->fill(cnv, _fill_paint, preserve);
    }
 
    void canvas::canvas_state::stroke(d2d_canvas& cnv, bool preserve)
    {
-      if (!_path.impl()->empty())
-      {
-         for (auto p : *_path.impl())
-            cnv.DrawGeometry(p, _stroke_paint, _line_width, nullptr);
-         if (!preserve)
-            _path.impl()->clear();
-      }
+      // for now
+      _path.impl()->stroke(cnv, _stroke_paint, _line_width, preserve);
    }
 
    canvas::canvas(canvas_impl_ptr context_)

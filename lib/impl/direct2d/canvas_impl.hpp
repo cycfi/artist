@@ -76,6 +76,8 @@ namespace cycfi::artist
    using d2d_rect = ID2D1RectangleGeometry;
    using d2d_round_rect = ID2D1RoundedRectangleGeometry;
    using d2d_ellipse = ID2D1EllipseGeometry;
+   using d2d_path = ID2D1PathGeometry;
+   using d2d_path_builder = ID2D1GeometrySink;
 
    ////////////////////////////////////////////////////////////////////////////
    // Low-level utilities
