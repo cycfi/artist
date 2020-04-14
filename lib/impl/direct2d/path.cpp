@@ -74,15 +74,12 @@ namespace cycfi::artist
 
    void path::add(rect r)
    {
-      ID2D1RectangleGeometry* geom = nullptr;
-      get_factory().CreateRectangleGeometry(
-         { r.left, r.top, r.right, r.bottom }, &geom
-      );
-      _impl->add(geom);
+      _impl->add(make_rect(r));
    }
 
    void path::add(rect r, float radius)
    {
+      _impl->add(make_round_rect(r, radius));
    }
 
 //   void path::add(struct circle c)

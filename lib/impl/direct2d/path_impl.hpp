@@ -7,7 +7,6 @@
 #define ELEMENTS_DETAIL_DIRECT_2D_PATH_IMPL_APR_13_2020
 
 #include <canvas_impl.hpp>
-#include <functional>
 #include <vector>
 
 namespace cycfi::artist
@@ -16,22 +15,33 @@ namespace cycfi::artist
    {
    public:
 
-                        ~path_impl();
+                           ~path_impl();
 
-      bool              empty() const;
-      void              add(d2d_geometry* geom);
-      void              clear();
-      d2d_geometry*     compute_fill();
-      void              fill_rule(d2d_fill_mode mode);
+      bool                 empty() const;
+      void                 add(d2d_geometry* geom);
+      void                 clear();
+      d2d_geometry*        compute_fill();
+      void                 fill_rule(d2d_fill_mode mode);
 
    private:
 
       using geometry_vector = std::vector<d2d_geometry*>;
 
-      geometry_vector   _geometries;
-      d2d_fill_mode     _mode;
+      geometry_vector      _geometries;
+      d2d_fill_mode        _mode = D2D1_FILL_MODE_WINDING;
+      d2d_geometry_group*  _fill_geom = nullptr;
+      bool                 _recompute = 0;
    };
 
+   ////////////////////////////////////////////////////////////////////////////
+   // Low level utils
+   ////////////////////////////////////////////////////////////////////////////
+   d2d_rect*         make_rect(rect r);
+   d2d_round_rect*   make_round_rect(rect r, float radius);
+
+   ////////////////////////////////////////////////////////////////////////////
+   // Inlines
+   ////////////////////////////////////////////////////////////////////////////
    inline path_impl::~path_impl()
    {
       for (auto& g : _geometries)
@@ -46,11 +56,25 @@ namespace cycfi::artist
    inline void path_impl::add(d2d_geometry* geom)
    {
       _geometries.push_back(geom);
+      _recompute = true;
    }
 
    inline d2d_geometry* path_impl::compute_fill()
    {
-      return _geometries[0]; // for now
+      if (_geometries.empty())
+         return nullptr;
+      if (_geometries.size() == 1)
+         return _geometries[0];
+
+      if (_fill_geom)
+      {
+         if (_recompute)
+            release(_fill_geom);
+         else
+            return _fill_geom;
+      }
+      _fill_geom = make_group(_geometries, _mode);
+      return _fill_geom;
    }
 
    inline void path_impl::clear()
@@ -58,14 +82,36 @@ namespace cycfi::artist
       for (auto& g : _geometries)
          release(g);
       _geometries.clear();
+      _recompute = true;
    }
 
    inline void path_impl::fill_rule(d2d_fill_mode mode)
    {
       _mode = mode;
+      _recompute = true;
    }
 
+   inline d2d_rect* make_rect(rect r)
+   {
+      d2d_rect* geom = nullptr;
+      auto hr = get_factory().CreateRectangleGeometry(
+         { r.left, r.top, r.right, r.bottom }, &geom
+      );
+      if (!SUCCEEDED(hr))
+         throw std::runtime_error{ "Error: CreateRectangleGeometry Fail." };
+      return geom;
+   }
 
+   inline d2d_round_rect* make_round_rect(rect r, float radius)
+   {
+      d2d_round_rect* geom = nullptr;
+      auto hr = get_factory().CreateRoundedRectangleGeometry(
+          { { r.left, r.top, r.right, r.bottom }, radius , radius }, &geom
+      );
+      if (!SUCCEEDED(hr))
+         throw std::runtime_error{ "Error: CreateRoundedRectangleGeometry Fail." };
+      return geom;
+   }
 
 /*
    struct path_impl

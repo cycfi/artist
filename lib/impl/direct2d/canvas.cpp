@@ -160,6 +160,7 @@ namespace cycfi::artist
 
    void canvas::round_rect(struct rect r, float radius)
    {
+      _state->path().add(r, radius);
    }
 
 //   void canvas::circle(struct circle c)
