@@ -20,24 +20,33 @@ namespace cycfi::artist
 
       artist::path&     path();
       void              fill_paint(color c, d2d_canvas& cnv);
-      void              fill(d2d_canvas& cnv);
+      void              stroke_paint(color c, d2d_canvas& cnv);
+      void              line_width(float w);
+      void              fill(d2d_canvas& cnv, bool preserve);
+      void              stroke(d2d_canvas& cnv, bool preserve);
 
    private:
 
-      artist::path      _path;            // for now
-      color             _fill_color;      // for now
-      d2d_paint*        _fill_paint;      // for now
+      artist::path      _path;               // for now
+      color             _fill_color;         // for now
+      d2d_paint*        _fill_paint;         // for now
+      color             _stroke_color;       // for now
+      d2d_paint*        _stroke_paint;       // for now
+      float             _line_width = 1;     // for now
    };
 
    void canvas::canvas_state::update(d2d_canvas& cnv)
    {
       if (!_fill_paint)
          _fill_paint = make_paint(_fill_color, cnv);
+      if (!_stroke_paint)
+         _stroke_paint = make_paint(_stroke_color, cnv);
    }
 
    void canvas::canvas_state::discard()
    {
       release(_fill_paint);
+      release(_stroke_paint);
    }
 
    artist::path& canvas::canvas_state::path()
@@ -55,7 +64,22 @@ namespace cycfi::artist
       }
    }
 
-   void canvas::canvas_state::fill(d2d_canvas& cnv)
+   void canvas::canvas_state::stroke_paint(color c, d2d_canvas& cnv)
+   {
+      if (c != _stroke_color)
+      {
+         _stroke_color = c;
+         release(_stroke_paint);
+         _stroke_paint = make_paint(_stroke_color, cnv);
+      }
+   }
+
+   void canvas::canvas_state::line_width(float w)
+   {
+      _line_width = w;
+   }
+
+   void canvas::canvas_state::fill(d2d_canvas& cnv, bool preserve)
    {
       // for now
       if (!_path.impl()->empty())
@@ -65,7 +89,19 @@ namespace cycfi::artist
           , _fill_paint
           , nullptr
          );
-         _path.impl()->clear();
+         if (!preserve)
+            _path.impl()->clear();
+      }
+   }
+
+   void canvas::canvas_state::stroke(d2d_canvas& cnv, bool preserve)
+   {
+      if (!_path.impl()->empty())
+      {
+         for (auto p : *_path.impl())
+            cnv.DrawGeometry(p, _stroke_paint, _line_width, nullptr);
+         if (!preserve)
+            _path.impl()->clear();
       }
    }
 
@@ -114,19 +150,22 @@ namespace cycfi::artist
 
    void canvas::fill()
    {
-      _state->fill(*_context->canvas());
+      _state->fill(*_context->canvas(), false);
    }
 
    void canvas::fill_preserve()
    {
+      _state->fill(*_context->canvas(), true);
    }
 
    void canvas::stroke()
    {
+      _state->stroke(*_context->canvas(), false);
    }
 
    void canvas::stroke_preserve()
    {
+      _state->stroke(*_context->canvas(), true);
    }
 
    void canvas::clip()
@@ -186,10 +225,12 @@ namespace cycfi::artist
 
    void canvas::stroke_style(color c)
    {
+      _state->stroke_paint(c, *_context->canvas());
    }
 
    void canvas::line_width(float w)
    {
+      _state->line_width(w);
    }
 
    void canvas::line_cap(line_cap_enum cap_)

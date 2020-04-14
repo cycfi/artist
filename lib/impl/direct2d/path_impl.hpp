@@ -15,6 +15,9 @@ namespace cycfi::artist
    {
    public:
 
+      using geometry_vector = std::vector<d2d_geometry*>;
+      using iterator = geometry_vector::iterator;
+
                            ~path_impl();
 
       bool                 empty() const;
@@ -23,9 +26,10 @@ namespace cycfi::artist
       d2d_geometry*        compute_fill();
       void                 fill_rule(d2d_fill_mode mode);
 
-   private:
+      iterator             begin()  { return _geometries.begin(); }
+      iterator             end()    { return _geometries.end(); }
 
-      using geometry_vector = std::vector<d2d_geometry*>;
+   private:
 
       geometry_vector      _geometries;
       d2d_fill_mode        _mode = D2D1_FILL_MODE_WINDING;
