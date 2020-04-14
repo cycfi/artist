@@ -12,33 +12,10 @@
 
 namespace cycfi::artist
 {
-   struct pe_round_rect
-   {
-      rect  r;
-      float radius;
-   };
-
-   struct pe_arc
-   {
-      point p;
-      float radius;
-      float start_angle;
-      float end_angle;
-      bool  ccw;
-   };
-
-   using path_element = std::variant<
-      rect
-    , pe_round_rect
-    , circle
-    , pe_arc
-   >;
-
    struct path_impl
    {
    public:
 
-      using element_vector = std::vector<path_element>;
       using geometry_vector = std::vector<d2d_geometry*>;
       using iterator = geometry_vector::iterator;
 
@@ -76,7 +53,6 @@ namespace cycfi::artist
 
       void                 add(d2d_geometry* geom);
 
-      element_vector       _elements;
       geometry_vector      _geometries;
       d2d_fill_mode        _mode = D2D1_FILL_MODE_WINDING;
       d2d_geometry_group*  _fill_geom = nullptr;
@@ -92,7 +68,7 @@ namespace cycfi::artist
    d2d_path*               make_path();
    d2d_path_sink*          start(d2d_path* path);
    void                    stop(d2d_path_sink* sink);
-   void                    make_arc(d2d_path_sink* sink, pe_arc const& arc);
+//   void                    make_arc(d2d_path_sink* sink, pe_arc const& arc);
 
    ////////////////////////////////////////////////////////////////////////////
    // Inlines
@@ -117,19 +93,16 @@ namespace cycfi::artist
 
    inline void path_impl::add(rect r)
    {
-      _elements.push_back(r);
       add(make_rect(r));
    }
 
    inline void path_impl::add(rect r, float radius)
    {
-      _elements.push_back(pe_round_rect{ r, radius });
       add(make_round_rect(r, radius));
    }
 
    inline void path_impl::add(circle c)
    {
-      _elements.push_back(c);
       add(make_circle(c));
    }
 

@@ -25,7 +25,6 @@ namespace cycfi::artist
       for (auto& g : _geometries)
          release(g);
       _geometries.clear();
-      _elements.clear();
       release(_fill_geom);
    }
 
@@ -63,18 +62,15 @@ namespace cycfi::artist
     , bool ccw
    )
    {
-      auto el = pe_arc{ p, radius, start_angle, end_angle, ccw };
-      _elements.push_back(el);
-
       auto path = make_path();
       auto sink = start(path);
-      make_arc(sink, el);
+      //make_arc(sink, el);
       stop(sink);
       add(path);
    }
 
-   void make_arc(d2d_path_sink* sink, pe_arc const& arc)
-   {
-   }
+//   void make_arc(d2d_path_sink* sink, pe_arc const& arc)
+//   {
+//   }
 }
 
