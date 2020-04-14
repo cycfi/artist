@@ -144,6 +144,7 @@ elseif (WIN32 AND ARTIST_DIRECT_2D)
       impl/direct2d/font.cpp
       impl/direct2d/text_layout.cpp
       impl/direct2d/path.cpp
+      impl/direct2d/path_impl.cpp
    )
 
 elseif (ARTIST_SKIA)
