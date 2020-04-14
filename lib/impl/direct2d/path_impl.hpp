@@ -16,6 +16,15 @@ namespace cycfi::artist
    {
    public:
 
+      enum fill_type
+      {
+         fill_winding = D2D1_FILL_MODE_WINDING,
+         fill_odd_even = D2D1_FILL_MODE_ALTERNATE,
+         stroke_mode = -1
+      };
+
+      using geometry_gen = std::function<d2d_geometry*(fill_type mode)>;
+      using gen_vector = std::vector<geometry_gen>;
       using geometry_vector = std::vector<d2d_geometry*>;
       using iterator = geometry_vector::iterator;
 
@@ -51,9 +60,10 @@ namespace cycfi::artist
 
    private:
 
-      void                 add(d2d_geometry* geom);
+      void                 add_gen(geometry_gen&& gen);
 
       geometry_vector      _geometries;
+      gen_vector           _generators;
       d2d_fill_mode        _mode = D2D1_FILL_MODE_WINDING;
       d2d_geometry_group*  _fill_geom = nullptr;
    };
@@ -82,28 +92,28 @@ namespace cycfi::artist
 
    inline bool path_impl::empty() const
    {
-      return _geometries.empty();
+      return _generators.empty();
    }
 
-   inline void path_impl::add(d2d_geometry* geom)
+   inline void path_impl::add_gen(geometry_gen&& gen)
    {
-      _geometries.push_back(geom);
+      _generators.emplace_back(std::move(gen));
       release(_fill_geom);
    }
 
    inline void path_impl::add(rect r)
    {
-      add(make_rect(r));
+      add_gen([=](auto){ return make_rect(r); });
    }
 
    inline void path_impl::add(rect r, float radius)
    {
-      add(make_round_rect(r, radius));
+      add_gen([=](auto){ return make_round_rect(r, radius); });
    }
 
    inline void path_impl::add(circle c)
    {
-      add(make_circle(c));
+      add_gen([=](auto){ return make_circle(c); });
    }
 
    inline void path_impl::fill_rule(d2d_fill_mode mode)

@@ -9,13 +9,19 @@ namespace cycfi::artist
 {
    d2d_geometry* path_impl::compute_fill()
    {
-      if (_geometries.empty())
+      auto mode = fill_type(_mode);
+
+      if (_generators.empty())
          return nullptr;
-      if (_geometries.size() == 1)
-         return _geometries[0];
+      if (_generators.size() == 1)
+         return _generators[0](mode);
 
       if (_fill_geom)
          return _fill_geom;
+
+      clear();
+      for (auto const& gen : _generators)
+         _geometries.push_back(gen(mode));
       _fill_geom = make_group(_geometries, _mode);
       return _fill_geom;
    }
@@ -25,6 +31,7 @@ namespace cycfi::artist
       for (auto& g : _geometries)
          release(g);
       _geometries.clear();
+      _generators.clear();
       release(_fill_geom);
    }
 
@@ -49,8 +56,14 @@ namespace cycfi::artist
    {
       if (!empty())
       {
-         for (auto p : _geometries)
+         clear();
+         auto mode = stroke_mode;
+         for (auto const& gen : _generators)
+         {
+            auto p = gen(mode);
+            _geometries.push_back(p);
             cnv.DrawGeometry(p, paint, line_width, nullptr);
+         }
          if (!preserve)
             clear();
       }
@@ -62,11 +75,11 @@ namespace cycfi::artist
     , bool ccw
    )
    {
-      auto path = make_path();
-      auto sink = start(path);
-      //make_arc(sink, el);
-      stop(sink);
-      add(path);
+//      auto path = make_path();
+//      auto sink = start(path);
+//      //make_arc(sink, el);
+//      stop(sink);
+//      add(path);
    }
 
 //   void make_arc(d2d_path_sink* sink, pe_arc const& arc)
