@@ -34,7 +34,6 @@ namespace cycfi::artist
       geometry_vector      _geometries;
       d2d_fill_mode        _mode = D2D1_FILL_MODE_WINDING;
       d2d_geometry_group*  _fill_geom = nullptr;
-      bool                 _recompute = 0;
    };
 
    ////////////////////////////////////////////////////////////////////////////
@@ -50,6 +49,7 @@ namespace cycfi::artist
    {
       for (auto& g : _geometries)
          release(g);
+      release(_fill_geom);
    }
 
    inline bool path_impl::empty() const
@@ -60,7 +60,7 @@ namespace cycfi::artist
    inline void path_impl::add(d2d_geometry* geom)
    {
       _geometries.push_back(geom);
-      _recompute = true;
+      release(_fill_geom);
    }
 
    inline d2d_geometry* path_impl::compute_fill()
@@ -71,12 +71,7 @@ namespace cycfi::artist
          return _geometries[0];
 
       if (_fill_geom)
-      {
-         if (_recompute)
-            release(_fill_geom);
-         else
-            return _fill_geom;
-      }
+         return _fill_geom;
       _fill_geom = make_group(_geometries, _mode);
       return _fill_geom;
    }
@@ -86,13 +81,13 @@ namespace cycfi::artist
       for (auto& g : _geometries)
          release(g);
       _geometries.clear();
-      _recompute = true;
+      release(_fill_geom);
    }
 
    inline void path_impl::fill_rule(d2d_fill_mode mode)
    {
       _mode = mode;
-      _recompute = true;
+      release(_fill_geom);
    }
 
    inline d2d_rect* make_rect(rect r)
