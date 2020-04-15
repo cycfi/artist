@@ -32,9 +32,6 @@ namespace cycfi::artist
       using geometry_vector = std::vector<d2d_geometry*>;
       using iterator = geometry_vector::iterator;
 
-      using line_cap_enum = canvas::line_cap_enum;
-      using join_enum = canvas::join_enum;
-
                            ~path_impl();
 
       bool                 empty() const;
@@ -57,6 +54,7 @@ namespace cycfi::artist
                             , d2d_paint* paint
                             , float line_width
                             , bool preserve
+                            , d2d_stroke_style* stroke_style
                            );
 
       void                 begin_path();
@@ -70,10 +68,6 @@ namespace cycfi::artist
                             , bool ccw
                            );
       void                 arc_to(point p1, point p2, float radius);
-
-      void                 line_cap(line_cap_enum cap);
-      void                 line_join(join_enum join);
-      void                 miter_limit(float limit = 10);
 
    private:
 
@@ -91,10 +85,6 @@ namespace cycfi::artist
       path_gen_state       _path_gens_state = path_ended;
       point                _start;
       point                _cp;
-
-      d2d_stroke_style*    _stroke_style = nullptr;
-      line_cap_enum        _line_cap = line_cap_enum::butt;
-      join_enum            _join = join_enum::miter_join;
    };
 
    ////////////////////////////////////////////////////////////////////////////
@@ -121,7 +111,6 @@ namespace cycfi::artist
       for (auto& g : _geometries)
          release(g);
       release(_fill_geom);
-      release(_stroke_style);
    }
 
    inline bool path_impl::empty() const

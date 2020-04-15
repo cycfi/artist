@@ -15,6 +15,8 @@ namespace cycfi::artist
    {
    public:
 
+                        ~canvas_state();
+
       virtual void      update(d2d_canvas& cnv);
       virtual void      discard();
 
@@ -25,7 +27,16 @@ namespace cycfi::artist
       void              fill(d2d_canvas& cnv, bool preserve);
       void              stroke(d2d_canvas& cnv, bool preserve);
 
+      using line_cap_enum = canvas::line_cap_enum;
+      using join_enum = canvas::join_enum;
+
+      void              line_cap(line_cap_enum cap);
+      void              line_join(join_enum join);
+      void              miter_limit(float limit = 10);
+
    private:
+
+      void              update_stroke_style();
 
       artist::path      _path;               // for now
       color             _fill_color;         // for now
@@ -33,7 +44,18 @@ namespace cycfi::artist
       color             _stroke_color;       // for now
       d2d_paint*        _stroke_paint;       // for now
       float             _line_width = 1;     // for now
+
+      d2d_stroke_style* _stroke_style = nullptr;
+      line_cap_enum     _line_cap = line_cap_enum::butt;
+      join_enum         _join = join_enum::miter_join;
+      float             _miter_limit = 10;
    };
+
+
+   canvas::canvas_state::~canvas_state()
+   {
+      release(_stroke_style);
+   }
 
    void canvas::canvas_state::update(d2d_canvas& cnv)
    {
@@ -88,7 +110,44 @@ namespace cycfi::artist
    void canvas::canvas_state::stroke(d2d_canvas& cnv, bool preserve)
    {
       // for now
-      _path.impl()->stroke(cnv, _stroke_paint, _line_width, preserve);
+      _path.impl()->stroke(
+         cnv, _stroke_paint, _line_width, preserve, _stroke_style
+      );
+   }
+
+   void canvas::canvas_state::line_cap(line_cap_enum cap)
+   {
+      if (_line_cap != cap)
+      {
+         _line_cap = cap;
+         update_stroke_style();
+      }
+   }
+
+   void canvas::canvas_state::line_join(join_enum join)
+   {
+      if (join != _join)
+      {
+         _join = join;
+         update_stroke_style();
+      }
+   }
+
+   void canvas::canvas_state::miter_limit(float limit)
+   {
+      if (_miter_limit != limit)
+      {
+         _miter_limit = limit;
+         update_stroke_style();
+      }
+   }
+
+   void canvas::canvas_state::update_stroke_style()
+   {
+      release(_stroke_style);
+      _stroke_style = make_stroke_style(
+         _line_cap, _join, _miter_limit
+      );
    }
 
    canvas::canvas(canvas_impl_ptr context_)
@@ -228,14 +287,17 @@ namespace cycfi::artist
 
    void canvas::line_cap(line_cap_enum cap_)
    {
+      _state->line_cap(cap_);
    }
 
    void canvas::line_join(join_enum join_)
    {
+      _state->line_join(join_);
    }
 
    void canvas::miter_limit(float limit)
    {
+      _state->miter_limit(limit);
    }
 
    void canvas::shadow_style(point offset, float blur, color c)

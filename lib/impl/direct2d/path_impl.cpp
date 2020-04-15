@@ -53,7 +53,9 @@ namespace cycfi::artist
       d2d_canvas& cnv
     , d2d_paint* paint
     , float line_width
-    , bool preserve)
+    , bool preserve
+    , d2d_stroke_style* stroke_style
+   )
    {
       build_path();
       if (!empty())
@@ -63,7 +65,7 @@ namespace cycfi::artist
          {
             auto p = gen(mode);
             _geometries.push_back(p);
-            cnv.DrawGeometry(p, paint, line_width, _stroke_style);
+            cnv.DrawGeometry(p, paint, line_width, stroke_style);
          }
          if (!preserve)
             clear();
