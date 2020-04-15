@@ -69,6 +69,9 @@ namespace cycfi::artist
                            );
       void                 arc_to(point p1, point p2, float radius);
 
+      void                 quadratic_curve_to(point cp, point end);
+      void                 bezier_curve_to(point cp1, point cp2, point end);
+
    private:
 
       enum path_gen_state { path_started, path_ended };

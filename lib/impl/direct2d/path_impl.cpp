@@ -19,7 +19,6 @@ namespace cycfi::artist
       if (_fill_geom)
          return _fill_geom;
 
-      clear();
       for (auto const& gen : _geom_gens)
          _geometries.push_back(gen(mode));
       _fill_geom = make_group(_geometries, _mode);
@@ -167,7 +166,7 @@ namespace cycfi::artist
       arc.arcSize = diff_angle > pi? d2d_arc_large : d2d_arc_small;
 
       _path_gens.push_back(
-         [=](d2d_path_sink* sink, fill_type mode)
+         [arc](d2d_path_sink* sink, fill_type mode)
          {
             sink->AddArc(arc);
          }
@@ -218,6 +217,41 @@ namespace cycfi::artist
          { cx + p1.x, cy + p1.y }
        , radius, start_angle, end_angle
        , (b1 * a2 > b2 * a1)
+      );
+   }
+
+   void path_impl::quadratic_curve_to(point cp, point end)
+   {
+      if (_path_gens_state == path_ended)
+         move_to({ cp.x, cp.y });
+
+      d2d_quad_segment quad;
+      quad.point1 = { cp.x, cp.y };
+      quad.point2 = { end.x, end.y };
+
+      _path_gens.push_back(
+         [quad](d2d_path_sink* sink, fill_type mode)
+         {
+            sink->AddQuadraticBezier(quad);
+         }
+      );
+   }
+
+   void path_impl::bezier_curve_to(point cp1, point cp2, point end)
+   {
+      if (_path_gens_state == path_ended)
+         move_to({ cp1.x, cp1.y });
+
+      d2d_bezier_segment bezier;
+      bezier.point1 = { cp1.x, cp1.y };
+      bezier.point2 = { cp2.x, cp2.y };
+      bezier.point3 = { end.x, end.y };
+
+      _path_gens.push_back(
+         [bezier](d2d_path_sink* sink, fill_type mode)
+         {
+            sink->AddBezier(bezier);
+         }
       );
    }
 

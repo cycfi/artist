@@ -264,10 +264,12 @@ namespace cycfi::artist
 
    void canvas::quadratic_curve_to(point cp, point end)
    {
+      _state->path().quadratic_curve_to(cp, end);
    }
 
    void canvas::bezier_curve_to(point cp1, point cp2, point end)
    {
+      _state->path().bezier_curve_to(cp1, cp2, end);
    }
 
    void canvas::fill_style(color c)

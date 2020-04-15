@@ -121,10 +121,12 @@ namespace cycfi::artist
 
    void path::quadratic_curve_to(point cp, point end)
    {
+      _impl->quadratic_curve_to(cp, end);
    }
 
    void path::bezier_curve_to(point cp1, point cp2, point end)
    {
+      _impl->bezier_curve_to(cp1, cp2, end);
    }
 
    void path::fill_rule(path::fill_rule_enum rule)

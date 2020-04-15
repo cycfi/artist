@@ -218,7 +218,7 @@ void bezier(canvas& cnv)
    cnv.bezier_curve_to(cp1, cp2, end);
    cnv.stroke();
 
-   cnv.stroke_style(colors::pink.opacity(0.2));
+   cnv.fill_style(colors::pink.opacity(0.8));
    cnv.circle(cp1.x, cp1.y, 3);
    cnv.circle(cp2.x, cp2.y, 3);
    cnv.fill();
@@ -306,8 +306,8 @@ void draw(canvas& cnv)
    arc_to(cnv);
    line_caps(cnv);
    line_joins(cnv);
-   // bezier(cnv);
-   // quad(cnv);
+   bezier(cnv);
+   quad(cnv);
    // linear_gradient(cnv);
    // radial_gradient(cnv);
 }

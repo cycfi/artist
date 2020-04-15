@@ -81,6 +81,7 @@ namespace cycfi::artist
    using d2d_figure_begin = D2D1_FIGURE_BEGIN;
    using d2d_arc_segment = D2D1_ARC_SEGMENT;
    using d2d_quad_segment = D2D1_QUADRATIC_BEZIER_SEGMENT;
+   using d2d_bezier_segment = D2D1_BEZIER_SEGMENT;
    using d2d_stroke_style = ID2D1StrokeStyle;
    using d2d_stroke_style_properties = D2D1_STROKE_STYLE_PROPERTIES;
    using d2d_cap_style = D2D1_CAP_STYLE;
