@@ -122,6 +122,12 @@ namespace cycfi::artist
 
    void path_impl::line_to(point p)
    {
+      if (_path_gens_state == path_ended)
+      {
+         move_to(p);
+         return;
+      }
+
       _path_gens.push_back(
          [p](d2d_path_sink* sink, fill_type mode)
          {
@@ -137,12 +143,15 @@ namespace cycfi::artist
     , bool ccw
    )
    {
-
       auto startx = p.x + (radius * std::cos(start_angle));
       auto starty = p.y + (radius * std::sin(start_angle));
       auto endx = p.x + (radius * std::cos(end_angle));
       auto endy = p.y + (radius * std::sin(end_angle));
-      move_to({ startx, starty });
+
+      if (_path_gens_state == path_ended)
+         move_to({ startx, starty });
+      else
+         line_to({ startx, starty });
 
       auto diff_angle = end_angle - start_angle;
       if (diff_angle < 0)
@@ -202,8 +211,6 @@ namespace cycfi::artist
       auto qy = a2 * (k1 + j2);
       auto start_angle = std::atan2f(py - cy, px - cx);
       auto end_angle = std::atan2f(qy - cy, qx - cx);
-
-      line_to({ px + p1.x, py + p1.y });
 
       arc(
          { cx + p1.x, cy + p1.y }
