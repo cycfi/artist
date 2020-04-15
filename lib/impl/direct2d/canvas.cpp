@@ -160,14 +160,17 @@ namespace cycfi::artist
 
    void canvas::move_to(point p)
    {
+      _state->path().move_to(p);
    }
 
    void canvas::line_to(point p)
    {
+     _state->path().line_to(p);
    }
 
    void canvas::arc_to(point p1, point p2, float radius)
    {
+      _state->path().arc_to(p1, p2, radius);
    }
 
    void canvas::arc(

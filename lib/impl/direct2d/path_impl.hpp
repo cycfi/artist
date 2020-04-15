@@ -66,6 +66,7 @@ namespace cycfi::artist
                             , float start_angle, float end_angle
                             , bool ccw
                            );
+      void                 arc_to(point p1, point p2, float radius);
 
    private:
 
@@ -81,6 +82,8 @@ namespace cycfi::artist
       d2d_geometry_group*  _fill_geom = nullptr;
       path_gen_vector      _path_gens;
       path_gen_state       _path_gens_state = path_ended;
+      point                _start;
+      point                _cp;
    };
 
    ////////////////////////////////////////////////////////////////////////////

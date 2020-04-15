@@ -85,6 +85,7 @@ namespace cycfi::artist
             sink->BeginFigure({ 0, 0 }, flag);
          }
       );
+      _start = _cp = point{ 0, 0 };
    }
 
    void path_impl::end_path(bool close)
@@ -98,6 +99,8 @@ namespace cycfi::artist
             );
          }
       );
+      if (close)
+         _cp = _start;
    }
 
    void path_impl::move_to(point p)
@@ -114,6 +117,7 @@ namespace cycfi::artist
             sink->BeginFigure({ p.x, p.y }, flag);
          }
       );
+      _cp = p;
    }
 
    void path_impl::line_to(point p)
@@ -124,6 +128,7 @@ namespace cycfi::artist
             sink->AddLine({ p.x, p.y });
          }
       );
+      _cp = p;
    }
 
    void path_impl::arc(
@@ -132,24 +137,78 @@ namespace cycfi::artist
     , bool ccw
    )
    {
+
       auto startx = p.x + (radius * std::cos(start_angle));
       auto starty = p.y + (radius * std::sin(start_angle));
+      auto endx = p.x + (radius * std::cos(end_angle));
+      auto endy = p.y + (radius * std::sin(end_angle));
       move_to({ startx, starty });
+
+      auto diff_angle = end_angle - start_angle;
+      if (diff_angle < 0)
+         diff_angle += 2 * pi;
+
+      d2d_arc_segment arc;
+      arc.point = { endx, endy };
+      arc.size = { radius, radius };
+      arc.rotationAngle = diff_angle * 180 / pi;
+      arc.sweepDirection = ccw? d2d_ccw : d2d_cw;
+      arc.arcSize = diff_angle > pi? d2d_arc_large : d2d_arc_small;
 
       _path_gens.push_back(
          [=](d2d_path_sink* sink, fill_type mode)
          {
-            auto endx = p.x + (radius * std::cos(end_angle));
-            auto endy = p.y + (radius * std::sin(end_angle));
-
-            d2d_arc_segment arc;
-            arc.point = { endx, endy };
-            arc.size = { radius, radius };
-            arc.rotationAngle = (end_angle - start_angle) * 180 / pi;
-            arc.sweepDirection = ccw? d2d_ccw : d2d_cw;
-            arc.arcSize = d2d_arc_large;
             sink->AddArc(arc);
          }
+      );
+
+      _cp = { endx, endy };
+   }
+
+   void path_impl::arc_to(point p1, point p2, float radius)
+   {
+      // Adapted from http://code.google.com/p/fxcanvas/
+
+      if (radius == 0)
+      {
+         line_to(p1);
+         return;
+      }
+
+      auto a1 = _cp.y - p1.y;
+      auto b1 = _cp.x - p1.x;
+      auto a2 = p2.y - p1.y;
+      auto b2 = p2.x - p1.x;
+      auto mm = fabsf(a1 * b2 - b1 * a2);
+
+      if (mm < 1.0e-8)
+      {
+         line_to(p1);
+         return;
+      }
+
+      auto dd = a1 * a1 + b1 * b1;
+      auto cc = a2 * a2 + b2 * b2;
+      auto tt = a1 * a2 + b1 * b2;
+      auto k1 = radius * std::sqrtf(dd) / mm;
+      auto k2 = radius * std::sqrtf(cc) / mm;
+      auto j1 = k1 * tt / dd;
+      auto j2 = k2 * tt / cc;
+      auto cx = k1 * b2 + k2 * b1;
+      auto cy = k1 * a2 + k2 * a1;
+      auto px = b1 * (k2 + j1);
+      auto py = a1 * (k2 + j1);
+      auto qx = b2 * (k1 + j2);
+      auto qy = a2 * (k1 + j2);
+      auto start_angle = std::atan2f(py - cy, px - cx);
+      auto end_angle = std::atan2f(qy - cy, qx - cx);
+
+      line_to({ px + p1.x, py + p1.y });
+
+      arc(
+         { cx + p1.x, cy + p1.y }
+       , radius, start_angle, end_angle
+       , (b1 * a2 > b2 * a1)
       );
    }
 

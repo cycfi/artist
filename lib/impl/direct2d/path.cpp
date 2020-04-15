@@ -89,14 +89,17 @@ namespace cycfi::artist
 
    void path::move_to(point p)
    {
+      _impl->move_to(p);
    }
 
    void path::line_to(point p)
    {
+      _impl->line_to(p);
    }
 
    void path::arc_to(point p1, point p2, float radius)
    {
+      _impl->arc_to(p1, p2, radius);
    }
 
    void path::arc(

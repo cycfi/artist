@@ -80,6 +80,7 @@ namespace cycfi::artist
    using d2d_path_sink = ID2D1GeometrySink;
    using d2d_figure_begin = D2D1_FIGURE_BEGIN;
    using d2d_arc_segment = D2D1_ARC_SEGMENT;
+   using d2d_quad_segment = D2D1_QUADRATIC_BEZIER_SEGMENT;
 
    constexpr auto d2d_ccw = D2D1_SWEEP_DIRECTION_COUNTER_CLOCKWISE;
    constexpr auto d2d_cw = D2D1_SWEEP_DIRECTION_CLOCKWISE;
