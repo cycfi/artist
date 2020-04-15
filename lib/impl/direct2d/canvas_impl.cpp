@@ -57,5 +57,15 @@ namespace cycfi::artist
       if (_state)
          _state->update(*_d2d_canvas);
    }
+
+   d2d_paint* make_paint(canvas::linear_gradient const& lg, d2d_canvas& cn)
+   {
+      return nullptr;
+   }
+
+   d2d_paint* make_paint(canvas::radial_gradient const& rg, d2d_canvas& cn)
+   {
+      return nullptr;
+   }
 }
 

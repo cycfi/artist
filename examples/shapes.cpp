@@ -308,8 +308,8 @@ void draw(canvas& cnv)
    line_joins(cnv);
    bezier(cnv);
    quad(cnv);
-   // linear_gradient(cnv);
-   // radial_gradient(cnv);
+   linear_gradient(cnv);
+   radial_gradient(cnv);
 }
 
 int main(int argc, char const* argv[])

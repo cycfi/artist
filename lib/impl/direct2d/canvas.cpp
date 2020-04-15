@@ -7,6 +7,7 @@
 #include <artist/canvas.hpp>
 #include <canvas_impl.hpp>
 #include <path_impl.hpp>
+#include <variant>
 #include <stack>
 
 namespace cycfi::artist
@@ -38,10 +39,16 @@ namespace cycfi::artist
 
       void              update_stroke_style();
 
+      using paint_info = std::variant<
+         color
+       , canvas::linear_gradient
+       , canvas::radial_gradient
+      >;
+
       artist::path      _path;               // for now
-      color             _fill_color;         // for now
+      paint_info        _fill_info;
       d2d_paint*        _fill_paint;         // for now
-      color             _stroke_color;       // for now
+      paint_info        _stroke_info;
       d2d_paint*        _stroke_paint;       // for now
       float             _line_width = 1;     // for now
 
@@ -51,18 +58,25 @@ namespace cycfi::artist
       float             _miter_limit = 10;
    };
 
-
    canvas::canvas_state::~canvas_state()
    {
+      release(_fill_paint);
+      release(_stroke_paint);
       release(_stroke_style);
    }
 
    void canvas::canvas_state::update(d2d_canvas& cnv)
    {
+      auto make =
+         [&cnv](auto const& info) -> d2d_paint*
+         {
+            return make_paint(info, cnv);
+         };
+
       if (!_fill_paint)
-         _fill_paint = make_paint(_fill_color, cnv);
+         _fill_paint = std::visit(make, _fill_info);
       if (!_stroke_paint)
-         _stroke_paint = make_paint(_stroke_color, cnv);
+         _stroke_paint = std::visit(make, _stroke_info);
    }
 
    void canvas::canvas_state::discard()
@@ -78,21 +92,23 @@ namespace cycfi::artist
 
    void canvas::canvas_state::fill_paint(color c, d2d_canvas& cnv)
    {
-      if (c != _fill_color)
+      if (!std::holds_alternative<color>(_fill_info)
+         || c != std::get<color>(_fill_info))
       {
-         _fill_color = c;
+         _fill_info = c;
          release(_fill_paint);
-         _fill_paint = make_paint(_fill_color, cnv);
+         _fill_paint = make_paint(c, cnv);
       }
    }
 
    void canvas::canvas_state::stroke_paint(color c, d2d_canvas& cnv)
    {
-      if (c != _stroke_color)
+      if (!std::holds_alternative<color>(_stroke_info)
+         || c != std::get<color>(_stroke_info))
       {
-         _stroke_color = c;
+         _stroke_info = c;
          release(_stroke_paint);
-         _stroke_paint = make_paint(_stroke_color, cnv);
+         _stroke_paint = make_paint(c, cnv);
       }
    }
 
