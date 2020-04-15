@@ -126,13 +126,11 @@ namespace cycfi::artist
 
    void canvas::canvas_state::fill(d2d_canvas& cnv, bool preserve)
    {
-      // for now
       _path.impl()->fill(cnv, _fill_paint, preserve);
    }
 
    void canvas::canvas_state::stroke(d2d_canvas& cnv, bool preserve)
    {
-      // for now
       _path.impl()->stroke(
          cnv, _stroke_paint, _line_width, preserve, _stroke_style
       );

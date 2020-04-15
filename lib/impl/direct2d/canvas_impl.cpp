@@ -130,8 +130,8 @@ namespace cycfi::artist
       auto hr = cnv.CreateRadialGradientBrush(
         D2D1::RadialGradientBrushProperties(
             D2D1::Point2F(rg.c1.x, rg.c1.y),
-            D2D1::Point2F(rg.c2.x, rg.c2.y),
-            rg.c1_radius,
+            D2D1::Point2F(rg.c2.x-rg.c1.x, rg.c2.y-rg.c1.y),
+            rg.c2_radius,
             rg.c2_radius
          ),
          stops,
