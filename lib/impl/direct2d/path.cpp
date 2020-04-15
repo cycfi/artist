@@ -104,7 +104,10 @@ namespace cycfi::artist
       float start_angle, float end_angle,
       bool ccw)
    {
-      _impl->add(p, radius, start_angle, end_angle, ccw);
+      if (start_angle == std::fmod(end_angle, 2 * pi))
+         _impl->add(circle{ p, radius });
+      else
+        _impl->arc(p, radius, start_angle, end_angle, ccw);
    }
 
    void path::quadratic_curve_to(point cp, point end)

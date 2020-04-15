@@ -85,6 +85,10 @@ namespace cycfi::artist
    constexpr auto d2d_cw = D2D1_SWEEP_DIRECTION_CLOCKWISE;
    constexpr auto d2d_arc_small = D2D1_ARC_SIZE_SMALL;
    constexpr auto d2d_arc_large = D2D1_ARC_SIZE_LARGE;
+   constexpr auto d2d_path_open = D2D1_FIGURE_END_OPEN;
+   constexpr auto d2d_path_closed = D2D1_FIGURE_END_CLOSED;
+   constexpr auto d2d_path_hollow = D2D1_FIGURE_BEGIN_HOLLOW;
+   constexpr auto d2d_path_filled = D2D1_FIGURE_BEGIN_FILLED;
 
    ////////////////////////////////////////////////////////////////////////////
    // Low-level utilities

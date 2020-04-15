@@ -23,8 +23,12 @@ namespace cycfi::artist
          stroke_mode = -1
       };
 
+      using path_gen = std::function<void(d2d_path_sink* sink, fill_type mode)>;
+      using path_gen_vector = std::vector<path_gen>;
+
       using geometry_gen = std::function<d2d_geometry*(fill_type mode)>;
-      using gen_vector = std::vector<geometry_gen>;
+      using geometry_gen_vector = std::vector<geometry_gen>;
+
       using geometry_vector = std::vector<d2d_geometry*>;
       using iterator = geometry_vector::iterator;
 
@@ -58,14 +62,31 @@ namespace cycfi::artist
                             , bool preserve
                            );
 
+      void                 begin_path();
+      void                 end_path(bool close = false);
+      void                 close();
+      void                 move_to(point p);
+      void                 line_to(point p);
+      void                 arc(
+                              point p, float radius
+                            , float start_angle, float end_angle
+                            , bool ccw
+                           );
+
    private:
 
+      enum path_gen_state { path_started, path_ended };
+
       void                 add_gen(geometry_gen&& gen);
+      void                 close_sub_path_if_open();
+      void                 build_path();
 
       geometry_vector      _geometries;
-      gen_vector           _generators;
+      geometry_gen_vector  _geom_gens;
       d2d_fill_mode        _mode = D2D1_FILL_MODE_WINDING;
       d2d_geometry_group*  _fill_geom = nullptr;
+      path_gen_vector      _path_gens;
+      path_gen_state       _path_gens_state = path_ended;
    };
 
    ////////////////////////////////////////////////////////////////////////////
@@ -99,12 +120,12 @@ namespace cycfi::artist
 
    inline bool path_impl::empty() const
    {
-      return _generators.empty();
+      return _geom_gens.empty();
    }
 
    inline void path_impl::add_gen(geometry_gen&& gen)
    {
-      _generators.emplace_back(std::move(gen));
+      _geom_gens.emplace_back(std::move(gen));
       release(_fill_geom);
    }
 
@@ -127,6 +148,17 @@ namespace cycfi::artist
    {
       _mode = mode;
       release(_fill_geom);
+   }
+
+   inline void path_impl::close()
+   {
+      end_path(true);
+   }
+
+   inline void path_impl::close_sub_path_if_open()
+   {
+      if (_path_gens_state == path_started)
+         end_path();
    }
 
    inline d2d_rect* make_rect(rect r)

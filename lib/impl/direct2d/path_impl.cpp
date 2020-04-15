@@ -11,16 +11,16 @@ namespace cycfi::artist
    {
       auto mode = fill_type(_mode);
 
-      if (_generators.empty())
+      if (_geom_gens.empty())
          return nullptr;
-      if (_generators.size() == 1)
-         return _generators[0](mode);
+      if (_geom_gens.size() == 1)
+         return _geom_gens[0](mode);
 
       if (_fill_geom)
          return _fill_geom;
 
       clear();
-      for (auto const& gen : _generators)
+      for (auto const& gen : _geom_gens)
          _geometries.push_back(gen(mode));
       _fill_geom = make_group(_geometries, _mode);
       return _fill_geom;
@@ -31,7 +31,7 @@ namespace cycfi::artist
       for (auto& g : _geometries)
          release(g);
       _geometries.clear();
-      _generators.clear();
+      _geom_gens.clear();
       release(_fill_geom);
    }
 
@@ -40,6 +40,7 @@ namespace cycfi::artist
     , d2d_paint* paint
     , bool preserve)
    {
+      build_path();
       if (!empty())
       {
          cnv.FillGeometry(compute_fill(), paint, nullptr);
@@ -54,10 +55,11 @@ namespace cycfi::artist
     , float line_width
     , bool preserve)
    {
+      build_path();
       if (!empty())
       {
          auto mode = stroke_mode;
-         for (auto const& gen : _generators)
+         for (auto const& gen : _geom_gens)
          {
             auto p = gen(mode);
             _geometries.push_back(p);
@@ -129,6 +131,111 @@ namespace cycfi::artist
       sink->AddArc(arc);
 
       sink->EndFigure(D2D1_FIGURE_END_OPEN);
+   }
+
+   void path_impl::begin_path()
+   {
+      if (_path_gens_state == path_started)
+         end_path();
+      _path_gens_state = path_started;
+      _path_gens.push_back(
+         [](d2d_path_sink* sink, fill_type mode)
+         {
+            d2d_figure_begin flag =
+               mode == path_impl::stroke_mode?
+               d2d_path_hollow : d2d_path_filled
+               ;
+            sink->BeginFigure({ 0, 0 }, flag);
+         }
+      );
+   }
+
+   void path_impl::end_path(bool close)
+   {
+      _path_gens_state = path_ended;
+      _path_gens.push_back(
+         [close](d2d_path_sink* sink, fill_type mode)
+         {
+            sink->EndFigure(
+               close? d2d_path_closed : d2d_path_open
+            );
+         }
+      );
+   }
+
+   void path_impl::move_to(point p)
+   {
+      close_sub_path_if_open();
+      _path_gens_state = path_started;
+      _path_gens.push_back(
+         [p](d2d_path_sink* sink, fill_type mode)
+         {
+            d2d_figure_begin flag =
+               mode == path_impl::stroke_mode?
+               d2d_path_hollow : d2d_path_filled
+               ;
+            sink->BeginFigure({ p.x, p.y }, flag);
+         }
+      );
+   }
+
+   void path_impl::line_to(point p)
+   {
+      _path_gens.push_back(
+         [p](d2d_path_sink* sink, fill_type mode)
+         {
+            sink->AddLine({ p.x, p.y });
+         }
+      );
+   }
+
+   void path_impl::arc(
+      point p, float radius
+    , float start_angle, float end_angle
+    , bool ccw
+   )
+   {
+      auto startx = p.x + (radius * std::cos(start_angle));
+      auto starty = p.y + (radius * std::sin(start_angle));
+      move_to({ startx, starty });
+
+      _path_gens.push_back(
+         [=](d2d_path_sink* sink, fill_type mode)
+         {
+            auto endx = p.x + (radius * std::cos(end_angle));
+            auto endy = p.y + (radius * std::sin(end_angle));
+
+            d2d_arc_segment arc;
+            arc.point = { endx, endy };
+            arc.size = { radius, radius };
+            arc.rotationAngle = (end_angle - start_angle) * 180 / pi;
+            arc.sweepDirection = ccw? d2d_ccw : d2d_cw;
+            arc.arcSize = d2d_arc_large;
+            sink->AddArc(arc);
+         }
+      );
+   }
+
+   void path_impl::build_path()
+   {
+      if (_path_gens.size())
+      {
+         close_sub_path_if_open();
+
+         auto gen =
+            [this, gen_vec = _path_gens](auto mode)
+            {
+               auto path = make_path();
+               auto sink = start(path);
+               for (auto const& gen : gen_vec)
+                  gen(sink, mode);
+               stop(sink);
+               return path;
+            };
+
+         add_gen(gen);
+         _path_gens.clear();
+      }
    }
 }
 
