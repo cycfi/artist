@@ -69,7 +69,8 @@ namespace cycfi::artist
    ////////////////////////////////////////////////////////////////////////////
    // Low-level D2D types
    ////////////////////////////////////////////////////////////////////////////
-   using d2d_paint = ID2D1SolidColorBrush;
+   using d2d_paint = ID2D1Brush;
+   using d2d_solid_color_paint = ID2D1SolidColorBrush;
    using d2d_geometry = ID2D1Geometry;
    using d2d_geometry_group = ID2D1GeometryGroup;
    using d2d_fill_mode = D2D1_FILL_MODE;
@@ -129,7 +130,7 @@ namespace cycfi::artist
 
    inline d2d_paint* make_paint(color c, d2d_canvas& cnv)
    {
-      d2d_paint* ptr = nullptr;
+      d2d_solid_color_paint* ptr = nullptr;
       auto hr = cnv.CreateSolidColorBrush(
          D2D1::ColorF(c.red, c.green, c.blue, c.alpha)
        , &ptr
