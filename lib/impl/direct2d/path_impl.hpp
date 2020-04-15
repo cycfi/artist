@@ -43,12 +43,6 @@ namespace cycfi::artist
       void                 add(rect r, float radius);
       void                 add(circle c);
 
-      void                 add(
-                              point p, float radius
-                            , float start_angle, float end_angle
-                            , bool ccw
-                           );
-
       void                 fill(
                               d2d_canvas& cnv
                             , d2d_paint* paint
@@ -99,14 +93,6 @@ namespace cycfi::artist
    d2d_path*               make_path();
    d2d_path_sink*          start(d2d_path* path);
    void                    stop(d2d_path_sink* sink);
-
-  void                     make_arc(
-                              d2d_path_sink* sink
-                            , point p, float radius
-                            , float start_angle, float end_angle
-                            , bool ccw
-                            , path_impl::fill_type mode
-                           );
 
    ////////////////////////////////////////////////////////////////////////////
    // Inlines
