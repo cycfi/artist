@@ -63,7 +63,7 @@ namespace cycfi::artist
          {
             auto p = gen(mode);
             _geometries.push_back(p);
-            cnv.DrawGeometry(p, paint, line_width, nullptr);
+            cnv.DrawGeometry(p, paint, line_width, _stroke_style);
          }
          if (!preserve)
             clear();
@@ -230,6 +230,10 @@ namespace cycfi::artist
             {
                auto path = make_path();
                auto sink = start(path);
+
+               if (mode != path_impl::stroke_mode)
+                  sink->SetFillMode(d2d_fill_mode(mode));
+
                for (auto const& gen : gen_vec)
                   gen(sink, mode);
                stop(sink);

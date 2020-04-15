@@ -32,6 +32,9 @@ namespace cycfi::artist
       using geometry_vector = std::vector<d2d_geometry*>;
       using iterator = geometry_vector::iterator;
 
+      using line_cap_enum = canvas::line_cap_enum;
+      using join_enum = canvas::join_enum;
+
                            ~path_impl();
 
       bool                 empty() const;
@@ -58,7 +61,7 @@ namespace cycfi::artist
 
       void                 begin_path();
       void                 end_path(bool close = false);
-      void                 close();
+      void                 close_path();
       void                 move_to(point p);
       void                 line_to(point p);
       void                 arc(
@@ -67,6 +70,10 @@ namespace cycfi::artist
                             , bool ccw
                            );
       void                 arc_to(point p1, point p2, float radius);
+
+      void                 line_cap(line_cap_enum cap);
+      void                 line_join(join_enum join);
+      void                 miter_limit(float limit = 10);
 
    private:
 
@@ -84,6 +91,10 @@ namespace cycfi::artist
       path_gen_state       _path_gens_state = path_ended;
       point                _start;
       point                _cp;
+
+      d2d_stroke_style*    _stroke_style = nullptr;
+      line_cap_enum        _line_cap = line_cap_enum::butt;
+      join_enum            _join = join_enum::miter_join;
    };
 
    ////////////////////////////////////////////////////////////////////////////
@@ -92,6 +103,11 @@ namespace cycfi::artist
    d2d_rect*               make_rect(rect r);
    d2d_round_rect*         make_round_rect(rect r, float radius);
    d2d_ellipse*            make_circle(circle c);
+   d2d_stroke_style*       make_stroke_style(
+                              canvas::line_cap_enum line_cap
+                            , canvas::join_enum join
+                            , float miter_limit
+                           );
 
    d2d_path*               make_path();
    d2d_path_sink*          start(d2d_path* path);
@@ -105,6 +121,7 @@ namespace cycfi::artist
       for (auto& g : _geometries)
          release(g);
       release(_fill_geom);
+      release(_stroke_style);
    }
 
    inline bool path_impl::empty() const
@@ -139,7 +156,7 @@ namespace cycfi::artist
       release(_fill_geom);
    }
 
-   inline void path_impl::close()
+   inline void path_impl::close_path()
    {
       end_path(true);
    }
@@ -181,6 +198,47 @@ namespace cycfi::artist
       if (!SUCCEEDED(hr))
          throw std::runtime_error{ "Error: CreateEllipseGeometry Fail." };
       return geom;
+   }
+
+   inline d2d_stroke_style* make_stroke_style(
+      canvas::line_cap_enum line_cap_
+    , canvas::join_enum join_
+    , float miter_limit
+   )
+   {
+      d2d_cap_style line_cap = d2d_cap_style_flat;
+      d2d_line_join join = d2d_line_join_miter;
+
+      switch (line_cap_)
+      {
+         case canvas::butt: line_cap = d2d_cap_style_flat; break;
+         case canvas::round: line_cap = d2d_cap_style_round; break;
+         case canvas::square: line_cap = d2d_cap_style_square; break;
+      };
+
+      switch (join_)
+      {
+         case canvas::bevel_join: join = d2d_line_join_bevel; break;
+         case canvas::round_join: join = d2d_line_join_round; break;
+         case canvas::miter_join: join = d2d_line_join_miter; break;
+      };
+
+      d2d_stroke_style* style = nullptr;
+      auto hr = get_factory().CreateStrokeStyle(
+        d2d_stroke_style_properties{
+            line_cap,
+            line_cap,
+            line_cap,
+            join,
+            miter_limit,
+            D2D1_DASH_STYLE_SOLID,
+            0.0f
+         }
+       , nullptr, 0, &style
+      );
+      if (!SUCCEEDED(hr))
+         throw std::runtime_error{ "Error: CreateStrokeStyle Fail." };
+      return style;
    }
 
    inline d2d_path* make_path()

@@ -81,6 +81,10 @@ namespace cycfi::artist
    using d2d_figure_begin = D2D1_FIGURE_BEGIN;
    using d2d_arc_segment = D2D1_ARC_SEGMENT;
    using d2d_quad_segment = D2D1_QUADRATIC_BEZIER_SEGMENT;
+   using d2d_stroke_style = ID2D1StrokeStyle;
+   using d2d_stroke_style_properties = D2D1_STROKE_STYLE_PROPERTIES;
+   using d2d_cap_style = D2D1_CAP_STYLE;
+   using d2d_line_join = D2D1_LINE_JOIN;
 
    constexpr auto d2d_ccw = D2D1_SWEEP_DIRECTION_COUNTER_CLOCKWISE;
    constexpr auto d2d_cw = D2D1_SWEEP_DIRECTION_CLOCKWISE;
@@ -90,6 +94,13 @@ namespace cycfi::artist
    constexpr auto d2d_path_closed = D2D1_FIGURE_END_CLOSED;
    constexpr auto d2d_path_hollow = D2D1_FIGURE_BEGIN_HOLLOW;
    constexpr auto d2d_path_filled = D2D1_FIGURE_BEGIN_FILLED;
+
+   constexpr auto d2d_line_join_miter = D2D1_LINE_JOIN_MITER;
+   constexpr auto d2d_line_join_bevel = D2D1_LINE_JOIN_BEVEL;
+   constexpr auto d2d_line_join_round = D2D1_LINE_JOIN_ROUND;
+   constexpr auto d2d_cap_style_flat = D2D1_CAP_STYLE_FLAT;
+   constexpr auto d2d_cap_style_square = D2D1_CAP_STYLE_SQUARE;
+   constexpr auto d2d_cap_style_round = D2D1_CAP_STYLE_ROUND;
 
    ////////////////////////////////////////////////////////////////////////////
    // Low-level utilities

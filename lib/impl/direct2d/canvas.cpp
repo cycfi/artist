@@ -128,10 +128,12 @@ namespace cycfi::artist
 
    void canvas::begin_path()
    {
+      _state->path().begin_path();
    }
 
    void canvas::close_path()
    {
+      _state->path().close();
    }
 
    void canvas::fill()

@@ -68,8 +68,14 @@ namespace cycfi::artist
       return {};
    }
 
+   void path::begin_path()
+   {
+      _impl->begin_path();
+   }
+
    void path::close()
    {
+      _impl->close_path();
    }
 
    void path::add(rect r)

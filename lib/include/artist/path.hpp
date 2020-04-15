@@ -44,6 +44,7 @@ namespace cycfi::artist
       bool              includes(point p) const;
       rect              bounds() const;
 
+      void              begin_path();
       void              close();
 
       void              add(rect r);
