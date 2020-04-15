@@ -240,6 +240,31 @@ namespace cycfi::artist
       rhs.cnv = 0;
       return *this;
    }
+
+   inline bool canvas::color_stop::operator==(color_stop const& rhs) const
+   {
+      return offset == rhs.offset && color == rhs.color;
+   }
+
+   inline bool canvas::gradient::operator==(gradient const& rhs) const
+   {
+      if (color_space.size() == rhs.color_space.size())
+         return std::equal(color_space.begin(), color_space.end(), rhs.color_space.end());
+      return false;
+   }
+
+   inline bool canvas::linear_gradient::operator==(linear_gradient const& rhs) const
+   {
+      return start == rhs.start && end == rhs.end
+         && gradient::operator==(rhs);
+   }
+
+   inline bool canvas::radial_gradient::operator==(radial_gradient const& rhs) const
+   {
+      return c1 == rhs.c1 && c1_radius == rhs.c1_radius
+         && c2 == rhs.c2 && c2_radius == rhs.c2_radius
+         && gradient::operator==(rhs);
+   }
 }
 
 #endif

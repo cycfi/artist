@@ -72,6 +72,7 @@ namespace cycfi::artist
    using d2d_paint = ID2D1Brush;
    using d2d_solid_color = ID2D1SolidColorBrush;
    using d2d_linear_gradient = ID2D1LinearGradientBrush;
+   using d2d_radial_gradient = ID2D1RadialGradientBrush;
    using d2d_geometry = ID2D1Geometry;
    using d2d_geometry_group = ID2D1GeometryGroup;
    using d2d_fill_mode = D2D1_FILL_MODE;
@@ -88,6 +89,8 @@ namespace cycfi::artist
    using d2d_stroke_style_properties = D2D1_STROKE_STYLE_PROPERTIES;
    using d2d_cap_style = D2D1_CAP_STYLE;
    using d2d_line_join = D2D1_LINE_JOIN;
+   using d2d_gradient_stop = D2D1_GRADIENT_STOP;
+   using d2d_gradient_stop_collection = ID2D1GradientStopCollection;
 
    constexpr auto d2d_ccw = D2D1_SWEEP_DIRECTION_COUNTER_CLOCKWISE;
    constexpr auto d2d_cw = D2D1_SWEEP_DIRECTION_CLOCKWISE;
@@ -112,8 +115,8 @@ namespace cycfi::artist
    inline void release(Interface*& ptr);
 
    d2d_paint* make_paint(color c, d2d_canvas& cn);
-   d2d_paint* make_paint(canvas::linear_gradient const& , d2d_canvas& cn);
-   d2d_paint* make_paint(canvas::radial_gradient const& rg, d2d_canvas& cn);
+   d2d_paint* make_paint(canvas::linear_gradient const& , d2d_canvas& cnv);
+   d2d_paint* make_paint(canvas::radial_gradient const& rg, d2d_canvas& cnv);
 
    template <typename Container>
    d2d_geometry_group* make_group(Container const& c);
@@ -129,18 +132,6 @@ namespace cycfi::artist
          ptr->Release();
          ptr = nullptr;
       }
-   }
-
-   inline d2d_paint* make_paint(color c, d2d_canvas& cnv)
-   {
-      d2d_solid_color* ptr = nullptr;
-      auto hr = cnv.CreateSolidColorBrush(
-         D2D1::ColorF(c.red, c.green, c.blue, c.alpha)
-       , &ptr
-      );
-      if (!SUCCEEDED(hr))
-         throw std::runtime_error{ "Error: CreateSolidColorBrush Fail." };
-      return ptr;
    }
 
    template <typename Container>

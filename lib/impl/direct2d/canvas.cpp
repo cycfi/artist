@@ -22,8 +22,13 @@ namespace cycfi::artist
       virtual void      discard();
 
       artist::path&     path();
-      void              fill_paint(color c, d2d_canvas& cnv);
-      void              stroke_paint(color c, d2d_canvas& cnv);
+
+                        template <typename T>
+      void              fill_paint(T const& info, d2d_canvas& cnv);
+
+                        template <typename T>
+      void              stroke_paint(T const& info, d2d_canvas& cnv);
+
       void              line_width(float w);
       void              fill(d2d_canvas& cnv, bool preserve);
       void              stroke(d2d_canvas& cnv, bool preserve);
@@ -90,25 +95,27 @@ namespace cycfi::artist
       return _path;
    }
 
-   void canvas::canvas_state::fill_paint(color c, d2d_canvas& cnv)
+   template <typename T>
+   void canvas::canvas_state::fill_paint(T const& info, d2d_canvas& cnv)
    {
-      if (!std::holds_alternative<color>(_fill_info)
-         || c != std::get<color>(_fill_info))
+      if (!std::holds_alternative<T>(_fill_info)
+         || info != std::get<T>(_fill_info))
       {
-         _fill_info = c;
+         _fill_info = info;
          release(_fill_paint);
-         _fill_paint = make_paint(c, cnv);
+         _fill_paint = make_paint(info, cnv);
       }
    }
 
-   void canvas::canvas_state::stroke_paint(color c, d2d_canvas& cnv)
+   template <typename T>
+   void canvas::canvas_state::stroke_paint(T const& info, d2d_canvas& cnv)
    {
-      if (!std::holds_alternative<color>(_stroke_info)
-         || c != std::get<color>(_stroke_info))
+      if (!std::holds_alternative<T>(_stroke_info)
+         || info != std::get<T>(_stroke_info))
       {
-         _stroke_info = c;
+         _stroke_info = info;
          release(_stroke_paint);
-         _stroke_paint = make_paint(c, cnv);
+         _stroke_paint = make_paint(info, cnv);
       }
    }
 
@@ -328,18 +335,22 @@ namespace cycfi::artist
 
    void canvas::fill_style(linear_gradient const& gr)
    {
+      _state->fill_paint(gr, *_context->canvas());
    }
 
    void canvas::fill_style(radial_gradient const& gr)
    {
+      _state->fill_paint(gr, *_context->canvas());
    }
 
    void canvas::stroke_style(linear_gradient const& gr)
    {
+      _state->stroke_paint(gr, *_context->canvas());
    }
 
    void canvas::stroke_style(radial_gradient const& gr)
    {
+      _state->stroke_paint(gr, *_context->canvas());
    }
 
    void canvas::font(class font const& font_)

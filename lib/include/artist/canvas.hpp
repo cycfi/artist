@@ -183,6 +183,8 @@ namespace cycfi::artist
       // Gradients
       struct color_stop
       {
+         bool operator==(color_stop const& rhs) const;
+
          float          offset;
          struct color   color;
       };
@@ -192,6 +194,9 @@ namespace cycfi::artist
          void  add_color_stop(color_stop cs);
          void  add_color_stop(float offset, struct color color_);
          std::vector<color_stop> color_space = {};
+
+         bool operator==(gradient const& rhs) const;
+         bool operator!=(gradient const& rhs) const   { return !(*this == rhs); }
       };
 
       struct linear_gradient : gradient
@@ -205,6 +210,9 @@ namespace cycfi::artist
           : start{ start }
           , end{ end }
          {}
+
+         bool operator==(linear_gradient const& rhs) const;
+         bool operator!=(linear_gradient const& rhs) const  { return !(*this == rhs); }
 
          point start = {};
          point end = {};
@@ -231,6 +239,9 @@ namespace cycfi::artist
           , c2{ c2 }
           , c2_radius{ c2r }
          {}
+
+         bool operator==(radial_gradient const& rhs) const;
+         bool operator!=(radial_gradient const& rhs) const  { return !(*this == rhs); }
 
          point c1 = {};
          float c1_radius = {};
