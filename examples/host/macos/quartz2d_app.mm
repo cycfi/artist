@@ -175,11 +175,11 @@ public:
          ];
 
       auto color =
-         [NSColor colorWithCalibratedRed : bkd.red
-                                   green : bkd.green
-                                    blue : bkd.blue
-                                   alpha : bkd.alpha
-         ];
+           [NSColor colorWithRed : bkd.red
+                           green : bkd.green
+                            blue : bkd.blue
+                           alpha : bkd.alpha
+           ];
 
       _content = [[CocoaView alloc] init];
       [_content start];

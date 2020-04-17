@@ -3,8 +3,8 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#if !defined(ELEMENTS_PATH_APRIL_8_2020)
-#define ELEMENTS_PATH_APRIL_8_2020
+#if !defined(ARTIST_PATH_APRIL_8_2020)
+#define ARTIST_PATH_APRIL_8_2020
 
 #include <infra/support.hpp>
 #include <artist/rect.hpp>
@@ -17,7 +17,11 @@ using path_impl = struct CGPath;
 #elif defined(ARTIST_SKIA)
 using path_impl = class SkPath;
 #elif defined(ARTIST_DIRECT_2D)
-namespace cycfi::artist { struct path_impl; }
+namespace cycfi::artist
+{
+   namespace d2d { struct path_impl; }
+   using d2d::path_impl;
+}
 #endif
 
 namespace cycfi::artist

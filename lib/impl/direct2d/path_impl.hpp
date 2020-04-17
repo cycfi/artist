@@ -3,58 +3,64 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#if !defined(ELEMENTS_DETAIL_DIRECT_2D_PATH_IMPL_APR_13_2020)
-#define ELEMENTS_DETAIL_DIRECT_2D_PATH_IMPL_APR_13_2020
+#if !defined(ARTIST_D2D_PATH_IMPL_APR_13_2020)
+#define ARTIST_D2D_PATH_IMPL_APR_13_2020
 
-#include <canvas_impl.hpp>
+#include <context.hpp>
 #include <vector>
 #include <variant>
 
-namespace cycfi::artist
+namespace cycfi::artist::d2d
 {
    struct path_impl
    {
    public:
 
-      enum fill_type
+      enum render_mode
       {
-         fill_winding = D2D1_FILL_MODE_WINDING,
-         fill_odd_even = D2D1_FILL_MODE_ALTERNATE,
+         fill_winding = fill_mode_winding,
+         fill_odd_even = fill_mode_alternate,
          stroke_mode = -1
       };
 
-      using path_gen = std::function<void(d2d_path_sink* sink, fill_type mode)>;
+      using path_gen = std::function<void(geometry_sink* sink, render_mode mode)>;
       using path_gen_vector = std::vector<path_gen>;
 
-      using geometry_gen = std::function<d2d_geometry*(fill_type mode)>;
+      using geometry_gen = std::function<geometry*(render_mode mode)>;
       using geometry_gen_vector = std::vector<geometry_gen>;
 
-      using geometry_vector = std::vector<d2d_geometry*>;
+      using geometry_vector = std::vector<geometry*>;
       using iterator = geometry_vector::iterator;
 
                            ~path_impl();
 
       bool                 empty() const;
       void                 clear();
-      d2d_geometry*        compute_fill();
-      void                 fill_rule(d2d_fill_mode mode);
+      void                 fill_rule(fill_mode mode);
 
       void                 add(rect r);
       void                 add(rect r, float radius);
       void                 add(circle c);
 
       void                 fill(
-                              d2d_canvas& cnv
-                            , d2d_paint* paint
+                              render_target& target
+                            , brush* paint
                             , bool preserve
                            );
 
       void                 stroke(
-                              d2d_canvas& cnv
-                            , d2d_paint* paint
+                              render_target& target
+                            , brush* paint
                             , float line_width
                             , bool preserve
-                            , d2d_stroke_style* stroke_style
+                            , stroke_style* stroke_style
+                           );
+
+      rect                 fill_bounds(render_target& target);
+      rect                 stroke_bounds(
+                              render_target& target
+                            , float line_width
+                            , stroke_style* stroke_style
                            );
 
       void                 begin_path();
@@ -79,32 +85,37 @@ namespace cycfi::artist
       void                 add_gen(geometry_gen&& gen);
       void                 close_sub_path_if_open();
       void                 build_path();
+      void                 compute_geometries(render_mode mode);
+      void                 clear_geometries();
+      geometry*            compute_fill();
 
       geometry_vector      _geometries;
-      geometry_gen_vector  _geom_gens;
-      d2d_fill_mode        _mode = D2D1_FILL_MODE_WINDING;
-      d2d_geometry_group*  _fill_geom = nullptr;
+      geometry_gen_vector  _geometry_gens;
+      fill_mode            _mode = fill_mode_winding;
+      geometry_group*      _fill_geometry = nullptr;
       path_gen_vector      _path_gens;
       path_gen_state       _path_gens_state = path_ended;
       point                _start;
       point                _cp;
+      int                  _id = -1;
+      int                  _generation = 0;
    };
 
    ////////////////////////////////////////////////////////////////////////////
    // Low level utils
    ////////////////////////////////////////////////////////////////////////////
-   d2d_rect*               make_rect(rect r);
-   d2d_round_rect*         make_round_rect(rect r, float radius);
-   d2d_ellipse*            make_circle(circle c);
-   d2d_stroke_style*       make_stroke_style(
+   rect_geometry*          make_rect(rect r);
+   round_rect_geometry*    make_round_rect(rect r, float radius);
+   ellipse_geometry*       make_circle(circle c);
+   stroke_style*           make_stroke_style(
                               canvas::line_cap_enum line_cap
                             , canvas::join_enum join
                             , float miter_limit
                            );
 
-   d2d_path*               make_path();
-   d2d_path_sink*          start(d2d_path* path);
-   void                    stop(d2d_path_sink* sink);
+   path_geometry*          make_path();
+   geometry_sink*          start(path_geometry* path);
+   void                    stop(geometry_sink* sink);
 
    ////////////////////////////////////////////////////////////////////////////
    // Inlines
@@ -113,18 +124,19 @@ namespace cycfi::artist
    {
       for (auto& g : _geometries)
          release(g);
-      release(_fill_geom);
+      release(_fill_geometry);
    }
 
    inline bool path_impl::empty() const
    {
-      return _geom_gens.empty();
+      return _geometry_gens.empty();
    }
 
    inline void path_impl::add_gen(geometry_gen&& gen)
    {
-      _geom_gens.emplace_back(std::move(gen));
-      release(_fill_geom);
+      _geometry_gens.emplace_back(std::move(gen));
+      release(_fill_geometry);
+      ++_id;
    }
 
    inline void path_impl::add(rect r)
@@ -142,10 +154,10 @@ namespace cycfi::artist
       add_gen([=](auto){ return make_circle(c); });
    }
 
-   inline void path_impl::fill_rule(d2d_fill_mode mode)
+   inline void path_impl::fill_rule(fill_mode mode)
    {
       _mode = mode;
-      release(_fill_geom);
+      release(_fill_geometry);
    }
 
    inline void path_impl::close_path()
@@ -159,9 +171,9 @@ namespace cycfi::artist
          end_path();
    }
 
-   inline d2d_rect* make_rect(rect r)
+   inline rect_geometry* make_rect(rect r)
    {
-      d2d_rect* geom = nullptr;
+      rect_geometry* geom = nullptr;
       auto hr = get_factory().CreateRectangleGeometry(
          { r.left, r.top, r.right, r.bottom }, &geom
       );
@@ -170,9 +182,9 @@ namespace cycfi::artist
       return geom;
    }
 
-   inline d2d_round_rect* make_round_rect(rect r, float radius)
+   inline round_rect_geometry* make_round_rect(rect r, float radius)
    {
-      d2d_round_rect* geom = nullptr;
+      round_rect_geometry* geom = nullptr;
       auto hr = get_factory().CreateRoundedRectangleGeometry(
           { { r.left, r.top, r.right, r.bottom }, radius , radius }, &geom
       );
@@ -181,9 +193,9 @@ namespace cycfi::artist
       return geom;
    }
 
-   inline d2d_ellipse* make_circle(circle c)
+   inline ellipse_geometry* make_circle(circle c)
    {
-      d2d_ellipse* geom = nullptr;
+      ellipse_geometry* geom = nullptr;
       auto hr = get_factory().CreateEllipseGeometry(
          { { c.cx, c.cy }, c.radius, c.radius }, &geom
       );
@@ -192,32 +204,32 @@ namespace cycfi::artist
       return geom;
    }
 
-   inline d2d_stroke_style* make_stroke_style(
+   inline stroke_style* make_stroke_style(
       canvas::line_cap_enum line_cap_
     , canvas::join_enum join_
     , float miter_limit
    )
    {
-      d2d_cap_style line_cap = d2d_cap_style_flat;
-      d2d_line_join join = d2d_line_join_miter;
+      cap_style line_cap = cap_style_flat;
+      line_join join = line_join_miter;
 
       switch (line_cap_)
       {
-         case canvas::butt: line_cap = d2d_cap_style_flat; break;
-         case canvas::round: line_cap = d2d_cap_style_round; break;
-         case canvas::square: line_cap = d2d_cap_style_square; break;
+         case canvas::butt: line_cap = cap_style_flat; break;
+         case canvas::round: line_cap = cap_style_round; break;
+         case canvas::square: line_cap = cap_style_square; break;
       };
 
       switch (join_)
       {
-         case canvas::bevel_join: join = d2d_line_join_bevel; break;
-         case canvas::round_join: join = d2d_line_join_round; break;
-         case canvas::miter_join: join = d2d_line_join_miter; break;
+         case canvas::bevel_join: join = line_join_bevel; break;
+         case canvas::round_join: join = line_join_round; break;
+         case canvas::miter_join: join = line_join_miter; break;
       };
 
-      d2d_stroke_style* style = nullptr;
+      stroke_style* style = nullptr;
       auto hr = get_factory().CreateStrokeStyle(
-        d2d_stroke_style_properties{
+              stroke_style_properties{
             line_cap,
             line_cap,
             line_cap,
@@ -233,25 +245,25 @@ namespace cycfi::artist
       return style;
    }
 
-   inline d2d_path* make_path()
+   inline path_geometry* make_path()
    {
-      d2d_path* geom = nullptr;
+      path_geometry* geom = nullptr;
       auto hr = get_factory().CreatePathGeometry(&geom);
       if (!SUCCEEDED(hr))
          throw std::runtime_error{ "Error: CreatePathGeometry Fail." };
       return geom;
    }
 
-   inline d2d_path_sink* start(d2d_path* path)
+   inline geometry_sink* start(path_geometry* path)
    {
-      d2d_path_sink* sink = nullptr;
+      geometry_sink* sink = nullptr;
       auto hr = path->Open(&sink);
       if (!SUCCEEDED(hr))
          throw std::runtime_error{ "Error: ID2D1PathGeometry::Open Fail." };
       return sink;
    }
 
-   inline void stop(d2d_path_sink* sink)
+   inline void stop(geometry_sink* sink)
    {
       auto hr = sink->Close();
       if (!SUCCEEDED(hr))

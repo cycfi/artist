@@ -5,70 +5,125 @@
 =============================================================================*/
 #include <path_impl.hpp>
 
-namespace cycfi::artist
+namespace cycfi::artist::d2d
 {
-   d2d_geometry* path_impl::compute_fill()
+   geometry* path_impl::compute_fill()
    {
-      auto mode = fill_type(_mode);
+      if (_fill_geometry && _id == _generation)
+         return _fill_geometry;
+      auto mode = render_mode(_mode);
 
-      if (_geom_gens.empty())
+      if (_geometry_gens.empty())
          return nullptr;
-      if (_geom_gens.size() == 1)
-         return _geom_gens[0](mode);
+      if (_geometry_gens.size() == 1)
+         return _geometry_gens[0](mode);
+      if (_fill_geometry)
+         return _fill_geometry;
 
-      if (_fill_geom)
-         return _fill_geom;
-
-      for (auto const& gen : _geom_gens)
-         _geometries.push_back(gen(mode));
-      _fill_geom = make_group(_geometries, _mode);
-      return _fill_geom;
+      compute_geometries(mode);
+      _fill_geometry = make_group(_geometries, _mode);
+      return _fill_geometry;
    }
 
-   void path_impl::clear()
+   void path_impl::compute_geometries(render_mode mode)
+   {
+      if (_id == _generation)
+         return;
+      _id = _generation;
+      clear_geometries();
+      for (auto const& gen : _geometry_gens)
+         _geometries.push_back(gen(mode));
+   }
+
+   void path_impl::clear_geometries()
    {
       for (auto& g : _geometries)
          release(g);
       _geometries.clear();
-      _geom_gens.clear();
-      release(_fill_geom);
+      release(_fill_geometry);
+   }
+
+   void path_impl::clear()
+   {
+      clear_geometries();
+      _geometry_gens.clear();
    }
 
    void path_impl::fill(
-      d2d_canvas& cnv
-    , d2d_paint* paint
+      render_target& target
+    , brush* paint
     , bool preserve)
    {
       build_path();
       if (!empty())
       {
-         cnv.FillGeometry(compute_fill(), paint, nullptr);
+         target.FillGeometry(compute_fill(), paint, nullptr);
          if (!preserve)
             clear();
       }
    }
 
    void path_impl::stroke(
-      d2d_canvas& cnv
-    , d2d_paint* paint
+      render_target& target
+    , brush* paint
     , float line_width
     , bool preserve
-    , d2d_stroke_style* stroke_style
+    , stroke_style* stroke_style
    )
    {
       build_path();
       if (!empty())
       {
-         auto mode = stroke_mode;
-         for (auto const& gen : _geom_gens)
-         {
-            auto p = gen(mode);
-            _geometries.push_back(p);
-            cnv.DrawGeometry(p, paint, line_width, stroke_style);
-         }
+         compute_geometries(stroke_mode);
+         for (auto geom : _geometries)
+            target.DrawGeometry(geom, paint, line_width, stroke_style);
          if (!preserve)
             clear();
       }
+   }
+
+   rect path_impl::fill_bounds(render_target& target)
+   {
+      rectf d2d_bounds;
+      build_path();
+      if (!empty())
+      {
+         //matrix2x2f matrix = matrix2x2f::Identity();
+         //target.GetTransform(&matrix);
+         auto geom = compute_fill();
+         geom->GetBounds(nullptr, &d2d_bounds);
+      }
+      return {
+         d2d_bounds.left,
+         d2d_bounds.top,
+         d2d_bounds.right,
+         d2d_bounds.bottom,
+      };
+   }
+
+   rect path_impl::stroke_bounds(
+      render_target& target
+    , float line_width
+    , stroke_style* stroke_style
+   )
+   {
+      rectf d2d_bounds;
+      build_path();
+      if (!empty())
+      {
+         //matrix2x2f matrix = matrix2x2f::Identity();
+         //target.GetTransform(&matrix);
+         auto geom = compute_fill();
+         geom->GetWidenedBounds(
+            line_width, stroke_style, nullptr, &d2d_bounds
+         );
+      }
+      return {
+         d2d_bounds.left,
+         d2d_bounds.top,
+         d2d_bounds.right,
+         d2d_bounds.bottom,
+      };
    }
 
    void path_impl::begin_path()
@@ -77,11 +132,11 @@ namespace cycfi::artist
          end_path();
       _path_gens_state = path_started;
       _path_gens.push_back(
-         [](d2d_path_sink* sink, fill_type mode)
+         [](geometry_sink* sink, render_mode mode)
          {
-            d2d_figure_begin flag =
-               mode == path_impl::stroke_mode?
-               d2d_path_hollow : d2d_path_filled
+            figure_begin flag =
+               mode == path_impl::stroke_mode ?
+               figure_begin_hollow : figure_begin_filled
                ;
             sink->BeginFigure({ 0, 0 }, flag);
          }
@@ -93,10 +148,10 @@ namespace cycfi::artist
    {
       _path_gens_state = path_ended;
       _path_gens.push_back(
-         [close](d2d_path_sink* sink, fill_type mode)
+         [close](geometry_sink* sink, render_mode mode)
          {
             sink->EndFigure(
-               close? d2d_path_closed : d2d_path_open
+                    close ? figure_end_closed : figure_path_open
             );
          }
       );
@@ -109,11 +164,11 @@ namespace cycfi::artist
       close_sub_path_if_open();
       _path_gens_state = path_started;
       _path_gens.push_back(
-         [p](d2d_path_sink* sink, fill_type mode)
+         [p](geometry_sink* sink, render_mode mode)
          {
-            d2d_figure_begin flag =
-               mode == path_impl::stroke_mode?
-               d2d_path_hollow : d2d_path_filled
+            figure_begin flag =
+               mode == path_impl::stroke_mode ?
+               figure_begin_hollow : figure_begin_filled
                ;
             sink->BeginFigure({ p.x, p.y }, flag);
          }
@@ -130,7 +185,7 @@ namespace cycfi::artist
       }
 
       _path_gens.push_back(
-         [p](d2d_path_sink* sink, fill_type mode)
+         [p](geometry_sink* sink, render_mode mode)
          {
             sink->AddLine({ p.x, p.y });
          }
@@ -158,15 +213,15 @@ namespace cycfi::artist
       if (diff_angle < 0)
          diff_angle += 2 * pi;
 
-      d2d_arc_segment arc;
+      arc_segment arc;
       arc.point = { endx, endy };
       arc.size = { radius, radius };
       arc.rotationAngle = diff_angle * 180 / pi;
-      arc.sweepDirection = ccw? d2d_ccw : d2d_cw;
-      arc.arcSize = diff_angle > pi? d2d_arc_large : d2d_arc_small;
+      arc.sweepDirection = ccw ? sweep_dir_ccw : sweep_dir_cw;
+      arc.arcSize = diff_angle > pi ? arc_large : arc_small;
 
       _path_gens.push_back(
-         [arc](d2d_path_sink* sink, fill_type mode)
+         [arc](geometry_sink* sink, render_mode mode)
          {
             sink->AddArc(arc);
          }
@@ -225,12 +280,12 @@ namespace cycfi::artist
       if (_path_gens_state == path_ended)
          move_to({ cp.x, cp.y });
 
-      d2d_quad_segment quad;
+      quadratic_bezier_segment quad;
       quad.point1 = { cp.x, cp.y };
       quad.point2 = { end.x, end.y };
 
       _path_gens.push_back(
-         [quad](d2d_path_sink* sink, fill_type mode)
+         [quad](geometry_sink* sink, render_mode mode)
          {
             sink->AddQuadraticBezier(quad);
          }
@@ -242,13 +297,13 @@ namespace cycfi::artist
       if (_path_gens_state == path_ended)
          move_to({ cp1.x, cp1.y });
 
-      d2d_bezier_segment bezier;
+      bezier_segment bezier;
       bezier.point1 = { cp1.x, cp1.y };
       bezier.point2 = { cp2.x, cp2.y };
       bezier.point3 = { end.x, end.y };
 
       _path_gens.push_back(
-         [bezier](d2d_path_sink* sink, fill_type mode)
+         [bezier](geometry_sink* sink, render_mode mode)
          {
             sink->AddBezier(bezier);
          }
@@ -268,7 +323,7 @@ namespace cycfi::artist
                auto sink = start(path);
 
                if (mode != path_impl::stroke_mode)
-                  sink->SetFillMode(d2d_fill_mode(mode));
+                  sink->SetFillMode(fill_mode(mode));
 
                for (auto const& gen : gen_vec)
                   gen(sink, mode);

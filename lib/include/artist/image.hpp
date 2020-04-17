@@ -3,8 +3,8 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#if !defined(ELEMENTS_IMAGE_SEPTEMBER_5_2016)
-#define ELEMENTS_IMAGE_SEPTEMBER_5_2016
+#if !defined(ARTIST_IMAGE_SEPTEMBER_5_2016)
+#define ARTIST_IMAGE_SEPTEMBER_5_2016
 
 #include <artist/point.hpp>
 #include <artist/resources.hpp>
@@ -18,8 +18,11 @@ using canvas_impl = SkCanvas;
 
 namespace cycfi::artist
 {
-#if defined(ARTIST_QUARTZ_2D) || defined(ARTIST_DIRECT_2D)
+#if defined(ARTIST_QUARTZ_2D)
    struct canvas_impl;
+#elif defined(ARTIST_DIRECT_2D)
+   namespace d2d { struct context; };
+   using canvas_impl = d2d::context;
 #endif
 
    using canvas_impl_ptr = canvas_impl*;

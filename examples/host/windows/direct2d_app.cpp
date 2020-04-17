@@ -10,9 +10,10 @@
 #pragma comment(lib, "dwrite")
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "shcore.lib")
+#pragma comment(lib, "dxguid.lib")
 
 #include "../../app.hpp"
-#include <canvas_impl.hpp>
+#include <context.hpp>
 #include <ShellScalingAPI.h>
 
 #ifndef HINST_THISCOMPONENT
@@ -32,7 +33,6 @@ public:
 
 private:
 
-   // HRESULT     create_device_independent_resources();
    void        render();
    void        resize(UINT width, UINT height);
 
@@ -45,16 +45,11 @@ private:
 
 private:
 
-   using canvas_impl_ptr = std::unique_ptr<ca::canvas_impl>;
+   using context_ptr = std::unique_ptr<ca::d2d::context>;
    using canvas_ptr = std::unique_ptr<ca::canvas>;
 
-   canvas_impl_ptr         _canvas_impl;
-   canvas_ptr              _canvas;
-   // state                   _state;
-
-   // IWICImagingFactory*     _pWICFactory = nullptr;
-   // IDWriteFactory*         _pDWriteFactory = nullptr;
-   // IDWriteTextFormat*      _pTextFormat = nullptr;
+   context_ptr       _canvas_impl;
+   canvas_ptr        _canvas;
 };
 
 app::app(extent size, color bkd, bool animate)
@@ -80,18 +75,23 @@ app::app(extent size, color bkd, bool animate)
    // Because the CreateWindow function takes its size in pixels, we
    // obtain the system DPI and use it to scale the window size.
    FLOAT dpiX, dpiY;
-   ca::get_factory().GetDesktopDpi(&dpiX, &dpiY);
+   ca::d2d::get_factory().GetDesktopDpi(&dpiX, &dpiY);
+   auto style = /*WS_OVERLAPPEDWINDOW; */ WS_CAPTION | WS_SYSMENU | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
+
+   size.x *= dpiX / 96.f;
+   size.y *= dpiY / 96.f;
+
+   RECT rect = { 0, 0, LONG(size.x), LONG(size.y) };
+   AdjustWindowRectExForDpi(&rect, style, false, WS_EX_APPWINDOW, dpiX);
 
    auto hwnd = CreateWindow(
       L"D2DDemoApp",
-      L"Direct2D Demo Application",
-      WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT,
-      CW_USEDEFAULT,
-      static_cast<UINT>(ceil(size.x * dpiX / 96.f)),
-      static_cast<UINT>(ceil(size.y * dpiY / 96.f)),
-      nullptr,
-      nullptr,
+      L"Direct2D",
+      style,
+      CW_USEDEFAULT, CW_USEDEFAULT,       // default position
+      rect.right-rect.left,               // width
+      rect.bottom-rect.top,               // height
+      nullptr, nullptr,                   // parent window, menu
       HINST_THISCOMPONENT,
       this
       );
@@ -99,7 +99,7 @@ app::app(extent size, color bkd, bool animate)
 
    if (SUCCEEDED(hr))
    {
-      _canvas_impl = std::make_unique<ca::canvas_impl>(hwnd, bkd);
+      _canvas_impl = std::make_unique<ca::d2d::context>(hwnd, bkd);
       _canvas = std::make_unique<ca::canvas>(_canvas_impl.get());
 
       ShowWindow(_canvas_impl->hwnd(), SW_SHOWNORMAL);
@@ -112,51 +112,8 @@ app::app(extent size, color bkd, bool animate)
 
 app::~app()
 {
-   // ca::release(_pDWriteFactory);
-   // ca::release(_pTextFormat);
    CoUninitialize();
 }
-
-/*
-HRESULT app::create_device_independent_resources()
-{
-   static const WCHAR msc_fontName[] = L"Verdana";
-   static const FLOAT msc_fontSize = 50;
-   // ID2D1GeometrySink *pSink = nullptr;
-
-   // Create a DirectWrite factory.
-   auto hr = DWriteCreateFactory(
-      DWRITE_FACTORY_TYPE_SHARED,
-      __uuidof(_pDWriteFactory),
-      reinterpret_cast<IUnknown **>(&_pDWriteFactory)
-   );
-
-   if (SUCCEEDED(hr))
-   {
-      // Create a DirectWrite text format object.
-      hr = _pDWriteFactory->CreateTextFormat(
-         msc_fontName,
-         nullptr,
-         DWRITE_FONT_WEIGHT_NORMAL,
-         DWRITE_FONT_STYLE_NORMAL,
-         DWRITE_FONT_STRETCH_NORMAL,
-         msc_fontSize,
-         L"", //locale
-         &_pTextFormat
-      );
-   }
-   if (SUCCEEDED(hr))
-   {
-      // Center the text horizontally and vertically.
-      _pTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-      _pTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-   }
-
-   // ca::release(pSink);
-
-   return hr;
-}
-*/
 
 void app::run()
 {
@@ -175,27 +132,13 @@ void app::render()
       [this](auto&)
       {
          draw(*_canvas);
-
-
-
-         // static const WCHAR sc_helloWorld[] = L"Hello, World!";
-         // auto size = canvas.GetSize();
-         // canvas.SetTransform(D2D1::Matrix3x2F::Identity());
-         // canvas.Clear(D2D1::ColorF(D2D1::ColorF::White));
-         // canvas.DrawText(
-         //    sc_helloWorld,
-         //    ARRAYSIZE(sc_helloWorld) - 1,
-         //    _pTextFormat,
-         //    D2D1::RectF(0, 0, size.width, size.height),
-         //    _state._pBlackBrush
-         // );
       }
    );
 }
 
 void app::resize(UINT width, UINT height)
 {
-   if (_canvas_impl->canvas())
+   if (_canvas_impl->target())
    {
       D2D1_SIZE_U size;
       size.width = width;
@@ -204,7 +147,7 @@ void app::resize(UINT width, UINT height)
       // Note: This method can fail, but it's okay to ignore the
       // error here -- it will be repeated on the next call to
       // EndDraw.
-      _canvas_impl->canvas()->Resize(size);
+      // $$$ for now $$$ need dynamic cast _canvas_impl->canvas()->Resize(size);
    }
 }
 
@@ -221,7 +164,7 @@ LRESULT CALLBACK app::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
          hwnd,
          GWLP_USERDATA,
          reinterpret_cast<LONG_PTR>(_app)
-         );
+      );
 
       result = 1;
    }
@@ -239,7 +182,7 @@ LRESULT CALLBACK app::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
       {
          switch (message)
          {
-         case WM_SIZE:
+            case WM_SIZE:
                {
                   UINT width = LOWORD(lParam);
                   UINT height = HIWORD(lParam);
@@ -249,8 +192,8 @@ LRESULT CALLBACK app::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
                result = 0;
                break;
 
-         case WM_PAINT:
-         case WM_DISPLAYCHANGE:
+            case WM_PAINT:
+            case WM_DISPLAYCHANGE:
                {
                   PAINTSTRUCT ps;
                   BeginPaint(hwnd, &ps);
@@ -262,7 +205,7 @@ LRESULT CALLBACK app::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
                result = 0;
                break;
 
-         case WM_DESTROY:
+            case WM_DESTROY:
                {
                   PostQuitMessage(0);
                }

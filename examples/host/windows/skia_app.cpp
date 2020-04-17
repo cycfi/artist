@@ -194,7 +194,7 @@ window::window(extent size, color bkd, bool animate)
    if (animate)
       SetTimer(WND, IDT_TIMER1, 16, (TIMERPROC) nullptr);
 
-   SetWindowText(WND, L"Artist");
+   SetWindowText(WND, L"Skia");
    ShowWindow(WND, SW_SHOW);
 }
 

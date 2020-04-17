@@ -3,8 +3,8 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#if !defined(ELEMENTS_DETAIL_OSX_UTILS_MARCH_17_2020)
-#define ELEMENTS_DETAIL_OSX_UTILS_MARCH_17_2020
+#if !defined(ARTIST_DETAIL_OSX_UTILS_MARCH_17_2020)
+#define ARTIST_DETAIL_OSX_UTILS_MARCH_17_2020
 
 #include <Quartz/Quartz.h>
 
