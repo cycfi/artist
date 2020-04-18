@@ -12,6 +12,7 @@
 #include <chrono>
 #include "../../app.hpp"
 #include <artist/resources.hpp>
+#include <cairo-quartz.h>
 
 using namespace cycfi::artist;
 
@@ -102,8 +103,15 @@ using offscreen_type = std::shared_ptr<image>;
 
 - (void) drawRect : (NSRect) dirty
 {
+   auto w = [self bounds].size.width;
+   auto h = [self bounds].size.height;
+
    auto start = std::chrono::high_resolution_clock::now();
-   // auto ctx = NSGraphicsContext.currentContext.CGContext;
+   auto ctx = NSGraphicsContext.currentContext.CGContext;
+   auto surface = cairo_quartz_surface_create_for_cg_context(ctx, w, h);
+   auto context = cairo_create(surface);
+   auto cnv = canvas { context };
+   draw(cnv);
 
    // if (_first && _task)
    // {
@@ -132,6 +140,9 @@ using offscreen_type = std::shared_ptr<image>;
 
    auto stop = std::chrono::high_resolution_clock::now();
    elapsed_ = std::chrono::duration<double>{ stop - start }.count();
+
+   cairo_surface_destroy(surface);
+   cairo_destroy(context);
 }
 
 -(BOOL) isFlipped

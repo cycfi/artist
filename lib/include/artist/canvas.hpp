@@ -20,6 +20,9 @@
 #if defined(ARTIST_SKIA)
 class SkCanvas;
 using canvas_impl = SkCanvas;
+#elif defined(ARTIST_CAIRO)
+extern "C" { typedef struct _cairo cairo_t; }
+using canvas_impl = cairo_t;
 #endif
 
 namespace cycfi::artist
