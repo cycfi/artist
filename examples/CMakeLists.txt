@@ -19,6 +19,11 @@ function(add_example name)
             host/macos/skia_app.mm
             print_elapsed.cpp
          )
+      elseif (ARTIST_CAIRO)
+         set(MAIN_APP
+            host/macos/cairo_app.mm
+            print_elapsed.cpp
+         )
       else()
          set(MAIN_APP
             host/macos/quartz2d_app.mm

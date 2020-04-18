@@ -16,6 +16,8 @@
 using path_impl = struct CGPath;
 #elif defined(ARTIST_SKIA)
 using path_impl = class SkPath;
+#elif defined(ARTIST_CAIRO)
+using path_impl = void;
 #endif
 
 namespace cycfi::artist
@@ -165,7 +167,7 @@ namespace cycfi::artist
       bezier_curve_to({ cp1x, cp1y }, { cp2x, cp2y }, { x, y });
    }
 
-#if !defined(ARTIST_SKIA)
+#if !defined(ARTIST_SKIA) && !defined(ARTIST_CAIRO)
    inline void path::add(circle c)
    {
       arc(point{ c.cx, c.cy }, c.radius, 0.0, 2 * pi);

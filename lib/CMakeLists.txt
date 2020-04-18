@@ -120,33 +120,37 @@ set(ARTIST_HEADERS
    include/artist/resources.hpp
 )
 
-if (APPLE)
-   if (ARTIST_QUARTZ_2D)
-      set(ARTIST_IMPL
-         impl/macos/quartz2d/canvas.mm
-              impl/macos/quartz2d/image.mm
-         impl/macos/quartz2d/font.mm
-         impl/macos/quartz2d/text_layout.mm
-         impl/macos/quartz2d/path.mm
-      )
-   endif()
-elseif (UNIX)
+if (APPLE AND ARTIST_QUARTZ_2D)
    set(ARTIST_IMPL
-   )
-elseif (WIN32)
-   set(ARTIST_IMPL
+      impl/macos/quartz2d/canvas.mm
+            impl/macos/quartz2d/image.mm
+      impl/macos/quartz2d/font.mm
+      impl/macos/quartz2d/text_layout.mm
+      impl/macos/quartz2d/path.mm
    )
 endif()
 
 if (ARTIST_SKIA)
+
    set(ARTIST_IMPL
       impl/skia/canvas.cpp
-           impl/skia/image.cpp
+      impl/skia/image.cpp
       impl/skia/font.cpp
       impl/skia/text_layout.cpp
       impl/skia/path.cpp
       impl/skia/detail/harfbuzz.cpp
    )
+
+elseif (ARTIST_CAIRO)
+
+   set(ARTIST_IMPL
+      impl/cairo/canvas.cpp
+      impl/cairo/image.cpp
+      impl/cairo/font.cpp
+      impl/cairo/text_layout.cpp
+      impl/cairo/path.cpp
+   )
+
 endif()
 
 source_group("Source Files\\artist"
@@ -178,6 +182,9 @@ endif()
 
 if (ARTIST_SKIA)
    add_dependencies(artist prebuilt_binaries)
+elseif (ARTIST_CAIRO AND NOT MSVC)
+   pkg_check_modules(cairo REQUIRED IMPORTED_TARGET cairo)
+   target_link_libraries(artist PUBLIC PkgConfig::cairo)
 endif()
 
 target_sources(artist
@@ -219,7 +226,13 @@ if (ARTIST_SKIA)
    )
 endif()
 
-if (ARTIST_QUARTZ_2D)
+if (ARTIST_CAIRO)
+   target_compile_definitions(
+      artist
+      PUBLIC
+         ARTIST_CAIRO
+   )
+elseif (ARTIST_QUARTZ_2D)
    target_compile_definitions(
       artist
       PUBLIC
