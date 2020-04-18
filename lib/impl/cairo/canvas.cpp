@@ -142,7 +142,50 @@ namespace cycfi::artist
 
    void canvas::arc_to(point p1, point p2, float radius)
    {
-      assert(false); // unimplemented
+     // Adapted from http://code.google.com/p/fxcanvas/
+
+      if (radius == 0)
+      {
+         line_to(p1);
+         return;
+      }
+
+      double cpx, cpy;
+      cairo_get_current_point(_context, &cpx, &cpy);
+
+      auto a1 = cpy - p1.y;
+      auto b1 = cpx - p1.x;
+      auto a2 = p2.y - p1.y;
+      auto b2 = p2.x - p1.x;
+      auto mm = fabs(a1 * b2 - b1 * a2);
+
+      if (mm < 1.0e-8)
+      {
+         line_to(p1);
+         return;
+      }
+
+      auto dd = a1 * a1 + b1 * b1;
+      auto cc = a2 * a2 + b2 * b2;
+      auto tt = a1 * a2 + b1 * b2;
+      auto k1 = radius * std::sqrtf(dd) / mm;
+      auto k2 = radius * std::sqrtf(cc) / mm;
+      auto j1 = k1 * tt / dd;
+      auto j2 = k2 * tt / cc;
+      auto cx = k1 * b2 + k2 * b1;
+      auto cy = k1 * a2 + k2 * a1;
+      auto px = b1 * (k2 + j1);
+      auto py = a1 * (k2 + j1);
+      auto qx = b2 * (k1 + j2);
+      auto qy = a2 * (k1 + j2);
+      auto start_angle = std::atan2f(py - cy, px - cx);
+      auto end_angle = std::atan2f(qy - cy, qx - cx);
+
+      arc(
+         { float(cx + p1.x), float(cy + p1.y) }
+       , radius, start_angle, end_angle
+       , (b1 * a2 > b2 * a1)
+      );
    }
 
    void canvas::arc(
@@ -181,17 +224,14 @@ namespace cycfi::artist
 
    void canvas::path(class path const& p)
    {
-      assert(false); // unimplemented
    }
 
    void canvas::quadratic_curve_to(point cp, point end)
    {
-      assert(false); // unimplemented
    }
 
    void canvas::bezier_curve_to(point cp1, point cp2, point end)
    {
-      assert(false); // unimplemented
    }
 
    void canvas::fill_style(color c)
@@ -221,27 +261,38 @@ namespace cycfi::artist
 
    void canvas::line_cap(line_cap_enum cap_)
    {
-      assert(false); // unimplemented
+      cairo_line_cap_t cap = CAIRO_LINE_CAP_BUTT;
+      switch (cap_)
+      {
+         case butt:     cap = CAIRO_LINE_CAP_BUTT; break;
+         case round:    cap = CAIRO_LINE_CAP_ROUND; break;
+         case square:   cap = CAIRO_LINE_CAP_SQUARE; break;
+      }
+      cairo_set_line_cap(_context, cap);
    }
 
    void canvas::line_join(join_enum join_)
    {
-      assert(false); // unimplemented
+      cairo_line_join_t join = CAIRO_LINE_JOIN_MITER;
+      switch (join_)
+      {
+         case bevel_join:  join = CAIRO_LINE_JOIN_BEVEL; break;
+         case round_join:  join = CAIRO_LINE_JOIN_ROUND; break;
+         case miter_join:  join = CAIRO_LINE_JOIN_MITER; break;
+      }
+      cairo_set_line_join(_context, join);
    }
 
    void canvas::miter_limit(float limit)
    {
-      assert(false); // unimplemented
    }
 
    void canvas::shadow_style(point offset, float blur, color c)
    {
-      assert(false); // unimplemented
    }
 
    void canvas::global_composite_operation(composite_op_enum mode)
    {
-      assert(false); // unimplemented
    }
 
    void canvas::fill_style(linear_gradient const& gr)
@@ -336,7 +387,6 @@ namespace cycfi::artist
 
    void canvas::font(class font const& font_)
    {
-      assert(false); // unimplemented
    }
 
    namespace
@@ -436,6 +486,5 @@ namespace cycfi::artist
 
    void canvas::draw(image const& pic, struct rect src, struct rect dest)
    {
-      assert(false); // unimplemented
    }
 }

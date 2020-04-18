@@ -303,9 +303,9 @@ void draw(canvas& cnv)
    background(cnv);
    rectangles(cnv);
    circles_and_arcs(cnv);
-//   arc_to(cnv);
-//   line_caps(cnv);
-//   line_joins(cnv);
+   arc_to(cnv);
+   line_caps(cnv);
+   line_joins(cnv);
 //   bezier(cnv);
 //   quad(cnv);
    linear_gradient(cnv);
