@@ -228,10 +228,20 @@ namespace cycfi::artist
 
    void canvas::quadratic_curve_to(point cp, point end)
    {
+      double x, y;
+      cairo_get_current_point(_context, &x, &y);
+      cairo_curve_to(_context,
+         2.0 / 3.0 * cp.x + 1.0 / 3.0 * x,
+         2.0 / 3.0 * cp.y + 1.0 / 3.0 * y,
+         2.0 / 3.0 * cp.x + 1.0 / 3.0 * end.x,
+         2.0 / 3.0 * cp.y + 1.0 / 3.0 * end.y,
+         end.x, end.y
+      );
    }
 
    void canvas::bezier_curve_to(point cp1, point cp2, point end)
    {
+      cairo_curve_to(_context, cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
    }
 
    void canvas::fill_style(color c)
@@ -285,6 +295,7 @@ namespace cycfi::artist
 
    void canvas::miter_limit(float limit)
    {
+      cairo_set_miter_limit(_context, limit);
    }
 
    void canvas::shadow_style(point offset, float blur, color c)
