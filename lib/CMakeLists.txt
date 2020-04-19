@@ -118,6 +118,7 @@ set(ARTIST_HEADERS
    include/artist/rect.hpp
    include/artist/text_layout.hpp
    include/artist/resources.hpp
+   include/artist/affine_transform.hpp
 )
 
 if (APPLE)
