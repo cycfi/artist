@@ -13,6 +13,7 @@
 #include <artist/font.hpp>
 #include <artist/path.hpp>
 #include <artist/text_layout.hpp>
+#include <artist/affine_transform.hpp>
 
 #include <vector>
 #include <memory>
@@ -53,9 +54,14 @@ namespace cycfi::artist
       point             user_to_device(point p);
 
       void              translate(float x, float y);
+      void              scale(float xy);
       void              scale(float x, float y);
       point             device_to_user(float x, float y);
       point             user_to_device(float x, float y);
+
+      affine_transform  transform() const;
+      void              transform(affine_transform const& mat);
+      void              transform(double a, double b, double c, double d, double tx, double ty);
 
       ///////////////////////////////////////////////////////////////////////////////////
       // Paths

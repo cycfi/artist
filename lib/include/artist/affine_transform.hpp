@@ -13,21 +13,32 @@ namespace cycfi::artist
     struct affine_transform
     {
         constexpr bool                  is_identity() const;
-        constexpr affine_transform      translate(float tx, float ty);
-        constexpr affine_transform      scale(float sx, float sy);
-        inline affine_transform         rotate(float rad);
+        constexpr affine_transform      translate(double tx, double ty);
+        constexpr affine_transform      scale(double sx, double sy);
+        constexpr affine_transform      scale(double sc);
+        inline affine_transform         rotate(double rad);
+        inline affine_transform         skew(double sx, double sy);
         constexpr affine_transform      invert();
 
-        float a     = 1.0f;
-        float b     = 0.0f;
-        float c     = 0.0f;
-        float d     = 1.0f;
-        float tx    = 0.0f;
-        float ty    = 0.0f;
+        double a    = 1.0;
+        double b    = 0.0;
+        double c    = 0.0;
+        double d    = 1.0;
+        double tx   = 0.0;
+        double ty   = 0.0;
     };
 
     constexpr affine_transform affine_identity;
 
+    constexpr affine_transform make_translation(double tx, double ty);
+    constexpr affine_transform make_scale(double sx, double sy);
+    constexpr affine_transform make_scale(double sc);
+    inline affine_transform make_rotation(double rad);
+    inline affine_transform make_skew(double sx, double sy);
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Inlines and constexpr
+    ///////////////////////////////////////////////////////////////////////////
     constexpr bool operator==(affine_transform const& lhs, affine_transform const& rhs)
     {
         return lhs.a == rhs.a && lhs.b == rhs.b && lhs.c == rhs.c
@@ -40,7 +51,7 @@ namespace cycfi::artist
         return !(rhs == lhs);
     }
 
-    constexpr affine_transform concat(affine_transform t1, affine_transform t2)
+    constexpr affine_transform operator*(affine_transform t1, affine_transform t2)
     {
         return {
             t2.a * t1.a + t2.b * t1.c
@@ -57,41 +68,61 @@ namespace cycfi::artist
         return *this == affine_identity;
     }
 
-    constexpr affine_transform make_translation(float tx, float ty)
+    constexpr affine_transform make_translation(double tx, double ty)
     {
-        return { 1.0f, 0.0f, 0.0f, 1.0f, tx, ty };
+        return { 1.0, 0.0, 0.0, 1.0, tx, ty };
     }
 
-    constexpr affine_transform make_scale(float sx, float sy)
+    constexpr affine_transform make_scale(double sx, double sy)
     {
-        return { sx, 0.0f, 0.0f, sy, 0.0f, 0.0f };
+        return { sx, 0.0, 0.0, sy, 0.0, 0.0 };
     }
 
-    inline affine_transform make_rotation(float rad)
+    constexpr affine_transform make_scale(double sc)
     {
-        auto s = std::sinf(rad);
-        auto c = std::cosf(rad);
-        return { c, s, -s, c, 0.0f, 0.0f };
+        return { sc, 0.0, 0.0, sc, 0.0, 0.0 };
     }
 
-    constexpr affine_transform affine_transform::translate(float tx, float ty)
+    inline affine_transform make_rotation(double rad)
     {
-        return concat(*this, make_translation(tx, ty));
+        auto s = std::sin(rad);
+        auto c = std::cos(rad);
+        return { c, s, -s, c, 0.0, 0.0 };
     }
 
-    constexpr affine_transform affine_transform::scale(float sx, float sy)
+    inline affine_transform make_skew(double sx, double sy)
     {
-        return concat(*this, make_scale(sx, sy));
+        return { 1.0, std::tan(sx), std::tan(sy), 1.0, 0.0, 0.0 };
     }
 
-    inline affine_transform affine_transform::rotate(float rad)
+    constexpr affine_transform affine_transform::translate(double tx, double ty)
     {
-        return concat(*this, make_rotation(rad));
+        return *this * make_translation(tx, ty);
+    }
+
+    constexpr affine_transform affine_transform::scale(double sx, double sy)
+    {
+        return *this * make_scale(sx, sy);
+    }
+
+    constexpr affine_transform affine_transform::scale(double sc)
+    {
+        return *this * make_scale(sc);
+    }
+
+    inline affine_transform affine_transform::rotate(double rad)
+    {
+        return *this * make_rotation(rad);
+    }
+
+    inline affine_transform affine_transform::skew(double sx, double sy)
+    {
+        return *this * make_skew(sx, sy);
     }
 
     constexpr affine_transform affine_transform::invert()
     {
-	    float determinant = a * d - c * b;
+	    double determinant = a * d - c * b;
 	    if (determinant == 0)
             return *this;
 

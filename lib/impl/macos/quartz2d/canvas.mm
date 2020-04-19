@@ -221,6 +221,25 @@ namespace cycfi::artist
       CGContextScaleCTM(CGContextRef(_context), p.x, p.y);
    }
 
+   affine_transform canvas::transform() const
+   {
+      auto [a, b, c, d, tx, ty] = CGContextGetCTM(CGContextRef(_context));
+      return affine_transform{ a, b, c, d, tx, ty };
+   }
+
+   void canvas::transform(affine_transform const& mat)
+   {
+      transform(mat.a, mat.b, mat.c, mat.d, mat.tx, mat.ty);
+   }
+
+   void canvas::transform(double a, double b, double c, double d, double tx, double ty)
+   {
+      auto ctx = CGContextRef(_context);
+      auto inv = CGAffineTransformInvert(CGContextGetCTM(ctx));
+      CGContextConcatCTM(ctx, inv);
+      CGContextConcatCTM(ctx, { a, b, c, d, tx, ty });
+   }
+
    void canvas::save()
    {
       CGContextSaveGState(CGContextRef(_context));
