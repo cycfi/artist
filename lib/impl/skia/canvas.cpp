@@ -170,6 +170,11 @@ namespace cycfi::artist
       _context->scale(p.x, p.y);
    }
 
+   void canvas::skew(double sx, double sy)
+   {
+      _context->skew(sx, sy);
+   }
+
    affine_transform canvas::transform() const
    {
       auto mat = _context->getTotalMatrix();
