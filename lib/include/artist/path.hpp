@@ -88,6 +88,10 @@ namespace cycfi::artist
 
       void              fill_rule(fill_rule_enum rule);
 
+#if defined(ARTIST_QUARTZ_2D)
+      fill_rule_enum    fill_rule() const { return _fill_rule; }
+#endif
+
       path_impl*        impl();
       path_impl const*  impl() const;
 

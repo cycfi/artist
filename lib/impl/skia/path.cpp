@@ -131,4 +131,9 @@ namespace cycfi::artist
    {
       _impl->cubicTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
    }
+
+   void path::fill_rule(fill_rule_enum rule)
+   {
+      _impl->setFillType(rule == fill_winding? SkPathFillType::kWinding : SkPathFillType::kEvenOdd);
+   }
 }

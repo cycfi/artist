@@ -246,6 +246,11 @@ namespace cycfi::artist
       _state->path().reset();
    }
 
+   void canvas::clip(class path const& p)
+   {
+      _context->clipPath(*p.impl(), true);
+   }
+
    void canvas::move_to(point p)
    {
       _state->path().moveTo(p.x, p.y);
@@ -508,6 +513,13 @@ namespace cycfi::artist
    void canvas::font(class font const& font_)
    {
       _state->font() = font_;
+   }
+
+   void canvas::fill_rule(path::fill_rule_enum rule)
+   {
+      _state->path().setFillType(
+         rule == path::fill_winding? SkPathFillType::kWinding : SkPathFillType::kEvenOdd
+      );
    }
 
    namespace

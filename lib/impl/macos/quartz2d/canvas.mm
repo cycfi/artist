@@ -405,6 +405,31 @@ namespace cycfi::artist
          CGContextEOClip(CGContextRef(_context));
    }
 
+   void canvas::clip(class path const& p)
+   {
+      auto ctx = CGContextRef(_context);
+      auto save = CGContextCopyPath(ctx);
+      begin_path();
+      CGContextAddPath(ctx, p.impl());
+
+      if (p.fill_rule() == path::fill_winding)
+         CGContextClip(CGContextRef(_context));
+      else
+         CGContextEOClip(CGContextRef(_context));
+
+      begin_path();
+      CGContextAddPath(ctx, save);
+      CGPathRelease(save);
+   }
+
+   bool canvas::point_in_path(point p) const
+   {
+      auto mode = _state->fill_rule() == path::fill_winding?
+         kCGPathFillStroke : kCGPathEOFillStroke
+         ;
+      return CGContextPathContainsPoint(CGContextRef(_context), { p.x, p.y }, mode);
+   }
+
    void canvas::move_to(point p)
    {
       CGContextMoveToPoint(CGContextRef(_context), p.x, p.y);
