@@ -688,10 +688,17 @@ void misc(canvas& cnv)
       p.add(circle{ 230, 230, 50 });
       p.add(circle{ 230, 230, 25 });
       p.fill_rule(path::fill_odd_even);
+
+      CHECK(p.includes(230-50+5, 230));
+      CHECK(!p.includes(230, 230));
+
       cnv.clip(p);
-      cnv.rect(0, 0, 1000, 1000);
+      cnv.rect(0, 0, 500, 500);
       cnv.fill_style(colors::navajo_white.opacity(0.5));
-      cnv.fill();
+      cnv.fill_preserve();
+
+      CHECK(cnv.includes(10, 10));
+      CHECK(!p.includes(501, 500));
    }
 }
 

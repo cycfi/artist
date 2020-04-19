@@ -422,7 +422,7 @@ namespace cycfi::artist
       CGPathRelease(save);
    }
 
-   bool canvas::point_in_path(point p) const
+   bool canvas::includes(point p) const
    {
       auto mode = _state->fill_rule() == path::fill_winding?
          kCGPathFillStroke : kCGPathEOFillStroke

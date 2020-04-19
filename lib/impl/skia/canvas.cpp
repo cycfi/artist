@@ -251,6 +251,11 @@ namespace cycfi::artist
       _context->clipPath(*p.impl(), true);
    }
 
+   bool canvas::includes(point p) const
+   {
+      return _state->path().contains(p.x, p.y);
+   }
+
    void canvas::move_to(point p)
    {
       _state->path().moveTo(p.x, p.y);
