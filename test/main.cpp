@@ -356,6 +356,13 @@ void typography(canvas& cnv)
       cnv.fill_style(bkd_color);
       cnv.shadow_style(8, colors::light_sky_blue);
       cnv.fill_text("Glow", 250, 265);
+
+      auto m = cnv.measure_text("Shadow");
+      CHECK(std::floor(m.ascent) == 55);
+      CHECK(std::floor(m.descent) == 15);
+      CHECK(std::floor(m.leading) == 0);
+      CHECK(std::floor(m.size.x) == 198);
+      CHECK(std::floor(m.size.y) == 70);
    }
 
    cnv.move_to({ 500, 220 });

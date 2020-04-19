@@ -856,14 +856,13 @@ namespace cycfi::artist
       auto line = detail::measure_text(
          _state->font(), utf8.begin(), utf8.end(), width, ascent, descent, leading);
 
-      auto bounds = CTLineGetImageBounds(line, ctx);
       CFRelease(line);
       return canvas::text_metrics
       {
          float(ascent)
        , float(descent)
        , float(leading)
-       , { float(width), float(bounds.size.height) }
+       , { float(width), float(ascent + descent + leading) }
       };
    }
 
