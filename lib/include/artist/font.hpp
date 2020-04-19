@@ -3,8 +3,8 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#if !defined(ELEMENTS_FONT_FEBRUARY_11_2020)
-#define ELEMENTS_FONT_FEBRUARY_11_2020
+#if !defined(ARTIST_FONT_FEBRUARY_11_2020)
+#define ARTIST_FONT_FEBRUARY_11_2020
 
 #include <string_view>
 #include <infra/filesystem.hpp>

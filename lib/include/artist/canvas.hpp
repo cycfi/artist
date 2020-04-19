@@ -3,8 +3,8 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#if !defined(ELEMENTS_CANVAS_MAY_3_2016)
-#define ELEMENTS_CANVAS_MAY_3_2016
+#if !defined(ARTIST_CANVAS_MAY_3_2016)
+#define ARTIST_CANVAS_MAY_3_2016
 
 #include <artist/color.hpp>
 #include <artist/rect.hpp>
