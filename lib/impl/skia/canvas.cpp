@@ -557,7 +557,14 @@ namespace cycfi::artist
 
    canvas::text_metrics canvas::measure_text(std::string_view utf8)
    {
-      return {};
+      auto m = _state->font().metrics();
+      auto width = _state->font().measure_text(utf8);
+      return {
+         m.ascent
+       , m.descent
+       , m.leading
+       , { width, m.ascent + m.descent + m.leading }
+      };
    }
 
    void canvas::text_align(int align)
