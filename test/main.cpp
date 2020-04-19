@@ -600,10 +600,64 @@ void paths(canvas& cnv)
    }
 }
 
+void compare_transform(affine_transform const& a, affine_transform const& b)
+{
+   CHECK(a.a == Approx(b.a));
+   CHECK(a.b == Approx(b.b));
+   CHECK(a.c == Approx(b.c));
+   CHECK(a.d == Approx(b.d));
+   CHECK(a.tx == Approx(b.tx));
+   CHECK(a.ty == Approx(b.ty));
+}
+
 void misc(canvas& cnv)
 {
+   using cycfi::pi;
+
    background(cnv);
    cnv.clear_rect(30, 30, 50, 50);
+
+   {
+      auto save = cnv.new_state();
+
+      affine_transform mat = cnv.transform();
+      cnv.fill_style(colors::blue);
+
+      cnv.rotate(pi/4);
+      mat = mat.rotate(pi/4);
+      auto ctm = cnv.transform();
+      compare_transform(mat, ctm);
+
+      cnv.scale(2);
+      mat = mat.scale(2);
+      ctm = cnv.transform();
+      compare_transform(mat, ctm);
+
+      cnv.translate(100, 0);
+      mat = mat.translate(100, 0);
+      ctm = cnv.transform();
+      compare_transform(mat, ctm);
+
+      cnv.rect(-25, -25, 50, 50);
+      cnv.fill();
+
+      cnv.transform(mat);
+      cnv.rect(-20, -20, 40, 40);
+      cnv.fill_style(colors::red);
+      cnv.fill();
+   }
+
+   {
+      auto save = cnv.new_state();
+
+      affine_transform mat = cnv.transform();
+      mat = mat.translate(144, 144);
+      mat = mat.skew(pi/8, pi/12);
+      cnv.transform(mat);
+      cnv.rect(0, 0, 72, 72);
+      cnv.fill_style(colors::green);
+      cnv.fill();
+   }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

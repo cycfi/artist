@@ -170,6 +170,27 @@ namespace cycfi::artist
       _context->scale(p.x, p.y);
    }
 
+   affine_transform canvas::transform() const
+   {
+      auto mat = _context->getTotalMatrix();
+      SkScalar sc[6];
+      (void) mat.asAffine(sc);
+      return affine_transform{ sc[0], sc[1], sc[2], sc[3], sc[4], sc[5] };
+   }
+
+   void canvas::transform(affine_transform const& mat)
+   {
+      transform(mat.a, mat.b, mat.c, mat.d, mat.tx, mat.ty);
+   }
+
+   void canvas::transform(double a, double b, double c, double d, double tx, double ty)
+   {
+      SkMatrix mat;
+      SkScalar sc[9] = { float(a), float(b), float(c), float(d), float(tx), float(ty) };
+      mat.setAffine(sc);
+      _context->setMatrix(mat);
+   }
+
    void canvas::save()
    {
       _context->save();

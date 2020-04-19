@@ -26,6 +26,11 @@ namespace cycfi::artist
       scale({ x, y });
    }
 
+   inline void canvas::scale(float xy)
+   {
+      scale({ xy, xy });
+   }
+
    inline point canvas::device_to_user(float x, float y)
    {
       return device_to_user({ x, y });
