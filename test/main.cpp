@@ -648,9 +648,26 @@ void misc(canvas& cnv)
    }
 
    {
+      affine_transform mat;
+      auto p = mat.apply(0, 0);
+      CHECK(p.x == Approx(0));
+      CHECK(p.y == Approx(0));
+
+      mat = mat.scale(10);
+      p = mat.apply(4, 4);
+      CHECK(p.x == Approx(40));
+      CHECK(p.y == Approx(40));
+
+      mat = mat.translate(2, 2);
+      p = mat.apply(0, 0);
+      CHECK(p.x == Approx(20));
+      CHECK(p.y == Approx(20));
+   }
+
+   affine_transform mat = cnv.transform();
+   {
       auto save = cnv.new_state();
 
-      affine_transform mat = cnv.transform();
       mat = mat.translate(144, 144);
       mat = mat.skew(pi/8, pi/12);
       cnv.transform(mat);

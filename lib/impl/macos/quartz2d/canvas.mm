@@ -221,6 +221,12 @@ namespace cycfi::artist
       CGContextScaleCTM(CGContextRef(_context), p.x, p.y);
    }
 
+   void canvas::skew(double sx, double sy)
+   {
+      auto mat = CGAffineTransformMake(1, std::tan(sx), std::tan(sy), 1, 0, 0);
+      CGContextConcatCTM(CGContextRef(_context), mat);
+   }
+
    affine_transform canvas::transform() const
    {
       auto [a, b, c, d, tx, ty] = CGContextGetCTM(CGContextRef(_context));
