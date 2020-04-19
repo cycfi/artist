@@ -40,6 +40,7 @@ namespace cycfi::artist
       bool              operator!=(path const& rhs) const;
       bool              is_empty() const;
       bool              includes(point p) const;
+      bool              includes(float x, float y) const;
       rect              bounds() const;
 
       void              close();
@@ -128,6 +129,11 @@ namespace cycfi::artist
    inline bool path::operator!=(path const& rhs) const
    {
       return !(*this == rhs);
+   }
+
+   inline bool path::includes(float x, float y) const
+   {
+      return includes({ x, y });
    }
 
    inline void path::move_to(float x, float y)
