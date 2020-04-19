@@ -649,7 +649,7 @@ void misc(canvas& cnv)
 
    {
       affine_transform mat;
-      auto p = mat.apply(0, 0);
+      auto p = mat.apply(0.0, 0.0);
       CHECK(p.x == Approx(0));
       CHECK(p.y == Approx(0));
 
@@ -659,7 +659,7 @@ void misc(canvas& cnv)
       CHECK(p.y == Approx(40));
 
       mat = mat.translate(2, 2);
-      p = mat.apply(0, 0);
+      p = mat.apply(0.0, 0.0);
       CHECK(p.x == Approx(20));
       CHECK(p.y == Approx(20));
    }

@@ -13,15 +13,20 @@ namespace cycfi::artist
 {
    struct affine_transform
    {
-      constexpr bool                  is_identity() const;
-      constexpr affine_transform      translate(double tx, double ty) const;
-      constexpr affine_transform      scale(double sx, double sy) const;
-      constexpr affine_transform      scale(double sc) const;
-      inline affine_transform         rotate(double rad) const;
-      inline affine_transform         skew(double sx, double sy) const;
-      constexpr affine_transform      invert() const;
-      constexpr point                 apply(point p) const;
-      constexpr point                 apply(float x, float y) const;
+      constexpr bool                   is_identity() const;
+      constexpr affine_transform       translate(double tx, double ty) const;
+      constexpr affine_transform       scale(double sx, double sy) const;
+      constexpr affine_transform       scale(double sc) const;
+      inline affine_transform          rotate(double rad) const;
+      inline affine_transform          skew(double sx, double sy) const;
+      constexpr affine_transform       invert() const;
+
+      constexpr point                  apply(point p) const;
+      constexpr point                  apply(float x, float y) const;
+
+                                       template <std::size_t N>
+      constexpr void                   apply(point p[N]) const;
+      constexpr void                   apply(point p[], std::size_t n) const;
 
       double a    = 1.0;
       double b    = 0.0;
@@ -85,6 +90,18 @@ namespace cycfi::artist
          float(a * x + c * y + tx)
        , float(b * x + d * y + ty)
       };
+   }
+
+   template <std::size_t N>
+   constexpr void affine_transform::apply(point p[N]) const
+   {
+      apply(p, N);
+   }
+
+   constexpr void affine_transform::apply(point p[], std::size_t n) const
+   {
+      for (std::size_t i = 0; i != n; ++i)
+         p[i] = apply(p[i]);
    }
 
    constexpr affine_transform make_translation(double tx, double ty)

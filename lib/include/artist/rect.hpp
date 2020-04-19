@@ -20,6 +20,9 @@ namespace cycfi::artist
       constexpr         rect(point origin, float right, float bottom)
                          : rect(origin.x, origin.y, right, bottom)
                         {}
+      constexpr         rect(point top_left, point bottom_right)
+                         : rect(top_left.x, top_left.y, bottom_right.x, bottom_right.y)
+                        {}
       constexpr         rect(float left, float top, extent size)
                          : rect(left, top, left + size.x, top + size.y)
                         {}
