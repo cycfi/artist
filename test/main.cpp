@@ -671,15 +671,26 @@ void misc(canvas& cnv)
       CHECK(p.y == Approx(20));
    }
 
-   affine_transform mat = cnv.transform();
    {
       auto save = cnv.new_state();
 
+      affine_transform mat = cnv.transform();
       mat = mat.translate(144, 144);
       mat = mat.skew(pi/8, pi/12);
       cnv.transform(mat);
       cnv.rect(0, 0, 72, 72);
       cnv.fill_style(colors::green);
+      cnv.fill();
+   }
+
+   {
+      path p;
+      p.add(circle{ 230, 230, 50 });
+      p.add(circle{ 230, 230, 25 });
+      p.fill_rule(path::fill_odd_even);
+      cnv.clip(p);
+      cnv.rect(0, 0, 1000, 1000);
+      cnv.fill_style(colors::navajo_white.opacity(0.5));
       cnv.fill();
    }
 }

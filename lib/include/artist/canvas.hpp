@@ -75,7 +75,7 @@ namespace cycfi::artist
 
       void              clip();
       void              clip(path const& p);
-      bool              hit_test(point p) const;
+      bool              point_in_path(point p) const;
       struct rect       fill_extent() const;
 
       void              move_to(point p);
