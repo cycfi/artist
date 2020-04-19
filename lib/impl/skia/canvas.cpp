@@ -42,6 +42,7 @@ namespace cycfi::artist
       SkPaint&          stroke_paint();
       class font&       font();
       int&              text_align();
+      SkPaint&          clear_paint();
 
       void              save();
       void              restore();
@@ -76,11 +77,15 @@ namespace cycfi::artist
       state_info const* current() const { return _stack.top().get(); }
 
       state_info_stack  _stack;
+      SkPaint           _clear_paint;
    };
 
    canvas::canvas_state::canvas_state()
    {
       _stack.push(std::make_unique<state_info>());
+      _clear_paint.setAntiAlias(true);
+      _clear_paint.setStyle(SkPaint::kFill_Style);
+      _clear_paint.setBlendMode(SkBlendMode::kClear);
    }
 
    SkPath& canvas::canvas_state::path()
@@ -106,6 +111,11 @@ namespace cycfi::artist
    int& canvas::canvas_state::text_align()
    {
       return current()->_text_align;
+   }
+
+   SkPaint& canvas::canvas_state::clear_paint()
+   {
+      return _clear_paint;
    }
 
    void canvas::canvas_state::save()
@@ -259,6 +269,11 @@ namespace cycfi::artist
    void canvas::path(class path const& p)
    {
       _state->path() = *p.impl();
+   }
+
+   void canvas::clear_rect(struct rect r)
+   {
+      _context->drawRect({ r.left, r.top, r.right, r.bottom }, _state->clear_paint());
    }
 
    void canvas::quadratic_curve_to(point cp, point end)

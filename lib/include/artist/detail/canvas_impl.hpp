@@ -80,6 +80,11 @@ namespace cycfi::artist
       circle({ cx, cy, radius });
    }
 
+   inline void canvas::clear_rect(float x, float y, float width, float height)
+   {
+      clear_rect({ x, y, extent{ width, height } });
+   }
+
    inline void canvas::quadratic_curve_to(float cpx, float cpy, float x, float y)
    {
       quadratic_curve_to({ cpx, cpy }, { x, y });

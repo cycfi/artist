@@ -456,6 +456,11 @@ namespace cycfi::artist
       CGContextAddPath(CGContextRef(_context), p.impl());
    }
 
+   void canvas::clear_rect(struct rect r)
+   {
+      CGContextClearRect(CGContextRef(_context), CGRectMake(r.left, r.top, r.width(), r.height()));
+   }
+
    void canvas::quadratic_curve_to(point cp, point end)
    {
       CGContextAddQuadCurveToPoint(CGContextRef(_context), cp.x, cp.y, end.x, end.y);

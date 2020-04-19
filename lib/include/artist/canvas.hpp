@@ -83,6 +83,7 @@ namespace cycfi::artist
       void              round_rect(struct rect r, float radius);
       void              circle(struct circle c);
       void              path(class path const& p);
+      void              clear_rect(struct rect r);
 
       void              quadratic_curve_to(point cp, point end);
       void              bezier_curve_to(point cp1, point cp2, point end);
@@ -106,6 +107,7 @@ namespace cycfi::artist
                            float radius
                         );
       void              circle(float cx, float cy, float radius);
+      void              clear_rect(float x, float y, float width, float height);
 
       void              quadratic_curve_to(float cpx, float cpy, float x, float y);
       void              bezier_curve_to(
