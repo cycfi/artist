@@ -108,6 +108,8 @@ namespace cycfi::artist
                            offset += extra;
                         positions[i-glyph_start] += offset;
                      }
+                     if (glyph_idx < positions.size())
+                        positions[glyph_idx] += offset;
                      line_width = linfo.width;
                   }
                }
@@ -136,6 +138,8 @@ namespace cycfi::artist
                 , SkTextEncoding::kGlyphID
                );
 
+               auto last_glyph = std::min<std::size_t>(glyph_count+1, positions.size());
+               positions.erase(positions.begin()+last_glyph, positions.end());
                _rows.push_back(
                   row_info{
                      point{ linfo.offset, y }
@@ -200,9 +204,42 @@ namespace cycfi::artist
          }
       }
 
-      rect glyph_bounds(std::size_t str_pos) const
+      point caret_pos(std::size_t str_pos) const
       {
-         return {};
+         auto glyphs_info = _buff.glyphs();
+
+         // Find the glyph index from str_pos
+         auto glyph_index = str_pos;
+         auto row_index = -1;
+         if (str_pos < _utf8.size())
+         {
+            glyph_index = _buff.glyph_index(str_pos);
+         }
+         else
+         {
+            glyph_index = glyphs_info.count;
+            row_index = _rows.size() - 1;
+         }
+
+         // Find the row that includes the glyph index
+         if (row_index == -1)
+         {
+            auto i = std::lower_bound(_rows.begin(), _rows.end(), glyph_index,
+               [](auto const& row, std::size_t pos)
+               {
+                  return (row.glyph_index + row.glyph_count) < pos;
+               }
+            );
+            if (i == _rows.end())
+               return { -1, -1 };
+            row_index = i - _rows.begin();
+         }
+
+         // Now find the glyph position in the row
+         auto const& row = _rows[row_index];
+         auto index = glyph_index - row.glyph_index;
+         auto xpos = (index < row.positions.size())? row.positions[index] : row.width;
+         return { xpos, row.pos.y };
       }
 
       std::size_t hit_test(point p) const
@@ -278,9 +315,9 @@ namespace cycfi::artist
       _impl->draw(cnv, p);
    }
 
-   rect text_layout::glyph_bounds(std::size_t str_pos) const
+   point text_layout::caret_pos(std::size_t str_pos) const
    {
-      return _impl->glyph_bounds(str_pos);
+      return _impl->caret_pos(str_pos);
    }
 
    std::size_t text_layout::hit_test(point p) const
