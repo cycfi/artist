@@ -9,6 +9,7 @@
 #include <string_view>
 #include <artist/font.hpp>
 #include <artist/rect.hpp>
+#include <artist/detail/utf8_utils.hpp>
 #include <memory>
 #include <functional>
 
@@ -42,11 +43,16 @@ namespace cycfi::artist
       };
 
       using get_line_info = std::function<line_info(float y)>;
+      static constexpr auto npos = std::size_t(-1);
 
       void                 flow(float width, bool justify = false);
       void                 flow(get_line_info const& glf, flow_info finfo);
       void                 draw(canvas& cnv, point p) const;
       void                 draw(canvas& cnv, float x, float y) const;
+
+      rect                 glyph_bounds(std::size_t str_pos) const;
+      std::size_t          hit_test(float x, float y) const;
+      std::size_t          hit_test(point p) const;
 
    private:
 
@@ -62,6 +68,11 @@ namespace cycfi::artist
    inline void text_layout::draw(canvas& cnv, float x, float y) const
    {
       draw(cnv, { x, y });
+   }
+
+   inline std::size_t text_layout::hit_test(float x, float y) const
+   {
+      return hit_test({ x, y });
    }
 }
 
