@@ -158,7 +158,7 @@ namespace cycfi::artist
          if (i != _rows.end()-1 && p.x >= (i->pos.x + i->width))
             return _indices[rng.location + rng.length - 1];
 
-         auto index = CTLineGetStringIndexForPosition(i->line, { p.x, 0 });
+         auto index = CTLineGetStringIndexForPosition(i->line, { p.x - i->pos.x, 0 });
          return _indices[index];
       }
 
