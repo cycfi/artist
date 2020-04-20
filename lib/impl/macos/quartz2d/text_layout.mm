@@ -134,9 +134,49 @@ namespace cycfi::artist
          }
       }
 
-      rect glyph_bounds(std::size_t str_pos) const
+      point caret_pos(std::size_t str_pos) const
       {
-         return {};
+         // Find the glyph index from str_pos
+         auto glyph_index = str_pos;
+         auto row_index = -1;
+         if (str_pos < _utf8.size())
+         {
+            auto f = _indices.begin() + (str_pos / 4);
+            auto l = _indices.begin() + str_pos + 1;
+            auto i = std::lower_bound(f, l, str_pos,
+               [](std::size_t index, std::size_t pos)
+               {
+                  return index < pos;
+               }
+            );
+            if (i == _indices.end())
+               return { -1, -1 };
+            glyph_index = i - _indices.begin();
+         }
+         else
+         {
+            glyph_index = _indices.back();
+            row_index = _rows.size() - 1;
+         }
+
+         // Find the row that includes the glyph index
+         if (row_index == -1)
+         {
+            auto i = std::lower_bound(_rows.begin(), _rows.end(), str_pos,
+               [](auto const& row, std::size_t pos)
+               {
+                  auto rng = CTLineGetStringRange(row.line);
+                  return (rng.location + rng.length - 1) < pos;
+               }
+            );
+            if (i == _rows.end())
+               return { -1, -1 };
+            row_index = i - _rows.begin();
+         }
+         // Now find the glyph position in the row
+         auto const& row = _rows[row_index];
+         auto offset = CTLineGetOffsetForStringIndex(row.line, glyph_index, nullptr);
+         return { float(row.pos.x + offset), row.pos.y };
       }
 
       std::size_t hit_test(point p) const
@@ -201,9 +241,9 @@ namespace cycfi::artist
       _impl->draw(cnv, p);
    }
 
-   rect text_layout::glyph_bounds(std::size_t str_pos) const
+   point text_layout::caret_pos(std::size_t str_pos) const
    {
-      return _impl->glyph_bounds(str_pos);
+      return _impl->caret_pos(str_pos);
    }
 
    std::size_t text_layout::hit_test(point p) const
