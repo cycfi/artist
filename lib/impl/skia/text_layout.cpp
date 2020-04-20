@@ -38,6 +38,17 @@ namespace cycfi::artist
       {
       }
 
+      struct row_info
+      {
+         point                   pos;
+         float                   width;
+         float                   height;
+         std::size_t             glyph_count;
+         std::size_t             glyph_index;
+         sk_sp<SkTextBlob>       line;
+         std::vector<SkScalar>   positions;
+      };
+
       void flow(get_line_info const& glf, flow_info finfo)
       {
          _buff.shape(_hb_font);
@@ -75,14 +86,14 @@ namespace cycfi::artist
             };
 
          auto justify =
-            [&](std::size_t glyph_idx, bool must_break)
+            [&](std::size_t glyph_idx, bool must_break) -> float
             {
+               auto line_width =
+                  positions[glyph_idx-glyph_start] +
+                  (glyphs_info.positions[glyph_idx].x_advance * scalex)
+               ;
                if (finfo.justify && !must_break)
                {
-                  auto line_width =
-                     positions[glyph_idx-glyph_start] +
-                     (glyphs_info.positions[glyph_idx].x_advance * scalex)
-                  ;
                   if (((line_width / linfo.width) > 0.9))
                   {
                      // Full justify
@@ -97,15 +108,17 @@ namespace cycfi::artist
                            offset += extra;
                         positions[i-glyph_start] += offset;
                      }
+                     line_width = linfo.width;
                   }
                }
+               return line_width;
             };
 
          auto new_line =
             [&](std::size_t utf8_idx, std::size_t& i, bool must_break)
             {
                auto glyph_idx = _buff.glyph_index(utf8_idx);
-               justify(glyph_idx, must_break);
+               auto line_width = justify(glyph_idx, must_break);
 
                auto glyph_count = glyph_idx - glyph_start;
                if (i == glyphs_info.count-1)
@@ -115,15 +128,24 @@ namespace cycfi::artist
                for (auto j = 0; j != glyph_count; ++j)
                   line_glyphs[j] = glyphs_info.glyphs[glyph_start + j].codepoint;
 
+               auto text_blob = SkTextBlob::MakeFromPosTextH(
+                  line_glyphs.data()
+                , line_glyphs.size() * sizeof(SkGlyphID)
+                , positions.data(), 0
+                , *_font.impl()
+                , SkTextEncoding::kGlyphID
+               );
+
                _rows.push_back(
-                  std::make_pair(
+                  row_info{
                      point{ linfo.offset, y }
-                   , SkTextBlob::MakeFromPosTextH(
-                        line_glyphs.data(), line_glyphs.size() * sizeof(SkGlyphID)
-                     , positions.data(), 0
-                     , *_font.impl()
-                     , SkTextEncoding::kGlyphID)
-                  )
+                   , line_width
+                   , finfo.line_height
+                   , std::size_t(glyph_count)
+                   , std::size_t(glyph_start)
+                   , text_blob
+                   , std::move(positions)
+                  }
                );
 
                positions.clear();
@@ -160,6 +182,9 @@ namespace cycfi::artist
                   ; // deal with the case where we have to forcefully break the line
             }
          }
+         auto& last = _rows.back();
+         last.pos.y += finfo.last_line_height - finfo.line_height;
+         last.height = finfo.last_line_height;
       }
 
       void  draw(canvas& cnv, point p)
@@ -168,14 +193,53 @@ namespace cycfi::artist
          {
             auto sk_cnv = cnv.impl();
             sk_cnv->drawTextBlob(
-               line.second
-             , p.x+line.first.x, p.y+line.first.y
+               line.line
+             , p.x+line.pos.x, p.y+line.pos.y
              , fill_paint(cnv)
             );
          }
       }
 
-      using line_vector = std::vector<std::pair<point, sk_sp<SkTextBlob>>>;
+      rect glyph_bounds(std::size_t str_pos) const
+      {
+         return {};
+      }
+
+      std::size_t hit_test(point p) const
+      {
+         auto glyphs_info = _buff.glyphs();
+         auto i = std::lower_bound(
+            _rows.begin(), _rows.end(), p.y,
+            [](auto const& row, float y)
+            {
+               return row.pos.y < y;
+            }
+         );
+         if (i == _rows.end())
+            return npos;
+
+         if (p.x <= i->pos.x)
+            return glyphs_info.glyphs[i->glyph_index].cluster;
+
+         auto is_last_row = (i == _rows.end()-1);
+         if (!is_last_row && p.x >= (i->pos.x + i->width))
+            return glyphs_info.glyphs[i->glyph_index + i->glyph_count].cluster;
+
+         auto f = i->positions.begin();
+         auto l = i->positions.end();
+         auto j = std::lower_bound(f, l, p.x - i->pos.x,
+            [](float pos, float x)
+            {
+               return pos < x;
+            }
+         );
+         if (j == l)
+            return is_last_row? _utf8.size() : npos;
+         auto index = i->glyph_index + (j-f);
+         return glyphs_info.glyphs[index-1].cluster;
+      }
+
+      using line_vector = std::vector<row_info>;
 
       font                    _font;
       detail::hb_font         _hb_font;
@@ -212,6 +276,16 @@ namespace cycfi::artist
    void text_layout::draw(canvas& cnv, point p) const
    {
       _impl->draw(cnv, p);
+   }
+
+   rect text_layout::glyph_bounds(std::size_t str_pos) const
+   {
+      return _impl->glyph_bounds(str_pos);
+   }
+
+   std::size_t text_layout::hit_test(point p) const
+   {
+      return _impl->hit_test(p);
    }
 }
 
