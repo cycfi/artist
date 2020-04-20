@@ -422,6 +422,52 @@ void typography(canvas& cnv)
    auto tlayout = text_layout{ font_descr{ "Open Sans", 12 }.italic(), text };
    tlayout.flow(350, true);
    tlayout.draw(cnv, 20, 300);
+
+   // Hit testing
+   {
+      auto i = tlayout.hit_test(0, 2000);
+      CHECK(i == tlayout.npos);
+
+      i = tlayout.hit_test(0, 0);
+      CHECK(i == 0);
+
+      i = tlayout.hit_test(350, 0);
+      CHECK(i == 64);
+      CHECK(text[i] == ' ');
+
+      i = tlayout.hit_test(0, 20);
+      CHECK(i == 133);
+      CHECK(text[i] == 'b');
+
+      i = tlayout.hit_test(350, 20);
+      CHECK(i == 192);
+      CHECK(text[i] == '\n');
+
+      i = tlayout.hit_test(110, 20);
+      CHECK(i == 154);
+      CHECK(text[i] == 'a');
+
+      i = tlayout.hit_test(350, 15);
+      CHECK(i == 132);
+      CHECK(text[i] == ' ');
+
+      i = tlayout.hit_test(345, 15);
+      CHECK(i == 131);
+      CHECK(text[i] == ',');
+
+      i = tlayout.hit_test(20, 49);
+      CHECK(i == 193);
+      CHECK(text[i] == '\n');
+
+      i = tlayout.hit_test(0, 147);
+      CHECK(i == 405);
+      char const* s = text.data()+i;
+      auto cp = codepoint(s);
+      CHECK(cp == 8288); // 'WORD JOINER' (U+2060)
+
+      i = tlayout.hit_test(88, 147);
+      CHECK(i == text.size());
+   }
 }
 
 char const* mode_name(canvas::composite_op_enum mode)
