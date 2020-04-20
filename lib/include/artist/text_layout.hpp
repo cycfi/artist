@@ -50,7 +50,7 @@ namespace cycfi::artist
       void                 draw(canvas& cnv, point p) const;
       void                 draw(canvas& cnv, float x, float y) const;
 
-      rect                 glyph_bounds(std::size_t str_pos) const;
+      point                caret_pos(std::size_t str_pos) const;
       std::size_t          hit_test(float x, float y) const;
       std::size_t          hit_test(point p) const;
 

@@ -476,6 +476,37 @@ void typography(canvas& cnv)
       i = tlayout.hit_test(88, 147);
       CHECK(i == text.size());
    }
+
+   // glyph_bounds
+   {
+      auto test_caret_pos =
+         [&tlayout](std::size_t index, bool exceed = false)
+         {
+            point pos = tlayout.caret_pos(index);
+            if (exceed)
+            {
+               CHECK(std::floor(pos.x) == 86);
+               CHECK(std::floor(pos.y) == 147);
+            }
+            else
+            {
+               std::size_t got_index = tlayout.hit_test(pos);
+               CHECK(got_index == index);
+            }
+         };
+
+      test_caret_pos(1000, true);
+      test_caret_pos(-1, true);
+
+      test_caret_pos(10);
+      test_caret_pos(0);
+      test_caret_pos(64);
+      test_caret_pos(193);
+      test_caret_pos(132);
+      test_caret_pos(133);
+      test_caret_pos(154);
+      test_caret_pos(405);
+   }
 }
 
 char const* mode_name(canvas::composite_op_enum mode)
