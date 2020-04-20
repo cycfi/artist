@@ -236,7 +236,7 @@ namespace cycfi::artist
          if (j == l)
             return is_last_row? _utf8.size() : npos;
          auto index = i->glyph_index + (j-f);
-         return glyphs_info.glyphs[index-1].cluster;
+         return glyphs_info.glyphs[index].cluster;
       }
 
       using line_vector = std::vector<row_info>;

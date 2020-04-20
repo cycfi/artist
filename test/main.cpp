@@ -439,11 +439,15 @@ void typography(canvas& cnv)
       CHECK(i == 133);
       CHECK(text[i] == 'b');
 
+      i = tlayout.hit_test(5, 20);
+      CHECK(i == 134);
+      CHECK(text[i] == 'e');
+
       i = tlayout.hit_test(350, 20);
       CHECK(i == 192);
       CHECK(text[i] == '\n');
 
-      i = tlayout.hit_test(110, 20);
+      i = tlayout.hit_test(109, 20);
       CHECK(i == 154);
       CHECK(text[i] == 'a');
 
@@ -451,9 +455,13 @@ void typography(canvas& cnv)
       CHECK(i == 132);
       CHECK(text[i] == ' ');
 
-      i = tlayout.hit_test(345, 15);
-      CHECK(i == 131);
-      CHECK(text[i] == ',');
+      // Harfbuzz vs. CoreText have slightly different results here,
+      // but that is OK.
+      i = tlayout.hit_test(343, 15);
+      auto check_index = i == 131 || i == 130;
+      auto check_char = text[i] == ',' || text[i] == 'h';
+      CHECK(check_index);
+      CHECK(check_char);
 
       i = tlayout.hit_test(20, 49);
       CHECK(i == 193);
