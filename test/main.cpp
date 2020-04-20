@@ -506,6 +506,9 @@ void typography(canvas& cnv)
       test_caret_pos(133);
       test_caret_pos(154);
       test_caret_pos(405);
+      test_caret_pos(420);
+      test_caret_pos(425);
+      test_caret_pos(426);
    }
 }
 

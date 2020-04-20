@@ -123,7 +123,7 @@ namespace cycfi::artist
                auto line_width = justify(glyph_idx, must_break);
 
                auto glyph_count = glyph_idx - glyph_start;
-               if (i == glyphs_info.count-1)
+               if (i == glyphs_info.count-1) // the last glyph?
                   ++glyph_count;
 
                std::vector<SkGlyphID> line_glyphs(glyph_count);
@@ -238,8 +238,8 @@ namespace cycfi::artist
          // Now find the glyph position in the row
          auto const& row = _rows[row_index];
          auto index = glyph_index - row.glyph_index;
-         auto xpos = (index < row.positions.size())? row.positions[index] : row.width;
-         return { xpos, row.pos.y };
+         auto offset = (index < row.positions.size())? row.positions[index] : row.width;
+         return { row.pos.x + offset, row.pos.y };
       }
 
       std::size_t hit_test(point p) const
