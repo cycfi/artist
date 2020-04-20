@@ -162,7 +162,7 @@ namespace cycfi::artist
          // Find the row that includes the glyph index
          if (row_index == -1)
          {
-            auto i = std::lower_bound(_rows.begin(), _rows.end(), str_pos,
+            auto i = std::lower_bound(_rows.begin(), _rows.end(), glyph_index,
                [](auto const& row, std::size_t pos)
                {
                   auto rng = CTLineGetStringRange(row.line);
