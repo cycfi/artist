@@ -243,6 +243,7 @@ LRESULT CALLBACK handle_event(
          break;
 
       case WM_CLOSE:
+         KillTimer(hWnd, IDT_TIMER1);
          PostQuitMessage(0);
          break;
 
