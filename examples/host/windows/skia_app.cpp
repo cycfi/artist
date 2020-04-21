@@ -239,7 +239,10 @@ LRESULT CALLBACK handle_event(
 
       case WM_KEYDOWN:
          if (wParam == VK_ESCAPE)
+         {
+            KillTimer(hWnd, IDT_TIMER1);
             PostQuitMessage(0);
+         }
          break;
 
       case WM_CLOSE:
