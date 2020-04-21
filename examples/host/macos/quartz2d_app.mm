@@ -70,7 +70,6 @@ namespace cycfi::artist
 
 //=======================================================================
 
-@class OpenGLLayer;
 using offscreen_type = std::shared_ptr<image>;
 
 @interface CocoaView : NSView
