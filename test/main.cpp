@@ -785,7 +785,7 @@ void misc(canvas& cnv)
       cnv.fill_style(colors::navajo_white.opacity(0.5));
       cnv.fill_preserve();
 
-      CHECK(cnv.includes(10, 10));
+      CHECK(cnv.point_in_path(10, 10));
       CHECK(!p.includes(501, 500));
    }
 }

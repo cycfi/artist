@@ -16,9 +16,9 @@ namespace cycfi::artist
       return _context;
    }
 
-   inline bool canvas::includes(float x, float y) const
+   inline bool canvas::point_in_path(float x, float y) const
    {
-      return includes({ x, y });
+      return point_in_path({x, y});
    }
 
    inline void canvas::translate(float x, float y)
