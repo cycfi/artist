@@ -30,7 +30,7 @@ namespace cycfi::artist
                          : rect(origin.x, origin.y, origin.x + size.x, origin.y + size.y)
                         {}
 
-                        rect(rect const &) = default;
+      constexpr         rect(rect const &) = default;
       constexpr rect&   operator=(rect const&) = default;
 
       constexpr bool    operator==(rect const& other) const;
