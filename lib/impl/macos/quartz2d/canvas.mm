@@ -54,7 +54,8 @@ namespace cycfi::artist
 
       void              save();
       void              restore();
-
+      float             scale() const                    { return _scale; }
+      void              scale(float sc)                  { _scale = sc; }
 
    private:
 
@@ -77,6 +78,7 @@ namespace cycfi::artist
 
       state_info_stack  _stack;
       fill_rule_enum    _fill_rule = fill_rule_enum::fill_winding;
+      float             _scale;
    };
 
    namespace
@@ -200,6 +202,10 @@ namespace cycfi::artist
       auto ctx = CGContextRef(_context);
       CGAffineTransform trans = CGAffineTransformMakeScale(1, -1);
       CGContextSetTextMatrix(ctx, trans);
+
+      CGRect user = { { 0, 0 }, { 100, 100 }};
+      auto device = CGContextConvertRectToDeviceSpace(ctx, user);
+      _state->scale(device.size.height / user.size.height);
    }
 
    canvas::~canvas()
@@ -229,14 +235,20 @@ namespace cycfi::artist
 
    point canvas::device_to_user(point p)
    {
-      auto up = CGContextConvertPointToUserSpace(CGContextRef(_context), { p.x, p.y });
+      auto scale = _state->scale();
+      auto up = CGContextConvertPointToUserSpace(
+         CGContextRef(_context), { p.x * scale, p.y * scale }
+      );
       return { float(up.x), float(up.y) };
    }
 
    point canvas::user_to_device(point p)
    {
-      auto dp = CGContextConvertPointToDeviceSpace(CGContextRef(_context), { p.x, p.y });
-      return { float(dp.x), float(dp.y) };
+      auto scale = _state->scale();
+      auto dp = CGContextConvertPointToDeviceSpace(
+         CGContextRef(_context), { p.x, p.y }
+      );
+      return { float(dp.x / scale), float(dp.y / scale) };
    }
 
    affine_transform canvas::transform() const
