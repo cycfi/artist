@@ -227,6 +227,18 @@ namespace cycfi::artist
       CGContextConcatCTM(CGContextRef(_context), mat);
    }
 
+   point canvas::device_to_user(point p)
+   {
+      auto up = CGContextConvertPointToUserSpace(CGContextRef(_context), { p.x, p.y });
+      return { float(up.x), float(up.y) };
+   }
+
+   point canvas::user_to_device(point p)
+   {
+      auto dp = CGContextConvertPointToDeviceSpace(CGContextRef(_context), { p.x, p.y });
+      return { float(dp.x), float(dp.y) };
+   }
+
    affine_transform canvas::transform() const
    {
       auto [a, b, c, d, tx, ty] = CGContextGetCTM(CGContextRef(_context));
