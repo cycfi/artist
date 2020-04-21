@@ -57,7 +57,7 @@ namespace cycfi::artist
       image_impl_ptr  _impl;
    };
 
-   using pixmap_ptr = std::shared_ptr<image>;
+   using image_ptr = std::shared_ptr<image>;
 
    ////////////////////////////////////////////////////////////////////////////
    // offscreen_image allows drawing into a picture
