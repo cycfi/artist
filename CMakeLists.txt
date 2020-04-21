@@ -36,7 +36,7 @@ if (ARTIST_SKIA)
   set(ARTIST_QUARTZ_2D OFF)
 endif()
 
-if (ARTIST_SKIA AND MSVC)
+if (ARTIST_SKIA AND WIN32)
    ExternalProject_Add(dlls
       PREFIX "windows-x64-dll"
       URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/windows-x64-dll.zip
@@ -49,6 +49,16 @@ if (ARTIST_SKIA AND MSVC)
    set(ICONV_DLL ${CMAKE_CURRENT_BINARY_DIR}/windows-x64-dll/src/dlls/libiconv.dll)
    set(XML2_DLL ${CMAKE_CURRENT_BINARY_DIR}/windows-x64-dll/src/dlls/libxml2.dll)
    set(FREETYPE_DLL ${CMAKE_CURRENT_BINARY_DIR}/windows-x64-dll/src/dlls/freetype.dll)
+endif()
+
+if (ARTIST_SKIA AND WIN32)
+   message(STATUS "Building for Win32 with Skia.")
+elseif (ARTIST_DIRECT_2D AND WIN32)
+   message(STATUS "Building for Win32 with Direct2D.")
+elseif (ARTIST_SKIA AND APPLE)
+   message(STATUS "Building for MacOS with Skia.")
+elseif (ARTIST_SKIA AND APPLE)
+   message(STATUS "Building for MacOS with Quartz2D.")
 endif()
 
 add_subdirectory(lib)
