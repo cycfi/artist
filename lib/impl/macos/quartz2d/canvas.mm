@@ -899,9 +899,7 @@ namespace cycfi::artist
 
    canvas::text_metrics canvas::measure_text(std::string_view utf8)
    {
-      auto ctx = CGContextRef(_context);
       CGFloat ascent, descent, leading, width;
-
       auto line = detail::measure_text(
          _state->font(), utf8.begin(), utf8.end(), width, ascent, descent, leading);
 
