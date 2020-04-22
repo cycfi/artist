@@ -16,6 +16,16 @@ namespace cycfi::artist
       return _context;
    }
 
+   inline canvas::operator bool() const
+   {
+      return _context != nullptr;
+   }
+
+   inline bool canvas::operator!() const
+   {
+      return _context == nullptr;
+   }
+
    inline bool canvas::point_in_path(float x, float y) const
    {
       return point_in_path({x, y});

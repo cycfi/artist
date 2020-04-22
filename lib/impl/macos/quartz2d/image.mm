@@ -102,9 +102,9 @@ namespace cycfi::artist
       [((__bridge NSImage*) _image.impl()) unlockFocus];
    }
 
-   canvas_impl_ptr offscreen_image::context() const
+   canvas_impl* offscreen_image::context() const
    {
-      return (canvas_impl_ptr) NSGraphicsContext.currentContext.CGContext;
+      return (canvas_impl*) NSGraphicsContext.currentContext.CGContext;
    }
 }
 
