@@ -191,7 +191,7 @@ namespace cycfi::artist
       delete _state;
    }
 
-   canvas_impl_ptr offscreen_image::context() const
+   canvas_impl* offscreen_image::context() const
    {
       return _state->recording_canvas;
    }

@@ -29,19 +29,19 @@ namespace cycfi::artist
    struct canvas_impl;
 #endif
 
-   using canvas_impl_ptr = canvas_impl*;
-
    class canvas
    {
    public:
 
-      explicit          canvas(canvas_impl_ptr context_);
+      explicit          canvas(canvas_impl* context_);
                         canvas(canvas const& rhs) = delete;
                         ~canvas();
 
                         canvas(canvas&& rhs) = delete;
       canvas&           operator=(canvas const& rhs) = delete;
-      canvas_impl_ptr   impl() const;
+      canvas_impl*      impl() const;
+      explicit          operator bool() const;
+      bool              operator!() const;
 
       void              pre_scale(point p);
 
@@ -350,7 +350,7 @@ namespace cycfi::artist
 
    private:
 
-      canvas_impl_ptr   _context;
+      canvas_impl*      _context;
       canvas_state_ptr  _state;
    };
 }

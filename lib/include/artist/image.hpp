@@ -22,8 +22,6 @@ namespace cycfi::artist
    struct canvas_impl;
 #endif
 
-   using canvas_impl_ptr = canvas_impl*;
-
    class image_impl;
    using image_impl_ptr = image_impl*;
 
@@ -70,7 +68,7 @@ namespace cycfi::artist
                         ~offscreen_image();
       offscreen_image&  operator=(offscreen_image const& rhs) = delete;
 
-      canvas_impl_ptr   context() const;
+      canvas_impl*      context() const;
 
    private:
                         offscreen_image(offscreen_image const&) = delete;

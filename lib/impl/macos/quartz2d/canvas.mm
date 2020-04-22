@@ -194,7 +194,7 @@ namespace cycfi::artist
          _stack.pop();
    }
 
-   canvas::canvas(canvas_impl_ptr context_)
+   canvas::canvas(canvas_impl* context_)
     : _context{ context_ }
     , _state{ std::make_unique<canvas_state>() }
    {
