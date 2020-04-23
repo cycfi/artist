@@ -39,6 +39,7 @@ namespace cycfi::artist
 
       void                       flow(get_line_info const& glf, flow_info finfo);
       void                       draw(canvas& cnv, point p);
+      void                       text(std::string_view utf8);
       point                      caret_point(std::size_t index) const;
       std::size_t                caret_index(point p) const;
       std::size_t                num_lines() const;
@@ -86,6 +87,10 @@ namespace cycfi::artist
 
    void text_layout::impl::flow(get_line_info const& glf, flow_info finfo)
    {
+      _rows.clear();
+      if (_utf8.size() == 0)
+         return;
+
       _buff.shape(_hb_font);
       auto glyphs_info = _buff.glyphs();
 
@@ -228,6 +233,9 @@ namespace cycfi::artist
 
    void  text_layout::impl::draw(canvas& cnv, point p)
    {
+      if (_rows.size() == 0)
+         return;
+
       for (auto const& line : _rows)
       {
          auto sk_cnv = cnv.impl();
@@ -242,8 +250,17 @@ namespace cycfi::artist
       }
    }
 
+   void text_layout::impl::text(std::string_view utf8)
+   {
+      _buff.text(utf8);
+      _rows.clear();
+   }
+
    point text_layout::impl::caret_point(std::size_t index) const
    {
+      if (_rows.size() == 0)
+         return { 0, 0 };
+
       auto glyphs_info = _buff.glyphs();
 
       // Find the glyph index from string index
@@ -282,6 +299,9 @@ namespace cycfi::artist
 
    std::size_t text_layout::impl::caret_index(point p) const
    {
+      if (_rows.size() == 0)
+         return 0;
+
       auto glyphs_info = _buff.glyphs();
       auto i = std::lower_bound(
          _rows.begin(), _rows.end(), p.y,
@@ -336,6 +356,16 @@ namespace cycfi::artist
 
    text_layout::~text_layout()
    {
+   }
+
+   text_layout::text_layout(text_layout&& rhs) noexcept
+    : _impl{ std::move(rhs._impl) }
+   {
+   }
+
+   void text_layout::text(std::string_view utf8)
+   {
+      _impl->text(utf8);
    }
 
    void text_layout::flow(float width, bool justify)
