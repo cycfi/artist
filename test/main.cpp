@@ -788,6 +788,28 @@ void misc(canvas& cnv)
       CHECK(cnv.point_in_path(10, 10));
       CHECK(!p.includes(501, 500));
    }
+
+   // Test small offscreen hit testing and text measurements work
+   {
+      image img{ 1, 1 };
+      offscreen_image offscr{ img };
+      canvas cnv{ offscr.context() };
+
+      cnv.circle(230, 230, 50);
+      cnv.circle(230, 230, 25);
+      cnv.fill_rule(path::fill_odd_even);
+
+      CHECK(cnv.point_in_path(230-50+5, 230));
+      CHECK(!cnv.point_in_path(230, 230));
+
+      cnv.font(font_descr{ "Open Sans", 36 });
+      auto m = cnv.measure_text("Hello, World");
+      CHECK(std::floor(m.size.x) == 205);
+      CHECK(std::floor(m.size.y)== 49);
+      CHECK(std::floor(m.ascent) == 38);
+      CHECK(std::floor(m.descent) == 10);
+      CHECK(std::floor(m.leading) == 0);
+   }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
