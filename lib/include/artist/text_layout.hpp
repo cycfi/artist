@@ -54,9 +54,9 @@ namespace cycfi::artist
       void                 draw(canvas& cnv, float x, float y) const;
 
       std::size_t          num_lines() const;
-      point                caret_pos(std::size_t str_pos) const;
-      std::size_t          hit_test(float x, float y) const;
-      std::size_t          hit_test(point p) const;
+      point                caret_point(std::size_t index) const;
+      std::size_t          caret_index(float x, float y) const;
+      std::size_t          caret_index(point p) const;
 
    private:
 
@@ -74,9 +74,9 @@ namespace cycfi::artist
       draw(cnv, { x, y });
    }
 
-   inline std::size_t text_layout::hit_test(float x, float y) const
+   inline std::size_t text_layout::caret_index(float x, float y) const
    {
-      return hit_test({ x, y });
+      return caret_index({x, y});
    }
 }
 
