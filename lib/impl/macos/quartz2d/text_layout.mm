@@ -34,8 +34,8 @@ namespace cycfi::artist
       void              draw(canvas& cnv, point p);
       void              text(std::string_view utf8);
       void              build_indices();
-      point             caret_pos(std::size_t str_pos) const;
-      std::size_t       hit_test(point p) const;
+      point             caret_point(std::size_t index) const;
+      std::size_t       caret_index(point p) const;
       std::size_t       num_lines() const;
       class font&       font();
 
@@ -191,19 +191,19 @@ namespace cycfi::artist
       _indices.push_back(_utf8.size());
    }
 
-   point text_layout::impl::caret_pos(std::size_t str_pos) const
+   point text_layout::impl::caret_point(std::size_t index) const
    {
       if (_rows.size() == 0)
          return { 0, 0 };
 
-      // Find the glyph index from str_pos
-      auto glyph_index = str_pos;
+      // Find the glyph index from string index
+      auto glyph_index = index;
       auto row_index = -1;
-      if (str_pos < _utf8.size())
+      if (index < _utf8.size())
       {
-         auto f = _indices.begin() + (str_pos / 4);
-         auto l = _indices.begin() + str_pos + 1;
-         auto i = std::lower_bound(f, l, str_pos,
+         auto f = _indices.begin() + (index / 4);
+         auto l = _indices.begin() + index + 1;
+         auto i = std::lower_bound(f, l, index,
             [](std::size_t index, std::size_t pos)
             {
                return index < pos;
@@ -239,7 +239,7 @@ namespace cycfi::artist
       return { float(row.pos.x + offset), row.pos.y };
    }
 
-   std::size_t text_layout::impl::hit_test(point p) const
+   std::size_t text_layout::impl::caret_index(point p) const
    {
       if (_rows.size() == 0)
          return 0;
@@ -325,14 +325,14 @@ namespace cycfi::artist
       return _impl->num_lines();
    }
 
-   point text_layout::caret_pos(std::size_t str_pos) const
+   point text_layout::caret_point(std::size_t index) const
    {
-      return _impl->caret_pos(str_pos);
+      return _impl->caret_point(index);
    }
 
-   std::size_t text_layout::hit_test(point p) const
+   std::size_t text_layout::caret_index(point p) const
    {
-      return _impl->hit_test(p);
+      return _impl->caret_index(p);
    }
 }
 

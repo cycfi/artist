@@ -419,61 +419,65 @@ void typography(canvas& cnv)
       "⁠—Albert Einstein"
       ;
 
-   auto tlayout = text_layout{ font_descr{ "Open Sans", 12 }.italic(), text };
+   auto tlayout = text_layout{
+      font_descr{ "Open Sans", 12 }.italic()
+    , rgba(220, 220, 220, 200)
+    , text
+   };
    tlayout.flow(350, true);
    tlayout.draw(cnv, 20, 300);
 
    // Hit testing
    {
-      auto i = tlayout.hit_test(0, 2000);
+      auto i = tlayout.caret_index(0, 2000);
       CHECK(i == tlayout.npos);
 
-      i = tlayout.hit_test(0, 0);
+      i = tlayout.caret_index(0, 0);
       CHECK(i == 0);
 
-      i = tlayout.hit_test(350, 0);
+      i = tlayout.caret_index(350, 0);
       CHECK(i == 64);
       CHECK(text[i] == ' ');
 
-      i = tlayout.hit_test(0, 20);
+      i = tlayout.caret_index(0, 20);
       CHECK(i == 133);
       CHECK(text[i] == 'b');
 
-      i = tlayout.hit_test(5, 20);
+      i = tlayout.caret_index(5, 20);
       CHECK(i == 134);
       CHECK(text[i] == 'e');
 
-      i = tlayout.hit_test(350, 20);
+      i = tlayout.caret_index(350, 20);
       CHECK(i == 192);
       CHECK(text[i] == '\n');
 
-      i = tlayout.hit_test(109, 20);
+      i = tlayout.caret_index(109, 20);
       CHECK(i == 154);
       CHECK(text[i] == 'a');
 
-      i = tlayout.hit_test(350, 15);
+      i = tlayout.caret_index(350, 15);
       CHECK(i == 132);
       CHECK(text[i] == ' ');
 
       // Harfbuzz vs. CoreText have slightly different results here,
       // but that is OK.
-      i = tlayout.hit_test(343, 15);
+      i = tlayout.caret_index(343, 15);
       auto check_index = i == 131 || i == 130;
       auto check_char = text[i] == ',' || text[i] == 'h';
       CHECK(check_index);
       CHECK(check_char);
 
-      i = tlayout.hit_test(20, 49);
+      i = tlayout.caret_index(20, 49);
       CHECK(i == 193);
       CHECK(text[i] == '\n');
 
-      i = tlayout.hit_test(0, 147);
+      i = tlayout.caret_index(0, 147);
       CHECK(i == 405);
       char const* s = text.data()+i;
       auto cp = codepoint(s);
       CHECK(cp == 8288); // 'WORD JOINER' (U+2060)
 
-      i = tlayout.hit_test(88, 147);
+      i = tlayout.caret_index(88, 147);
       CHECK(i == text.size());
    }
 
@@ -482,7 +486,7 @@ void typography(canvas& cnv)
       auto test_caret_pos =
          [&tlayout](std::size_t index, bool exceed = false)
          {
-            point pos = tlayout.caret_pos(index);
+            point pos = tlayout.caret_point(index);
             if (exceed)
             {
                CHECK(std::floor(pos.x) == 86);
@@ -490,7 +494,7 @@ void typography(canvas& cnv)
             }
             else
             {
-               std::size_t got_index = tlayout.hit_test(pos);
+               std::size_t got_index = tlayout.caret_index(pos);
                CHECK(got_index == index);
             }
          };

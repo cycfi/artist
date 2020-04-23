@@ -134,11 +134,6 @@ namespace cycfi::artist
       return cnv._state->fill_paint();
    }
 
-   SkPaint& fill_paint(canvas const& cnv)
-   {
-      return canvas::canvas_state::get_fill_paint(cnv);
-   }
-
    canvas::canvas(canvas_impl* context_)
     : _context{ context_ }
     , _state{ std::make_unique<canvas_state>() }
