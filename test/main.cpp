@@ -16,6 +16,7 @@
 
 using namespace cycfi::artist;
 using namespace font_constants;
+using cycfi::codepoint;
 
 auto constexpr window_size = point{ 640.0f, 480.0f };
 auto constexpr bkd_color = rgba(54, 52, 55, 255);
