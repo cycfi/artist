@@ -125,7 +125,7 @@ if (APPLE)
    if (ARTIST_QUARTZ_2D)
       set(ARTIST_IMPL
          impl/macos/quartz2d/canvas.mm
-              impl/macos/quartz2d/image.mm
+         impl/macos/quartz2d/image.mm
          impl/macos/quartz2d/font.mm
          impl/macos/quartz2d/text_layout.mm
          impl/macos/quartz2d/path.mm
@@ -142,7 +142,7 @@ endif()
 if (ARTIST_SKIA)
    set(ARTIST_IMPL
       impl/skia/canvas.cpp
-           impl/skia/image.cpp
+      impl/skia/image.cpp
       impl/skia/font.cpp
       impl/skia/text_layout.cpp
       impl/skia/path.cpp
@@ -216,7 +216,7 @@ if (ARTIST_SKIA)
    target_compile_definitions(
       artist
       PUBLIC
-      ARTIST_SKIA
+         ARTIST_SKIA
    )
 endif()
 
