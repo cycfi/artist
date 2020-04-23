@@ -32,6 +32,7 @@ namespace cycfi::artist
       void              clear_rows();
       void              flow(get_line_info const& glf, flow_info finfo);
       void              draw(canvas& cnv, point p);
+      void              text(std::string_view utf8);
       void              build_indices();
       point             caret_pos(std::size_t str_pos) const;
       std::size_t       hit_test(point p) const;
@@ -159,21 +160,29 @@ namespace cycfi::artist
       }
    }
 
+   void text_layout::impl::text(std::string_view utf8)
+   {
+      clear_rows();
+      _indices.clear();
+      _utf8 = utf8;
+      build_indices();
+   }
+
    void text_layout::impl::build_indices()
    {
-      if (_indices.empty())
+      if (!_indices.empty())
+         _indices.clear();
+
+      // Build the utf8 indices vector
+      char const* i = _utf8.data();
+      char const* last = i + _utf8.size();
+      while (i != last)
       {
-         // Build the utf8 indices vector
-         char const* i = _utf8.data();
-         char const* last = i + _utf8.size();
-         while (i != last)
-         {
-            auto next = next_utf8(i, last);
-            _indices.push_back(i-_utf8.data());
-            i = next;
-         }
-         _indices.push_back(_utf8.size());
+         auto next = next_utf8(i, last);
+         _indices.push_back(i-_utf8.data());
+         i = next;
       }
+      _indices.push_back(_utf8.size());
    }
 
    point text_layout::impl::caret_pos(std::size_t str_pos) const
@@ -271,6 +280,11 @@ namespace cycfi::artist
    text_layout::text_layout(text_layout&& rhs) noexcept
     : _impl{ std::move(rhs._impl) }
    {
+   }
+
+   void text_layout::text(std::string_view utf8)
+   {
+      _impl->text(utf8);
    }
 
    void text_layout::flow(get_line_info const& glf, flow_info finfo)

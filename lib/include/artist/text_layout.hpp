@@ -47,6 +47,7 @@ namespace cycfi::artist
       using get_line_info = std::function<line_info(float y)>;
       static constexpr auto npos = std::size_t(-1);
 
+      void                 text(std::string_view utf8);
       void                 flow(float width, bool justify = false);
       void                 flow(get_line_info const& glf, flow_info finfo);
       void                 draw(canvas& cnv, point p) const;
