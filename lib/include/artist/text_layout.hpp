@@ -10,7 +10,7 @@
 #include <artist/font.hpp>
 #include <artist/rect.hpp>
 #include <artist/color.hpp>
-#include <artist/detail/utf8_utils.hpp>
+#include <infra/utf8_utils.hpp>
 #include <memory>
 #include <functional>
 

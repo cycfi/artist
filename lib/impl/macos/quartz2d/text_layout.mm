@@ -167,10 +167,13 @@ namespace cycfi::artist
 
    void text_layout::impl::text(std::string_view utf8)
    {
-      clear_rows();
-      _indices.clear();
-      _utf8 = utf8;
-      build_indices();
+      if (utf8 != _utf8)
+      {
+         clear_rows();
+         _indices.clear();
+         _utf8 = utf8;
+         build_indices();
+      }
    }
 
    void text_layout::impl::build_indices()
