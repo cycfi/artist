@@ -78,6 +78,8 @@ namespace cycfi::artist
    void text_layout::impl::flow(get_line_info const& glf, flow_info finfo)
    {
       clear_rows();
+      if (_utf8.size() == 0)
+         return;
 
       NSFont* font = (__bridge NSFont*) _font.impl();
       CFStringRef keys[] = { kCTFontAttributeName, kCTForegroundColorFromContextAttributeName };
@@ -148,6 +150,9 @@ namespace cycfi::artist
 
    void text_layout::impl::draw(canvas& cnv, point p)
    {
+      if (_rows.size() == 0)
+         return;
+
       auto ctx = CGContextRef(cnv.impl());
       CGContextSetRGBFillColor(
          ctx, _text_color.red, _text_color.green, _text_color.blue, _text_color.alpha
@@ -170,8 +175,9 @@ namespace cycfi::artist
 
    void text_layout::impl::build_indices()
    {
-      if (!_indices.empty())
-         _indices.clear();
+      _indices.clear();
+      if (_utf8.size() == 0)
+         return;
 
       // Build the utf8 indices vector
       char const* i = _utf8.data();
@@ -187,6 +193,9 @@ namespace cycfi::artist
 
    point text_layout::impl::caret_pos(std::size_t str_pos) const
    {
+      if (_rows.size() == 0)
+         return { 0, 0 };
+
       // Find the glyph index from str_pos
       auto glyph_index = str_pos;
       auto row_index = -1;
@@ -232,6 +241,9 @@ namespace cycfi::artist
 
    std::size_t text_layout::impl::hit_test(point p) const
    {
+      if (_rows.size() == 0)
+         return 0;
+
       auto i = std::lower_bound(
          _rows.begin(), _rows.end(), p.y,
          [](auto const& row, float y)
