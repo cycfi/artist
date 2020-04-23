@@ -6,7 +6,7 @@
 #include <string_view>
 #include <artist/text_layout.hpp>
 #include <artist/canvas.hpp>
-#include <artist/detail/utf8_utils.hpp>
+#include <infra/utf8_utils.hpp>
 #include "osx_utils.hpp"
 #include <vector>
 #include <algorithm>
