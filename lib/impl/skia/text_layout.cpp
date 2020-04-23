@@ -252,8 +252,11 @@ namespace cycfi::artist
 
    void text_layout::impl::text(std::string_view utf8)
    {
-      _buff.text(utf8);
-      _rows.clear();
+      if (utf8 != _utf8)
+      {
+         _buff.text(utf8);
+         _rows.clear();
+      }
    }
 
    point text_layout::impl::caret_point(std::size_t index) const
