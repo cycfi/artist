@@ -99,34 +99,38 @@ using offscreen_type = std::shared_ptr<image>;
 
 - (void) drawRect : (NSRect) dirty
 {
-   auto start = std::chrono::high_resolution_clock::now();
-   auto ctx = NSGraphicsContext.currentContext.CGContext;
-
-   if (_first && _task)
-   {
-      _first = false;
-      _offscreen = std::make_shared<image>(
-         extent{ float(self.bounds.size.width), float(self.bounds.size.height) }
-      );
-   }
-
-   if (_task)
-   {
-      auto cnv = canvas{ (canvas_impl*) ctx };
+   auto draw_f =
+      [&]()
       {
-         // Do offscreen rendering
-         offscreen_image ctx{ *_offscreen };
-         canvas offscreen_cnv{ ctx.context() };
-         draw(offscreen_cnv);
-      }
-      cnv.draw(*_offscreen);
-   }
-   else
-   {
-      auto cnv = canvas{ (canvas_impl*) ctx };
-      draw(cnv);
-   }
+         auto ctx = NSGraphicsContext.currentContext.CGContext;
+         if (_first && _task)
+         {
+            _first = false;
+            _offscreen = std::make_shared<image>(
+               extent{ float(self.bounds.size.width), float(self.bounds.size.height) }
+            );
+         }
 
+         if (_task)
+         {
+            auto cnv = canvas{ (canvas_impl*) ctx };
+            {
+               // Do offscreen rendering
+               offscreen_image ctx{ *_offscreen };
+               canvas offscreen_cnv{ ctx.context() };
+               draw(offscreen_cnv);
+            }
+            cnv.draw(*_offscreen);
+         }
+         else
+         {
+            auto cnv = canvas{ (canvas_impl*) ctx };
+            draw(cnv);
+         }
+      };
+
+   auto start = std::chrono::high_resolution_clock::now();
+   draw_f();
    auto stop = std::chrono::high_resolution_clock::now();
    elapsed_ = std::chrono::duration<double>{ stop - start }.count();
 }

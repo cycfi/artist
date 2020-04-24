@@ -9,7 +9,7 @@ using namespace cycfi::artist;
 
 extern float elapsed_;
 
-void print_elapsed(canvas& cnv, point br)
+void print_elapsed(canvas& cnv, point br, color c)
 {
    static font open_sans = font_descr{ "Open Sans", 12 };
    static int i = 0;
@@ -29,7 +29,7 @@ void print_elapsed(canvas& cnv, point br)
 
    if (c_elapsed)
    {
-      cnv.fill_style(rgba(220, 220, 220, 200));
+      cnv.fill_style(c);
       cnv.font(open_sans);
       cnv.text_align(cnv.right | cnv.bottom);
       cnv.fill_text(std::to_string(1 / c_elapsed) + " fps", { br.x, br.y });
