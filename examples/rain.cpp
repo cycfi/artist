@@ -24,11 +24,12 @@ constexpr auto w = window_size.x;
 constexpr auto h = window_size.y;
 constexpr int total = w;
 constexpr auto accelleration = 0.05;
-constexpr auto repaint_color = rgb(0, 0, 0).opacity(persistence);
+constexpr auto repaint_color = rgb(0, 0, 0);
 constexpr auto portion = 360.0f/total;
 
 float dots[total];
 float dots_vel[total];
+float opacity = 1.0;
 
 float random_size()
 {
@@ -37,7 +38,7 @@ float random_size()
 
 void draw(canvas& cnv)
 {
-   cnv.fill_style(repaint_color);
+   cnv.fill_style(repaint_color.opacity(opacity));
    cnv.fill_rect({ 0, 0, window_size });
    for (auto i = 0; i < total; ++i)
    {
@@ -55,6 +56,8 @@ void draw(canvas& cnv)
          dots[i] = dots_vel[i] = 0;
    }
 
+   if (opacity > persistence)
+      opacity *= 0.8;
    print_elapsed(cnv, window_size);
 }
 
