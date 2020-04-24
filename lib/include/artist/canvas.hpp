@@ -20,13 +20,14 @@
 
 #if defined(ARTIST_SKIA)
 class SkCanvas;
-using canvas_impl = SkCanvas;
 #endif
 
 namespace cycfi::artist
 {
 #if defined(ARTIST_QUARTZ_2D)
    struct canvas_impl;
+#elif defined(ARTIST_SKIA)
+   using canvas_impl = SkCanvas;
 #endif
 
    class canvas
@@ -43,7 +44,8 @@ namespace cycfi::artist
       explicit          operator bool() const;
       bool              operator!() const;
 
-      void              pre_scale(point p);
+      void              pre_scale(float sc);
+      float             pre_scale() const;
 
       ///////////////////////////////////////////////////////////////////////////////////
       // Transforms

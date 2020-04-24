@@ -13,20 +13,11 @@
 #include "../../app.hpp"
 #include <artist/resources.hpp>
 
-# include "GrContext.h"
-# include "gl/GrGLInterface.h"
-# include "SkImage.h"
-# include "SkSurface.h"
-
-# include "SkBitmap.h"
-# include "SkData.h"
-# include "SkImage.h"
-# include "SkPicture.h"
-# include "SkSurface.h"
-# include "SkCanvas.h"
-# include "SkPath.h"
-# include "GrBackendSurface.h"
-
+#include <GrContext.h>
+#include <gl/GrGLInterface.h>
+#include <SkImage.h>
+#include <SkSurface.h>
+#include <GrBackendSurface.h>
 #include <OpenGL/gl.h>
 
 using namespace cycfi::artist;
@@ -201,7 +192,7 @@ using offscreen_type = std::shared_ptr<image>;
 
    SkCanvas* gpu_canvas = surface->getCanvas();
    auto cnv = canvas{ gpu_canvas };
-   cnv.pre_scale({ float(scale), float(scale) });
+   cnv.pre_scale(scale);
    draw(cnv);
 
    [context flushBuffer];

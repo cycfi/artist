@@ -3,8 +3,6 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-
 #import <Cocoa/Cocoa.h>
 #include <dlfcn.h>
 #include <string>
