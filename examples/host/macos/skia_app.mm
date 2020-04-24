@@ -161,42 +161,48 @@ using offscreen_type = std::shared_ptr<image>;
                 forLayerTime : (CFTimeInterval) timeInterval
                  displayTime : (const CVTimeStamp*) timeStamp
 {
+   auto draw_f =
+      [&]()
+      {
+         _first = false;
+
+         [context makeCurrentContext];
+         CGLLockContext(context.CGLContextObj);
+
+         auto interface = GrGLMakeNativeInterface();
+         sk_sp<GrContext> ctx = GrContext::MakeGL(interface);
+
+         GrGLint buffer;
+         glGetIntegerv(GL_FRAMEBUFFER_BINDING, &buffer);
+         GrGLFramebufferInfo info;
+         info.fFBOID = (GrGLuint) buffer;
+         SkColorType colorType = kRGBA_8888_SkColorType;
+
+         auto bounds = [_view bounds];
+         auto scale = self.contentsScale;
+         auto size = point{ float(bounds.size.width*scale), float(bounds.size.height*scale) };
+
+         info.fFormat = GL_RGBA8;
+         GrBackendRenderTarget target(size.x, size.y, 0, 8, info);
+
+         sk_sp<SkSurface> surface(
+            SkSurface::MakeFromBackendRenderTarget(ctx.get(), target,
+            kBottomLeft_GrSurfaceOrigin, colorType, nullptr, nullptr));
+
+         if (!surface)
+            throw std::runtime_error("Error: SkSurface::MakeRenderTarget returned null");
+
+         SkCanvas* gpu_canvas = surface->getCanvas();
+         auto cnv = canvas{ gpu_canvas };
+         cnv.pre_scale(scale);
+         draw(cnv);
+
+         [context flushBuffer];
+         CGLUnlockContext(context.CGLContextObj);
+      };
+
    auto start = std::chrono::high_resolution_clock::now();
-   _first = false;
-
-   [context makeCurrentContext];
-   CGLLockContext(context.CGLContextObj);
-
-   auto interface = GrGLMakeNativeInterface();
-   sk_sp<GrContext> ctx = GrContext::MakeGL(interface);
-
-   GrGLint buffer;
-   glGetIntegerv(GL_FRAMEBUFFER_BINDING, &buffer);
-   GrGLFramebufferInfo info;
-   info.fFBOID = (GrGLuint) buffer;
-   SkColorType colorType = kRGBA_8888_SkColorType;
-
-   auto bounds = [_view bounds];
-   auto scale = self.contentsScale;
-   auto size = point{ float(bounds.size.width*scale), float(bounds.size.height*scale) };
-
-   info.fFormat = GL_RGBA8;
-   GrBackendRenderTarget target(size.x, size.y, 0, 8, info);
-
-   sk_sp<SkSurface> surface(
-      SkSurface::MakeFromBackendRenderTarget(ctx.get(), target,
-      kBottomLeft_GrSurfaceOrigin, colorType, nullptr, nullptr));
-
-   if (!surface)
-      throw std::runtime_error("Error: SkSurface::MakeRenderTarget returned null");
-
-   SkCanvas* gpu_canvas = surface->getCanvas();
-   auto cnv = canvas{ gpu_canvas };
-   cnv.pre_scale(scale);
-   draw(cnv);
-
-   [context flushBuffer];
-   CGLUnlockContext(context.CGLContextObj);
+   draw_f();
    auto stop = std::chrono::high_resolution_clock::now();
    elapsed_ = std::chrono::duration<double>{ stop - start }.count();
 }
