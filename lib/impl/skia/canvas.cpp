@@ -47,7 +47,7 @@ namespace cycfi::artist
       void              save();
       void              restore();
 
-      point             _pre_scale = { 1.0, 1.0 };
+      float             _pre_scale = 1.0;
 
       static SkPaint&   get_fill_paint(canvas const& cnv);
 
@@ -144,10 +144,15 @@ namespace cycfi::artist
    {
    }
 
-   void canvas::pre_scale(point p)
+   void canvas::pre_scale(float sc)
    {
-      scale(p);
-      _state->_pre_scale = p;
+      scale(sc, sc);
+      _state->_pre_scale = sc;
+   }
+
+   float canvas::pre_scale() const
+   {
+      return _state->_pre_scale;
    }
 
    void canvas::translate(point p)
@@ -168,6 +173,20 @@ namespace cycfi::artist
    void canvas::skew(double sx, double sy)
    {
       _context->skew(sx, sy);
+   }
+
+   point canvas::device_to_user(point p)
+   {
+      auto scale = _state->_pre_scale;
+      auto mat = _context->getTotalMatrix();
+      SkPoint skp;
+      mat.mapXY(p.x, p.y, &skp);
+      return { skp.x() / scale, skp.y() / scale };
+   }
+
+   point canvas::user_to_device(point p)
+   {
+      return {};
    }
 
    affine_transform canvas::transform() const
@@ -368,8 +387,8 @@ namespace cycfi::artist
       constexpr auto blur_factor = 0.4f;
 
       auto matrix = _context->getTotalMatrix();
-      auto scx = matrix.getScaleX() / _state->_pre_scale.x;
-      auto scy = matrix.getScaleY() / _state->_pre_scale.y;
+      auto scx = matrix.getScaleX() / _state->_pre_scale;
+      auto scy = matrix.getScaleY() / _state->_pre_scale;
 
       auto shadow = SkDropShadowImageFilter::Make(
          offset.x / scx

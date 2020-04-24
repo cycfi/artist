@@ -13,20 +13,11 @@
 #include "../../app.hpp"
 #include <artist/resources.hpp>
 
-# include "GrContext.h"
-# include "gl/GrGLInterface.h"
-# include "SkImage.h"
-# include "SkSurface.h"
-
-# include "SkBitmap.h"
-# include "SkData.h"
-# include "SkImage.h"
-# include "SkPicture.h"
-# include "SkSurface.h"
-# include "SkCanvas.h"
-# include "SkPath.h"
-# include "GrBackendSurface.h"
-
+#include <GrContext.h>
+#include <gl/GrGLInterface.h>
+#include <SkImage.h>
+#include <SkSurface.h>
+#include <GrBackendSurface.h>
 #include <OpenGL/gl.h>
 
 using namespace cycfi::artist;

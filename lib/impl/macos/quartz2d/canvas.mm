@@ -212,6 +212,15 @@ namespace cycfi::artist
    {
    }
 
+   void canvas::pre_scale(float sc)
+   {
+   }
+
+   float canvas::pre_scale() const
+   {
+      return 1.0; // for now
+   }
+
    void canvas::translate(point p)
    {
       CGContextTranslateCTM(CGContextRef(_context), p.x, p.y);
