@@ -392,6 +392,12 @@ namespace cycfi::artist
       _impl->draw(cnv, p);
    }
 
+   std::size_t text_layout::num_lines() const
+   {
+      return _impl->num_lines();
+   }
+
+
    point text_layout::caret_point(std::size_t index) const
    {
       return _impl->caret_point(index);
