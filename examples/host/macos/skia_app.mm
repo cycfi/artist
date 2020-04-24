@@ -92,7 +92,6 @@ using offscreen_type = std::shared_ptr<image>;
 @interface CocoaView : NSView
 {
    OpenGLLayer*   _layer;
-   NSTimer*       _task;
 }
 
 -(void) start;
@@ -102,13 +101,13 @@ using offscreen_type = std::shared_ptr<image>;
 
 @interface OpenGLLayer : NSOpenGLLayer
 {
-   bool                 _refresh;
-   bool                 _first;
+   bool                 _animate;
+   int                  _first;
    CocoaView*           _view;
 }
 
 - (id) initWithIGraphicsView : (CocoaView*) view;
-- (void) refresh;
+- (void) start_animation;
 
 @end
 
@@ -118,7 +117,7 @@ using offscreen_type = std::shared_ptr<image>;
 
 - (id) initWithIGraphicsView: (CocoaView*) view;
 {
-   _refresh = true;
+   _animate = false;
    _first = true;
    _view = view;
    self = [super init];
@@ -134,9 +133,9 @@ using offscreen_type = std::shared_ptr<image>;
    return self;
 }
 
-- (void) refresh
+- (void) start_animation
 {
-   _refresh = true;
+   _animate = true;
 }
 
 - (NSOpenGLPixelFormat*) openGLPixelFormatForDisplayMas : (uint32_t) mask
@@ -163,7 +162,7 @@ using offscreen_type = std::shared_ptr<image>;
                    forLayerTime : (CFTimeInterval) timeInterval
                     displayTime : (const CVTimeStamp*) timeStamp
 {
-   return _refresh;
+   return _first || _animate;
 }
 
 - (void) drawInOpenGLContext : (NSOpenGLContext*) context
@@ -171,11 +170,10 @@ using offscreen_type = std::shared_ptr<image>;
                 forLayerTime : (CFTimeInterval) timeInterval
                  displayTime : (const CVTimeStamp*) timeStamp
 {
-   _refresh = false;
    auto start = std::chrono::high_resolution_clock::now();
+   _first = false;
 
    [context makeCurrentContext];
-
    CGLLockContext(context.CGLContextObj);
 
    auto interface = GrGLMakeNativeInterface();
@@ -220,7 +218,6 @@ using offscreen_type = std::shared_ptr<image>;
 
 - (void) dealloc
 {
-   _task = nil;
 }
 
 - (void) start
@@ -232,10 +229,6 @@ using offscreen_type = std::shared_ptr<image>;
    [self setWantsLayer : YES];
 
    self.layer.opaque = YES;
-}
-
-- (void) drawRect : (NSRect) dirty
-{
 }
 
 - (CALayer*) makeBackingLayer
@@ -255,20 +248,9 @@ using offscreen_type = std::shared_ptr<image>;
    return YES;
 }
 
-- (void) on_tick : (id) sender
-{
-   [_layer refresh];
-}
-
 -(void) start_animation
 {
-   _task =
-      [NSTimer scheduledTimerWithTimeInterval : 0.016 // 60Hz
-           target : self
-         selector : @selector(on_tick:)
-         userInfo : nil
-          repeats : YES
-      ];
+   [_layer start_animation];
 }
 
 @end
