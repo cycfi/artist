@@ -194,7 +194,7 @@ using offscreen_type = std::shared_ptr<image>;
 
    SkCanvas* gpu_canvas = surface->getCanvas();
    auto cnv = canvas{ gpu_canvas };
-   cnv.pre_scale({ float(scale), float(scale) });
+   cnv.pre_scale(scale);
    draw(cnv);
 
    [context flushBuffer];
