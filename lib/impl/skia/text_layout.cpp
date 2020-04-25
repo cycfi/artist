@@ -43,7 +43,7 @@ namespace cycfi::artist
       point                      caret_point(std::size_t index) const;
       std::size_t                caret_index(point p) const;
       std::size_t                num_lines() const;
-      class font&                font();
+      class font&                get_font();
 
    private:
 
@@ -342,7 +342,7 @@ namespace cycfi::artist
       return _rows.size();
    }
 
-   class font& text_layout::impl::font()
+   class font& text_layout::impl::get_font()
    {
       return _font;
    }
@@ -378,7 +378,7 @@ namespace cycfi::artist
          return line_info{ 0, width };
       };
 
-      auto lh = _impl->font().line_height();
+      auto lh = _impl->get_font().line_height();
       flow(line_info_f, { justify, lh, lh });
    }
 
