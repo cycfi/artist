@@ -299,7 +299,7 @@ void window::render()
 
    SkCanvas* gpu_canvas = surface->getCanvas();
    auto cnv = canvas{ gpu_canvas };
-   cnv.pre_scale({ float(scale), float(scale) });
+   cnv.pre_scale(scale);
    draw(cnv);
    gpu_canvas->flush();
 
