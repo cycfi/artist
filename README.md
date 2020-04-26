@@ -1,2 +1,4 @@
 # artist
-High performance, cross Platform C++ Vector Graphics Library, inspired by the HTML5 canvas API.
+Cross Platform C++ Vector Graphics Library (Inspired by the HTML5 canvas API).
+
+Docs in the making... stay tuned...
