@@ -8,35 +8,37 @@
 using namespace cycfi::artist;
 auto constexpr window_size = extent{ 640.0f, 480.0f };
 
-auto space = image{ "space.jpg" };
-auto size = space.size();
 float x_incr = 0.5;
 float y_incr = 0.5;
-float x = 0;
-float y = 0;
+float x = 100;
+float y = 100;
 
 void draw(canvas& cnv)
 {
-   cnv.translate(x, y);
-   cnv.draw(space);
+   cnv.save();
+   cnv.fill_style(colors::white);
+   cnv.rect({ 0, 0, window_size });
+   cnv.fill();
+
+   cnv.fill_style(colors::black);
+   cnv.shadow_style({ 4, 4 }, 6, colors::gray[30]);
+   cnv.round_rect({ 10, 10, x, y }, 10);
+   cnv.fill();
+
    x += x_incr;
    y += y_incr;
 
-   if (x > 0)
+   if (x > 600 || x < 100)
       x_incr = -x_incr;
-   if (y > 0)
-      y_incr = -y_incr;
-   if (x < -(size.x-640))
-      x_incr = -x_incr;
-   if (y < -(size.y-480))
+   if (y > 440 || y < 100)
       y_incr = -y_incr;
 
-   cnv.translate(-x, -y);
-   print_elapsed(cnv, window_size);
+   cnv.restore();
+   print_elapsed(cnv, window_size, colors::black);
 }
 
 int main(int argc, char const* argv[])
 {
-   return run_app(argc, argv, window_size, colors::black, true);
+   return run_app(argc, argv, window_size, colors::white, true);
 }
 

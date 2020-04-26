@@ -3,8 +3,8 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#if !defined(ELEMENTS_RECT_APRIL_10_2016)
-#define ELEMENTS_RECT_APRIL_10_2016
+#if !defined(ARTIST_RECT_APRIL_10_2016)
+#define ARTIST_RECT_APRIL_10_2016
 
 #include <artist/point.hpp>
 
@@ -20,6 +20,9 @@ namespace cycfi::artist
       constexpr         rect(point origin, float right, float bottom)
                          : rect(origin.x, origin.y, right, bottom)
                         {}
+      constexpr         rect(point top_left, point bottom_right)
+                         : rect(top_left.x, top_left.y, bottom_right.x, bottom_right.y)
+                        {}
       constexpr         rect(float left, float top, extent size)
                          : rect(left, top, left + size.x, top + size.y)
                         {}
@@ -27,7 +30,7 @@ namespace cycfi::artist
                          : rect(origin.x, origin.y, origin.x + size.x, origin.y + size.y)
                         {}
 
-                        rect(rect const &) = default;
+      constexpr         rect(rect const &) = default;
       constexpr rect&   operator=(rect const&) = default;
 
       constexpr bool    operator==(rect const& other) const;
@@ -41,6 +44,7 @@ namespace cycfi::artist
       constexpr void    width(float width_);
       constexpr float   height() const;
       constexpr void    height(float height_);
+      constexpr extent  size() const;
 
       constexpr point   top_left() const;
       constexpr point   bottom_right() const;
@@ -143,6 +147,11 @@ namespace cycfi::artist
    constexpr void rect::height(float height_)
    {
       bottom = top + height_;
+   }
+
+   constexpr extent rect::size() const
+   {
+      return { width(), height() };
    }
 
    constexpr point rect::top_left() const

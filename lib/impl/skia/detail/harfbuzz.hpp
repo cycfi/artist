@@ -45,6 +45,8 @@ namespace cycfi::artist::detail
    {
    public:
                            hb_buffer(std::string_view utf8);
+
+      void                 text(std::string_view utf8);
       void                 direction(hb_direction_t dir);
       void                 script(hb_script_t scr);
       void                 language(char const* lang);

@@ -15,15 +15,21 @@ function(add_example name)
    if (APPLE)
 
       if (ARTIST_SKIA)
-         set(MAIN_APP skia_app.mm)
+         set(MAIN_APP
+            host/macos/skia_app.mm
+            print_elapsed.cpp
+         )
       else()
-         set(MAIN_APP quartz2d_app.mm)
+         set(MAIN_APP
+            host/macos/quartz2d_app.mm
+            print_elapsed.cpp
+         )
       endif()
 
       add_executable(
          ${name} MACOSX_BUNDLE
          ${name}.cpp
-            host/macos/${MAIN_APP}
+         ${MAIN_APP}
          ${${name}_fonts}
          ${${name}_images}
       )
@@ -50,6 +56,7 @@ function(add_example name)
          ${name}
          ${name}.cpp
          host/windows/skia_app.cpp
+         print_elapsed.cpp
       )
 
       set_property(TARGET ${name} PROPERTY
@@ -100,6 +107,7 @@ function(add_example name)
          ${name}
          ${name}.cpp
          host/linux/skia_app.cpp
+         print_elapsed.cpp
       )
 
       target_link_libraries(
@@ -148,5 +156,6 @@ add_example(tauri)
 add_example(space)
 add_example(composite_ops)
 add_example(paths)
+add_example(shadow)
 
 

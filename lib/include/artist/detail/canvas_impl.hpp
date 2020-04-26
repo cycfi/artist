@@ -3,8 +3,8 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#if !defined(ELEMENTS_DETAIL_CANVAS_IMPL_MAY_3_2016)
-#define ELEMENTS_DETAIL_CANVAS_IMPL_MAY_3_2016
+#if !defined(ARTIST_DETAIL_CANVAS_IMPL_MAY_3_2016)
+#define ARTIST_DETAIL_CANVAS_IMPL_MAY_3_2016
 
 namespace cycfi::artist
 {
@@ -16,6 +16,21 @@ namespace cycfi::artist
       return _context;
    }
 
+   inline canvas::operator bool() const
+   {
+      return _context != nullptr;
+   }
+
+   inline bool canvas::operator!() const
+   {
+      return _context == nullptr;
+   }
+
+   inline bool canvas::point_in_path(float x, float y) const
+   {
+      return point_in_path({x, y});
+   }
+
    inline void canvas::translate(float x, float y)
    {
       translate({ x, y });
@@ -24,6 +39,11 @@ namespace cycfi::artist
    inline void canvas::scale(float x, float y)
    {
       scale({ x, y });
+   }
+
+   inline void canvas::scale(float xy)
+   {
+      scale({ xy, xy });
    }
 
    inline point canvas::device_to_user(float x, float y)
@@ -78,6 +98,11 @@ namespace cycfi::artist
    inline void canvas::circle(float cx, float cy, float radius)
    {
       circle({ cx, cy, radius });
+   }
+
+   inline void canvas::clear_rect(float x, float y, float width, float height)
+   {
+      clear_rect({ x, y, extent{ width, height } });
    }
 
    inline void canvas::quadratic_curve_to(float cpx, float cpy, float x, float y)

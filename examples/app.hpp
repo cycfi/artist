@@ -3,8 +3,8 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#if !defined(ELEMENTS_TEST_APP_MARCH_12_2020)
-#define ELEMENTS_TEST_APP_MARCH_12_2020
+#if !defined(ARTIST_TEST_APP_MARCH_12_2020)
+#define ARTIST_TEST_APP_MARCH_12_2020
 
 #include <infra/support.hpp>
 #include <artist/canvas.hpp>
@@ -14,6 +14,7 @@ using cycfi::artist::canvas;
 using cycfi::artist::extent;
 using cycfi::artist::color;
 using cycfi::artist::point;
+using cycfi::artist::rgba;
 using duration = std::chrono::duration<double>;
 
 int            run_app(
@@ -25,6 +26,10 @@ int            run_app(
                );
 
 void           draw(canvas& cnv);
-void           print_elapsed(canvas& cnv, point br);
+void           print_elapsed(
+                  canvas& cnv
+                , point br
+                , color c = rgba(220, 220, 220, 200)
+               );
 
 #endif

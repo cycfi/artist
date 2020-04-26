@@ -3,8 +3,6 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-
 #import <Cocoa/Cocoa.h>
 #include <dlfcn.h>
 #include <string>
@@ -12,8 +10,6 @@
 #include <chrono>
 #include "../../app.hpp"
 #include <artist/resources.hpp>
-
-#include <OpenGL/gl.h>
 
 using namespace cycfi::artist;
 
@@ -72,7 +68,6 @@ namespace cycfi::artist
 
 //=======================================================================
 
-@class OpenGLLayer;
 using offscreen_type = std::shared_ptr<image>;
 
 @interface CocoaView : NSView
@@ -104,34 +99,38 @@ using offscreen_type = std::shared_ptr<image>;
 
 - (void) drawRect : (NSRect) dirty
 {
-   auto start = std::chrono::high_resolution_clock::now();
-   auto ctx = NSGraphicsContext.currentContext.CGContext;
-
-   if (_first && _task)
-   {
-      _first = false;
-      _offscreen = std::make_shared<image>(
-         extent{ float(self.bounds.size.width), float(self.bounds.size.height) }
-      );
-   }
-
-   if (_task)
-   {
-      auto cnv = canvas{ (canvas_impl_ptr) ctx };
+   auto draw_f =
+      [&]()
       {
-         // Do offscreen rendering
-         offscreen_image ctx{ *_offscreen };
-         canvas offscreen_cnv{ ctx.context() };
-         draw(offscreen_cnv);
-      }
-      cnv.draw(*_offscreen);
-   }
-   else
-   {
-      auto cnv = canvas{ (canvas_impl_ptr) ctx };
-      draw(cnv);
-   }
+         auto ctx = NSGraphicsContext.currentContext.CGContext;
+         if (_first && _task)
+         {
+            _first = false;
+            _offscreen = std::make_shared<image>(
+               extent{ float(self.bounds.size.width), float(self.bounds.size.height) }
+            );
+         }
 
+         if (_task)
+         {
+            auto cnv = canvas{ (canvas_impl*) ctx };
+            {
+               // Do offscreen rendering
+               offscreen_image ctx{ *_offscreen };
+               canvas offscreen_cnv{ ctx.context() };
+               draw(offscreen_cnv);
+            }
+            cnv.draw(*_offscreen);
+         }
+         else
+         {
+            auto cnv = canvas{ (canvas_impl*) ctx };
+            draw(cnv);
+         }
+      };
+
+   auto start = std::chrono::high_resolution_clock::now();
+   draw_f();
    auto stop = std::chrono::high_resolution_clock::now();
    elapsed_ = std::chrono::duration<double>{ stop - start }.count();
 }
@@ -250,29 +249,3 @@ int run_app(
    return _app.run();
 }
 
-void print_elapsed(canvas& cnv, point br)
-{
-   static font open_sans = font_descr{ "Open Sans", 12 };
-   static int i = 0;
-   static float t_elapsed = 0;
-   static float c_elapsed = 0;
-
-   if (++i == 30)
-   {
-      i = 0;
-      c_elapsed = t_elapsed / 30;
-      t_elapsed = 0;
-   }
-   else
-   {
-      t_elapsed += elapsed_;
-   }
-
-   if (c_elapsed)
-   {
-      cnv.fill_style(rgba(220, 220, 220, 200));
-      cnv.font(open_sans);
-      cnv.text_align(cnv.right | cnv.bottom);
-      cnv.fill_text(std::to_string(1 / c_elapsed) + " fps", { br.x, br.y });
-   }
-}

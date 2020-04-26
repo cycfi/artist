@@ -23,9 +23,6 @@ namespace cycfi::artist
       base_type&        base() { return *this; }
       base_type const&  base() const { return *this; }
    };
-
-   class canvas;
-   SkPaint& fill_paint(canvas const& cnv);
 }
 
 #endif

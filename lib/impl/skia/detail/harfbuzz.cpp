@@ -90,6 +90,14 @@ namespace cycfi::artist::detail
       _map.insert(_map.begin(), utf8.size(), -1);
    }
 
+   void hb_buffer::text(std::string_view utf8)
+   {
+      hb_buffer_clear_contents(_buffer.get());
+      hb_buffer_add_utf8(_buffer.get(), utf8.data(), utf8.size(), 0, utf8.size());
+      _map.clear();
+      _map.insert(_map.begin(), utf8.size(), -1);
+   }
+
    void hb_buffer::direction(hb_direction_t dir)
    {
       hb_buffer_set_direction(_buffer.get(), dir);
