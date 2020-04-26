@@ -42,11 +42,12 @@ namespace cycfi::artist
       SkPaint&          stroke_paint();
       class font&       font();
       int&              text_align();
+      SkPaint&          clear_paint();
 
       void              save();
       void              restore();
 
-      point             _pre_scale = { 1.0, 1.0 };
+      float             _pre_scale = 1.0;
 
       static SkPaint&   get_fill_paint(canvas const& cnv);
 
@@ -76,11 +77,15 @@ namespace cycfi::artist
       state_info const* current() const { return _stack.top().get(); }
 
       state_info_stack  _stack;
+      SkPaint           _clear_paint;
    };
 
    canvas::canvas_state::canvas_state()
    {
       _stack.push(std::make_unique<state_info>());
+      _clear_paint.setAntiAlias(true);
+      _clear_paint.setStyle(SkPaint::kFill_Style);
+      _clear_paint.setBlendMode(SkBlendMode::kClear);
    }
 
    SkPath& canvas::canvas_state::path()
@@ -108,6 +113,11 @@ namespace cycfi::artist
       return current()->_text_align;
    }
 
+   SkPaint& canvas::canvas_state::clear_paint()
+   {
+      return _clear_paint;
+   }
+
    void canvas::canvas_state::save()
    {
       _stack.push(std::make_unique<state_info>(*current()));
@@ -124,12 +134,7 @@ namespace cycfi::artist
       return cnv._state->fill_paint();
    }
 
-   SkPaint& fill_paint(canvas const& cnv)
-   {
-      return canvas::canvas_state::get_fill_paint(cnv);
-   }
-
-   canvas::canvas(canvas_impl_ptr context_)
+   canvas::canvas(canvas_impl* context_)
     : _context{ context_ }
     , _state{ std::make_unique<canvas_state>() }
    {
@@ -139,10 +144,15 @@ namespace cycfi::artist
    {
    }
 
-   void canvas::pre_scale(point p)
+   void canvas::pre_scale(float sc)
    {
-      scale(p);
-      _state->_pre_scale = p;
+      scale(sc, sc);
+      _state->_pre_scale = sc;
+   }
+
+   float canvas::pre_scale() const
+   {
+      return _state->_pre_scale;
    }
 
    void canvas::translate(point p)
@@ -158,6 +168,46 @@ namespace cycfi::artist
    void canvas::scale(point p)
    {
       _context->scale(p.x, p.y);
+   }
+
+   void canvas::skew(double sx, double sy)
+   {
+      _context->skew(sx, sy);
+   }
+
+   point canvas::device_to_user(point p)
+   {
+      auto scale = _state->_pre_scale;
+      auto mat = _context->getTotalMatrix();
+      SkPoint skp;
+      mat.mapXY(p.x, p.y, &skp);
+      return { skp.x() / scale, skp.y() / scale };
+   }
+
+   point canvas::user_to_device(point p)
+   {
+      return {};
+   }
+
+   affine_transform canvas::transform() const
+   {
+      auto mat = _context->getTotalMatrix();
+      SkScalar sc[6];
+      (void) mat.asAffine(sc);
+      return affine_transform{ sc[0], sc[1], sc[2], sc[3], sc[4], sc[5] };
+   }
+
+   void canvas::transform(affine_transform const& mat)
+   {
+      transform(mat.a, mat.b, mat.c, mat.d, mat.tx, mat.ty);
+   }
+
+   void canvas::transform(double a, double b, double c, double d, double tx, double ty)
+   {
+      SkMatrix mat;
+      SkScalar sc[9] = { float(a), float(b), float(c), float(d), float(tx), float(ty) };
+      mat.setAffine(sc);
+      _context->setMatrix(mat);
    }
 
    void canvas::save()
@@ -210,6 +260,16 @@ namespace cycfi::artist
       _state->path().reset();
    }
 
+   void canvas::clip(class path const& p)
+   {
+      _context->clipPath(*p.impl(), true);
+   }
+
+   bool canvas::point_in_path(point p) const
+   {
+      return _state->path().contains(p.x, p.y);
+   }
+
    void canvas::move_to(point p)
    {
       _state->path().moveTo(p.x, p.y);
@@ -259,6 +319,11 @@ namespace cycfi::artist
    void canvas::path(class path const& p)
    {
       _state->path() = *p.impl();
+   }
+
+   void canvas::clear_rect(struct rect r)
+   {
+      _context->drawRect({ r.left, r.top, r.right, r.bottom }, _state->clear_paint());
    }
 
    void canvas::quadratic_curve_to(point cp, point end)
@@ -322,8 +387,8 @@ namespace cycfi::artist
       constexpr auto blur_factor = 0.4f;
 
       auto matrix = _context->getTotalMatrix();
-      auto scx = matrix.getScaleX() / _state->_pre_scale.x;
-      auto scy = matrix.getScaleY() / _state->_pre_scale.y;
+      auto scx = matrix.getScaleX() / _state->_pre_scale;
+      auto scy = matrix.getScaleY() / _state->_pre_scale;
 
       auto shadow = SkDropShadowImageFilter::Make(
          offset.x / scx
@@ -469,6 +534,13 @@ namespace cycfi::artist
       _state->font() = font_;
    }
 
+   void canvas::fill_rule(path::fill_rule_enum rule)
+   {
+      _state->path().setFillType(
+         rule == path::fill_winding? SkPathFillType::kWinding : SkPathFillType::kEvenOdd
+      );
+   }
+
    namespace
    {
       void prepare_text(
@@ -516,7 +588,14 @@ namespace cycfi::artist
 
    canvas::text_metrics canvas::measure_text(std::string_view utf8)
    {
-      return {};
+      auto m = _state->font().metrics();
+      auto width = _state->font().measure_text(utf8);
+      return {
+         m.ascent
+       , m.descent
+       , m.leading
+       , { width, m.ascent + m.descent + m.leading }
+      };
    }
 
    void canvas::text_align(int align)

@@ -34,40 +34,45 @@ namespace
 
    gboolean render(GtkGLArea* area, GdkGLContext* context)
    {
-      auto start = std::chrono::steady_clock::now();
       auto error = [](char const* msg) { throw std::runtime_error(msg); };
 
-      if (_first_time)
-      {
-         glClearColor(_bkd.red, _bkd.green, _bkd.blue, _bkd.alpha);
-         glClear(GL_COLOR_BUFFER_BIT);
-         _first_time = false;
-      }
+      auto draw_f =
+         [&]()
+         {
+            if (_first_time)
+            {
+               glClearColor(_bkd.red, _bkd.green, _bkd.blue, _bkd.alpha);
+               glClear(GL_COLOR_BUFFER_BIT);
+               _first_time = false;
+            }
 
-      auto xface = GrGLMakeNativeInterface();
-      sk_sp<GrContext> ctx = GrContext::MakeGL(xface);
+            auto xface = GrGLMakeNativeInterface();
+            sk_sp<GrContext> ctx = GrContext::MakeGL(xface);
 
-      GrGLint buffer;
-      glGetIntegerv(GL_FRAMEBUFFER_BINDING, &buffer);
-      GrGLFramebufferInfo info;
-      info.fFBOID = (GrGLuint) buffer;
-      SkColorType colorType = kRGBA_8888_SkColorType;
+            GrGLint buffer;
+            glGetIntegerv(GL_FRAMEBUFFER_BINDING, &buffer);
+            GrGLFramebufferInfo info;
+            info.fFBOID = (GrGLuint) buffer;
+            SkColorType colorType = kRGBA_8888_SkColorType;
 
-      info.fFormat = GL_RGBA8;
-      GrBackendRenderTarget target(_size.x*_scale, _size.y*_scale, 0, 8, info);
+            info.fFormat = GL_RGBA8;
+            GrBackendRenderTarget target(_size.x*_scale, _size.y*_scale, 0, 8, info);
 
-      sk_sp<SkSurface> surface(
-         SkSurface::MakeFromBackendRenderTarget(ctx.get(), target,
-         kBottomLeft_GrSurfaceOrigin, colorType, nullptr, nullptr));
+            sk_sp<SkSurface> surface(
+               SkSurface::MakeFromBackendRenderTarget(ctx.get(), target,
+               kBottomLeft_GrSurfaceOrigin, colorType, nullptr, nullptr));
 
-      if (!surface)
-         error("Error: SkSurface::MakeRenderTarget returned null");
+            if (!surface)
+               error("Error: SkSurface::MakeRenderTarget returned null");
 
-      SkCanvas* gpu_canvas = surface->getCanvas();
-      auto cnv = canvas{ gpu_canvas };
-      cnv.pre_scale({ _scale, _scale });
-      draw(cnv);
+            SkCanvas* gpu_canvas = surface->getCanvas();
+            auto cnv = canvas{ gpu_canvas };
+            cnv.pre_scale(_scale);
+            draw(cnv);
+         };
 
+      auto start = std::chrono::steady_clock::now();
+      draw_f();
       auto stop = std::chrono::steady_clock::now();
       elapsed_ = std::chrono::duration<double>{ stop - start }.count();
 
@@ -145,31 +150,5 @@ int run_app(
    return status;
 }
 
-void print_elapsed(canvas& cnv, point br)
-{
-   static font open_sans = font_descr{ "Open Sans", 12 };
-   static int i = 0;
-   static float t_elapsed = 0;
-   static float c_elapsed = 0;
-
-   if (++i == 30)
-   {
-      i = 0;
-      c_elapsed = t_elapsed / 30;
-      t_elapsed = 0;
-   }
-   else
-   {
-      t_elapsed += elapsed_;
-   }
-
-   if (c_elapsed)
-   {
-      cnv.fill_style(rgba(220, 220, 220, 200));
-      cnv.font(open_sans);
-      cnv.text_align(cnv.right | cnv.bottom);
-      cnv.fill_text(std::to_string(1 / c_elapsed) + " fps", { br.x, br.y });
-   }
-}
 
 

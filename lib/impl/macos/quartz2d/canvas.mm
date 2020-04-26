@@ -54,7 +54,8 @@ namespace cycfi::artist
 
       void              save();
       void              restore();
-
+      float             scale() const                    { return _scale; }
+      void              scale(float sc)                  { _scale = sc; }
 
    private:
 
@@ -77,6 +78,7 @@ namespace cycfi::artist
 
       state_info_stack  _stack;
       fill_rule_enum    _fill_rule = fill_rule_enum::fill_winding;
+      float             _scale;
    };
 
    namespace
@@ -192,7 +194,7 @@ namespace cycfi::artist
          _stack.pop();
    }
 
-   canvas::canvas(canvas_impl_ptr context_)
+   canvas::canvas(canvas_impl* context_)
     : _context{ context_ }
     , _state{ std::make_unique<canvas_state>() }
    {
@@ -200,10 +202,23 @@ namespace cycfi::artist
       auto ctx = CGContextRef(_context);
       CGAffineTransform trans = CGAffineTransformMakeScale(1, -1);
       CGContextSetTextMatrix(ctx, trans);
+
+      CGRect user = { { 0, 0 }, { 100, 100 }};
+      auto device = CGContextConvertRectToDeviceSpace(ctx, user);
+      _state->scale(device.size.height / user.size.height);
    }
 
    canvas::~canvas()
    {
+   }
+
+   void canvas::pre_scale(float sc)
+   {
+   }
+
+   float canvas::pre_scale() const
+   {
+      return 1.0; // for now
    }
 
    void canvas::translate(point p)
@@ -219,6 +234,49 @@ namespace cycfi::artist
    void canvas::scale(point p)
    {
       CGContextScaleCTM(CGContextRef(_context), p.x, p.y);
+   }
+
+   void canvas::skew(double sx, double sy)
+   {
+      auto mat = CGAffineTransformMake(1, std::tan(sx), std::tan(sy), 1, 0, 0);
+      CGContextConcatCTM(CGContextRef(_context), mat);
+   }
+
+   point canvas::device_to_user(point p)
+   {
+      auto scale = _state->scale();
+      auto up = CGContextConvertPointToUserSpace(
+         CGContextRef(_context), { p.x * scale, p.y * scale }
+      );
+      return { float(up.x), float(up.y) };
+   }
+
+   point canvas::user_to_device(point p)
+   {
+      auto scale = _state->scale();
+      auto dp = CGContextConvertPointToDeviceSpace(
+         CGContextRef(_context), { p.x, p.y }
+      );
+      return { float(dp.x / scale), float(dp.y / scale) };
+   }
+
+   affine_transform canvas::transform() const
+   {
+      auto [a, b, c, d, tx, ty] = CGContextGetCTM(CGContextRef(_context));
+      return affine_transform{ a, b, c, d, tx, ty };
+   }
+
+   void canvas::transform(affine_transform const& mat)
+   {
+      transform(mat.a, mat.b, mat.c, mat.d, mat.tx, mat.ty);
+   }
+
+   void canvas::transform(double a, double b, double c, double d, double tx, double ty)
+   {
+      auto ctx = CGContextRef(_context);
+      auto inv = CGAffineTransformInvert(CGContextGetCTM(ctx));
+      CGContextConcatCTM(ctx, inv);
+      CGContextConcatCTM(ctx, { a, b, c, d, tx, ty });
    }
 
    void canvas::save()
@@ -380,6 +438,31 @@ namespace cycfi::artist
          CGContextEOClip(CGContextRef(_context));
    }
 
+   void canvas::clip(class path const& p)
+   {
+      auto ctx = CGContextRef(_context);
+      auto save = CGContextCopyPath(ctx);
+      begin_path();
+      CGContextAddPath(ctx, p.impl());
+
+      if (p.fill_rule() == path::fill_winding)
+         CGContextClip(CGContextRef(_context));
+      else
+         CGContextEOClip(CGContextRef(_context));
+
+      begin_path();
+      CGContextAddPath(ctx, save);
+      CGPathRelease(save);
+   }
+
+   bool canvas::point_in_path(point p) const
+   {
+      auto mode = _state->fill_rule() == path::fill_winding?
+         kCGPathFillStroke : kCGPathEOFillStroke
+         ;
+      return CGContextPathContainsPoint(CGContextRef(_context), { p.x, p.y }, mode);
+   }
+
    void canvas::move_to(point p)
    {
       CGContextMoveToPoint(CGContextRef(_context), p.x, p.y);
@@ -454,6 +537,11 @@ namespace cycfi::artist
    void canvas::path(class path const& p)
    {
       CGContextAddPath(CGContextRef(_context), p.impl());
+   }
+
+   void canvas::clear_rect(struct rect r)
+   {
+      CGContextClearRect(CGContextRef(_context), CGRectMake(r.left, r.top, r.width(), r.height()));
    }
 
    void canvas::quadratic_curve_to(point cp, point end)
@@ -820,20 +908,17 @@ namespace cycfi::artist
 
    canvas::text_metrics canvas::measure_text(std::string_view utf8)
    {
-      auto ctx = CGContextRef(_context);
       CGFloat ascent, descent, leading, width;
-
       auto line = detail::measure_text(
          _state->font(), utf8.begin(), utf8.end(), width, ascent, descent, leading);
 
-      auto bounds = CTLineGetImageBounds(line, ctx);
       CFRelease(line);
       return canvas::text_metrics
       {
          float(ascent)
        , float(descent)
        , float(leading)
-       , { float(width), float(bounds.size.height) }
+       , { float(width), float(ascent + descent + leading) }
       };
    }
 

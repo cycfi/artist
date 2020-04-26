@@ -11,10 +11,12 @@
 
 #define CATCH_CONFIG_MAIN
 #include <infra/catch.hpp>
+#include <artist/affine_transform.hpp>
 #include "app_paths.hpp"
 
 using namespace cycfi::artist;
 using namespace font_constants;
+using cycfi::codepoint;
 
 auto constexpr window_size = point{ 640.0f, 480.0f };
 auto constexpr bkd_color = rgba(54, 52, 55, 255);
@@ -355,6 +357,13 @@ void typography(canvas& cnv)
       cnv.fill_style(bkd_color);
       cnv.shadow_style(8, colors::light_sky_blue);
       cnv.fill_text("Glow", 250, 265);
+
+      auto m = cnv.measure_text("Shadow");
+      CHECK(std::floor(m.ascent) == 55);
+      CHECK(std::floor(m.descent) == 15);
+      CHECK(std::floor(m.leading) == 0);
+      CHECK(std::floor(m.size.x) == 198);
+      CHECK(std::floor(m.size.y) == 70);
    }
 
    cnv.move_to({ 500, 220 });
@@ -411,9 +420,101 @@ void typography(canvas& cnv)
       "⁠—Albert Einstein"
       ;
 
-   auto tlayout = text_layout{ font_descr{ "Open Sans", 12 }.italic(), text };
+   auto tlayout = text_layout{
+      font_descr{ "Open Sans", 12 }.italic()
+    , rgba(220, 220, 220, 200)
+    , text
+   };
    tlayout.flow(350, true);
    tlayout.draw(cnv, 20, 300);
+
+   // Hit testing
+   {
+      auto i = tlayout.caret_index(0, 2000);
+      CHECK(i == tlayout.npos);
+
+      i = tlayout.caret_index(0, 0);
+      CHECK(i == 0);
+
+      i = tlayout.caret_index(350, 0);
+      CHECK(i == 64);
+      CHECK(text[i] == ' ');
+
+      i = tlayout.caret_index(0, 20);
+      CHECK(i == 133);
+      CHECK(text[i] == 'b');
+
+      i = tlayout.caret_index(5, 20);
+      CHECK(i == 134);
+      CHECK(text[i] == 'e');
+
+      i = tlayout.caret_index(350, 20);
+      CHECK(i == 192);
+      CHECK(text[i] == '\n');
+
+      i = tlayout.caret_index(109, 20);
+      CHECK(i == 154);
+      CHECK(text[i] == 'a');
+
+      i = tlayout.caret_index(350, 15);
+      CHECK(i == 132);
+      CHECK(text[i] == ' ');
+
+      // Harfbuzz vs. CoreText have slightly different results here,
+      // but that is OK.
+      i = tlayout.caret_index(343, 15);
+      auto check_index = i == 131 || i == 130;
+      auto check_char = text[i] == ',' || text[i] == 'h';
+      CHECK(check_index);
+      CHECK(check_char);
+
+      i = tlayout.caret_index(20, 49);
+      CHECK(i == 193);
+      CHECK(text[i] == '\n');
+
+      i = tlayout.caret_index(0, 147);
+      CHECK(i == 405);
+      char const* s = text.data()+i;
+      auto cp = codepoint(s);
+      CHECK(cp == 8288); // 'WORD JOINER' (U+2060)
+
+      i = tlayout.caret_index(88, 147);
+      CHECK(i == text.size());
+   }
+
+   // glyph_bounds
+   {
+      auto test_caret_pos =
+         [&tlayout](std::size_t index, bool exceed = false)
+         {
+            point pos = tlayout.caret_point(index);
+            if (exceed)
+            {
+               CHECK(std::floor(pos.x) == 86);
+               CHECK(std::floor(pos.y) == 147);
+            }
+            else
+            {
+               std::size_t got_index = tlayout.caret_index(pos);
+               CHECK(got_index == index);
+            }
+         };
+
+      test_caret_pos(1000, true);
+      test_caret_pos(-1, true);
+
+      test_caret_pos(10);
+      test_caret_pos(0);
+      test_caret_pos(64);
+      test_caret_pos(193);
+      test_caret_pos(132);
+      test_caret_pos(133);
+      test_caret_pos(154);
+      test_caret_pos(405);
+      test_caret_pos(420);
+      test_caret_pos(425);
+      test_caret_pos(426);
+   }
 }
 
 char const* mode_name(canvas::composite_op_enum mode)
@@ -506,11 +607,8 @@ void composite_ops(canvas& cnv)
    composite_draw(cnv, { 360, 240 }, cnv.xor_);
 }
 
-// $$$ TODO : Test this $$$
 void drop_shadow(canvas& cnv)
 {
-   background(cnv);
-
    cnv.shadow_style({ 20, 20 }, 10, colors::black);
    cnv.fill_style(colors::red);
    cnv.fill_rect(20, 20, 100, 80);
@@ -522,6 +620,204 @@ void drop_shadow(canvas& cnv)
    cnv.fill_rect(20, 20, 100, 80);
 }
 
+void paths(canvas& cnv)
+{
+   auto stroke_fill =
+      [&](path const& p, color fill_c, color stroke_c)
+      {
+         cnv.path(p);
+         cnv.fill_color(fill_c);
+         cnv.stroke_color(stroke_c);
+         cnv.fill();
+         cnv.line_width(5);
+         cnv.path(p);
+         cnv.stroke();
+      };
+
+   auto stroke =
+      [&](path const& p, color stroke_c)
+      {
+         cnv.path(p);
+         cnv.stroke_color(stroke_c);
+         cnv.line_width(5);
+         cnv.stroke();
+      };
+
+   auto dot =
+      [&](float x, float y)
+      {
+         cnv.circle(x, y, 10);
+         cnv.fill_color(colors::white.opacity(0.5));
+         cnv.fill();
+      };
+
+   background(cnv);
+
+   // These paths are defined using SVG-style strings lifted off the
+   // W3C SVG documentation: https://www.w3.org/TR/SVG/paths.html
+
+   {
+      auto save = cnv.new_state();
+      cnv.scale(0.5, 0.5);
+
+      cnv.translate(-40, 0);
+      path p1{ "M 100 100 L 300 100 L 200 300 z" };
+      stroke_fill(p1, colors::green.opacity(0.5), colors::ivory);
+
+      cnv.translate(220, 0);
+      path p2{ "M100,200 C100,100 250,100 250,200 S400,300 400,200" };
+      stroke(p2, colors::light_sky_blue);
+
+      cnv.translate(-150, 250);
+      path p3{ "M200,300 Q400,50 600,300 T1000,300" };
+      stroke(p3, colors::light_sky_blue);
+
+      path p4{ "M200,300 L400,50 L600,300 L800,550 L1000,300" };
+      stroke(p4, colors::light_gray.opacity(0.5));
+      dot(200, 300);
+      dot(600, 300);
+      dot(1000, 300);
+      dot(400, 50);
+      dot(800, 550);
+      cnv.translate(150, -250);
+
+      cnv.translate(350, 0);
+      path p5{ "M300,200 h-150 a150,150 0 1,0 150,-150 z" };
+      stroke_fill(p5, colors::red.opacity(0.8), colors::ivory);
+
+      path p6{ "M275,175 v-150 a150,150 0 0,0 -150,150 z" };
+      stroke_fill(p6, colors::blue.opacity(0.8), colors::ivory);
+
+      cnv.translate(-350, 200);
+      path p7{
+         "M600,350 l 50,-25"
+         "a25,25 -30 0,1 50,-25 l 50,-25"
+         "a25,50 -30 0,1 50,-25 l 50,-25"
+         "a25,75 -30 0,1 50,-25 l 50,-25"
+         "a25,100 -30 0,1 50,-25 l 50,-25"
+      };
+      stroke(p7, colors::ivory);
+   }
+}
+
+void compare_transform(affine_transform const& a, affine_transform const& b)
+{
+   CHECK(a.a == Approx(b.a));
+   CHECK(a.b == Approx(b.b));
+   CHECK(a.c == Approx(b.c));
+   CHECK(a.d == Approx(b.d));
+   CHECK(a.tx == Approx(b.tx));
+   CHECK(a.ty == Approx(b.ty));
+}
+
+void misc(canvas& cnv)
+{
+   using cycfi::pi;
+
+   background(cnv);
+   cnv.clear_rect(30, 30, 50, 50);
+
+   {
+      auto save = cnv.new_state();
+
+      affine_transform mat = cnv.transform();
+      cnv.fill_style(colors::blue);
+
+      cnv.rotate(pi/4);
+      mat = mat.rotate(pi/4);
+      auto ctm = cnv.transform();
+      compare_transform(mat, ctm);
+
+      cnv.scale(2);
+      mat = mat.scale(2);
+      ctm = cnv.transform();
+      compare_transform(mat, ctm);
+
+      cnv.translate(100, 0);
+      mat = mat.translate(100, 0);
+      ctm = cnv.transform();
+      compare_transform(mat, ctm);
+
+      cnv.rect(-25, -25, 50, 50);
+      cnv.fill();
+
+      cnv.transform(mat);
+      cnv.rect(-20, -20, 40, 40);
+      cnv.fill_style(colors::red);
+      cnv.fill();
+   }
+
+   {
+      affine_transform mat;
+      auto p = mat.apply(0.0, 0.0);
+      CHECK(p.x == Approx(0));
+      CHECK(p.y == Approx(0));
+
+      mat = mat.scale(10);
+      p = mat.apply(4, 4);
+      CHECK(p.x == Approx(40));
+      CHECK(p.y == Approx(40));
+
+      mat = mat.translate(2, 2);
+      p = mat.apply(0.0, 0.0);
+      CHECK(p.x == Approx(20));
+      CHECK(p.y == Approx(20));
+   }
+
+   {
+      auto save = cnv.new_state();
+
+      affine_transform mat = cnv.transform();
+      mat = mat.translate(144, 144);
+      mat = mat.skew(pi/8, pi/12);
+      cnv.transform(mat);
+      cnv.rect(0, 0, 72, 72);
+      cnv.fill_style(colors::green);
+      cnv.fill();
+   }
+
+   {
+      path p;
+      p.add(circle{ 230, 230, 50 });
+      p.add(circle{ 230, 230, 25 });
+      p.fill_rule(path::fill_odd_even);
+
+      CHECK(p.includes(230-50+5, 230));
+      CHECK(!p.includes(230, 230));
+
+      cnv.clip(p);
+      cnv.rect(0, 0, 500, 500);
+      cnv.fill_style(colors::navajo_white.opacity(0.5));
+      cnv.fill_preserve();
+
+      CHECK(cnv.point_in_path(10, 10));
+      CHECK(!p.includes(501, 500));
+   }
+
+   // Test small offscreen hit testing and text measurements work
+   {
+      image img{ 1, 1 };
+      offscreen_image offscr{ img };
+      canvas cnv{ offscr.context() };
+
+      cnv.circle(230, 230, 50);
+      cnv.circle(230, 230, 25);
+      cnv.fill_rule(path::fill_odd_even);
+
+      CHECK(cnv.point_in_path(230-50+5, 230));
+      CHECK(!cnv.point_in_path(230, 230));
+
+      cnv.font(font_descr{ "Open Sans", 36 });
+      auto m = cnv.measure_text("Hello, World");
+      CHECK(std::floor(m.size.x) == 205);
+      CHECK(std::floor(m.size.y)== 49);
+      CHECK(std::floor(m.ascent) == 38);
+      CHECK(std::floor(m.descent) == 10);
+      CHECK(std::floor(m.leading) == 0);
+   }
+}
+
+///////////////////////////////////////////////////////////////////////////////
 namespace cycfi::artist
 {
    void init_paths()
@@ -537,6 +833,17 @@ namespace cycfi::artist
 ///////////////////////////////////////////////////////////////////////////////
 // Test Drivers
 ///////////////////////////////////////////////////////////////////////////////
+
+// How to add a test:
+//    1. Copy one of the test cases
+//    2. Change the target function to be tested (e.g. test_draw(pm_cnv))
+//    3. Run it. You will get a test failure on the first run.
+//    4. Inspect the PNG result in the output "results" directory in the
+//       output test folder generated by CMake
+//    5. If the result is good, place it in the golden directory alongside
+//       the souure test files. There's one for each platform and graphics
+//       backend, e.g. "test/macos_golden/quartz_2d"
+//    6. Have CMake regenerate the build files
 
 TEST_CASE("Drawing")
 {
@@ -570,4 +877,39 @@ TEST_CASE("Composite")
    }
    compare_golden(pm, "composite_ops");
 }
+
+TEST_CASE("DropShadow")
+{
+   image pm{window_size };
+   {
+      offscreen_image ctx{ pm };
+      canvas pm_cnv{ ctx.context() };
+      drop_shadow(pm_cnv);
+   }
+   compare_golden(pm, "drop_shadow");
+}
+
+TEST_CASE("Paths")
+{
+   image pm{window_size };
+   {
+      offscreen_image ctx{ pm };
+      canvas pm_cnv{ ctx.context() };
+      paths(pm_cnv);
+   }
+   compare_golden(pm, "paths");
+}
+
+TEST_CASE("Misc")
+{
+   image pm{window_size };
+   {
+      offscreen_image ctx{ pm };
+      canvas pm_cnv{ ctx.context() };
+      misc(pm_cnv);
+   }
+   compare_golden(pm, "misc");
+}
+
+
 

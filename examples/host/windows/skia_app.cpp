@@ -239,10 +239,14 @@ LRESULT CALLBACK handle_event(
 
       case WM_KEYDOWN:
          if (wParam == VK_ESCAPE)
+         {
+            KillTimer(hWnd, IDT_TIMER1);
             PostQuitMessage(0);
+         }
          break;
 
       case WM_CLOSE:
+         KillTimer(hWnd, IDT_TIMER1);
          PostQuitMessage(0);
          break;
 
@@ -295,7 +299,7 @@ void window::render()
 
    SkCanvas* gpu_canvas = surface->getCanvas();
    auto cnv = canvas{ gpu_canvas };
-   cnv.pre_scale({ float(scale), float(scale) });
+   cnv.pre_scale(scale);
    draw(cnv);
    gpu_canvas->flush();
 
@@ -358,31 +362,5 @@ int run_app(
    return msg.wParam;
 }
 
-void print_elapsed(canvas& cnv, point br)
-{
-   static font open_sans = font_descr{ "Open Sans", 12 };
-   static int i = 0;
-   static float t_elapsed = 0;
-   static float c_elapsed = 0;
-
-   if (++i == 30)
-   {
-      i = 0;
-      c_elapsed = t_elapsed / 30;
-      t_elapsed = 0;
-   }
-   else
-   {
-      t_elapsed += elapsed_;
-   }
-
-   if (c_elapsed)
-   {
-      cnv.fill_style(rgba(220, 220, 220, 200));
-      cnv.font(open_sans);
-      cnv.text_align(cnv.right | cnv.bottom);
-      cnv.fill_text(std::to_string(1 / c_elapsed) + " fps", { br.x, br.y });
-   }
-}
 
 
