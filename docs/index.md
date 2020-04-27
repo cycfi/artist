@@ -5,7 +5,9 @@
 <!-- ![alt Photon Sampler]({{ site.url }}/artist/assets/images/artist_sampler.jpg) -->
 
 ## Introduction
-x
+
+The Artist 2D Canvas Library is an abstraction layer with an API inspired by
+the HTML5 canvas API.
 
 ## <a name="jdeguzman"></a>About the Author
 
