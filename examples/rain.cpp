@@ -14,7 +14,7 @@ using namespace cycfi::artist;
 ///////////////////////////////////////////////////////////////////////////////
 
 #if defined(ARTIST_SKIA) && defined(__APPLE__)
-constexpr auto persistence = 0.15;
+constexpr auto persistence = 0.10;
 #else
 constexpr auto persistence = 0.04;
 #endif
@@ -36,7 +36,7 @@ float random_size()
    return float(std::rand()) / (RAND_MAX);
 }
 
-void draw(canvas& cnv)
+void rain(canvas& cnv)
 {
    cnv.fill_style(repaint_color.opacity(opacity));
    cnv.fill_rect({ 0, 0, window_size });
@@ -59,6 +59,17 @@ void draw(canvas& cnv)
    if (opacity > persistence)
       opacity *= 0.8;
    print_elapsed(cnv, window_size);
+}
+
+void draw(canvas& cnv)
+{
+   static auto offscreen = image{ window_size };
+   {
+      auto ctx = offscreen_image{ offscreen };
+      auto offscreen_cnv = canvas{ ctx.context() };
+      rain(offscreen_cnv);
+   }
+   cnv.draw(offscreen);
 }
 
 void init()
