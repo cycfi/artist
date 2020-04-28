@@ -83,7 +83,9 @@ using skia_context = std::unique_ptr<sk_app::WindowContext>;
 
 @interface CocoaView : NSView
 {
+   NSTimer*       _task;
    skia_context   _skia_context;
+   float          _scale;
 }
 
 -(void) start;
@@ -97,45 +99,41 @@ using skia_context = std::unique_ptr<sk_app::WindowContext>;
 
 - (void) dealloc
 {
+   _task = nil;
 }
 
 - (void) start
 {
+   _task = nullptr;
+
    sk_app::window_context_factory::MacWindowInfo info;
    info.fMainView = self;
    _skia_context = sk_app::window_context_factory::MakeGLForMac(info, sk_app::DisplayParams());
+
+   NSRect user = { { 0, 0 }, { 100, 100 }};
+   NSRect backing_bounds = [self convertRectToBacking : user];
+   _scale = backing_bounds.size.height / user.size.height;
 }
 
 - (void) drawRect : (NSRect) dirty
 {
-   sk_sp<SkSurface> backbuffer = _skia_context->getBackbufferSurface();
-   if (backbuffer)
+   auto start = std::chrono::high_resolution_clock::now();
+   auto surface = _skia_context->getBackbufferSurface();
+   if (surface)
    {
-      SkCanvas* canvas = backbuffer->getCanvas();
-      canvas->clear(SK_ColorWHITE);
+      SkCanvas* gpu_canvas = surface->getCanvas();
+      gpu_canvas->save();
+      auto cnv = canvas{ gpu_canvas };
+      cnv.pre_scale(_scale);
 
-      SkPaint paint;
-      paint.setAntiAlias(true);
-      paint.setColor(SK_ColorBLUE);
-      paint.setStyle(SkPaint::kStroke_Style);
-      paint.setStrokeWidth(5);
+      draw(cnv);
 
-      SkPath path1;
-      path1.moveTo(100, 200);
-      path1.cubicTo(100, 100, 250, 100, 250, 200);
-      path1.cubicTo(250, 300, 400, 300, 400, 200);
-
-      canvas->drawPath(path1, paint);
-
-      SkPath path2;
-      path2.moveTo(200, 300);
-      path2.quadTo(400, 50, 600, 300);
-      path2.quadTo(800, 550, 1000, 300);
-
-      canvas->drawPath(path2, paint);
-      backbuffer->flush();
+      gpu_canvas->restore();
+      surface->flush();
       _skia_context->swapBuffers();
    }
+   auto stop = std::chrono::high_resolution_clock::now();
+   elapsed_ = std::chrono::duration<double>{ stop - start }.count();
 }
 
 -(BOOL) isFlipped
@@ -143,8 +141,20 @@ using skia_context = std::unique_ptr<sk_app::WindowContext>;
    return YES;
 }
 
+- (void) on_tick : (id) sender
+{
+   [self setNeedsDisplay : YES];
+}
+
 -(void) start_animation
 {
+   _task =
+      [NSTimer scheduledTimerWithTimeInterval : 0.016 // 60Hz
+           target : self
+         selector : @selector(on_tick:)
+         userInfo : nil
+          repeats : YES
+      ];
 }
 
 @end
