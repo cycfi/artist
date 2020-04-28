@@ -102,7 +102,7 @@ sk_sp<const GrGLInterface> GLWindowContext_mac::onInitializeContext() {
         }
 
         // TODO: support Retina displays
-        [fMainView setWantsBestResolutionOpenGLSurface:NO];
+        [fMainView setWantsBestResolutionOpenGLSurface:YES];
         [fGLContext setView:fMainView];
     }
 
@@ -125,9 +125,9 @@ sk_sp<const GrGLInterface> GLWindowContext_mac::onInitializeContext() {
     fSampleCount = sampleCount;
     fSampleCount = std::max(fSampleCount, 1);
 
-    const NSRect viewportRect = [fMainView frame];
-    fWidth = viewportRect.size.width;
-    fHeight = viewportRect.size.height;
+    NSRect backing_bounds = [fMainView convertRectToBacking:[fMainView bounds]];
+    fWidth = backing_bounds.size.width;
+    fHeight = backing_bounds.size.height;
 
     glViewport(0, 0, fWidth, fHeight);
 
