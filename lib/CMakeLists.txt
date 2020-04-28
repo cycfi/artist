@@ -147,6 +147,9 @@ if (ARTIST_SKIA)
       impl/skia/text_layout.cpp
       impl/skia/path.cpp
       impl/skia/detail/harfbuzz.cpp
+      external/skia/include/tools/sk_app/GLWindowContext.cpp
+      external/skia/include/tools/sk_app/GLWindowContext.cpp
+      external/skia/include/tools/sk_app/mac/GLWindowContext_mac.mm ### $$$ fixme Mac only $$$
    )
 endif()
 
@@ -199,6 +202,7 @@ if (ARTIST_SKIA)
       artist
       PUBLIC
          external/skia
+         external/skia/include
          external/skia/include/core
          external/skia/include/config
          external/skia/include/utils
@@ -217,6 +221,7 @@ if (ARTIST_SKIA)
       artist
       PUBLIC
          ARTIST_SKIA
+         SK_RELEASE
    )
 endif()
 
