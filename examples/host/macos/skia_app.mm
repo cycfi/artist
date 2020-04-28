@@ -77,135 +77,12 @@ namespace cycfi::artist
 
 //=======================================================================
 
-@class OpenGLLayer;
-using offscreen_type = std::shared_ptr<image>;
-
 @interface CocoaView : NSView
 {
-   OpenGLLayer*   _layer;
 }
 
 -(void) start;
 -(void) start_animation;
-
-@end
-
-@interface OpenGLLayer : NSOpenGLLayer
-{
-   bool                 _animate;
-   int                  _first;
-   CocoaView*           _view;
-}
-
-- (id) initWithIGraphicsView : (CocoaView*) view;
-- (void) start_animation;
-
-@end
-
-//=======================================================================
-
-@implementation OpenGLLayer
-
-- (id) initWithIGraphicsView: (CocoaView*) view;
-{
-   _animate = false;
-   _first = true;
-   _view = view;
-   self = [super init];
-   if (self != nil)
-   {
-      // Layer should render when size changes.
-      self.needsDisplayOnBoundsChange = YES;
-
-      // The layer should continuously call canDrawInOpenGLContext
-      self.asynchronous = YES;
-   }
-
-   return self;
-}
-
-- (void) start_animation
-{
-   _animate = true;
-}
-
-- (NSOpenGLPixelFormat*) openGLPixelFormatForDisplayMas : (uint32_t) mask
-{
-   NSOpenGLPixelFormatAttribute attr[] = {
-      NSOpenGLPFAOpenGLProfile,
-      NSOpenGLProfileVersion3_2Core,
-      NSOpenGLPFANoRecovery,
-      NSOpenGLPFAAccelerated,
-      NSOpenGLPFADoubleBuffer,
-      NSOpenGLPFAColorSize, 24,
-      0
-   };
-   return [[NSOpenGLPixelFormat alloc] initWithAttributes:attr];
-}
-
-- (NSOpenGLContext*) openGLContextForPixelFormat : (NSOpenGLPixelFormat*) pixelFormat
-{
-   return [super openGLContextForPixelFormat : pixelFormat];
-}
-
-- (BOOL) canDrawInOpenGLContext : (NSOpenGLContext*) context
-                    pixelFormat : (NSOpenGLPixelFormat*) pixelFormat
-                   forLayerTime : (CFTimeInterval) timeInterval
-                    displayTime : (const CVTimeStamp*) timeStamp
-{
-   return _first || _animate;
-}
-
-- (void) drawInOpenGLContext : (NSOpenGLContext*) context
-                 pixelFormat : (NSOpenGLPixelFormat*) pixelFormat
-                forLayerTime : (CFTimeInterval) timeInterval
-                 displayTime : (const CVTimeStamp*) timeStamp
-{
-   auto draw_f =
-      [&]()
-      {
-         _first = false;
-
-         [context makeCurrentContext];
-         CGLLockContext(context.CGLContextObj);
-
-         auto interface = GrGLMakeNativeInterface();
-         sk_sp<GrContext> ctx = GrContext::MakeGL(interface);
-
-         GrGLint buffer;
-         glGetIntegerv(GL_FRAMEBUFFER_BINDING, &buffer);
-         GrGLFramebufferInfo info;
-         info.fFBOID = (GrGLuint) buffer;
-         SkColorType colorType = kRGBA_8888_SkColorType;
-
-         auto bounds = [_view bounds];
-         auto scale = self.contentsScale;
-         auto size = point{ float(bounds.size.width*scale), float(bounds.size.height*scale) };
-
-         info.fFormat = GL_RGBA8;
-         GrBackendRenderTarget target(size.x, size.y, 0, 8, info);
-
-         sk_sp<SkSurface> surface(
-            SkSurface::MakeFromBackendRenderTarget(ctx.get(), target,
-            kBottomLeft_GrSurfaceOrigin, colorType, nullptr, nullptr));
-
-         if (!surface)
-            throw std::runtime_error("Error: SkSurface::MakeRenderTarget returned null");
-
-         SkCanvas* gpu_canvas = surface->getCanvas();
-         auto cnv = canvas{ gpu_canvas };
-         cnv.pre_scale(scale);
-         draw(cnv);
-
-         [context flushBuffer];
-         CGLUnlockContext(context.CGLContextObj);
-      };
-
-   auto start = std::chrono::high_resolution_clock::now();
-   draw_f();
-   auto stop = std::chrono::high_resolution_clock::now();
-   elapsed_ = std::chrono::duration<double>{ stop - start }.count();
-}
 
 @end
 
@@ -219,25 +96,10 @@ using offscreen_type = std::shared_ptr<image>;
 
 - (void) start
 {
-   // Enable retina-support
-   self.wantsBestResolutionOpenGLSurface = YES;
-
-   // Enable layer-backed drawing of view
-   [self setWantsLayer : YES];
-
-   self.layer.opaque = YES;
 }
 
-- (CALayer*) makeBackingLayer
+- (void) drawRect : (NSRect) dirty
 {
-   _layer = [[OpenGLLayer alloc] initWithIGraphicsView : self];
-   return _layer;
-}
-
-- (void) viewDidChangeBackingProperties
-{
-   [super viewDidChangeBackingProperties];
-   self.layer.contentsScale = self.window.backingScaleFactor;
 }
 
 -(BOOL) isFlipped
@@ -247,7 +109,6 @@ using offscreen_type = std::shared_ptr<image>;
 
 -(void) start_animation
 {
-   [_layer start_animation];
 }
 
 @end
