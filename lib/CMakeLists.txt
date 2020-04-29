@@ -140,6 +140,17 @@ elseif (WIN32)
 endif()
 
 if (ARTIST_SKIA)
+
+   if (APPLE)
+      set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
+         external/skia/src/GLWindowContext_mac.mm
+      )
+   elseif (MSVC)
+      set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
+         external/skia/src/GLWindowContext_win.cpp
+      )
+   endif()
+
    set(ARTIST_IMPL
       impl/skia/canvas.cpp
       impl/skia/image.cpp
@@ -147,9 +158,8 @@ if (ARTIST_SKIA)
       impl/skia/text_layout.cpp
       impl/skia/path.cpp
       impl/skia/detail/harfbuzz.cpp
-      external/skia/include/tools/sk_app/GLWindowContext.cpp
-      external/skia/include/tools/sk_app/GLWindowContext.cpp
-      external/skia/include/tools/sk_app/mac/GLWindowContext_mac.mm ### $$$ fixme Mac only $$$
+      external/skia/src/GLWindowContext.cpp
+      ${ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT}
    )
 endif()
 
