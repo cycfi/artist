@@ -30,6 +30,7 @@ void           draw(canvas& cnv);
 void           print_elapsed(
                   canvas& cnv
                 , point br
+                , color bkd = colors::black
                 , color c = colors::white
                );
 
