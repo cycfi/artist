@@ -60,33 +60,40 @@ namespace
       auto draw_f =
          [&]()
          {
-            GrGLint buffer;
-            glGetIntegerv(GL_FRAMEBUFFER_BINDING, &buffer);
-            GrGLFramebufferInfo info;
-            info.fFBOID = (GrGLuint) buffer;
-            SkColorType colorType = kRGBA_8888_SkColorType;
+            if (!state._surface)
+            {
+               GrGLint buffer;
+               glGetIntegerv(GL_FRAMEBUFFER_BINDING, &buffer);
+               GrGLFramebufferInfo info;
+               info.fFBOID = (GrGLuint) buffer;
+               SkColorType colorType = kRGBA_8888_SkColorType;
 
-            info.fFormat = GL_RGBA8;
-            GrBackendRenderTarget target(
-               state._size.x*state._scale
-             , state._size.y*state._scale
-             , 0, 8, info
-            );
+               info.fFormat = GL_RGBA8;
+               GrBackendRenderTarget target(
+                  state._size.x*state._scale
+                , state._size.y*state._scale
+                , 0, 8, info
+               );
 
-            sk_sp<SkSurface> surface(
-               SkSurface::MakeFromBackendRenderTarget(state._ctx.get(), target,
-               kBottomLeft_GrSurfaceOrigin, colorType, nullptr, nullptr));
+               state._surface =
+                  SkSurface::MakeFromBackendRenderTarget(
+                     state._ctx.get(), target,
+                     kBottomLeft_GrSurfaceOrigin, colorType, nullptr, nullptr
+                  );
 
-            if (!surface)
-               error("Error: SkSurface::MakeRenderTarget returned null");
+               if (!state._surface)
+                  error("Error: SkSurface::MakeRenderTarget returned null");
+            }
 
-            SkCanvas* gpu_canvas = surface->getCanvas();
+            SkCanvas* gpu_canvas = state._surface->getCanvas();
+            gpu_canvas->save();
             auto cnv = canvas{ gpu_canvas };
             cnv.pre_scale(state._scale);
 
             draw(cnv);
 
-            surface->flush();
+            gpu_canvas->restore();
+            state._surface->flush();
          };
 
       auto start = std::chrono::steady_clock::now();
