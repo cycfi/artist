@@ -16,12 +16,13 @@ using cycfi::artist::color;
 using cycfi::artist::point;
 using cycfi::artist::rgba;
 using duration = std::chrono::duration<double>;
+namespace colors = cycfi::artist::colors;
 
 int            run_app(
                   int argc
                 , char const* argv[]
                 , extent window_size
-                , color background_color = cycfi::artist::colors::white
+                , color background_color = colors::white
                 , bool animate = false
                );
 
@@ -29,7 +30,7 @@ void           draw(canvas& cnv);
 void           print_elapsed(
                   canvas& cnv
                 , point br
-                , color c = rgba(220, 220, 220, 200)
+                , color c = colors::white
                );
 
 #endif
