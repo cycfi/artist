@@ -46,8 +46,14 @@ namespace
                _first_time = false;
             }
 
-            auto xface = GrGLMakeNativeInterface();
-            sk_sp<GrContext> ctx = GrContext::MakeGL(xface);
+            static sk_sp<const GrGLInterface> xface;
+            static sk_sp<GrContext> ctx;
+
+            if (!xface)
+            {
+               xface = GrGLMakeNativeInterface();
+               ctx = GrContext::MakeGL(xface);
+            }
 
             GrGLint buffer;
             glGetIntegerv(GL_FRAMEBUFFER_BINDING, &buffer);
@@ -69,6 +75,8 @@ namespace
             auto cnv = canvas{ gpu_canvas };
             cnv.pre_scale(_scale);
             draw(cnv);
+
+            surface->flush();
          };
 
       auto start = std::chrono::steady_clock::now();
