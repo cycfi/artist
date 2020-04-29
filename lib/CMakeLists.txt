@@ -121,21 +121,13 @@ set(ARTIST_HEADERS
    include/artist/affine_transform.hpp
 )
 
-if (APPLE)
-   if (ARTIST_QUARTZ_2D)
-      set(ARTIST_IMPL
-         impl/macos/quartz2d/canvas.mm
-         impl/macos/quartz2d/image.mm
-         impl/macos/quartz2d/font.mm
-         impl/macos/quartz2d/text_layout.mm
-         impl/macos/quartz2d/path.mm
-      )
-   endif()
-elseif (UNIX)
+if (APPLE AND ARTIST_QUARTZ_2D)
    set(ARTIST_IMPL
-   )
-elseif (WIN32)
-   set(ARTIST_IMPL
+      impl/macos/quartz2d/canvas.mm
+      impl/macos/quartz2d/image.mm
+      impl/macos/quartz2d/font.mm
+      impl/macos/quartz2d/text_layout.mm
+      impl/macos/quartz2d/path.mm
    )
 endif()
 
