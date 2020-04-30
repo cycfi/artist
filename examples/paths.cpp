@@ -95,6 +95,6 @@ void draw(canvas& cnv)
 
 int main(int argc, char const* argv[])
 {
-   return run_app(argc, argv, window_size, colors::white); // colors::gray[10]);
+   return run_app(argc, argv, window_size, colors::gray[10]);
 }
 
