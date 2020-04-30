@@ -34,7 +34,7 @@ void draw(canvas& cnv)
       y_incr = -y_incr;
 
    cnv.restore();
-   print_elapsed(cnv, window_size, colors::black);
+   print_elapsed(cnv, window_size, colors::white, colors::black);
 }
 
 int main(int argc, char const* argv[])
