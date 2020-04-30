@@ -149,7 +149,7 @@ using skia_context = std::unique_ptr<sk_app::WindowContext>;
 -(void) start_animation
 {
    _task =
-      [NSTimer scheduledTimerWithTimeInterval : 0.016 // 60Hz
+      [NSTimer scheduledTimerWithTimeInterval : 1.0/60 // 60Hz
            target : self
          selector : @selector(on_tick:)
          userInfo : nil
