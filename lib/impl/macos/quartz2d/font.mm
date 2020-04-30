@@ -128,9 +128,9 @@ namespace cycfi::artist
    float font::measure_text(std::string_view str) const
    {
       NSFont* font = (__bridge NSFont*) _ptr;
-      NSDictionary* userAttributes = @{ NSFontAttributeName : font };
-      NSString* text = (__bridge NSString*) detail::cf_string(str.data(), str.data()+str.size());
-      const CGSize textSize = [text sizeWithAttributes : userAttributes];
+      NSDictionary* attr = @{ NSFontAttributeName : font };
+      NSString* text = detail::ns_string(str);
+      const CGSize textSize = [text sizeWithAttributes : attr];
       return textSize.width;
    }
 }
