@@ -7,6 +7,7 @@
 #define ARTIST_DETAIL_OSX_UTILS_MARCH_17_2020
 
 #include <Quartz/Quartz.h>
+#include <string_view>
 
 namespace cycfi::artist::detail
 {
@@ -16,6 +17,21 @@ namespace cycfi::artist::detail
          nullptr, (UInt8 const*)f, l-f, kCFStringEncodingUTF8
        , false, kCFAllocatorNull
       );
+   }
+
+   inline CFStringRef cf_string(std::string_view str)
+   {
+      return cf_string(str.data(), str.data()+str.size());
+   }
+
+   inline NSString* ns_string(char const* f, char const* l)
+   {
+      return (__bridge NSString*) cf_string(f, l);
+   }
+
+   inline NSString* ns_string(std::string_view str)
+   {
+      return ns_string(str.data(), str.data()+str.size());
    }
 }
 
