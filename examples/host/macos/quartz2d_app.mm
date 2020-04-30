@@ -68,13 +68,9 @@ namespace cycfi::artist
 
 //=======================================================================
 
-using offscreen_type = std::shared_ptr<image>;
-
 @interface CocoaView : NSView
 {
    NSTimer*       _task;
-   bool           _first;
-   offscreen_type _offscreen;
 }
 
 -(void) start;
@@ -93,8 +89,6 @@ using offscreen_type = std::shared_ptr<image>;
 
 - (void) start
 {
-   _first = true;
-   _task = nullptr;
 }
 
 - (void) drawRect : (NSRect) dirty
@@ -103,30 +97,8 @@ using offscreen_type = std::shared_ptr<image>;
       [&]()
       {
          auto ctx = NSGraphicsContext.currentContext.CGContext;
-         if (_first && _task)
-         {
-            _first = false;
-            _offscreen = std::make_shared<image>(
-               extent{ float(self.bounds.size.width), float(self.bounds.size.height) }
-            );
-         }
-
-         if (_task)
-         {
-            auto cnv = canvas{ (canvas_impl*) ctx };
-            {
-               // Do offscreen rendering
-               offscreen_image ctx{ *_offscreen };
-               canvas offscreen_cnv{ ctx.context() };
-               draw(offscreen_cnv);
-            }
-            cnv.draw(*_offscreen);
-         }
-         else
-         {
-            auto cnv = canvas{ (canvas_impl*) ctx };
-            draw(cnv);
-         }
+         auto cnv = canvas{ (canvas_impl*) ctx };
+         draw(cnv);
       };
 
    auto start = std::chrono::high_resolution_clock::now();
@@ -148,7 +120,7 @@ using offscreen_type = std::shared_ptr<image>;
 -(void) start_animation
 {
    _task =
-      [NSTimer scheduledTimerWithTimeInterval : 0.016 // 60Hz
+      [NSTimer scheduledTimerWithTimeInterval : 1.0/60 // 60Hz
            target : self
          selector : @selector(on_tick:)
          userInfo : nil
@@ -181,12 +153,12 @@ public:
            ];
 
       _content = [[CocoaView alloc] init];
-      [_content start];
       [_window setContentView : _content];
       [_window cascadeTopLeftFromPoint : NSMakePoint(20, 20)];
       [_window makeKeyAndOrderFront : nil];
       [_window setAppearance : [NSAppearance appearanceNamed : NSAppearanceNameVibrantDark]];
       [_window setBackgroundColor : color];
+      [_content start];
    }
 
    void start_animation()

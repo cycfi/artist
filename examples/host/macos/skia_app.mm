@@ -17,7 +17,9 @@
 #include <gl/GrGLInterface.h>
 #include <SkImage.h>
 #include <SkSurface.h>
-#include <GrBackendSurface.h>
+#include <tools/sk_app/DisplayParams.h>
+#include <tools/sk_app/WindowContext.h>
+#include <tools/sk_app/mac/WindowContextFactory_mac.h>
 #include <OpenGL/gl.h>
 
 using namespace cycfi::artist;
@@ -77,135 +79,17 @@ namespace cycfi::artist
 
 //=======================================================================
 
-@class OpenGLLayer;
-using offscreen_type = std::shared_ptr<image>;
+using skia_context = std::unique_ptr<sk_app::WindowContext>;
 
 @interface CocoaView : NSView
 {
-   OpenGLLayer*   _layer;
+   NSTimer*       _task;
+   skia_context   _skia_context;
+   float          _scale;
 }
 
 -(void) start;
 -(void) start_animation;
-
-@end
-
-@interface OpenGLLayer : NSOpenGLLayer
-{
-   bool                 _animate;
-   int                  _first;
-   CocoaView*           _view;
-}
-
-- (id) initWithIGraphicsView : (CocoaView*) view;
-- (void) start_animation;
-
-@end
-
-//=======================================================================
-
-@implementation OpenGLLayer
-
-- (id) initWithIGraphicsView: (CocoaView*) view;
-{
-   _animate = false;
-   _first = true;
-   _view = view;
-   self = [super init];
-   if (self != nil)
-   {
-      // Layer should render when size changes.
-      self.needsDisplayOnBoundsChange = YES;
-
-      // The layer should continuously call canDrawInOpenGLContext
-      self.asynchronous = YES;
-   }
-
-   return self;
-}
-
-- (void) start_animation
-{
-   _animate = true;
-}
-
-- (NSOpenGLPixelFormat*) openGLPixelFormatForDisplayMas : (uint32_t) mask
-{
-   NSOpenGLPixelFormatAttribute attr[] = {
-      NSOpenGLPFAOpenGLProfile,
-      NSOpenGLProfileVersion3_2Core,
-      NSOpenGLPFANoRecovery,
-      NSOpenGLPFAAccelerated,
-      NSOpenGLPFADoubleBuffer,
-      NSOpenGLPFAColorSize, 24,
-      0
-   };
-   return [[NSOpenGLPixelFormat alloc] initWithAttributes:attr];
-}
-
-- (NSOpenGLContext*) openGLContextForPixelFormat : (NSOpenGLPixelFormat*) pixelFormat
-{
-   return [super openGLContextForPixelFormat : pixelFormat];
-}
-
-- (BOOL) canDrawInOpenGLContext : (NSOpenGLContext*) context
-                    pixelFormat : (NSOpenGLPixelFormat*) pixelFormat
-                   forLayerTime : (CFTimeInterval) timeInterval
-                    displayTime : (const CVTimeStamp*) timeStamp
-{
-   return _first || _animate;
-}
-
-- (void) drawInOpenGLContext : (NSOpenGLContext*) context
-                 pixelFormat : (NSOpenGLPixelFormat*) pixelFormat
-                forLayerTime : (CFTimeInterval) timeInterval
-                 displayTime : (const CVTimeStamp*) timeStamp
-{
-   auto draw_f =
-      [&]()
-      {
-         _first = false;
-
-         [context makeCurrentContext];
-         CGLLockContext(context.CGLContextObj);
-
-         auto interface = GrGLMakeNativeInterface();
-         sk_sp<GrContext> ctx = GrContext::MakeGL(interface);
-
-         GrGLint buffer;
-         glGetIntegerv(GL_FRAMEBUFFER_BINDING, &buffer);
-         GrGLFramebufferInfo info;
-         info.fFBOID = (GrGLuint) buffer;
-         SkColorType colorType = kRGBA_8888_SkColorType;
-
-         auto bounds = [_view bounds];
-         auto scale = self.contentsScale;
-         auto size = point{ float(bounds.size.width*scale), float(bounds.size.height*scale) };
-
-         info.fFormat = GL_RGBA8;
-         GrBackendRenderTarget target(size.x, size.y, 0, 8, info);
-
-         sk_sp<SkSurface> surface(
-            SkSurface::MakeFromBackendRenderTarget(ctx.get(), target,
-            kBottomLeft_GrSurfaceOrigin, colorType, nullptr, nullptr));
-
-         if (!surface)
-            throw std::runtime_error("Error: SkSurface::MakeRenderTarget returned null");
-
-         SkCanvas* gpu_canvas = surface->getCanvas();
-         auto cnv = canvas{ gpu_canvas };
-         cnv.pre_scale(scale);
-         draw(cnv);
-
-         [context flushBuffer];
-         CGLUnlockContext(context.CGLContextObj);
-      };
-
-   auto start = std::chrono::high_resolution_clock::now();
-   draw_f();
-   auto stop = std::chrono::high_resolution_clock::now();
-   elapsed_ = std::chrono::duration<double>{ stop - start }.count();
-}
 
 @end
 
@@ -215,29 +99,41 @@ using offscreen_type = std::shared_ptr<image>;
 
 - (void) dealloc
 {
+   _task = nil;
 }
 
 - (void) start
 {
-   // Enable retina-support
-   self.wantsBestResolutionOpenGLSurface = YES;
+   _task = nullptr;
 
-   // Enable layer-backed drawing of view
-   [self setWantsLayer : YES];
+   sk_app::window_context_factory::MacWindowInfo info;
+   info.fMainView = self;
+   _skia_context = sk_app::window_context_factory::MakeGLForMac(info, sk_app::DisplayParams());
 
-   self.layer.opaque = YES;
+   NSRect user = { { 0, 0 }, { 100, 100 }};
+   NSRect backing_bounds = [self convertRectToBacking : user];
+   _scale = backing_bounds.size.height / user.size.height;
 }
 
-- (CALayer*) makeBackingLayer
+- (void) drawRect : (NSRect) dirty
 {
-   _layer = [[OpenGLLayer alloc] initWithIGraphicsView : self];
-   return _layer;
-}
+   auto start = std::chrono::high_resolution_clock::now();
+   auto surface = _skia_context->getBackbufferSurface();
+   if (surface)
+   {
+      SkCanvas* gpu_canvas = surface->getCanvas();
+      gpu_canvas->save();
+      auto cnv = canvas{ gpu_canvas };
+      cnv.pre_scale(_scale);
 
-- (void) viewDidChangeBackingProperties
-{
-   [super viewDidChangeBackingProperties];
-   self.layer.contentsScale = self.window.backingScaleFactor;
+      draw(cnv);
+
+      gpu_canvas->restore();
+      surface->flush();
+      _skia_context->swapBuffers();
+   }
+   auto stop = std::chrono::high_resolution_clock::now();
+   elapsed_ = std::chrono::duration<double>{ stop - start }.count();
 }
 
 -(BOOL) isFlipped
@@ -245,9 +141,20 @@ using offscreen_type = std::shared_ptr<image>;
    return YES;
 }
 
+- (void) on_tick : (id) sender
+{
+   [self setNeedsDisplay : YES];
+}
+
 -(void) start_animation
 {
-   [_layer start_animation];
+   _task =
+      [NSTimer scheduledTimerWithTimeInterval : 1.0/60 // 60Hz
+           target : self
+         selector : @selector(on_tick:)
+         userInfo : nil
+          repeats : YES
+      ];
 }
 
 @end
@@ -275,12 +182,12 @@ public:
            ];
 
       _content = [[CocoaView alloc] init];
-      [_content start];
       [_window setContentView : _content];
       [_window cascadeTopLeftFromPoint : NSMakePoint(20, 20)];
       [_window makeKeyAndOrderFront : nil];
       [_window setAppearance : [NSAppearance appearanceNamed : NSAppearanceNameVibrantDark]];
       [_window setBackgroundColor : color];
+      [_content start];
    }
 
    void start_animation()
