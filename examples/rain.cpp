@@ -58,7 +58,7 @@ void rain(canvas& cnv)
 
    if (opacity > persistence)
       opacity *= 0.8;
-   print_elapsed(cnv, window_size);
+   print_elapsed(cnv, window_size, colors::black.opacity(0.1));
 }
 
 void draw(canvas& cnv)
