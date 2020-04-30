@@ -218,7 +218,7 @@ void bezier(canvas& cnv)
    cnv.bezier_curve_to(cp1, cp2, end);
    cnv.stroke();
 
-   cnv.stroke_style(colors::pink.opacity(0.2));
+   cnv.fill_style(colors::pink.opacity(0.8));
    cnv.circle(cp1.x, cp1.y, 3);
    cnv.circle(cp2.x, cp2.y, 3);
    cnv.fill();
@@ -250,7 +250,7 @@ void quad(canvas& cnv)
    cnv.quadratic_curve_to(cp, end);
    cnv.stroke();
 
-   cnv.stroke_style(colors::pink.opacity(0.2));
+   cnv.fill_style(colors::pink.opacity(0.8));
    cnv.circle(cp.x, cp.y, 3);
    cnv.fill();
 
@@ -314,6 +314,6 @@ void draw(canvas& cnv)
 
 int main(int argc, char const* argv[])
 {
-   return run_app(argc, argv, window_size);
+   return run_app(argc, argv, window_size, bkd_color);
 }
 
