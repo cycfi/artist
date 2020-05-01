@@ -88,7 +88,7 @@ using skia_context = std::unique_ptr<sk_app::WindowContext>;
    float          _scale;
 }
 
--(void) start;
+-(void) start : (SkColor) bkd;
 -(void) start_animation;
 
 @end
@@ -99,10 +99,10 @@ using skia_context = std::unique_ptr<sk_app::WindowContext>;
 
 - (void) dealloc
 {
-   _task = nil;
+   _task = nullptr;
 }
 
-- (void) start
+- (void) start : (SkColor) bkd
 {
    _task = nullptr;
 
@@ -113,6 +113,10 @@ using skia_context = std::unique_ptr<sk_app::WindowContext>;
    NSRect user = { { 0, 0 }, { 100, 100 }};
    NSRect backing_bounds = [self convertRectToBacking : user];
    _scale = backing_bounds.size.height / user.size.height;
+
+   auto surface = _skia_context->getBackbufferSurface();
+   if (surface)
+      surface->getCanvas()->clear(bkd);
 }
 
 - (void) drawRect : (NSRect) dirty
@@ -187,7 +191,7 @@ public:
       [_window makeKeyAndOrderFront : nil];
       [_window setAppearance : [NSAppearance appearanceNamed : NSAppearanceNameVibrantDark]];
       [_window setBackgroundColor : color];
-      [_content start];
+      [_content start : SkColorSetARGB(bkd.alpha*255, bkd.red*255, bkd.green*255, bkd.blue*255)];
    }
 
    void start_animation()

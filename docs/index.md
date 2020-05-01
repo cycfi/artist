@@ -7,7 +7,35 @@
 ## Introduction
 
 The Artist 2D Canvas Library is an abstraction layer with an API inspired by
-the HTML5 canvas API.
+the HTML5 canvas API. The library presents a lean API modeled after the [HTML
+Canvas 2D Context specification](https://www.w3.org/TR/2dcontext/). The API
+is a not-so-thin layer above various 2D platform-specific and cross-platform
+2D "backend" graphics libraries, such as [Skia](https://skia.org/) and
+[Quartz-2D](https://apple.co/2SljYHw).
+
+The Artist library goes beyond the basic HTML5 canvas API with extensions for
+dealing with text layout and mechanisms for text editing, fonts and font
+management, path creation and manipulation, and image capture and offscreen
+graphics.
+
+Artist is designed with these requirements in mind:
+
+1. It should be open source with a liberal, non-viral license.
+2. It should be very easy to build and incorporate in any target application
+   or library.
+3. It should be allow for HDPI displays.
+4. It should have a very lean and easy to use API, using modern C++, with
+   standardized behavior across multiple platforms and graphics backend.
+
+## Setup and Installation
+
+The Artist 2D Canvas Library is cross-platform. Artist currently supports
+the MacOS, Windows and Linux. Follow the Setup and Installation guide to get
+started using the library.
+
+## Gallery
+
+Follow this link for more screenshots: [Gallery](gallery).
 
 ## <a name="jdeguzman"></a>About the Author
 
