@@ -73,7 +73,6 @@ void composite_ops(canvas& cnv)
 {
    cnv.font(font_descr{ "Open Sans", 10 });
 
-   auto col1 = 0;
    auto col2 = xsize*4;
 
    composite_draw(cnv, { 0, 0 }, cnv.source_over);

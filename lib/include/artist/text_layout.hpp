@@ -60,7 +60,7 @@ namespace cycfi::artist
 
    private:
 
-      struct impl;
+      class impl;
       using impl_ptr = std::unique_ptr<impl>;
 
       impl_ptr             _impl;
