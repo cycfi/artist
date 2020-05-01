@@ -373,7 +373,7 @@ namespace cycfi::artist
 
    void text_layout::flow(float width, bool justify)
    {
-      auto line_info_f = [this, width](float /*y*/)
+      auto line_info_f = [width](float /*y*/)
       {
          return line_info{ 0, width };
       };

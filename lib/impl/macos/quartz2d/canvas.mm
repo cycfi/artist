@@ -301,24 +301,6 @@ namespace cycfi::artist
       CGContextClosePath(CGContextRef(_context));
    }
 
-   namespace
-   {
-      bool needs_workaround(canvas::composite_op_enum mode)
-      {
-         switch (mode)
-         {
-            case canvas::composite_op_enum::source_in:
-            case canvas::composite_op_enum::source_out:
-            case canvas::composite_op_enum::destination_atop:
-            case canvas::composite_op_enum::destination_in:
-            case canvas::composite_op_enum::copy:
-               return true;
-            default:
-               return false;
-         };
-      };
-   }
-
    void canvas::fill_rule(path::fill_rule_enum rule)
    {
       _state->fill_rule(rule);
