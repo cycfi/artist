@@ -2,8 +2,6 @@
 
 [<img src="{{ site.url }}/artist/assets/images/artist_sampler.jpg">]({{ site.url }}/artist/assets/images/artist_sampler.png)
 
-<!-- ![alt Photon Sampler]({{ site.url }}/artist/assets/images/artist_sampler.jpg) -->
-
 ## Introduction
 
 The Artist 2D Canvas Library is an abstraction layer with an API inspired by
