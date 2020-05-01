@@ -1,6 +1,6 @@
 # ![Artist-Logo](docs/assets/images/artist.png) Artist 2D Canvas Library
 
-[<img src="docs/assets/images/artist_sampler.jpg">](docs/assets/images/artist_sampler.png)
+[<img src="docs/assets/images/artist_sampler.jpg">](https://cycfi.github.io/artist/assets/images/artist_sampler.png)
 
 ## Introduction
 
@@ -38,7 +38,7 @@ Artist is designed with these requirements in mind:
 
 ## Documentation
 
-Follow this link for the documentation proper: [The Artist 2D Canvas Library](https://cycfi.github.io/artist/gallery).
+Follow this link for the documentation proper: [The Artist 2D Canvas Library](https://cycfi.github.io/artist).
 
 ## Gallery
 
