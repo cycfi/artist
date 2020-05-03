@@ -3,8 +3,8 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#if !defined(ELEMENTS_PATH_APRIL_8_2020)
-#define ELEMENTS_PATH_APRIL_8_2020
+#if !defined(ARTIST_PATH_APRIL_8_2020)
+#define ARTIST_PATH_APRIL_8_2020
 
 #include <infra/support.hpp>
 #include <artist/rect.hpp>
@@ -42,6 +42,7 @@ namespace cycfi::artist
       bool              operator!=(path const& rhs) const;
       bool              is_empty() const;
       bool              includes(point p) const;
+      bool              includes(float x, float y) const;
       rect              bounds() const;
 
       void              close();
@@ -90,6 +91,10 @@ namespace cycfi::artist
 
       void              fill_rule(fill_rule_enum rule);
 
+#if defined(ARTIST_QUARTZ_2D)
+      fill_rule_enum    fill_rule() const { return _fill_rule; }
+#endif
+
       path_impl*        impl();
       path_impl const*  impl() const;
 
@@ -126,6 +131,11 @@ namespace cycfi::artist
    inline bool path::operator!=(path const& rhs) const
    {
       return !(*this == rhs);
+   }
+
+   inline bool path::includes(float x, float y) const
+   {
+      return includes({ x, y });
    }
 
    inline void path::move_to(float x, float y)

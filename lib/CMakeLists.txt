@@ -118,12 +118,13 @@ set(ARTIST_HEADERS
    include/artist/rect.hpp
    include/artist/text_layout.hpp
    include/artist/resources.hpp
+   include/artist/affine_transform.hpp
 )
 
 if (APPLE AND ARTIST_QUARTZ_2D)
    set(ARTIST_IMPL
       impl/macos/quartz2d/canvas.mm
-            impl/macos/quartz2d/image.mm
+      impl/macos/quartz2d/image.mm
       impl/macos/quartz2d/font.mm
       impl/macos/quartz2d/text_layout.mm
       impl/macos/quartz2d/path.mm
@@ -132,6 +133,16 @@ endif()
 
 if (ARTIST_SKIA)
 
+   if (APPLE)
+      set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
+         external/skia/src/GLWindowContext_mac.mm
+      )
+   elseif (MSVC)
+      set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
+         external/skia/src/GLWindowContext_win.cpp
+      )
+   endif()
+
    set(ARTIST_IMPL
       impl/skia/canvas.cpp
       impl/skia/image.cpp
@@ -139,6 +150,8 @@ if (ARTIST_SKIA)
       impl/skia/text_layout.cpp
       impl/skia/path.cpp
       impl/skia/detail/harfbuzz.cpp
+      external/skia/src/GLWindowContext.cpp
+      ${ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT}
    )
 
 elseif (ARTIST_CAIRO)
@@ -205,6 +218,7 @@ if (ARTIST_SKIA)
       artist
       PUBLIC
          external/skia
+         external/skia/include
          external/skia/include/core
          external/skia/include/config
          external/skia/include/utils
@@ -222,7 +236,8 @@ if (ARTIST_SKIA)
    target_compile_definitions(
       artist
       PUBLIC
-      ARTIST_SKIA
+         ARTIST_SKIA
+         SK_RELEASE
    )
 endif()
 

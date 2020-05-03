@@ -3,8 +3,8 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#if !defined(ELEMENTS_IMAGE_SEPTEMBER_5_2016)
-#define ELEMENTS_IMAGE_SEPTEMBER_5_2016
+#if !defined(ARTIST_IMAGE_SEPTEMBER_5_2016)
+#define ARTIST_IMAGE_SEPTEMBER_5_2016
 
 #include <artist/point.hpp>
 #include <artist/resources.hpp>
@@ -24,8 +24,6 @@ namespace cycfi::artist
 #if defined(ARTIST_QUARTZ_2D)
    struct canvas_impl;
 #endif
-
-   using canvas_impl_ptr = canvas_impl*;
 
    class image_impl;
    using image_impl_ptr = image_impl*;
@@ -60,7 +58,7 @@ namespace cycfi::artist
       image_impl_ptr  _impl;
    };
 
-   using pixmap_ptr = std::shared_ptr<image>;
+   using image_ptr = std::shared_ptr<image>;
 
    ////////////////////////////////////////////////////////////////////////////
    // offscreen_image allows drawing into a picture
@@ -73,7 +71,7 @@ namespace cycfi::artist
                         ~offscreen_image();
       offscreen_image&  operator=(offscreen_image const& rhs) = delete;
 
-      canvas_impl_ptr   context() const;
+      canvas_impl*      context() const;
 
    private:
                         offscreen_image(offscreen_image const&) = delete;

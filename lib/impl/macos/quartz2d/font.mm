@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <sstream>
 #include <cmath>
+#include "osx_utils.hpp"
 
 namespace cycfi::artist
 {
@@ -122,6 +123,15 @@ namespace cycfi::artist
          float(-[font descender]),
          float([font leading])
       };
+   }
+
+   float font::measure_text(std::string_view str) const
+   {
+      NSFont* font = (__bridge NSFont*) _ptr;
+      NSDictionary* attr = @{ NSFontAttributeName : font };
+      NSString* text = detail::ns_string(str);
+      const CGSize textSize = [text sizeWithAttributes : attr];
+      return textSize.width;
    }
 }
 

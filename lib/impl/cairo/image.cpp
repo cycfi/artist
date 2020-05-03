@@ -56,7 +56,7 @@ namespace cycfi::artist
    {
    }
 
-   canvas_impl_ptr offscreen_image::context() const
+   canvas_impl* offscreen_image::context() const
    {
       return nullptr;
    }

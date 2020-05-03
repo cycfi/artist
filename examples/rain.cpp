@@ -13,8 +13,8 @@ using namespace cycfi::artist;
 // https://onaircode.com/awesome-html5-canvas-examples-source-code/
 ///////////////////////////////////////////////////////////////////////////////
 
-#if defined(ARTIST_SKIA) && defined(__APPLE__)
-constexpr auto persistence = 0.15;
+#if defined(ARTIST_SKIA) && !defined(linux)
+constexpr auto persistence = 0.10;
 #else
 constexpr auto persistence = 0.04;
 #endif
@@ -24,20 +24,21 @@ constexpr auto w = window_size.x;
 constexpr auto h = window_size.y;
 constexpr int total = w;
 constexpr auto accelleration = 0.05;
-constexpr auto repaint_color = rgb(0, 0, 0).opacity(persistence);
+constexpr auto repaint_color = rgb(0, 0, 0);
 constexpr auto portion = 360.0f/total;
 
 float dots[total];
 float dots_vel[total];
+float opacity = 1.0;
 
 float random_size()
 {
    return float(std::rand()) / (RAND_MAX);
 }
 
-void draw(canvas& cnv)
+void rain(canvas& cnv)
 {
-   cnv.fill_style(repaint_color);
+   cnv.fill_style(repaint_color.opacity(opacity));
    cnv.fill_rect({ 0, 0, window_size });
    for (auto i = 0; i < total; ++i)
    {
@@ -55,7 +56,20 @@ void draw(canvas& cnv)
          dots[i] = dots_vel[i] = 0;
    }
 
-   print_elapsed(cnv, window_size);
+   if (opacity > persistence)
+      opacity *= 0.8;
+   print_elapsed(cnv, window_size, colors::black.opacity(0.1));
+}
+
+void draw(canvas& cnv)
+{
+   static auto offscreen = image{ window_size };
+   {
+      auto ctx = offscreen_image{ offscreen };
+      auto offscreen_cnv = canvas{ ctx.context() };
+      rain(offscreen_cnv);
+   }
+   cnv.draw(offscreen);
 }
 
 void init()

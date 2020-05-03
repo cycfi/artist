@@ -11,18 +11,18 @@ set(CMAKE_CXX_STANDARD 17)
 
 set(DEFAULT_BUILD_TYPE "Release")
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-    message(STATUS "Setting build type to '${DEFAULT_BUILD_TYPE}' as none was specified.")
-    set(CMAKE_BUILD_TYPE "${DEFAULT_BUILD_TYPE}" CACHE
-        STRING "Choose the type of build." FORCE)
-    # Set the possible values of build type for cmake-gui
-    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
-        "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+   message(STATUS "Setting build type to '${DEFAULT_BUILD_TYPE}' as none was specified.")
+   set(CMAKE_BUILD_TYPE "${DEFAULT_BUILD_TYPE}" CACHE
+      STRING "Choose the type of build." FORCE)
+   # Set the possible values of build type for cmake-gui
+   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+     "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
 include(CheckIPOSupported)
 check_ipo_supported(RESULT IPO_SUPPORTED)
 if (IPO_SUPPORTED)
-    message(STATUS "Link-time optimization supported. Will be enabled in Release build type")
+   message(STATUS "Link-time optimization supported. Will be enabled in Release build type")
 endif()
 
 if (APPLE)
@@ -43,7 +43,7 @@ if (ARTIST_CAIRO)
   set(ARTIST_SKIA OFF)
 endif()
 
-if (ARTIST_SKIA AND MSVC)
+if (ARTIST_SKIA AND WIN32)
    ExternalProject_Add(dlls
       PREFIX "windows-x64-dll"
       URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/windows-x64-dll.zip
@@ -58,6 +58,23 @@ if (ARTIST_SKIA AND MSVC)
    set(FREETYPE_DLL ${CMAKE_CURRENT_BINARY_DIR}/windows-x64-dll/src/dlls/freetype.dll)
 endif()
 
+if (ARTIST_SKIA AND WIN32)
+   message(STATUS "Building Artist lib for Win32 with Skia.")
+elseif (ARTIST_SKIA AND APPLE)
+   message(STATUS "Building Artist lib for MacOS with Skia.")
+elseif (ARTIST_QUARTZ_2D AND APPLE)
+   message(STATUS "Building Artist lib for MacOS with Quartz2D.")
+endif()
+
 add_subdirectory(lib)
-add_subdirectory(examples)
-add_subdirectory(test)
+
+option(ARTIST_BUILD_EXAMPLES "build Artist library examples" ON)
+option(ARTIST_BUILD_TESTS "build Artist library tests" ON)
+
+if (ARTIST_BUILD_EXAMPLES)
+   add_subdirectory(examples)
+endif()
+
+if (ARTIST_BUILD_TESTS)
+   add_subdirectory(test)
+endif()

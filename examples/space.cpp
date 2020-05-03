@@ -32,11 +32,11 @@ void draw(canvas& cnv)
       y_incr = -y_incr;
 
    cnv.translate(-x, -y);
-   print_elapsed(cnv, window_size);
+   print_elapsed(cnv, window_size, colors::black.opacity(0));
 }
 
 int main(int argc, char const* argv[])
 {
-   return run_app(argc, argv, window_size, colors::black,true);
+   return run_app(argc, argv, window_size, colors::black, true);
 }
 

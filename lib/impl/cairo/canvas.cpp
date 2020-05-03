@@ -49,7 +49,7 @@ namespace cycfi::artist
       }
    }
 
-   canvas::canvas(canvas_impl_ptr context_)
+   canvas::canvas(canvas_impl* context_)
     : _context{ context_ }
     , _state{ std::make_unique<canvas_state>() }
    {
@@ -59,7 +59,7 @@ namespace cycfi::artist
    {
    }
 
-   void canvas::pre_scale(point p)
+   void canvas::pre_scale(float scale)
    {
    }
 

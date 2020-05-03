@@ -3,8 +3,8 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#if !defined(ELEMENTS_CANVAS_MAY_3_2016)
-#define ELEMENTS_CANVAS_MAY_3_2016
+#if !defined(ARTIST_CANVAS_MAY_3_2016)
+#define ARTIST_CANVAS_MAY_3_2016
 
 #include <artist/color.hpp>
 #include <artist/rect.hpp>
@@ -13,52 +13,62 @@
 #include <artist/font.hpp>
 #include <artist/path.hpp>
 #include <artist/text_layout.hpp>
+#include <artist/affine_transform.hpp>
 
 #include <vector>
 #include <memory>
 
 #if defined(ARTIST_SKIA)
 class SkCanvas;
-using canvas_impl = SkCanvas;
 #elif defined(ARTIST_CAIRO)
 extern "C" { typedef struct _cairo cairo_t; }
-using canvas_impl = cairo_t;
 #endif
 
 namespace cycfi::artist
 {
 #if defined(ARTIST_QUARTZ_2D)
    struct canvas_impl;
+#elif defined(ARTIST_SKIA)
+   using canvas_impl = SkCanvas;
+#elif defined(ARTIST_CAIRO)
+   using canvas_impl = cairo_t;
 #endif
-
-   using canvas_impl_ptr = canvas_impl*;
 
    class canvas
    {
    public:
 
-      explicit          canvas(canvas_impl_ptr context_);
+      explicit          canvas(canvas_impl* context_);
                         canvas(canvas const& rhs) = delete;
                         ~canvas();
 
                         canvas(canvas&& rhs) = delete;
       canvas&           operator=(canvas const& rhs) = delete;
-      canvas_impl_ptr   impl() const;
+      canvas_impl*      impl() const;
+      explicit          operator bool() const;
+      bool              operator!() const;
 
-      void              pre_scale(point p);
+      void              pre_scale(float sc);
+      float             pre_scale() const;
 
       ///////////////////////////////////////////////////////////////////////////////////
       // Transforms
       void              translate(point p);
       void              rotate(float rad);
       void              scale(point p);
+      void              skew(double sx, double sy);
       point             device_to_user(point p);
       point             user_to_device(point p);
 
       void              translate(float x, float y);
+      void              scale(float xy);
       void              scale(float x, float y);
       point             device_to_user(float x, float y);
       point             user_to_device(float x, float y);
+
+      affine_transform  transform() const;
+      void              transform(affine_transform const& mat);
+      void              transform(double a, double b, double c, double d, double tx, double ty);
 
       ///////////////////////////////////////////////////////////////////////////////////
       // Paths
@@ -71,7 +81,8 @@ namespace cycfi::artist
 
       void              clip();
       void              clip(path const& p);
-      bool              hit_test(point p) const;
+      bool              point_in_path(point p) const;
+      bool              point_in_path(float x, float y) const;
       struct rect       fill_extent() const;
 
       void              move_to(point p);
@@ -86,6 +97,7 @@ namespace cycfi::artist
       void              round_rect(struct rect r, float radius);
       void              circle(struct circle c);
       void              path(class path const& p);
+      void              clear_rect(struct rect r);
 
       void              quadratic_curve_to(point cp, point end);
       void              bezier_curve_to(point cp1, point cp2, point end);
@@ -109,6 +121,7 @@ namespace cycfi::artist
                            float radius
                         );
       void              circle(float cx, float cy, float radius);
+      void              clear_rect(float x, float y, float width, float height);
 
       void              quadratic_curve_to(float cpx, float cpy, float x, float y);
       void              bezier_curve_to(
@@ -343,7 +356,7 @@ namespace cycfi::artist
 
    private:
 
-      canvas_impl_ptr   _context;
+      canvas_impl*      _context;
       canvas_state_ptr  _state;
    };
 }
