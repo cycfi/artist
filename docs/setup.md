@@ -64,7 +64,7 @@ latest version with a C++17 compiler.
 Artist 2D Canvas Library, plus the Cycfi Infra library:
 
 ```
-git clone --recurse-submodules  https://github.com/cycfi/artist.git
+git clone --recurse-submodules https://github.com/cycfi/artist.git
 ```
 
 ### CMake
@@ -82,6 +82,10 @@ for specific environments.
 ```
 brew install fontconfig
 ```
+
+The MacOS port is configured to have cmake download Skia, precompiled, as
+needed, so there is no need to have the library manually installed. CMake
+will take care of downloading and setting up dependencies.
 
 ### Install CMake
 
@@ -199,6 +203,10 @@ sudo apt-get install fontconfig
 sudo apt-get install libgtkglext1-dev
 sudo apt-get install libgtk-3-dev
 ```
+
+The Linux port is configured to have cmake download Skia, precompiled, as
+needed, so there is no need to have the library manually installed. CMake
+will take care of downloading and setting up dependencies.
 
 ### Install CMake
 
