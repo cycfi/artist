@@ -81,7 +81,6 @@ namespace cycfi::artist
    rect                 align(rect r, rect encl, float x_align, float y_align);
    rect                 align_h(rect r, rect encl, float x_align);
    rect                 align_v(rect r, rect encl, float y_align);
-   rect                 clip(rect r, rect encl);
 
    ////////////////////////////////////////////////////////////////////////////
    // Inlines
