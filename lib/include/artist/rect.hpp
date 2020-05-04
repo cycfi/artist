@@ -30,7 +30,7 @@ namespace cycfi::artist
                          : rect(origin.x, origin.y, origin.x + size.x, origin.y + size.y)
                         {}
 
-      constexpr         rect(rect const &) = default;
+      constexpr         rect(rect const&) = default;
       constexpr rect&   operator=(rect const&) = default;
 
       constexpr bool    operator==(rect const& other) const;
@@ -53,7 +53,8 @@ namespace cycfi::artist
 
       constexpr rect    move(float dx, float dy) const;
       constexpr rect    move_to(float x, float y) const;
-      constexpr rect    inset(float x_inset = 1.0, float y_inset = 1.0) const;
+      constexpr rect    inset(float x_inset, float y_inset) const;
+      constexpr rect    inset(float xy_inset) const;
 
       float             left;
       float             top;
@@ -70,8 +71,8 @@ namespace cycfi::artist
 
    constexpr point      center_point(rect r);
    constexpr float      area(rect r);
-   rect                 max(rect a, rect b);
-   rect                 min(rect a, rect b);
+   rect                 union_(rect a, rect b);
+   rect                 intersection(rect a, rect b);
 
    constexpr void       clear(rect& r);
    rect                 center(rect r, rect encl);
@@ -201,6 +202,11 @@ namespace cycfi::artist
          clear(r);
 
       return r;
+   }
+
+   constexpr rect rect::inset(float xy_inset) const
+   {
+      return inset(xy_inset, xy_inset);
    }
 
    constexpr bool is_valid(rect r)
