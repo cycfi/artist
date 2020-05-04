@@ -1,7 +1,11 @@
 # Canvas
 
 ## Table of Contents
-* hhh
+* [Foundation](#foundation)
+   * [Point](#point)
+   * [Extent](#extent)
+   * [Rect](#rect)
+   * [Circle](#circle)
 
 -------------------------------------------------------------------------------
 The canvas API is a derivative of and in line with the spirit the HTML5
@@ -9,8 +13,10 @@ canvas API, but using a slightly different syntax and naming convention
 following standard c++ style (e.g. using lower-case and underscores as word
 separators instead of camelCase).
 
+-------------------------------------------------------------------------------
 ## Foundation
 
+-------------------------------------------------------------------------------
 ### Point
 
 The point indicates position in the 2D cartesian coordinate space,
@@ -92,7 +98,12 @@ p.y
    reflected instance of `point`.
 10. Direct access to members `x` and `y`
 
+-------------------------------------------------------------------------------
 ### Extent
+
+The `extent` struct is a specialization of `point` but deletes the members
+`move`, `move_to`, and `reflect`. `extent` is intended for specifying
+2-dimensional sizes.
 
 ```c++
 struct extent : point
@@ -107,10 +118,7 @@ struct extent : point
 };
 ```
 
-The `extent` struct is a specialization of `point` but deletes the members
-`move`, `move_to`, and `reflect`. `extent` is intended for specifying
-2-dimensional sizes.
-
+-------------------------------------------------------------------------------
 ### Rect
 
 The `rect` struct represents a 2-dimensional rectangle specified by the
@@ -281,12 +289,20 @@ center_v(r, r2)
 align(r, r2, x, y)
 align_h(r, r2, x)
 align_v(r, r2, y)
+
+// Member access [10]
+r.left
+r.top
+r.right
+r.bottom
 ```
 
 #### Notation
 
 | `left`, `top`, `right`, `bottom`     | Scalar coordinates.   |
 | `width_`, `height_`                  | Scalar coordinates.   |
+| `x`, `y`                             | Scalar coordinates. |
+| `dx`, `dy`                           | Relative scalar coordinates. |
 | `origin`, `top_left`, `bottom_right` | Instance of `point`.  |
 | `size`                               | Instance of `extent`. |
 | `r`, `r2`                            | Instance of `rect`. |
@@ -312,9 +328,10 @@ align_v(r, r2, y)
 15. Get the size of `r`. Returns an instance of `extent`.
 16. Get the top-left, bottom-right, top-right, and bottom-left corners or
     rectangle, `r`. Returns an instance of `point`.
-17. Move `r`, `dx` and `dy` distance. Returns the moved instance of `rect`.
-18. Move `r`, to absolute coordinates `x` and `y`. Returns the moved instance
+17. Move origin of `r` by `dx` and `dy` distance. Returns the moved instance
     of `rect`.
+18. Move origin of `r` to absolute coordinates `x` and `y`. Returns the moved
+    instance of `rect`.
 19. Inset `r` by `x` and `y` (in each dimension), or by `xy` (in both x and y
     dimensions). The rect `r` is shrunk if `x`, `y` or `xy` are positive,
     otherwise, expanded if negative.
@@ -343,6 +360,101 @@ align_v(r, r2, y)
        0.0 to 1.0.
     3. `align_v`: Vertically by `y`, where `y` is a fractional value from 0.0
        to 1.0.
+20. Direct access to members `left`, `top`, `right`, and `bottom`
+
+-------------------------------------------------------------------------------
+### Circle
+
+The circle is represented by a center point and radius:
+
+```c++
+struct circle
+{
+               circle();
+               circle(float cx, float cy, float radius);
+               circle(point c, float radius);
+               circle(rect r);
+               circle(circle const&) = default;
+   circle&     operator=(circle const&) = default;
+
+   rect        bounds() const;
+   bool        operator==(circle const& other) const;
+   bool        operator!=(circle const& other) const;
+
+   point       center() const;
+   circle      inset(float x) const;
+   circle      move(float dx, float dy) const;
+   circle      move_to(float x, float y) const;
+
+   float       cx;
+   float       cy;
+   float       radius;
+};
+```
+
+#### Expressions
+
+```c++
+// Default constructor [1].
+circle{}
+
+// Constructor [2].
+circle{ x, y, radius }
+
+// Copy constructor. [3]
+circle{ c }
+
+// Assignment [4]
+c = c2
+
+// Equality [5]
+c == c2
+
+// Non-equality [6]
+c != c2
+
+// Bounds [7]
+c.bounds()
+
+// Get the center [8]
+c.center()
+
+// Inset [9]
+c.inset(x)
+
+// Move [10]
+c.move(dx, dy)
+
+// Move To [11]
+c.move_to(x, y)
+
+// Member access [12]
+c.cx
+c.cy
+c.radius
+```
+
+#### Notation
+
+| `x`, `y`, `radius`          | Scalar coordinates.   |
+| `dx`, `dy`, `radius`        | Scalar coordinates.   |
+| `c`, `c2`                   | Instance of `circle`. |
+
+1. Default construct a `circle` with initial values `{ 0, 0, 0 }`
+2. Construct a `circle` given initial values `x`, `y`, and `radius`.
+3. Copy construct a `circle ` given a `circle`, `c`.
+4. Assign `c2` to `c`.
+5. Returns `true` if a `c2` is equal `c`.
+6. Returns `true` if a `c2` is not equal to `c`.
+7. Get the bounds: smallest `rect` that encloses `c`. Returns an instance of
+   `rect`.
+8. Get the center of `c`. Returns an instance of `point`.
+9. Inset `c` by `x`.
+10. Move center of `c` by `dx` and `dy` distance. Returns the moved instance
+    of `circle`.
+11. Move center of `c` to absolute coordinates `x` and `y`. Returns the
+    moved instance of `circle`.
+12. Direct access to members `cx`, `cy`, and `radius`
 
 -------------------------------------------------------------------------------
 
