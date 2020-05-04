@@ -30,15 +30,12 @@ namespace cycfi::artist
 
    rect intersection(rect a, rect b)
    {
-      auto r = rect{
+      return {
          std::max(a.left, b.left),
          std::max(a.top, b.top),
          std::min(a.right, b.right),
          std::min(a.bottom, b.bottom)
       };
-      clamp_min(r.right, r.left);
-      clamp_min(r.bottom, r.top);
-      return r;
    }
 
    rect center(rect r, rect encl)
@@ -88,15 +85,6 @@ namespace cycfi::artist
       r = r.move_to(
          r.left, encl.top + ((encl.height() - r.height()) * y_align)
       );
-      return r;
-   }
-
-   rect clip(rect r, rect encl)
-   {
-      clamp_min(r.left, encl.left);
-      clamp_min(r.top, encl.top);
-      clamp_max(r.right, encl.right);
-      clamp_max(r.bottom, encl.bottom);
       return r;
    }
 }

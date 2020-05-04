@@ -79,17 +79,17 @@ p.y
 
 #### Semantics
 1. Default construct a `point` with initial values `{ 0, 0 }`
-2. Construct a `point` given initial values `{ x, y }`.
+2. Construct a `point` given initial values `x`, and `y`.
 3. Copy construct a `point ` given a `point`, `p`.
-4. Assign `point`, `p2`, to `point`, `p`.
-5. Returns true if a point `point`, `p2`, is equal to a `point`, `p`.
-6. Returns true if a point `point`, `p2`, is not equal to a `point`, `p`.
-7. Move a `point`, `p`, `dx` and `dy` distance relative to `point`, `p`.
-   Returns the moved `point`.
-8. Move a `point`, `p`, to absolute coordinates `x` and `y`. Returns the new
-   `point`.
+4. Assign `p2`, to `p`.
+5. Returns `true` if a `p2`, is equal to `p`.
+6. Returns `true` if `p2`, is not equal to a `p`.
+7. Move `p` `dx` and `dy` distance relative to `p`. Returns the moved
+   instance of `point`.
+8. Move `p` to absolute coordinates `x` and `y`. Returns the moved instance
+   of `point`.
 9. Reflect a `point`, `p`, at 180 degree rotation of point, `p2`. Returns the
-   reflected `point`.
+   reflected instance of `point`.
 10. Direct access to members `x` and `y`
 
 ### Extent
@@ -197,10 +197,10 @@ rect{ origin, right, bottom }
 rect{ top_left, bottom_right }
 
 // Constructor [5].
-rect{ left, top, extent }
+rect{ left, top, size }
 
 // Constructor [6].
-rect{ origin, extent }
+rect{ origin, size }
 
 // Copy constructor [7].
 rect{ r }
@@ -263,10 +263,10 @@ center_point(r)
 // Compute the area [24]
 area(r)
 
-// Compute the union or two rectangles [25]
+// Compute the union of two rectangles [25]
 union_(r, r2)
 
-// Compute the intersection or two rectangles [26]
+// Compute the intersection of two rectangles [26]
 intersection(r, r2)
 
 // Clear a rectangle [27]
@@ -281,10 +281,68 @@ center_v(r, r2)
 align(r, r2, x, y)
 align_h(r, r2, x)
 align_v(r, r2, y)
-
-// Clip a rectangle [30]
-clip(r, r2)
 ```
+
+#### Notation
+
+| `left`, `top`, `right`, `bottom`     | Scalar coordinates.   |
+| `width_`, `height_`                  | Scalar coordinates.   |
+| `origin`, `top_left`, `bottom_right` | Instance of `point`.  |
+| `size`                               | Instance of `extent`. |
+| `r`, `r2`                            | Instance of `rect`. |
+
+
+#### Semantics
+1. Default construct a `rect` with initial values `{ 0, 0, 0, 0 }`
+2. Construct a `rect` given initial values `left`, `top`, `right`, and `bottom`.
+3. Construct a `rect` given `origin` (point), `right` and bottom`.
+4. Construct a `rect` given `top_left`, `bottom_right` points.
+5. Construct a `rect` given `left`, `top`, and `size` (extent).
+6. Construct a `rect` given `origin`, and `size` (extent).
+7. Copy construct a `rect ` given a `rect`, `r`.
+8. Assign `r2` to `r`.
+9. Returns `true` if a `r2` is equal `r`.
+10. Returns `true` if a `r2` is not equal to `r`.
+11. Returns `true` if `r` is empty. Equivalent to `r.size() == extent{ 0, 0 }`.
+12. Inclusion:
+    1. Returns true if `p` is inside `r`.
+    2. Returns true if `r2` is completely inside `r`.
+13. Returns the width and height of the `r`. Returns a scalar value.
+14. Sets the width and height of `r` to `width_` and `height_`, respectively.
+15. Get the size of `r`. Returns an instance of `extent`.
+16. Get the top-left, bottom-right, top-right, and bottom-left corners or
+    rectangle, `r`. Returns an instance of `point`.
+17. Move `r`, `dx` and `dy` distance. Returns the moved instance of `rect`.
+18. Move `r`, to absolute coordinates `x` and `y`. Returns the moved instance
+    of `rect`.
+19. Inset `r` by `x` and `y` (in each dimension), or by `xy` (in both x and y
+    dimensions). The rect `r` is shrunk if `x`, `y` or `xy` are positive,
+    otherwise, expanded if negative.
+20. Return `true` if `r` is a valid rectangle (left <= right && top <=
+    bottom).
+21. Return `true` if `r` and `r2` have the same size. Equivalent to `r.size()
+    == r2.size()`.
+22. Return `true` if `r` intersects with `r2`.
+23. Returns the center point of `r`. returns an instance of `point`.
+24. Returns the area of `r`. Equivalent to `r.width() * r.height()`. Returns
+    a scalar value.
+25. Compute the union of two rectangles. Returns an instance of `rect`.
+26. Compute the intersection of two rectangles. Returns an instance of
+    `rect`.
+27. Clear `r`. Equivalent to r = rect{};
+28. Center `r` in `r2`. Returns an instance of `rect`.
+    1. `center`: In both dimensions
+    2. `center_h`: Horizontally
+    3. `center_v`: Vertically
+29. Align `r` in `r2`. Given scalar `x` and `y` values, 0.0 aligns `r` to the
+    left or top, 1.0 aligns `r` to the right or bottom, 0.5 aligns `r` center
+    or middle. Returns an instance of `rect`.
+    1. `align`: In both dimensions by `x` and `y`, where `x` and `y` are
+       fractional values from 0.0 to 1.0.
+    2. `align_h`: Horizontally by `x`, where `x` is a fractional value from
+       0.0 to 1.0.
+    3. `align_v`: Vertically by `y`, where `y` is a fractional value from 0.0
+       to 1.0.
 
 -------------------------------------------------------------------------------
 
