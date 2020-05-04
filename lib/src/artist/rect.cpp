@@ -18,7 +18,7 @@ namespace cycfi::artist
       return true;
    }
 
-   rect max(rect a, rect b)
+   rect union_(rect a, rect b)
    {
       return {
          std::min(a.left, b.left),
@@ -28,14 +28,17 @@ namespace cycfi::artist
       };
    }
 
-   rect min(rect a, rect b)
+   rect intersection(rect a, rect b)
    {
-      return {
+      auto r = rect{
          std::max(a.left, b.left),
          std::max(a.top, b.top),
          std::min(a.right, b.right),
          std::min(a.bottom, b.bottom)
       };
+      clamp_min(r.right, r.left);
+      clamp_min(r.bottom, r.top);
+      return r;
    }
 
    rect center(rect r, rect encl)
