@@ -6,6 +6,8 @@
    * [Extent](#extent)
    * [Rect](#rect)
    * [Circle](#circle)
+   * [Color](#color)
+   * [Predefined Colors](#predefined-colors)
 
 -------------------------------------------------------------------------------
 The canvas API is a derivative of and in line with the spirit the HTML5
@@ -309,6 +311,7 @@ r.bottom
 
 
 #### Semantics
+
 1. Default construct a `rect` with initial values `{ 0, 0, 0, 0 }`
 2. Construct a `rect` given initial values `left`, `top`, `right`, and `bottom`.
 3. Construct a `rect` given `origin` (point), `right` and bottom`.
@@ -440,6 +443,8 @@ c.radius
 | `dx`, `dy`, `radius`        | Scalar coordinates.   |
 | `c`, `c2`                   | Instance of `circle`. |
 
+#### Semantics
+
 1. Default construct a `circle` with initial values `{ 0, 0, 0 }`
 2. Construct a `circle` given initial values `x`, `y`, and `radius`.
 3. Copy construct a `circle ` given a `circle`, `c`.
@@ -455,6 +460,255 @@ c.radius
 11. Move center of `c` to absolute coordinates `x` and `y`. Returns the
     moved instance of `circle`.
 12. Direct access to members `cx`, `cy`, and `radius`
+
+-------------------------------------------------------------------------------
+### Color
+
+Color is represented by `red`, `green`, `blue`, and `alpha`:
+
+```c++
+struct color
+{
+               color();
+               color(float red, float green, float blue, float alpha = 1.0f);
+
+   color       opacity(float alpha_) const;
+   color       level(float amount) const;
+
+   float       red   = 0.0f;
+   float       green = 0.0f;
+   float       blue  = 0.0f;
+   float       alpha = 0.0f;
+};
+```
+
+#### Free Functions
+
+```c++
+bool     operator==(color a, color b);
+bool     operator!=(color a, color b);
+color    rgb(std::uint32_t rgb);
+color    rgba(std::uint32_t rgba);
+color    rgb(std::uint8_t r, std::uint8_t g, std::uint8_t b);
+color    rgba(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a);
+color    hsl(float h, float sl, float l);
+```
+
+#### Expressions
+
+```c++
+// Default constructor [1].
+color{}
+
+// Constructor [2].
+color{ red, green, blue, alpha }
+
+// Copy constructor. [3]
+color{ c }
+
+// Assignment [4]
+c = c2
+
+// Equality [5]
+c == c2
+
+// Non-equality [6]
+c != c2
+
+// Opacity
+opacity(val) [7]
+
+// Linear level
+level(amount) [8]
+
+// RGB and RGBA from uint32_t [9]
+rgb(urgb);
+rgba(urgb);
+
+// RGB and RGBA from uint8_t reg, green, blue, and alpha components [10]
+rgb(ured, ugreen, ublue);
+rgba(ured, ugreen, ublue, ualpha);
+
+// RGB from HSL [11]
+hsl(h, sl, l);
+```
+
+#### Notation
+
+| `red`, `red`, `red`, `alpha`   | Scalar values.              |
+| `val`, `amount`                | Scalar values.              |
+| `c`, `c2`                      | Instance of `color`.        |
+| `urgb`                         | Instance of `std::uint32_t  |
+| `ured`, `ugreen`, `ublue`      | Instance of `std::uint8_t   |
+
+#### Semantics
+
+1. Default construct a `color` with initial values `{ 0, 0, 0, 0 }`
+2. Construct a `color` given initial values `red`, `green`, `blue`, and
+   `alpha`. The floating point values range from 0.0 to 1.0.
+3. Copy construct a `color` given a `color`, `c`.
+4. Assign `c2` to `c`.
+5. Returns `true` if a `c2` is equal `c`.
+6. Returns `true` if a `c2` is not equal to `c`.
+7. Sets the opacity (alpha) to `val`. Returns an instance of `color`.
+8. Multiplies all color components by `amount`. Returns an instance of `color`.
+9. Create an RGB or RGBA color from a `uint32_t` or the form rrggbb or
+   rrggbbaa respectively, typically with using hex literals (e.g.
+   0xffffffff).
+10. Create an RGB or RGBA color from `uint8_t` reg, green, blue, and alpha
+    components, where each component range from `0` to `255`.
+11. Create an RBB color from HSL.
+
+### Predefined Colors
+
+Namespace `cycfi::artist::colors` contains some predefined colors, including
+256 levels of grays. You normally use the colors, by hoisting the namespace
+into your own namespace:
+
+```c++
+namespace colors = cycfi::artist::colors;
+```
+
+The colors provided are from CSS: [Named Colors and Hex Equivalents](https://css-tricks.com/snippets/css/named-colors-and-hex-equivalents/)
+
+#### The colors
+
+```c++
+alice_blue,
+antique_white,
+aquamarine,
+azure,
+beige,
+bisque,
+black,
+blanched_almond,
+blue,
+blue_violet,
+brown,
+burly_wood,
+cadet_blue,
+chartreuse,
+chocolate,
+coral,
+cornflower_blue,
+corn_silk,
+cyan,
+dark_goldenrod,
+dark_green,
+dark_khaki,
+dark_olive_green,
+dark_orange,
+dark_orchid,
+dark_salmon,
+dark_sea_green,
+dark_slate_blue,
+dark_slate_gray,
+dark_turquoise,
+dark_violet,
+deep_pink,
+deep_sky_blue,
+dim_gray,
+dodger_blue,
+firebrick,
+floral_white,
+forest_green,
+gains_boro,
+ghost_white,
+gold,
+goldenrod,
+green,
+green_yellow,
+honeydew,
+hot_pink,
+indian_red,
+ivory,
+khaki,
+lavender,
+lavender_blush,
+lawn_green,
+lemon_chiffon,
+light_blue,
+light_coral,
+light_cyan,
+light_goldenrod,
+light_goldenrod_yellow,
+light_gray,
+light_pink,
+light_salmon,
+light_sea_green,
+light_sky_blue,
+light_slate_blue,
+light_slate_gray,
+light_steel_blue,
+light_yellow,
+lime_green,
+linen,
+magenta,
+maroon,
+medium_aquamarine,
+medium_blue,
+medium_forest_green,
+medium_goldenrod,
+medium_orchid,
+medium_purple,
+medium_sea_green,
+medium_slate_blue,
+medium_spring_green,
+medium_turquoise,
+medium_violet_red,
+midnight_blue,
+mint_cream,
+misty_rose,
+moccasin,
+navajo_white,
+navy,
+navy_blue,
+old_lace,
+olive_drab,
+orange,
+orange_red,
+orchid,
+pale_goldenrod,
+pale_green,
+pale_turquoise,
+pale_violet_red,
+papaya_whip,
+peach_puff,
+peru,
+pink,
+plum,
+powder_blue,
+purple,
+red,
+rosy_brown,
+royal_blue,
+saddle_brown,
+salmon,
+sandy_brown,
+sea_green,
+sea_shell,
+sienna,
+sky_blue,
+slate_blue,
+slate_gray,
+snow,
+spring_green,
+steel_blue,
+tan,
+thistle,
+tomato,
+turquoise,
+violet,
+violet_red,
+wheat,
+white,
+white_smoke,
+yellow,
+yellow_green
+
+// greys
+gray[0] ... gray[255]
+```
 
 -------------------------------------------------------------------------------
 
