@@ -418,6 +418,8 @@ namespace cycfi::artist
          rgb(252, 252, 252),
          rgb(255, 255, 255),
       };
+
+      constexpr auto grey = gray; // Synonym
    }
  }
 
