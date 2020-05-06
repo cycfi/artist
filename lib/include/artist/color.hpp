@@ -16,14 +16,14 @@ namespace cycfi::artist
    ////////////////////////////////////////////////////////////////////////////
    struct color
    {
-      constexpr color() = default;
+      constexpr         color() = default;
+      constexpr         color(
+                           float red, float green
+                         , float blue, float alpha = 1.0f
+                        );
 
-      constexpr color(float red, float green, float blue, float alpha = 1.0f)
-       : red(red), green(green), blue(blue), alpha(alpha)
-      {}
-
-      constexpr color opacity(float alpha_) const;
-      constexpr color level(float amount) const;
+      constexpr color   opacity(float alpha_) const;
+      constexpr color   level(float amount) const;
 
       float red   = 0.0f;
       float green = 0.0f;
@@ -31,9 +31,21 @@ namespace cycfi::artist
       float alpha = 0.0f;
    };
 
+   constexpr bool operator==(color const& a, color const& b);
+   constexpr bool operator!=(color const& a, color const& b);
+
    ////////////////////////////////////////////////////////////////////////////
    // Inlines
    ////////////////////////////////////////////////////////////////////////////
+   constexpr color::color(
+      float red
+    , float green
+    , float blue
+    , float alpha
+   )
+      : red(red), green(green), blue(blue), alpha(alpha)
+   {}
+
    constexpr color rgb(std::uint32_t rgb)
    {
       return {
@@ -62,7 +74,9 @@ namespace cycfi::artist
       };
    }
 
-   constexpr color rgba(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a)
+   constexpr color rgba(
+      std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a
+   )
    {
       return {
          r / 255.0f
@@ -74,11 +88,11 @@ namespace cycfi::artist
 
    // HSL to RGB (with h: 0 to 360, s and l: 0.0 to 1.0)
    // From: http://bit.ly/3daVkCb
-   constexpr color hsl(float h, float sl, float l)
+   constexpr color hsl(float h, float s, float l)
    {
       h = std::min(h, 359.99f);
       float r = l, g = l, b = l; // default to gray
-      float v = (l <= 0.5) ? (l * (1.0 + sl)) : (l + sl - l * sl);
+      float v = (l <= 0.5) ? (l * (1.0 + s)) : (l + s - l * s);
       if (v > 0)
       {
          float m = l + l - v;
@@ -133,7 +147,7 @@ namespace cycfi::artist
       return { r, g, b, 1.0f };
    }
 
-   constexpr bool operator==(color a, color b)
+   constexpr bool operator==(color const& a, color const& b)
    {
       return
          (a.alpha == b.alpha) &&
@@ -143,7 +157,7 @@ namespace cycfi::artist
          ;
    }
 
-   constexpr bool operator!=(color a, color b)
+   constexpr bool operator!=(color const& a, color const& b)
    {
       return !(a == b);
    }

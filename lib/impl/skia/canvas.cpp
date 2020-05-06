@@ -301,27 +301,27 @@ namespace cycfi::artist
       );
    }
 
-   void canvas::rect(struct rect r)
+   void canvas::add_rect(rect const& r)
    {
       _state->path().addRect({ r.left, r.top, r.right, r.bottom });
    }
 
-   void canvas::round_rect(struct rect r, float radius)
+   void canvas::add_round_rect(rect const& r, float radius)
    {
       _state->path().addRoundRect({ r.left, r.top, r.right, r.bottom }, radius, radius);
    }
 
-   void canvas::circle(struct circle c)
+   void canvas::add_circle(circle const& c)
    {
       _state->path().addCircle(c.cx, c.cy, c.radius);
    }
 
-   void canvas::path(class path const& p)
+   void canvas::add_path(path const& p)
    {
       _state->path() = *p.impl();
    }
 
-   void canvas::clear_rect(struct rect r)
+   void canvas::clear_rect(rect const& r)
    {
       _context->drawRect({ r.left, r.top, r.right, r.bottom }, _state->clear_paint());
    }
@@ -613,7 +613,7 @@ namespace cycfi::artist
       _state->text_align() |= align;
    }
 
-   void canvas::draw(image const& pic, struct rect src, struct rect dest)
+   void canvas::draw(image const& pic, rect const& src, rect const& dest)
    {
       auto draw_picture =
          [&](auto const& that)

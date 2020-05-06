@@ -12,7 +12,7 @@ auto constexpr bkd_color = rgb(44, 42, 45);
 
 void background(canvas& cnv)
 {
-   cnv.rect({ { 0, 0 }, window_size });
+   cnv.add_rect({ { 0, 0 }, window_size });
    cnv.fill_style(bkd_color);
    cnv.fill();
 }

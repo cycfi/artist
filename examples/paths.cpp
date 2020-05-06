@@ -14,19 +14,19 @@ void draw(canvas& cnv)
    auto stroke_fill =
       [&](path const& p, color fill_c, color stroke_c)
       {
-         cnv.path(p);
+         cnv.add_path(p);
          cnv.fill_color(fill_c);
          cnv.stroke_color(stroke_c);
          cnv.fill();
          cnv.line_width(5);
-         cnv.path(p);
+         cnv.add_path(p);
          cnv.stroke();
       };
 
    auto stroke =
       [&](path const& p, color stroke_c)
       {
-         cnv.path(p);
+         cnv.add_path(p);
          cnv.stroke_color(stroke_c);
          cnv.line_width(5);
          cnv.stroke();
@@ -35,7 +35,7 @@ void draw(canvas& cnv)
    auto dot =
       [&](float x, float y)
       {
-         cnv.circle(x, y, 10);
+         cnv.add_circle(x, y, 10);
          cnv.fill_color(colors::white.opacity(0.5));
          cnv.fill();
       };
