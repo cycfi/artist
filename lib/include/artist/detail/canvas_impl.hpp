@@ -82,22 +82,22 @@ namespace cycfi::artist
       arc({ x, y }, radius, start_angle, end_angle, ccw);
    }
 
-   inline void canvas::rect(float x, float y, float width, float height)
+   inline void canvas::add_rect(float x, float y, float width, float height)
    {
-      rect({ x, y, extent{ width, height } });
+      add_rect({ x, y, extent{ width, height } });
    }
 
-   inline void canvas::round_rect(
+   inline void canvas::add_round_rect(
       float x, float y,
       float width, float height,
       float radius)
    {
-      round_rect({ x, y, extent{ width, height } }, radius);
+      add_round_rect({ x, y, extent{ width, height } }, radius);
    }
 
-   inline void canvas::circle(float cx, float cy, float radius)
+   inline void canvas::add_circle(float cx, float cy, float radius)
    {
-      circle({ cx, cy, radius });
+      add_circle({ cx, cy, radius });
    }
 
    inline void canvas::clear_rect(float x, float y, float width, float height)
@@ -119,7 +119,7 @@ namespace cycfi::artist
    }
 
 #if !defined(ARTIST_SKIA)
-   inline void canvas::circle(struct circle c)
+   inline void canvas::add_circle(circle const& c)
    {
       arc(point{ c.cx, c.cy }, c.radius, 0.0, 2 * pi);
    }
@@ -150,27 +150,27 @@ namespace cycfi::artist
       color_space.push_back({ offset, color_ });
    }
 
-   inline void canvas::fill_rect(struct rect r)
+   inline void canvas::fill_rect(rect const& r)
    {
-      rect(r);
+      add_rect(r);
       fill();
    }
 
-   inline void canvas::fill_round_rect(struct rect r, float radius)
+   inline void canvas::fill_round_rect(rect const& r, float radius)
    {
-      round_rect(r, radius);
+      add_round_rect(r, radius);
       fill();
    }
 
-   inline void canvas::stroke_rect(struct rect r)
+   inline void canvas::stroke_rect(rect const& r)
    {
-      rect(r);
+      add_rect(r);
       stroke();
    }
 
-   inline void canvas::stroke_round_rect(struct rect r, float radius)
+   inline void canvas::stroke_round_rect(rect const& r, float radius)
    {
-      round_rect(r, radius);
+      add_round_rect(r, radius);
       stroke();
    }
 
@@ -214,7 +214,7 @@ namespace cycfi::artist
       global_composite_operation(mode);
    }
 
-   inline void canvas::draw(image const& pic, struct rect dest)
+   inline void canvas::draw(image const& pic, rect const& dest)
    {
       draw(pic, { 0, 0, pic.size() }, dest);
    }

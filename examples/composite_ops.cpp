@@ -54,7 +54,7 @@ void composite_draw(canvas& cnv, point p, canvas::composite_op_enum mode)
 {
    {
       auto save = cnv.new_state();
-      cnv.rect({ p.x, p.y, p.x+xsize, p.y+ysize });
+      cnv.add_rect({ p.x, p.y, p.x + xsize, p.y + ysize });
       cnv.clip();
 
       cnv.global_composite_operation(canvas::source_over);

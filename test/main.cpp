@@ -23,7 +23,7 @@ auto constexpr bkd_color = rgba(54, 52, 55, 255);
 
 void background(canvas& cnv)
 {
-   cnv.rect({ { 0, 0 }, window_size });
+   cnv.add_rect({ { 0, 0 }, window_size });
    cnv.fill_style(bkd_color);
    cnv.fill();
 }
@@ -61,7 +61,7 @@ void basics(canvas& cnv)
 {
    auto state = cnv.new_state();
 
-   cnv.rect(20, 20, 80, 40);
+   cnv.add_rect(20, 20, 80, 40);
    cnv.fill_style(colors::navy_blue);
    cnv.fill_preserve();
 
@@ -69,7 +69,7 @@ void basics(canvas& cnv)
    cnv.line_width(0.5);
    cnv.stroke();
 
-   cnv.round_rect(40, 35, 80, 45, 8);
+   cnv.add_round_rect(40, 35, 80, 45, 8);
    cnv.fill_style(colors::light_sea_green.opacity(0.5));
    cnv.fill();
 
@@ -79,7 +79,7 @@ void basics(canvas& cnv)
    cnv.stroke_style(colors::hot_pink);
    cnv.stroke();
 
-   cnv.circle(120, 80, 40);
+   cnv.add_circle(120, 80, 40);
    cnv.line_width(4);
    cnv.fill_style(colors::gold.opacity(0.5));
    cnv.stroke_style(colors::gold);
@@ -126,7 +126,7 @@ void linear_gradient(canvas& cnv)
    auto gr = canvas::linear_gradient{ x, y, x+300, y };
    rainbow(gr);
 
-   cnv.round_rect(x, y, 300, 80, 5);
+   cnv.add_round_rect(x, y, 300, 80, 5);
    cnv.fill_style(gr);
    cnv.fill();
 }
@@ -139,7 +139,7 @@ void radial_gradient(canvas& cnv)
    gr.add_color_stop(0.0, colors::red);
    gr.add_color_stop(1.0, colors::black);
 
-   cnv.circle({ center.move(15, 10), radius-10 });
+   cnv.add_circle({ center.move(15, 10), radius - 10 });
    cnv.fill_style(gr);
    cnv.fill();
 }
@@ -152,7 +152,7 @@ void stroke_gradient(canvas& cnv)
    gr.add_color_stop(0.0, colors::navy_blue);
    gr.add_color_stop(1.0, colors::maroon);
 
-   cnv.round_rect(x, y, 300, 80, 5);
+   cnv.add_round_rect(x, y, 300, 80, 5);
    cnv.line_width(8);
    cnv.stroke_style(gr);
    cnv.stroke();
@@ -559,7 +559,7 @@ void composite_draw(canvas& cnv, point p, canvas::composite_op_enum mode)
 {
    {
       auto save = cnv.new_state();
-      cnv.rect({ p.x, p.y, p.x+120, p.y+130 });
+      cnv.add_rect({ p.x, p.y, p.x + 120, p.y + 130 });
       cnv.clip();
 
       cnv.global_composite_operation(cnv.source_over);
@@ -574,7 +574,7 @@ void composite_draw(canvas& cnv, point p, canvas::composite_op_enum mode)
          offscreen_image ctx{ pm };
          canvas pm_cnv{ ctx.context() };
          pm_cnv.fill_style(colors::red);
-         pm_cnv.circle(70, 70, 30);
+         pm_cnv.add_circle(70, 70, 30);
          pm_cnv.fill();
       }
 
@@ -625,19 +625,19 @@ void paths(canvas& cnv)
    auto stroke_fill =
       [&](path const& p, color fill_c, color stroke_c)
       {
-         cnv.path(p);
+         cnv.add_path(p);
          cnv.fill_color(fill_c);
          cnv.stroke_color(stroke_c);
          cnv.fill();
          cnv.line_width(5);
-         cnv.path(p);
+         cnv.add_path(p);
          cnv.stroke();
       };
 
    auto stroke =
       [&](path const& p, color stroke_c)
       {
-         cnv.path(p);
+         cnv.add_path(p);
          cnv.stroke_color(stroke_c);
          cnv.line_width(5);
          cnv.stroke();
@@ -646,7 +646,7 @@ void paths(canvas& cnv)
    auto dot =
       [&](float x, float y)
       {
-         cnv.circle(x, y, 10);
+         cnv.add_circle(x, y, 10);
          cnv.fill_color(colors::white.opacity(0.5));
          cnv.fill();
       };
@@ -738,11 +738,11 @@ void misc(canvas& cnv)
       ctm = cnv.transform();
       compare_transform(mat, ctm);
 
-      cnv.rect(-25, -25, 50, 50);
+      cnv.add_rect(-25, -25, 50, 50);
       cnv.fill();
 
       cnv.transform(mat);
-      cnv.rect(-20, -20, 40, 40);
+      cnv.add_rect(-20, -20, 40, 40);
       cnv.fill_style(colors::red);
       cnv.fill();
    }
@@ -771,22 +771,22 @@ void misc(canvas& cnv)
       mat = mat.translate(144, 144);
       mat = mat.skew(pi/8, pi/12);
       cnv.transform(mat);
-      cnv.rect(0, 0, 72, 72);
+      cnv.add_rect(0, 0, 72, 72);
       cnv.fill_style(colors::green);
       cnv.fill();
    }
 
    {
       path p;
-      p.add(circle{ 230, 230, 50 });
-      p.add(circle{ 230, 230, 25 });
+      p.add_circle(circle{ 230, 230, 50 });
+      p.add_circle(circle{ 230, 230, 25 });
       p.fill_rule(path::fill_odd_even);
 
       CHECK(p.includes(230-50+5, 230));
       CHECK(!p.includes(230, 230));
 
       cnv.clip(p);
-      cnv.rect(0, 0, 500, 500);
+      cnv.add_rect(0, 0, 500, 500);
       cnv.fill_style(colors::navajo_white.opacity(0.5));
       cnv.fill_preserve();
 
@@ -800,8 +800,8 @@ void misc(canvas& cnv)
       offscreen_image offscr{ img };
       canvas cnv{ offscr.context() };
 
-      cnv.circle(230, 230, 50);
-      cnv.circle(230, 230, 25);
+      cnv.add_circle(230, 230, 50);
+      cnv.add_circle(230, 230, 25);
       cnv.fill_rule(path::fill_odd_even);
 
       CHECK(cnv.point_in_path(230-50+5, 230));

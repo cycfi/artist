@@ -19,7 +19,7 @@ namespace cycfi::artist
       constexpr   circle();
       constexpr   circle(float cx, float cy, float radius);
       constexpr   circle(point c, float radius);
-      constexpr   circle(rect r);
+      constexpr   circle(rect const& r);
                   circle(circle const&) = default;
       circle&     operator=(circle const&) = default;
 
@@ -52,7 +52,7 @@ namespace cycfi::artist
     : cx(c.x), cy(c.y), radius(radius)
    {}
 
-   inline constexpr circle::circle(rect r)
+   inline constexpr circle::circle(rect const& r)
     : circle(center_point(r), std::min(r.width(), r.height()))
    {}
 

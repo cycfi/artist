@@ -12,7 +12,7 @@ auto constexpr bkd_color = rgb(44, 42, 45);
 
 void background(canvas& cnv)
 {
-   cnv.rect({ { 0, 0 }, window_size });
+   cnv.add_rect({ { 0, 0 }, window_size });
    cnv.fill_style(bkd_color);
    cnv.fill();
 }
@@ -23,19 +23,19 @@ void rectangles(canvas& cnv)
    constexpr auto y = 40;
    cnv.line_width(2);
 
-   cnv.rect(x, y, 150, 100);
+   cnv.add_rect(x, y, 150, 100);
    cnv.fill_style(colors::red);
    cnv.fill();
 
-   cnv.rect(x, y, 150, 100);
+   cnv.add_rect(x, y, 150, 100);
    cnv.stroke_style(colors::navajo_white.opacity(0.5));
    cnv.stroke();
 
-   cnv.round_rect(x+30, y+30, 150, 100, 10);
+   cnv.add_round_rect(x + 30, y + 30, 150, 100, 10);
    cnv.fill_style(colors::blue.opacity(0.5));
    cnv.fill();
 
-   cnv.round_rect(x+30, y+30, 150, 100, 10);
+   cnv.add_round_rect(x + 30, y + 30, 150, 100, 10);
    cnv.stroke_style(colors::honeydew.opacity(0.5));
    cnv.stroke();
 }
@@ -52,7 +52,7 @@ void circles_and_arcs(canvas& cnv)
       auto ri = 7-i;
       auto radius = 20+(ri*5);
 
-      cnv.circle(cx, cy, radius);
+      cnv.add_circle(cx, cy, radius);
       cnv.fill_style(hsl(360/7 * i, 0.8, 0.5).opacity(0.7));
       cnv.fill();
 
@@ -219,8 +219,8 @@ void bezier(canvas& cnv)
    cnv.stroke();
 
    cnv.fill_style(colors::pink.opacity(0.8));
-   cnv.circle(cp1.x, cp1.y, 3);
-   cnv.circle(cp2.x, cp2.y, 3);
+   cnv.add_circle(cp1.x, cp1.y, 3);
+   cnv.add_circle(cp2.x, cp2.y, 3);
    cnv.fill();
 
    cnv.stroke_style(colors::white);
@@ -251,7 +251,7 @@ void quad(canvas& cnv)
    cnv.stroke();
 
    cnv.fill_style(colors::pink.opacity(0.8));
-   cnv.circle(cp.x, cp.y, 3);
+   cnv.add_circle(cp.x, cp.y, 3);
    cnv.fill();
 
    cnv.stroke_style(colors::white);
@@ -280,7 +280,7 @@ void linear_gradient(canvas& cnv)
    auto gr = canvas::linear_gradient{ x, y, x+300, y };
    rainbow(gr);
 
-   cnv.round_rect(x, y, 300, 80, 5);
+   cnv.add_round_rect(x, y, 300, 80, 5);
    cnv.fill_style(gr);
    cnv.fill();
 }
@@ -293,7 +293,7 @@ void radial_gradient(canvas& cnv)
    gr.add_color_stop(0.0, colors::red);
    gr.add_color_stop(1.0, colors::black);
 
-   cnv.circle({ center.move(15, 10), radius-10 });
+   cnv.add_circle({ center.move(15, 10), radius - 10 });
    cnv.fill_style(gr);
    cnv.fill();
 }

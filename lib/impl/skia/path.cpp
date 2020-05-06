@@ -77,17 +77,17 @@ namespace cycfi::artist
       _impl->close();
    }
 
-   void path::add(rect r)
+   void path::add_rect(rect const& r)
    {
       _impl->addRect({ r.left, r.top, r.right, r.bottom });
    }
 
-   void path::add(rect r, float radius)
+   void path::add_round_rect(rect const& r, float radius)
    {
       _impl->addRoundRect({ r.left, r.top, r.right, r.bottom }, radius, radius);
    }
 
-   void path::add(struct circle c)
+   void path::add_circle(circle const& c)
    {
       _impl->addCircle(c.cx, c.cy, c.radius);
    }

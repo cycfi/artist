@@ -79,7 +79,7 @@ namespace cycfi::artist
       void              clip(path const& p);
       bool              point_in_path(point p) const;
       bool              point_in_path(float x, float y) const;
-      struct rect       fill_extent() const;
+      rect              fill_extent() const;
 
       void              move_to(point p);
       void              line_to(point p);
@@ -89,11 +89,11 @@ namespace cycfi::artist
                            float start_angle, float end_angle,
                            bool ccw = false
                         );
-      void              rect(struct rect r);
-      void              round_rect(struct rect r, float radius);
-      void              circle(struct circle c);
-      void              path(class path const& p);
-      void              clear_rect(struct rect r);
+      void              add_rect(const rect& r);
+      void              add_round_rect(const rect& r, float radius);
+      void              add_circle(circle const& c);
+      void              add_path(path const& p);
+      void              clear_rect(rect const& r);
 
       void              quadratic_curve_to(point cp, point end);
       void              bezier_curve_to(point cp1, point cp2, point end);
@@ -110,13 +110,13 @@ namespace cycfi::artist
                            float start_angle, float end_angle,
                            bool ccw = false
                         );
-      void              rect(float x, float y, float width, float height);
-      void              round_rect(
+      void              add_rect(float x, float y, float width, float height);
+      void              add_round_rect(
                            float x, float y,
                            float width, float height,
                            float radius
                         );
-      void              circle(float cx, float cy, float radius);
+      void              add_circle(float cx, float cy, float radius);
       void              clear_rect(float x, float y, float width, float height);
 
       void              quadratic_curve_to(float cpx, float cpy, float x, float y);
@@ -265,10 +265,10 @@ namespace cycfi::artist
 
       ///////////////////////////////////////////////////////////////////////////////////
       // Rectangles
-      void              fill_rect(struct rect r);
-      void              fill_round_rect(struct rect r, float radius);
-      void              stroke_rect(struct rect r);
-      void              stroke_round_rect(struct rect r, float radius);
+      void              fill_rect(rect const& r);
+      void              fill_round_rect(rect const& r, float radius);
+      void              stroke_rect(rect const& r);
+      void              stroke_round_rect(rect const& r, float radius);
 
       void              fill_rect(float x, float y, float width, float height);
       void              fill_round_rect(float x, float y, float width, float height, float radius);
@@ -318,8 +318,8 @@ namespace cycfi::artist
       ///////////////////////////////////////////////////////////////////////////////////
       // Pixmaps
 
-      void              draw(image const& pic, struct rect src, struct rect dest);
-      void              draw(image const& pic, struct rect dest);
+      void              draw(image const& pic, rect const& src, rect const& dest);
+      void              draw(image const& pic, rect const& dest);
       void              draw(image const& pic, point pos = {0, 0 });
       void              draw(image const& pic, point pos, float scale);
       void              draw(image const& pic, float posx, float posy);

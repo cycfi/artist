@@ -17,12 +17,12 @@ void draw(canvas& cnv)
 {
    cnv.save();
    cnv.fill_style(colors::white);
-   cnv.rect({ 0, 0, window_size });
+   cnv.add_rect({ 0, 0, window_size });
    cnv.fill();
 
    cnv.fill_style(colors::black);
    cnv.shadow_style({ 4, 4 }, 6, colors::gray[30]);
-   cnv.round_rect({ 10, 10, x, y }, 10);
+   cnv.add_round_rect({ 10, 10, x, y }, 10);
    cnv.fill();
 
    x += x_incr;
