@@ -1,25 +1,15 @@
-# Canvas
+# Foundation
 
 ## Table of Contents
-* [Foundation](#foundation)
-   * [Point](#point)
-   * [Extent](#extent)
-   * [Rect](#rect)
-   * [Circle](#circle)
-   * [Color](#color)
-   * [Predefined Colors](#predefined-colors)
+* [point](#point)
+* [extent](#extent)
+* [rect](#rect)
+* [circle](#circle)
+* [color](#color)
+    * [Predefined Colors](#predefined-colors)
 
 -------------------------------------------------------------------------------
-The canvas API is a derivative of and in line with the spirit the HTML5
-canvas API, but using a slightly different syntax and naming convention
-following standard c++ style (e.g. using lower-case and underscores as word
-separators instead of camelCase).
-
--------------------------------------------------------------------------------
-## Foundation
-
--------------------------------------------------------------------------------
-### Point
+## point
 
 The point indicates position in the 2D cartesian coordinate space,
 represented by the `x` and `y` coordinates:
@@ -44,7 +34,7 @@ struct point
 };
 ```
 
-#### Expressions
+### Expressions
 
 ```c++
 // Default constructor [1].
@@ -79,13 +69,13 @@ p.x
 p.y
 ```
 
-#### Notation
+### Notation
 
 | `x`, `y`     | Scalar coordinates. |
 | `dx`, `dy`   | Relative scalar coordinates. |
 | `p`, `p2`    | Instance of `point` |
 
-#### Semantics
+### Semantics
 1. Default construct a `point` with initial values `{ 0, 0 }`
 2. Construct a `point` given initial values `x`, and `y`.
 3. Copy construct a `point ` given a `point`, `p`.
@@ -101,7 +91,7 @@ p.y
 10. Direct access to members `x` and `y`
 
 -------------------------------------------------------------------------------
-### Extent
+## extent
 
 The `extent` struct is a specialization of `point` but deletes the members
 `move`, `move_to`, and `reflect`. `extent` is intended for specifying
@@ -121,7 +111,7 @@ struct extent : point
 ```
 
 -------------------------------------------------------------------------------
-### Rect
+## rect
 
 The `rect` struct represents a 2-dimensional rectangle specified by the
 `left`, `top`, `right`, and `bottom` coordinates.
@@ -145,12 +135,12 @@ struct rect
 
    bool        is_empty() const;
    bool        includes(point p) const;
-   bool        includes(rect other) const;
+   bool        includes(rect const& other) const;
 
    float       width() const;
-   void        width(float width_);
+   void        width(float w);
    float       height() const;
-   void        height(float height_);
+   void        height(float h);
    extent      size() const;
 
    point       top_left() const;
@@ -160,7 +150,7 @@ struct rect
 
    rect        move(float dx, float dy) const;
    rect        move_to(float x, float y) const;
-   rect        inset(float x_inset = 1.0, float y_inset = 1.0) const;
+   rect        inset(float x = 1.0, float y = 1.0) const;
 
    float       left;
    float       top;
@@ -169,29 +159,29 @@ struct rect
 };
 ```
 
-#### Free Functions
+### Free Functions
 
 ```c++
-bool           is_valid(rect r);
-bool           is_same_size(rect a, rect b);
-bool           intersects(rect a, rect b);
+bool           is_valid(rect const& r);
+bool           is_same_size(rect const& a, rect const& b);
+bool           intersects(rect const& a, rect const& b);
 
-point          center_point(rect r);
-float          area(rect r);
-rect           union_(rect a, rect b);
-rect           intersection(rect a, rect b);
+point          center_point(rect const& r);
+float          area(rect const& r);
+rect           union_(rect const& a, rect const& b);
+rect           intersection(rect const& a, rect const& b);
 
 void           clear(rect& r);
-rect           center(rect r, rect encl);
-rect           center_h(rect r, rect encl);
-rect           center_v(rect r, rect encl);
-rect           align(rect r, rect encl, float x_align, float y_align);
-rect           align_h(rect r, rect encl, float x_align);
-rect           align_v(rect r, rect encl, float y_align);
-rect           clip(rect r, rect encl);
+rect           center(rect const& r, rect const& encl);
+rect           center_h(rect const& r, rect const& encl);
+rect           center_v(rect const& r, rect const& encl);
+rect           align(rect const& r, rect const& encl, float x, float y);
+rect           align_h(rect const& r, rect const& encl, float x);
+rect           align_v(rect const& r, rect const& encl, float y);
+rect           clip(rect const& r, rect const& encl);
 ```
 
-#### Expressions
+### Expressions
 
 ```c++
 // Default constructor [1].
@@ -236,8 +226,8 @@ r.width()
 r.height()
 
 // Get the width and height [14]
-r.height(width_)
-r.width(height_)
+r.height(w)
+r.width(h)
 
 // Get the size [15]
 r.size()
@@ -299,18 +289,17 @@ r.right
 r.bottom
 ```
 
-#### Notation
+### Notation
 
-| `left`, `top`, `right`, `bottom`     | Scalar coordinates.   |
-| `width_`, `height_`                  | Scalar coordinates.   |
-| `x`, `y`                             | Scalar coordinates. |
-| `dx`, `dy`                           | Relative scalar coordinates. |
-| `origin`, `top_left`, `bottom_right` | Instance of `point`.  |
-| `size`                               | Instance of `extent`. |
-| `r`, `r2`                            | Instance of `rect`. |
+| `left`, `top`, `right`, `bottom`     | Scalar coordinates.            |
+| `x`, `y`, `w`, `h`                   | Scalar coordinates.            |
+| `dx`, `dy`                           | Relative scalar coordinates.   |
+| `origin`, `top_left`, `bottom_right` | Instance of `point`.           |
+| `size`                               | Instance of `extent`.          |
+| `r`, `r2`                            | Instance of `rect`.            |
 
 
-#### Semantics
+### Semantics
 
 1. Default construct a `rect` with initial values `{ 0, 0, 0, 0 }`
 2. Construct a `rect` given initial values `left`, `top`, `right`, and `bottom`.
@@ -366,7 +355,7 @@ r.bottom
 20. Direct access to members `left`, `top`, `right`, and `bottom`
 
 -------------------------------------------------------------------------------
-### Circle
+## circle
 
 The circle is represented by a center point and radius:
 
@@ -376,7 +365,7 @@ struct circle
                circle();
                circle(float cx, float cy, float radius);
                circle(point c, float radius);
-               circle(rect r);
+               circle(rect const& r);
                circle(circle const&) = default;
    circle&     operator=(circle const&) = default;
 
@@ -395,7 +384,7 @@ struct circle
 };
 ```
 
-#### Expressions
+### Expressions
 
 ```c++
 // Default constructor [1].
@@ -437,13 +426,13 @@ c.cy
 c.radius
 ```
 
-#### Notation
+### Notation
 
 | `x`, `y`, `radius`          | Scalar coordinates.   |
 | `dx`, `dy`, `radius`        | Scalar coordinates.   |
 | `c`, `c2`                   | Instance of `circle`. |
 
-#### Semantics
+### Semantics
 
 1. Default construct a `circle` with initial values `{ 0, 0, 0 }`
 2. Construct a `circle` given initial values `x`, `y`, and `radius`.
@@ -462,7 +451,7 @@ c.radius
 12. Direct access to members `cx`, `cy`, and `radius`
 
 -------------------------------------------------------------------------------
-### Color
+## color
 
 Color is represented by `red`, `green`, `blue`, and `alpha`:
 
@@ -482,11 +471,11 @@ struct color
 };
 ```
 
-#### Free Functions
+### Free Functions
 
 ```c++
-bool     operator==(color a, color b);
-bool     operator!=(color a, color b);
+bool     operator==(color const& a, color const& b);
+bool     operator!=(color const& a, color const& b);
 color    rgb(std::uint32_t rgb);
 color    rgba(std::uint32_t rgba);
 color    rgb(std::uint8_t r, std::uint8_t g, std::uint8_t b);
@@ -494,7 +483,7 @@ color    rgba(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a);
 color    hsl(float h, float sl, float l);
 ```
 
-#### Expressions
+### Expressions
 
 ```c++
 // Default constructor [1].
@@ -533,7 +522,7 @@ rgba(ured, ugreen, ublue, ualpha);
 hsl(h, sl, l);
 ```
 
-#### Notation
+### Notation
 
 | `red`, `red`, `red`, `alpha`   | Scalar values.              |
 | `val`, `amount`                | Scalar values.              |
@@ -541,7 +530,7 @@ hsl(h, sl, l);
 | `urgb`                         | Instance of `std::uint32_t  |
 | `ured`, `ugreen`, `ublue`      | Instance of `std::uint8_t   |
 
-#### Semantics
+### Semantics
 
 1. Default construct a `color` with initial values `{ 0, 0, 0, 0 }`
 2. Construct a `color` given initial values `red`, `green`, `blue`, and
@@ -708,6 +697,7 @@ yellow_green
 
 // greys
 gray[0] ... gray[255]
+auto grey = gray; // Synonym
 ```
 
 -------------------------------------------------------------------------------
