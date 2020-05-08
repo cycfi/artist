@@ -8,6 +8,7 @@
 * [color](#color)
     * [Predefined Colors](#predefined-colors)
 * [font_descr](#font_descr)
+* [font](#font)
 
 -------------------------------------------------------------------------------
 The Foundation classes provide support for the Artist library, especially for
@@ -83,7 +84,7 @@ p.y
 ### Semantics
 1. Default construct a `point` with initial values `{ 0, 0 }`
 2. Construct a `point` given initial values `x`, and `y`.
-3. Copy construct a `point ` given a `point`, `p`.
+3. Copy construct a `point `, `p`.
 4. Assign `p2`, to `p`.
 5. Returns `true` if a `p2`, is equal to `p`.
 6. Returns `true` if `p2`, is not equal to a `p`.
@@ -312,7 +313,7 @@ r.bottom
 4. Construct a `rect` given `top_left`, `bottom_right` points.
 5. Construct a `rect` given `left`, `top`, and `size` (extent).
 6. Construct a `rect` given `origin`, and `size` (extent).
-7. Copy construct a `rect ` given a `rect`, `r`.
+7. Copy construct a `rect `, `r`.
 8. Assign `r2` to `r`.
 9. Returns `true` if a `r2` is equal `r`.
 10. Returns `true` if a `r2` is not equal to `r`.
@@ -441,7 +442,7 @@ c.radius
 
 1. Default construct a `circle` with initial values `{ 0, 0, 0 }`
 2. Construct a `circle` given initial values `x`, `y`, and `radius`.
-3. Copy construct a `circle ` given a `circle`, `c`.
+3. Copy construct a `circle`, `c`.
 4. Assign `c2` to `c`.
 5. Returns `true` if a `c2` is equal `c`.
 6. Returns `true` if a `c2` is not equal to `c`.
@@ -540,7 +541,7 @@ hsl(h, sl, l);
 1. Default construct a `color` with initial values `{ 0, 0, 0, 0 }`
 2. Construct a `color` given initial values `red`, `green`, `blue`, and
    `alpha`. The floating point values range from 0.0 to 1.0.
-3. Copy construct a `color` given a `color`, `c`.
+3. Copy construct a `color`, `c`.
 4. Assign `c2` to `c`.
 5. Returns `true` if a `c2` is equal `c`.
 6. Returns `true` if a `c2` is not equal to `c`.
@@ -711,138 +712,141 @@ auto grey = gray; // Synonym
 `font_desr` is a lightweight class that describes a font, including its
 weight (e.g. bold), slant (e.g. italic), and stretch (e.g. condensed).
 
-### Constants
-
 ```c++
-   namespace cycfi::artist::font_constants
+namespace font_constants
+{
+   enum weight_enum
    {
-      enum weight_enum
-      {
-         thin              = 10,
-         extra_light       = 20,
-         light             = 30,
-         weight_normal     = 40,
-         medium            = 50,
-         semi_bold         = 60,
-         bold              = 70,
-         extra_bold        = 80,
-         black             = 90,
-         extra_black       = 95,
-      };
-
-      enum slant_enum
-      {
-         slant_normal      = 0,
-         italic            = 90,
-         oblique           = 100
-      };
-
-      enum stretch_enum
-      {
-         ultra_condensed   = 25,
-         extra_condensed   = 31,
-         condensed         = 38,
-         semi_condensed	   = 44,
-         stretch_normal	   = 50,
-         semi_expanded	   = 57,
-         expanded          = 63,
-         extra_expanded	   = 75,
-         ultra_expanded	   = 100
-      };
-   }
-```
-
-```c++
-   struct font_descr
-   {
-      font_descr           normal() const;
-      font_descr           size(float size_) const;
-
-      font_descr           weight(font_constants::weight_enum w) const;
-      font_descr           thin() const;
-      font_descr           extra_light() const;
-      font_descr           light() const;
-      font_descr           weight_normal() const;
-      font_descr           medium() const;
-      font_descr           semi_bold() const;
-      font_descr           bold() const;
-      font_descr           extra_bold() const;
-      font_descr           black() const;
-      font_descr           extra_black() const;
-
-      font_descr           style(font_constants::slant_enum s) const;
-      font_descr           slant_normal() const;
-      font_descr           italic() const;
-      font_descr           oblique() const;
-
-      font_descr           stretch(font_constants::stretch_enum s) const;
-      font_descr           ultra_condensed() const;
-      font_descr           extra_condensed() const;
-      font_descr           condensed() const;
-      font_descr           semi_condensed() const;
-      font_descr           stretch_normal() const;
-      font_descr           semi_expanded() const;
-      font_descr           expanded() const;
-      font_descr           extra_expanded() const;
-      font_descr           ultra_expanded() const;
-
-      using slant_enum = font_constants::slant_enum;
-
-      std::string_view     _families;
-      float                _size = 12;
-      uint8_t              _weight = font_constants::weight_normal;
-      slant_enum           _slant = font_constants::slant_normal;
-      uint8_t              _stretch = font_constants::stretch_normal;
+      thin              = 10,
+      extra_light       = 20,
+      light             = 30,
+      weight_normal     = 40,
+      medium            = 50,
+      semi_bold         = 60,
+      bold              = 70,
+      extra_bold        = 80,
+      black             = 90,
+      extra_black       = 95,
    };
+
+   enum slant_enum
+   {
+      slant_normal      = 0,
+      italic            = 90,
+      oblique           = 100
+   };
+
+   enum stretch_enum
+   {
+      ultra_condensed   = 25,
+      extra_condensed   = 31,
+      condensed         = 38,
+      semi_condensed    = 44,
+      stretch_normal    = 50,
+      semi_expanded     = 57,
+      expanded          = 63,
+      extra_expanded    = 75,
+      ultra_expanded    = 100
+   };
+}
+
+struct font_descr
+{
+   font_descr           normal() const;
+   font_descr           size(float size_) const;
+
+   font_descr           weight(font_constants::weight_enum w) const;
+   font_descr           thin() const;
+   font_descr           extra_light() const;
+   font_descr           light() const;
+   font_descr           weight_normal() const;
+   font_descr           medium() const;
+   font_descr           semi_bold() const;
+   font_descr           bold() const;
+   font_descr           extra_bold() const;
+   font_descr           black() const;
+   font_descr           extra_black() const;
+
+   font_descr           style(font_constants::slant_enum s) const;
+   font_descr           slant_normal() const;
+   font_descr           italic() const;
+   font_descr           oblique() const;
+
+   font_descr           stretch(font_constants::stretch_enum s) const;
+   font_descr           ultra_condensed() const;
+   font_descr           extra_condensed() const;
+   font_descr           condensed() const;
+   font_descr           semi_condensed() const;
+   font_descr           stretch_normal() const;
+   font_descr           semi_expanded() const;
+   font_descr           expanded() const;
+   font_descr           extra_expanded() const;
+   font_descr           ultra_expanded() const;
+
+   using slant_enum = font_constants::slant_enum;
+
+   std::string_view     _families;
+   float                _size = 12;
+   uint8_t              _weight = font_constants::weight_normal;
+   slant_enum           _slant = font_constants::slant_normal;
+   uint8_t              _stretch = font_constants::stretch_normal;
+};
 ```
 
 ### Expressions
 
 ```c++
-   // Constructors [1].
-   font_descr{}
-   font_descr{ families }
-   font_descr{ families, sz }
-   font_descr{ families, sz, wt }
-   font_descr{ families, sz, wt, sl }
-   font_descr{ families, sz, wt, sl, str }
+// Constructors [1].
+font_descr{}
+font_descr{ families }
+font_descr{ families, sz }
+font_descr{ families, sz, wt }
+font_descr{ families, sz, wt, sl }
+font_descr{ families, sz, wt, sl, str }
 
-   // Normal [2]
-   f.normal()
+// Normal [2]
+f.normal()
 
-   // Sized [3]
-   f.size(size)
+// Sized [3]
+f.size(size)
 
-   // Weight [4]
-   f.weight(wt)
-   f.thin()
-   f.extra_light()
-   f.light()
-   f.weight_normal()
-   f.medium()
-   f.semi_bold()
-   f.bold()
-   f.extra_bold()
-   f.black()
-   f.extra_black()
+// Weight [4]
+f.weight(wt)
+f.thin()
+f.extra_light()
+f.light()
+f.weight_normal()
+f.medium()
+f.semi_bold()
+f.bold()
+f.extra_bold()
+f.black()
+f.extra_black()
 
-   // Slant [5]
-   f.style(sl)
-   f.slant_normal()
-   f.italic()
-   f.oblique()
+// Slant [5]
+f.style(sl)
+f.slant_normal()
+f.italic()
+f.oblique()
 
-   // Stretch [6]
-   f.stretch(str)
-   f.ultra_condensed()
-   f.extra_condensed()
-   f.condensed()
-   f.semi_condensed()
-   f.stretch_normal()
-   f.semi_expanded()
-   f.expanded()
-   f.extra_expanded()
-   f.ultra_expanded()
+// Stretch [6]
+f.stretch(str)
+f.ultra_condensed()
+f.extra_condensed()
+f.condensed()
+f.semi_condensed()
+f.stretch_normal()
+f.semi_expanded()
+f.expanded()
+f.extra_expanded()
+f.ultra_expanded()
+
+// Member access [7]
+f._families
+f._size
+f._weight
+f._slant
+f._stretch
 ```
 
 ### Notation
@@ -871,12 +875,95 @@ weight (e.g. bold), slant (e.g. italic), and stretch (e.g. condensed).
    instance of `font_descr`.
 6. Returns a copy of the `font_desr`, `f`, with the given font stretch.
    Returns instance of `font_descr`.
+7. Direct access to members.
 
 > :point_right: The syntax allows for concatenation. For example:
 > ```c++
->     font_descr{ "Open Sans", 14 }.bold().italic()
+> font_descr{ "Open Sans", 14 }.bold().italic()
 > ```
 
+-------------------------------------------------------------------------------
+## font
+
+The font loads a system or application font given a font descriptor.
+
+```c++
+class font
+{
+public:
+                        font();
+                        font(font_descr descr);
+                        font(font const& rhs);
+                        font(font&& rhs) noexcept;
+                        ~font();
+
+   font&                operator=(font const& rhs);
+   font&                operator=(font&& rhs) noexcept;
+   explicit             operator bool() const;
+   font_impl_ptr        impl() const;
+
+   struct metrics_info
+   {
+      float             ascent;
+      float             descent;
+      float             leading;
+   };
+
+   metrics_info         metrics() const;
+   float                line_height() const;
+   float                measure_text(std::string_view str) const;
+};
+```
+
+### Expressions
+
+```c++
+// Default constructor [1].
+font{}
+
+// Constructor [2].
+font{ fd }
+
+// Copy constructor. [3]
+font{ f }
+
+// Assignment [4]
+f = f2
+
+// Validity Check [5]
+bool(f)
+
+// Access to font handle [6]
+f.impl()
+
+// Font metrics [7]
+f.metrics()
+f.line_height()
+
+// Measuring text [8]
+f.measure_text(str)
+```
+
+### Notation
+
+| `fd`         | Instance of `font_descr`       |
+| `f`          | Instance of `font`             |
+| `str`        | Instance of `std::string_view` |
+
+### Semantics
+1. Default construct a `font`. The default constructed font is invalid.
+2. Construct a `point` given a font descriptor `font_descr`, `fd`.
+3. Copy construct a `font`, `f`.
+4. Assign `f2`, to `f`.
+5. Check if a `f` is valid. Returns `true` if `f` is valid.
+6. Get the backend-specific font handle.
+7. Get the font metrics (`ascent`, `descent`, `leading` and the
+   `line_height`).
+    - `f.metrics()` returns an instance of `font::metrics_info`.
+    - `f.line_height()` returns a scalar value.
+8. Measure the length the given string, `str`, will occupy when drawn using
+   the font `f`. This does not take into account the `canvas`' transformation
+   matrix. Returns a scalar value.
 
 -------------------------------------------------------------------------------
 
