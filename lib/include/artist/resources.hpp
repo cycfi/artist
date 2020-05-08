@@ -24,13 +24,10 @@ namespace cycfi::artist
    // path if file is not found.
    fs::path find_file(fs::path const& file);
 
-   // Get the application data path
-   fs::path app_data_path();
-
-   // init_paths is called only one time. Implementations provide their own
-   // init_paths function. It's main purpose is to set the initial paths.
-   // This is called solely by library. The client should not call this
-   // function.
+   // init_paths is called only one time. Platform specific implementations
+   // provide their own init_paths function. It's main purpose is to set the
+   // initial paths. This is called solely by library. The client should not
+   // call this function.
    extern void init_paths();
 }
 
