@@ -137,15 +137,73 @@ p == p2
 
 // Non-equality [6]
 p != p2
+
+// Check for empty path [7]
+p.empty()
+
+// Check for inclusion [8]
+p.includes(pt)
+p.includes(x, y)
+
+// Get the path bounds [9]
+p.bounds()
+
+// Close path [10]
+p.close()
+
+// Add rectangle [11]
+p.add_rect(r)
+p.add_rect(x, y, width height)
+
+// Add rounded rectangle [12]
+p.add_round_rect(r, radius)
+p.add_round_rect(x, y, width height, radius)
+
+// Add circle [13]
+p.add_circle(c)
+p.add_circle(cx, cy, radius)
+
+// Move current point [14]
+p.move_to(pt)
+p.move_to(x, y)
+
+// Add an arc [15]
+p.arc_to(pt1, pt2, radius)
+p.arc_to(x1, y1, x2, y2, radius)
+
+// Add an arc [16]
+p.arc(pt, radius, start_angle, end_angle, ccw)
+p.arc(pt, radius, start_angle, end_angle)
+p.arc(x, y, radius, start_angle, end_angle, ccw)
+p.arc(x, y, radius, start_angle, end_angle)
+
+// Add a quadratic Bézier curve [17]
+p.quadratic_curve_to(cp, end)
+p.quadratic_curve_to(cpx, cpy, x, y)
+
+// Add a cubic Bézier curve [18]
+p.bezier_curve_to(cp1, cp2, end)
+p.bezier_curve_to(cp1x, cp1y, cp2x, cp2y, x, y)
+
+// Set the fill-rule [19]
+p.fill_rule(fr)
+
 ```
 
 ### Notation
 
-| `r`          | Instance of `rect`. |
-| `radius`     | Scalar value. |
-| `c`          | Instance of `circle`. |
-| `svg_def`    | Instance of `std::string_view`. |
-| `p`, `p2`    | Instance of `path` |
+| `r`                               | Instance of `rect`.                  |
+| `pt`, `pt1`, `pt2`                | Instance of `point`.                 |
+| `cp`, `cp1`, `cp2`, `end`         | Instance of `point`.                 |
+| `x`, `y`, `width`, `height`       | Scalar values.                       |
+| `radius`, `x1`, `y1`, `x2`, `y2`  | Scalar values.                       |
+| `cpx`, `cpy`                      | Scalar values.                       |
+| `start_angle`, `end_angle`        | Scalar values.                       |
+| `ccw`                             | A Boolean value.                     |
+| `c`                               | Instance of `circle`.                |
+| `svg_def`                         | Instance of `std::string_view`.      |
+| `p`, `p2`                         | Instance of `path`                   |
+| `fr`                              | Instance of `path::fill_rule_enum`   |
 
 ### Semantics
 1. Default construct a `path`.
@@ -160,6 +218,30 @@ p != p2
 4. Assign `p2`, to `p`.
 5. Returns `true` if a `p2`, is equal to `p`.
 6. Returns `true` if `p2`, is not equal to a `p`.
+7. Returns `true` if `p` is empty.
+8. Returns `true` if point `pt` (or `x, y`) is inside `p`.
+9. Get the smallest rectangle that encapsulates the path, `p`.
+10. Close the current shape.
+11. Add rectangle, `r` (or `x, y, width height`), to the current path.
+12. Add rounded rectangle, `r, radius` (or `x, y, width, height, radius``) to
+    the current path.
+13. Add circle, `c` (or `cx, cy, radius`) to the current path.
+14. Move the current point to `pt` (or `x, y`).
+15. Add an arc, to the current path, between two tangents `pt1` and `pt2` (or
+    `x1, y1, x2, y2`) with the given `radius`.
+16. Add an arc, to the current path, given a center point, `pt` (or `x, y`),
+    `start_angle` (in radians) and an `end_angle` and a `bool` flag, `ccw`,
+    that specifies whether counterclockwise (flag is `false`) or clockwise
+    (flag is 'true`). The default is `false` (clockwise).
+17. Add a quadratic Bézier curve to the current path using the specified
+    control point, `cp` (or `cpx, cpy`) and ending point`end` (or `x, y`).
+    The starting point for the curve is the current point.
+18. Add a cubic Bézier curve to the current path using the specified control
+    points `cp1` and `cp2` (or `cp1x, cp1y` and `cp2x, cp2y`) and ending
+    point`end` (or `x, y`). The starting point for the curve is the current
+    point.
+19. Set the path's fill rule to `fr` (which can be `path::fill_winding` or
+    `path::fill_odd_even`).
 
 -------------------------------------------------------------------------------
 
