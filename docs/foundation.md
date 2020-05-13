@@ -21,6 +21,8 @@ the `canvas` class.
 The point indicates position in the 2D cartesian coordinate space,
 represented by the `x` and `y` coordinates:
 
+### Declaration
+
 ```c++
 struct point
 {
@@ -43,6 +45,14 @@ struct point
 
 ### Expressions
 
+#### Notation
+
+| `x`, `y`     | Scalar coordinates. |
+| `dx`, `dy`   | Relative scalar coordinates. |
+| `p`, `p2`    | Instance of `point` |
+
+#### Constructors and assignment
+
 ```c++
 // Default constructor [1].
 point{}
@@ -55,47 +65,66 @@ point{ p }
 
 // Assignment [4]
 p = p2
-
-// Equality [5]
-p == p2
-
-// Non-equality [6]
-p != p2
-
-// Move [7]
-p.move(dx, dy)
-
-// Move To [8]
-p.move_to(x, y)
-
-// Reflect [9]
-p.reflect(p2)
-
-// Member access [10]
-p.x
-p.y
 ```
 
-### Notation
-
-| `x`, `y`     | Scalar coordinates. |
-| `dx`, `dy`   | Relative scalar coordinates. |
-| `p`, `p2`    | Instance of `point` |
-
-### Semantics
+#### Semantics
 1. Default construct a `point` with initial values `{ 0, 0 }`
 2. Construct a `point` given initial values `x`, and `y`.
 3. Copy construct a `point `, `p`.
 4. Assign `p2`, to `p`.
-5. Returns `true` if a `p2`, is equal to `p`.
-6. Returns `true` if `p2`, is not equal to a `p`.
-7. Move `p` `dx` and `dy` distance relative to `p`. Returns the moved
+
+#### Equality
+
+```c++
+// Equality [1]
+p == p2
+
+// Non-equality [2]
+p != p2
+```
+
+#### Semantics
+1. Returns `true` if a `p2`, is equal to `p`.
+2. Returns `true` if `p2`, is not equal to a `p`.
+
+#### Move
+
+```c++
+// Move [1]
+p.move(dx, dy)
+
+// Move To [2]
+p.move_to(x, y)
+```
+
+#### Semantics
+
+1. Move `p` `dx` and `dy` distance relative to `p`. Returns the moved
    instance of `point`.
-8. Move `p` to absolute coordinates `x` and `y`. Returns the moved instance
+2. Move `p` to absolute coordinates `x` and `y`. Returns the moved instance
    of `point`.
-9. Reflect a `point`, `p`, at 180 degree rotation of point, `p2`. Returns the
+
+#### Reflect
+
+```c++
+p.reflect(p2)
+```
+
+#### Semantics
+
+1. Reflect a `point`, `p`, at 180 degree rotation of point, `p2`. Returns the
    reflected instance of `point`.
-10. Direct access to members `x` and `y`
+
+#### Member access
+
+```c++
+p.x
+p.y
+```
+
+#### Semantics
+
+1. Direct access to members `x` and `y`
 
 -------------------------------------------------------------------------------
 ## extent
@@ -103,6 +132,8 @@ p.y
 The `extent` struct is a specialization of `point` but deletes the members
 `move`, `move_to`, and `reflect`. `extent` is intended for specifying
 2-dimensional sizes.
+
+### Declaration
 
 ```c++
 struct extent : point
@@ -117,11 +148,12 @@ struct extent : point
 };
 ```
 
--------------------------------------------------------------------------------
 ## rect
 
 The `rect` struct represents a 2-dimensional rectangle specified by the
 `left`, `top`, `right`, and `bottom` coordinates.
+
+### Declaration
 
 ```c++
 struct rect
@@ -178,7 +210,6 @@ float          area(rect const& r);
 rect           union_(rect const& a, rect const& b);
 rect           intersection(rect const& a, rect const& b);
 
-void           clear(rect& r);
 rect           center(rect const& r, rect const& encl);
 rect           center_h(rect const& r, rect const& encl);
 rect           center_v(rect const& r, rect const& encl);
@@ -189,6 +220,17 @@ rect           clip(rect const& r, rect const& encl);
 ```
 
 ### Expressions
+
+#### Notation
+
+| `left`, `top`, `right`, `bottom`     | Scalar coordinates.            |
+| `x`, `y`, `w`, `h`                   | Scalar coordinates.            |
+| `dx`, `dy`                           | Relative scalar coordinates.   |
+| `origin`, `top_left`, `bottom_right` | Instance of `point`.           |
+| `size`                               | Instance of `extent`.          |
+| `r`, `r2`                            | Instance of `rect`.            |
+
+#### Constructors and assignment
 
 ```c++
 // Default constructor [1].
@@ -214,99 +256,9 @@ rect{ r }
 
 // Assignment [8]
 r = r2
-
-// Equality [9]
-r == r2
-
-// Non-equality [10]
-r != r2
-
-// Check for empty rectangle [11]
-r.empty()
-
-// Check for inclusion [12]
-r.includes(p)
-r.includes(r2)
-
-// Get the width and height [13]
-r.width()
-r.height()
-
-// Get the width and height [14]
-r.height(w)
-r.width(h)
-
-// Get the size [15]
-r.size()
-
-// Get the rectangle corners [16]
-r.top_left()
-r.bottom_right()
-r.top_right()
-r.bottom_left()
-
-// Move [17]
-r.move(dx, dy)
-
-// Move To [18]
-r.move_to(x, y)
-
-// Inset [19]
-r.inset(x, y)
-r.inset(xy)
-
-// Check for validity [20]
-is_valid(r)
-
-// Check for size equality [21]
-is_same_size(r, r2)
-
-// Check for intersection [22]
-intersects(r, r2)
-
-// Compute the center point [23]
-center_point(r)
-
-// Compute the area [24]
-area(r)
-
-// Compute the union of two rectangles [25]
-union_(r, r2)
-
-// Compute the intersection of two rectangles [26]
-intersection(r, r2)
-
-// Clear a rectangle [27]
-clear(r)
-
-// Center a rectangle [28]
-center(r, r2)
-center_h(r, r2)
-center_v(r, r2)
-
-// Align a rectangle [29]
-align(r, r2, x, y)
-align_h(r, r2, x)
-align_v(r, r2, y)
-
-// Member access [10]
-r.left
-r.top
-r.right
-r.bottom
 ```
 
-### Notation
-
-| `left`, `top`, `right`, `bottom`     | Scalar coordinates.            |
-| `x`, `y`, `w`, `h`                   | Scalar coordinates.            |
-| `dx`, `dy`                           | Relative scalar coordinates.   |
-| `origin`, `top_left`, `bottom_right` | Instance of `point`.           |
-| `size`                               | Instance of `extent`.          |
-| `r`, `r2`                            | Instance of `rect`.            |
-
-
-### Semantics
+#### Semantics
 
 1. Default construct a `rect` with initial values `{ 0, 0, 0, 0 }`
 2. Construct a `rect` given initial values `left`, `top`, `right`, and `bottom`.
@@ -316,41 +268,145 @@ r.bottom
 6. Construct a `rect` given `origin`, and `size` (extent).
 7. Copy construct a `rect `, `r`.
 8. Assign `r2` to `r`.
-9. Returns `true` if a `r2` is equal `r`.
-10. Returns `true` if a `r2` is not equal to `r`.
-11. Returns `true` if `r` is empty. Equivalent to `r.size() == extent{ 0, 0 }`.
-12. Inclusion:
+
+#### Equality
+
+```c++
+// Equality [1]
+r == r2
+
+// Non-equality [2]
+r != r2
+```
+
+#### Semantics
+
+1. Returns `true` if a `r2` is equal `r`.
+2. Returns `true` if a `r2` is not equal to `r`.
+
+#### Query
+
+```c++
+// Check for empty rectangle [1]
+r.empty()
+
+// Check for inclusion [2]
+r.includes(p)
+r.includes(r2)
+
+// Get the width and height [3]
+r.width()
+r.height()
+
+// Get the size [4]
+r.size()
+
+// Get the rectangle corners [5]
+r.top_left()
+r.bottom_right()
+r.top_right()
+r.bottom_left()
+```
+
+#### Semantics
+
+1. Returns `true` if `r` is empty. Equivalent to `r.size() == extent{ 0, 0 }`.
+2. Inclusion:
     1. Returns true if `p` is inside `r`.
     2. Returns true if `r2` is completely inside `r`.
-13. Returns the width and height of the `r`. Returns a scalar value.
-14. Sets the width and height of `r` to `width_` and `height_`, respectively.
-15. Get the size of `r`. Returns an instance of `extent`.
-16. Get the top-left, bottom-right, top-right, and bottom-left corners or
+3. Returns the width and height of the `r`. Returns a scalar value.
+4. Get the size of `r`. Returns an instance of `extent`.
+5. Get the top-left, bottom-right, top-right, and bottom-left corners or
     rectangle, `r`. Returns an instance of `point`.
-17. Move origin of `r` by `dx` and `dy` distance. Returns the moved instance
+
+#### Mutation
+
+```c++
+// Set the width and height [1]
+r.height(w)
+r.width(h)
+
+// Move [2]
+r.move(dx, dy)
+
+// Move To [3]
+r.move_to(x, y)
+
+// Inset [4]
+r.inset(x, y)
+r.inset(xy)
+```
+#### Semantics
+
+1. Sets the width and height of `r` to `2` and `h`, respectively.
+2. Move origin of `r` by `dx` and `dy` distance. Returns the moved instance
     of `rect`.
-18. Move origin of `r` to absolute coordinates `x` and `y`. Returns the moved
+3. Move origin of `r` to absolute coordinates `x` and `y`. Returns the moved
     instance of `rect`.
-19. Inset `r` by `x` and `y` (in each dimension), or by `xy` (in both x and y
+4. Inset `r` by `x` and `y` (in each dimension), or by `xy` (in both x and y
     dimensions). The rect `r` is shrunk if `x`, `y` or `xy` are positive,
     otherwise, expanded if negative.
-20. Return `true` if `r` is a valid rectangle (left <= right && top <=
+
+#### Free Query Functions
+
+```c++
+// Check for validity [1]
+is_valid(r)
+
+// Check for size equality [2]
+is_same_size(r, r2)
+
+// Check for intersection [3]
+intersects(r, r2)
+
+// Compute the center point [4]
+center_point(r)
+
+// Compute the area [5]
+area(r)
+
+// Compute the union of two rectangles [6]
+union_(r, r2)
+
+// Compute the intersection of two rectangles [7]
+intersection(r, r2)
+```
+
+#### Semantics
+
+1. Return `true` if `r` is a valid rectangle (left <= right && top <=
     bottom).
-21. Return `true` if `r` and `r2` have the same size. Equivalent to `r.size()
+2. Return `true` if `r` and `r2` have the same size. Equivalent to `r.size()
     == r2.size()`.
-22. Return `true` if `r` intersects with `r2`.
-23. Returns the center point of `r`. returns an instance of `point`.
-24. Returns the area of `r`. Equivalent to `r.width() * r.height()`. Returns
+3. Return `true` if `r` intersects with `r2`.
+4. Returns the center point of `r`. returns an instance of `point`.
+5. Returns the area of `r`. Equivalent to `r.width() * r.height()`. Returns
     a scalar value.
-25. Compute the union of two rectangles. Returns an instance of `rect`.
-26. Compute the intersection of two rectangles. Returns an instance of
+6. Compute the union of two rectangles. Returns an instance of `rect`.
+7. Compute the intersection of two rectangles. Returns an instance of
     `rect`.
-27. Clear `r`. Equivalent to r = rect{};
-28. Center `r` in `r2`. Returns an instance of `rect`.
+
+#### Functional
+
+```c++
+// Center a rectangle [1]
+center(r, r2)
+center_h(r, r2)
+center_v(r, r2)
+
+// Align a rectangle [2]
+align(r, r2, x, y)
+align_h(r, r2, x)
+align_v(r, r2, y)
+```
+
+### Semantics
+
+1. Center `r` in `r2`. Returns an instance of `rect`.
     1. `center`: In both dimensions
     2. `center_h`: Horizontally
     3. `center_v`: Vertically
-29. Align `r` in `r2`. Given scalar `x` and `y` values, 0.0 aligns `r` to the
+2. Align `r` in `r2`. Given scalar `x` and `y` values, 0.0 aligns `r` to the
     left or top, 1.0 aligns `r` to the right or bottom, 0.5 aligns `r` center
     or middle. Returns an instance of `rect`.
     1. `align`: In both dimensions by `x` and `y`, where `x` and `y` are
@@ -359,7 +415,20 @@ r.bottom
        0.0 to 1.0.
     3. `align_v`: Vertically by `y`, where `y` is a fractional value from 0.0
        to 1.0.
-20. Direct access to members `left`, `top`, `right`, and `bottom`
+
+#### Member Access
+
+```c++
+// Member access [1]
+r.left
+r.top
+r.right
+r.bottom
+```
+
+#### Semantic
+
+1. Direct access to members `left`, `top`, `right`, and `bottom`
 
 -------------------------------------------------------------------------------
 ## circle
