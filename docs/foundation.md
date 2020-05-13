@@ -87,7 +87,7 @@ p != p2
 1. Returns `true` if a `p2`, is equal to `p`.
 2. Returns `true` if `p2`, is not equal to a `p`.
 
-#### Move
+#### Transformation
 
 ```c++
 // Move [1]
@@ -95,25 +95,19 @@ p.move(dx, dy)
 
 // Move To [2]
 p.move_to(x, y)
-```
 
-#### Semantics
-
-1. Move `p` `dx` and `dy` distance relative to `p`. Returns the moved
-   instance of `point`.
-2. Move `p` to absolute coordinates `x` and `y`. Returns the moved instance
-   of `point`.
-
-#### Reflect
-
-```c++
+// Reflection [3]
 p.reflect(p2)
 ```
 
 #### Semantics
 
-1. Reflect a `point`, `p`, at 180 degree rotation of point, `p2`. Returns the
-   reflected instance of `point`.
+1. Move `p` `dx` and `dy` distance relative to `p`. Non-mutating. Returns the
+   moved instance of `point`.
+2. Move `p` to absolute coordinates `x` and `y`. Non-mutating. Returns the
+   moved instance of `point`.
+3. Reflect a `point`, `p`, at 180 degree rotation of point, `point`.
+   Non-mutating. Returns the reflected instance of `point`.
 
 #### Member access
 
@@ -124,7 +118,7 @@ p.y
 
 #### Semantics
 
-1. Direct access to members `x` and `y`
+1. Direct access to members `x` and `y`.
 
 -------------------------------------------------------------------------------
 ## extent
@@ -216,7 +210,6 @@ rect           center_v(rect const& r, rect const& encl);
 rect           align(rect const& r, rect const& encl, float x, float y);
 rect           align_h(rect const& r, rect const& encl, float x);
 rect           align_v(rect const& r, rect const& encl, float y);
-rect           clip(rect const& r, rect const& encl);
 ```
 
 ### Expressions
@@ -325,27 +318,34 @@ r.bottom_left()
 // Set the width and height [1]
 r.height(w)
 r.width(h)
+```
+#### Semantics
 
-// Move [2]
+1. Sets the width and height of `r` to `w` and `h`, respectively.
+
+#### Transformation
+
+```c++
+// Move [1]
 r.move(dx, dy)
 
-// Move To [3]
+// Move To [2]
 r.move_to(x, y)
 
-// Inset [4]
+// Inset [3]
 r.inset(x, y)
 r.inset(xy)
 ```
 #### Semantics
 
-1. Sets the width and height of `r` to `2` and `h`, respectively.
-2. Move origin of `r` by `dx` and `dy` distance. Returns the moved instance
-    of `rect`.
-3. Move origin of `r` to absolute coordinates `x` and `y`. Returns the moved
-    instance of `rect`.
-4. Inset `r` by `x` and `y` (in each dimension), or by `xy` (in both x and y
+1. Move origin of `r` by `dx` and `dy` distance. Non-mutating. Returns the
+    moved instance of `rect`.
+2. Move origin of `r` to absolute coordinates `x` and `y`. Non-mutating.
+    Returns the moved instance of `rect`.
+3. Inset `r` by `x` and `y` (in each dimension), or by `xy` (in both x and y
     dimensions). The rect `r` is shrunk if `x`, `y` or `xy` are positive,
-    otherwise, expanded if negative.
+    otherwise, expanded if negative. Non-mutating. Returns the inset instance
+    of `rect`.
 
 #### Free Query Functions
 
@@ -386,7 +386,7 @@ intersection(r, r2)
 7. Compute the intersection of two rectangles. Returns an instance of
     `rect`.
 
-#### Functional
+#### Free Transformation Functions
 
 ```c++
 // Center a rectangle [1]
