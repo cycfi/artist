@@ -84,8 +84,8 @@ p != p2
 ```
 
 #### Semantics
-1. Returns `true` if a `p2`, is equal to `p`.
-2. Returns `true` if `p2`, is not equal to a `p`.
+1. Returns `true` if `p2`, is equal to `p`.
+2. Returns `true` if `p2`, is not equal to `p`.
 
 #### Transformation
 
