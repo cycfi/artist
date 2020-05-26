@@ -16,10 +16,10 @@ graphics.
 
 ## Documentation
 
-1. [Gallery](gallery)
-2. [Setup and Installation](setup)
-3. [Backends](backends)
-3. [Foundation](foundation)
+1. [Gallery](http://cycfi.github.io/artist/gallery)
+2. [Setup and Installation](http://cycfi.github.io/artist/setup)
+3. [Backends](http://cycfi.github.io/artist/backends)
+3. [Foundation](http://cycfi.github.io/artist/foundation)
 
 ## <a name="jdeguzman"></a>About the Author
 
