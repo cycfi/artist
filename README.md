@@ -27,6 +27,8 @@ graphics.
 
 ## Documentation
 
+Documentation is work in progress. Stay tuned...
+
 1. [Gallery](http://cycfi.github.io/artist/gallery)
 2. [Setup and Installation](http://cycfi.github.io/artist/setup)
 3. [Backends](http://cycfi.github.io/artist/backends)
