@@ -16,20 +16,9 @@ dealing with text layout and mechanisms for text editing, fonts and font
 management, path creation and manipulation, and image capture and offscreen
 graphics.
 
-Artist is designed with these requirements in mind:
-
-1. It should be open source with a liberal, non-viral license.
-2. It should be very easy to build and incorporate in a target application,
-   plugin, or library.
-3. It should be ready for HDPI displays.
-4. It should have a very lean and easy to use API, using modern C++, with
-   standardized behavior across multiple platforms and graphics backend.
-5. It should aim for high performance for smooth user-interaction in GUIs.
-6. It should leverage modern graphic elements such as transparencies and path
-   effects such as shadows and glows.
-
 ## News
 
+* 13 May 2020: Foundation docs
 * 20 March 2020: Initial port for Quartz-2D
 * 31 March 2020: Initial port for Skia (MacOS)
 * 5 April 2020: Ported to Win32 (SKia)
@@ -38,17 +27,12 @@ Artist is designed with these requirements in mind:
 
 ## Documentation
 
-Follow this link for the documentation: [The Artist 2D Canvas Library](https://cycfi.github.io/artist).
+Documentation is work in progress. Stay tuned...
 
-## Gallery
-
-Follow this link for more screenshots: [Gallery](https://cycfi.github.io/artist/gallery).
-
-## Setup and Installation
-
-The Artist 2D Canvas Library is cross-platform. Artist currently supports the
-MacOS, Windows and Linux. Follow the [Setup and Installation
-guide](http://cycfi.github.io/artist/setup) to get started using the library.
+1. [Gallery](http://cycfi.github.io/artist/gallery)
+2. [Setup and Installation](http://cycfi.github.io/artist/setup)
+3. [Backends](http://cycfi.github.io/artist/backends)
+3. [Foundation](http://cycfi.github.io/artist/foundation)
 
 ## <a name="jdeguzman"></a>About the Author
 

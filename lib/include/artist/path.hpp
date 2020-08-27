@@ -28,9 +28,9 @@ namespace cycfi::artist
                         path();
                         ~path();
 
-                        path(rect r);
-                        path(rect r, float radius);
-                        path(circle c);
+                        path(rect const& r);
+                        path(rect const& r, float radius);
+                        path(circle const& c);
                         path(std::string_view svg_def);
                         path(path const& rhs);
                         path(path&& rhs);
@@ -47,9 +47,17 @@ namespace cycfi::artist
 
       void              close();
 
-      void              add(rect r);
-      void              add(rect r, float radius);
-      void              add(circle c);
+      void              add_rect(rect const& r);
+      void              add_round_rect(rect const& r, float radius);
+      void              add_circle(circle const& c);
+
+      void              add_rect(float x, float y, float width, float height);
+      void              add_round_rect(
+                           float x, float y,
+                           float width, float height,
+                           float radius
+                        );
+      void              add_circle(float cx, float cy, float radius);
 
       void              move_to(point p);
       void              line_to(point p);
@@ -110,22 +118,22 @@ namespace cycfi::artist
    ////////////////////////////////////////////////////////////////////////////
    // Inlines
    ////////////////////////////////////////////////////////////////////////////
-   inline path::path(rect r)
+   inline path::path(rect const& r)
     : path()
    {
-      add(r);
+      add_rect(r);
    }
 
-   inline path::path(rect r, float radius)
+   inline path::path(rect const& r, float radius)
     : path()
    {
-      add(r, radius);
+      add_round_rect(r, radius);
    }
 
-   inline path::path(circle c)
+   inline path::path(circle const& c)
     : path()
    {
-      add(c);
+      add_circle(c);
    }
 
    inline bool path::operator!=(path const& rhs) const
@@ -136,6 +144,25 @@ namespace cycfi::artist
    inline bool path::includes(float x, float y) const
    {
       return includes({ x, y });
+   }
+
+   inline void path::add_rect(float x, float y, float width, float height)
+   {
+      add_rect({ x, y, extent{ width, height } });
+   }
+
+   inline void path::add_round_rect(
+      float x, float y
+    , float width, float height
+    , float radius
+   )
+   {
+      add_round_rect({ x, y, extent{ width, height } }, radius);
+   }
+
+   inline void path::add_circle(float cx, float cy, float radius)
+   {
+      add_circle({ cx, cy, radius });
    }
 
    inline void path::move_to(float x, float y)
@@ -178,7 +205,7 @@ namespace cycfi::artist
    }
 
 #if !defined(ARTIST_SKIA) && !defined(ARTIST_CAIRO)
-   inline void path::add(circle c)
+   inline void path::add_circle(circle const& c)
    {
       arc(point{ c.cx, c.cy }, c.radius, 0.0, 2 * pi);
    }
@@ -201,7 +228,6 @@ namespace cycfi::artist
    }
 #endif
 }
-
 
 // The following may seem like crazy code! It is a workaround over MSVC
 // producing bad code if this is defined in the cpp file that causes a really

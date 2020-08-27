@@ -30,7 +30,7 @@ namespace cycfi::artist
                          : rect(origin.x, origin.y, origin.x + size.x, origin.y + size.y)
                         {}
 
-      constexpr         rect(rect const &) = default;
+      constexpr         rect(rect const&) = default;
       constexpr rect&   operator=(rect const&) = default;
 
       constexpr bool    operator==(rect const& other) const;
@@ -38,7 +38,7 @@ namespace cycfi::artist
 
       constexpr bool    is_empty() const;
       constexpr bool    includes(point p) const;
-      constexpr bool    includes(rect other) const;
+      constexpr bool    includes(rect const& other) const;
 
       constexpr float   width() const;
       constexpr void    width(float width_);
@@ -53,7 +53,8 @@ namespace cycfi::artist
 
       constexpr rect    move(float dx, float dy) const;
       constexpr rect    move_to(float x, float y) const;
-      constexpr rect    inset(float x_inset = 1.0, float y_inset = 1.0) const;
+      constexpr rect    inset(float x_inset, float y_inset) const;
+      constexpr rect    inset(float xy_inset) const;
 
       float             left;
       float             top;
@@ -64,23 +65,22 @@ namespace cycfi::artist
    ////////////////////////////////////////////////////////////////////////////
    // Free Functions
    ////////////////////////////////////////////////////////////////////////////
-   constexpr bool       is_valid(rect r);
-   constexpr bool       is_same_size(rect a, rect b);
-   bool                 intersects(rect a, rect b);
+   constexpr bool       is_valid(rect const& r);
+   constexpr bool       is_same_size(rect const& a, rect const& b);
+   bool                 intersects(rect const& a, rect const& b);
 
-   constexpr point      center_point(rect r);
-   constexpr float      area(rect r);
-   rect                 max(rect a, rect b);
-   rect                 min(rect a, rect b);
+   constexpr point      center_point(rect const& r);
+   constexpr float      area(rect const& r);
+   rect                 union_(rect const& a, rect const& b);
+   rect                 intersection(rect const& a, rect const& b);
 
    constexpr void       clear(rect& r);
-   rect                 center(rect r, rect encl);
-   rect                 center_h(rect r, rect encl);
-   rect                 center_v(rect r, rect encl);
-   rect                 align(rect r, rect encl, float x_align, float y_align);
-   rect                 align_h(rect r, rect encl, float x_align);
-   rect                 align_v(rect r, rect encl, float y_align);
-   rect                 clip(rect r, rect encl);
+   rect                 center(rect const& r, rect const& encl);
+   rect                 center_h(rect const& r, rect const& encl);
+   rect                 center_v(rect const& r, rect const& encl);
+   rect                 align(rect const& r, rect const& encl, float x_align, float y_align);
+   rect                 align_h(rect const& r, rect const& encl, float x_align);
+   rect                 align_v(rect const& r, rect const& encl, float y_align);
 
    ////////////////////////////////////////////////////////////////////////////
    // Inlines
@@ -119,7 +119,7 @@ namespace cycfi::artist
          ;
    }
 
-   constexpr bool rect::includes(rect other) const
+   constexpr bool rect::includes(rect const& other) const
    {
       return
          (other.left >= left) && (other.left <= right) &&
@@ -203,22 +203,27 @@ namespace cycfi::artist
       return r;
    }
 
-   constexpr bool is_valid(rect r)
+   constexpr rect rect::inset(float xy_inset) const
+   {
+      return inset(xy_inset, xy_inset);
+   }
+
+   constexpr bool is_valid(rect const& r)
    {
       return (r.left <= r.right) && (r.top <= r.bottom);
    }
 
-   constexpr bool is_same_size(rect a, rect b)
+   constexpr bool is_same_size(rect const& a, rect const& b)
    {
       return (a.width() == b.width()) && (a.height() == b.height());
    }
 
-   constexpr point center_point(rect r)
+   constexpr point center_point(rect const& r)
    {
       return { r.left + (r.width() / 2.0f), r.top + (r.height() / 2.0f) };
    }
 
-   constexpr float area(rect r)
+   constexpr float area(rect const& r)
    {
       return r.width() * r.height();
    }

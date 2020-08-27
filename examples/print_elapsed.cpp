@@ -46,7 +46,7 @@ void print_elapsed(canvas& cnv, point br, color bkd, color c)
 
    auto width = open_sans.measure_text(fps_str);
    cnv.fill_style(bkd);
-   cnv.rect({ br.x-(width+4), br.y-height, br.x, br.y });
+   cnv.add_rect({ br.x - (width + 4), br.y - height, br.x, br.y });
    cnv.fill();
 
    cnv.fill_style(c);

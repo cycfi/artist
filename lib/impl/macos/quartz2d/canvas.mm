@@ -503,25 +503,25 @@ namespace cycfi::artist
       }
    }
 
-   void canvas::rect(struct rect r)
+   void canvas::add_rect(const rect& r)
    {
       CGContextAddRect(CGContextRef(_context), CGRectMake(r.left, r.top, r.width(), r.height()));
    }
 
-   void canvas::round_rect(struct rect r, float radius)
+   void canvas::add_round_rect(const rect& r, float radius)
    {
       if (radius > 0.0f)
          detail::round_rect(*this, r, radius);
       else
-         rect(r);
+         add_rect(r);
    }
 
-   void canvas::path(class path const& p)
+   void canvas::add_path(path const& p)
    {
       CGContextAddPath(CGContextRef(_context), p.impl());
    }
 
-   void canvas::clear_rect(struct rect r)
+   void canvas::clear_rect(rect const& r)
    {
       CGContextClearRect(CGContextRef(_context), CGRectMake(r.left, r.top, r.width(), r.height()));
    }
@@ -919,7 +919,7 @@ namespace cycfi::artist
       _state->text_align(_state->text_align() | align);
    }
 
-   void canvas::draw(image const& img_, struct rect src, struct rect dest)
+   void canvas::draw(image const& img_, rect const& src, rect const& dest)
    {
       auto  img = (__bridge NSImage*) img_.impl();
       auto  src_ = NSRect{ { src.left, [img size].height - src.bottom }, { src.width(), src.height() } };

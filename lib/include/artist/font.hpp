@@ -9,6 +9,7 @@
 #include <string_view>
 #include <infra/filesystem.hpp>
 #include <memory>
+#include <vector>
 
 #if defined(ARTIST_SKIA)
 class SkFont;
@@ -49,15 +50,15 @@ namespace cycfi::artist
 
       enum stretch_enum
       {
-         ultra_condensed	= 25,
-         extra_condensed	= 31,
-         condensed	      = 38,
-         semi_condensed	   = 44,
-         stretch_normal	   = 50,
-         semi_expanded	   = 57,
-         expanded	         = 63,
-         extra_expanded	   = 75,
-         ultra_expanded	   = 100
+         ultra_condensed   = 25,
+         extra_condensed   = 31,
+         condensed         = 38,
+         semi_condensed    = 44,
+         stretch_normal    = 50,
+         semi_expanded     = 57,
+         expanded          = 63,
+         extra_expanded    = 75,
+         ultra_expanded    = 100
       };
    }
 

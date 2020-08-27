@@ -200,12 +200,12 @@ namespace cycfi::artist
          cairo_arc(_context, p.x, p.y, radius, start_angle, end_angle);
    }
 
-   void canvas::rect(struct rect r)
+   void canvas::add_rect(rect const& r)
    {
       cairo_rectangle(_context, r.left, r.top, r.width(), r.height());
    }
 
-   void canvas::round_rect(struct rect bounds, float radius)
+   void canvas::add_round_rect(rect const& bounds, float radius)
    {
       auto x = bounds.left;
       auto y = bounds.top;
@@ -222,7 +222,7 @@ namespace cycfi::artist
       cairo_close_path(_context);
    }
 
-   void canvas::path(class path const& p)
+   void canvas::add_path(path const& p)
    {
    }
 
@@ -495,7 +495,7 @@ namespace cycfi::artist
       _state->_info.align |= align;
    }
 
-   void canvas::draw(image const& pic, struct rect src, struct rect dest)
+   void canvas::draw(image const& pic, rect const& src, rect const& dest)
    {
    }
 }

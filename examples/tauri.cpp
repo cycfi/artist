@@ -11,7 +11,7 @@ auto constexpr bkd_color = rgb(44, 42, 45);
 
 void background(canvas& cnv)
 {
-   cnv.rect({ { 0, 0 }, window_size });
+   cnv.add_rect({ { 0, 0 }, window_size });
    cnv.fill_style(bkd_color);
    cnv.fill();
 }
@@ -34,7 +34,7 @@ void logo(canvas& cnv)
 
    cnv.begin_path();
    cnv.line_width(2.5);
-   cnv.circle(24, 8, 4);
+   cnv.add_circle(24, 8, 4);
    cnv.stroke();
 }
 

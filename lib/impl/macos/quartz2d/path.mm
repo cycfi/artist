@@ -82,14 +82,14 @@ namespace cycfi::artist
       CGPathCloseSubpath(_impl);
    }
 
-   void path::add(rect r)
+   void path::add_rect(rect const& r)
    {
       CGPathAddRect(_impl, nullptr,
          CGRect{ { r.left, r.top }, { r.width(), r.height() } }
       );
    }
 
-   void path::add(rect r, float radius)
+   void path::add_round_rect(rect const& r, float radius)
    {
       CGPathAddRoundedRect(_impl, nullptr,
          CGRect{ { r.left, r.top }, { r.width(), r.height() } }
