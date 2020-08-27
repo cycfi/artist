@@ -9,6 +9,7 @@
 #include <string_view>
 #include <infra/filesystem.hpp>
 #include <memory>
+#include <vector>
 
 #if defined(ARTIST_SKIA)
 class SkFont;
