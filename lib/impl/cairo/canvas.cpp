@@ -497,5 +497,14 @@ namespace cycfi::artist
 
    void canvas::draw(image const& pic, rect const& src, rect const& dest)
    {
+      auto  state = new_state();
+      auto  w = dest.width();
+      auto  h = dest.height();
+      translate(dest.top_left());
+      auto scale_ = point{ w/src.width(), h/src.height() };
+      scale(scale_);
+      cairo_set_source_surface(_context, pic.impl(), -src.left, -src.top);
+      add_rect({ 0, 0, w/scale_.x, h/scale_.y });
+      cairo_fill(_context);
    }
 }

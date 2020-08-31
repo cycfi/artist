@@ -8,8 +8,13 @@
 
 #include <artist/point.hpp>
 #include <artist/resources.hpp>
+#include <infra/support.hpp>
 #include <string_view>
 #include <memory>
+
+#if defined(ARTIST_CAIRO)
+#include <cairo.h>
+#endif
 
 #if defined(ARTIST_SKIA)
 class SkCanvas;
@@ -25,24 +30,27 @@ namespace cycfi::artist
    struct canvas_impl;
 #endif
 
+#if defined(ARTIST_CAIRO)
+   using image_impl = cairo_surface_t;
+#else
    class image_impl;
+#endif
+
    using image_impl_ptr = image_impl*;
 
    ////////////////////////////////////////////////////////////////////////////
-   // picture
+   // image
    ////////////////////////////////////////////////////////////////////////////
-   class image
+   class image : non_copyable
    {
    public:
 
       explicit          image(float sizex, float sizey);
       explicit          image(extent size);
       explicit          image(fs::path const& path_);
-                        image(image const& rhs) = delete;
                         image(image&& rhs) noexcept;
                         ~image();
 
-      image&            operator=(image const& rhs) = delete;
       image&            operator=(image&& rhs) noexcept;
 
       image_impl_ptr    impl() const;
