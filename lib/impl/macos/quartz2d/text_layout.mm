@@ -205,7 +205,7 @@ namespace cycfi::artist
       if (index < _utf8.size())
       {
          auto f = _indices.begin() + (index / 4);
-         auto l = _indices.begin() + index + 1;
+         auto l = _indices.begin() + std::min(index + 1, _indices.size());
          auto i = std::lower_bound(f, l, index,
             [](std::size_t index, std::size_t pos)
             {
