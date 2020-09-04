@@ -11,6 +11,7 @@
 #include <artist/rect.hpp>
 #include <artist/color.hpp>
 #include <infra/utf8_utils.hpp>
+#include <infra/support.hpp>
 #include <memory>
 #include <functional>
 
@@ -19,17 +20,13 @@ namespace cycfi::artist
    class canvas;
    class text_layout;
 
-   class text_layout
+   class text_layout : non_copyable
    {
    public:
                            text_layout(font const& font_, std::string_view utf8);
                            text_layout(font const& font_, color c, std::string_view utf8);
-                           text_layout(text_layout const& rhs) = delete;
                            text_layout(text_layout&& rhs) noexcept;
                            ~text_layout();
-
-      text_layout&         operator=(text_layout const& rhs) = delete;
-      text_layout&         operator=(text_layout&& rhs) noexcept = default;
 
       struct line_info
       {
