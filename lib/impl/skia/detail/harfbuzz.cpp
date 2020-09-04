@@ -87,14 +87,7 @@ namespace cycfi::artist::detail
     : _buffer(ptr_type(hb_buffer_create()))
    {
       hb_buffer_add_utf8(_buffer.get(), utf8.data(), utf8.size(), 0, utf8.size());
-      _map.insert(_map.begin(), utf8.size(), -1);
-   }
-
-   void hb_buffer::text(std::string_view utf8)
-   {
-      hb_buffer_clear_contents(_buffer.get());
-      hb_buffer_add_utf8(_buffer.get(), utf8.data(), utf8.size(), 0, utf8.size());
-      _map.clear();
+      hb_buffer_guess_segment_properties(_buffer.get());
       _map.insert(_map.begin(), utf8.size(), -1);
    }
 

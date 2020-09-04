@@ -65,11 +65,6 @@ namespace cycfi::artist
     , _utf8{ utf8 }
     , _buff{ utf8 }
    {
-      // $$$ For now... later, this should be extracted from the text, perhaps?
-      _buff.direction(HB_DIRECTION_LTR);
-      _buff.script(HB_SCRIPT_LATIN);
-      _buff.language("en");
-
       init_linebreak();
 
       _paint.setAntiAlias(true);
