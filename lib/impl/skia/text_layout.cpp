@@ -18,7 +18,7 @@
 
 namespace cycfi::artist
 {
-   class text_layout::impl
+   class text_layout::impl : non_copyable
    {
    public:
 
@@ -39,23 +39,23 @@ namespace cycfi::artist
 
       void                       flow(get_line_info const& glf, flow_info finfo);
       void                       draw(canvas& cnv, point p);
-      void                       text(std::string_view utf8);
       point                      caret_point(std::size_t index) const;
       std::size_t                caret_index(point p) const;
       std::size_t                num_lines() const;
       class font&                get_font();
+      color                      get_text_color();
 
    private:
 
       using line_vector = std::vector<row_info>;
 
-      class font              _font;
-      color                   _text_color;
-      detail::hb_font         _hb_font;
-      std::string_view        _utf8;
-      detail::hb_buffer       _buff;
-      line_vector             _rows;
-      SkPaint                 _paint;
+      class font                 _font;
+      color                      _text_color;
+      detail::hb_font            _hb_font;
+      std::string_view           _utf8;
+      detail::hb_buffer          _buff;
+      line_vector                _rows;
+      SkPaint                    _paint;
    };
 
    text_layout::impl::impl(class font const& font_, color c, std::string_view utf8)
@@ -75,6 +75,8 @@ namespace cycfi::artist
       _paint.setAntiAlias(true);
       _paint.setStyle(SkPaint::kFill_Style);
       _paint.setColor4f({ c.red, c.green, c.blue, c.alpha }, nullptr);
+
+      _buff.shape(_hb_font);
    }
 
    text_layout::impl::impl(class font const& font_, std::string_view utf8)
@@ -91,9 +93,7 @@ namespace cycfi::artist
       if (_utf8.size() == 0)
          return;
 
-      _buff.shape(_hb_font);
       auto glyphs_info = _buff.glyphs();
-
       int hb_scalex, hb_scaley;
       hb_font_get_scale(_hb_font.get(), &hb_scalex, &hb_scaley);
       auto sc_font = _font.impl();
@@ -250,15 +250,6 @@ namespace cycfi::artist
       }
    }
 
-   void text_layout::impl::text(std::string_view utf8)
-   {
-      if (utf8 != _utf8)
-      {
-         _buff.text(utf8);
-         _rows.clear();
-      }
-   }
-
    point text_layout::impl::caret_point(std::size_t index) const
    {
       if (_rows.size() == 0)
@@ -347,6 +338,11 @@ namespace cycfi::artist
       return _font;
    }
 
+   color text_layout::impl::get_text_color()
+   {
+      return _text_color;
+   }
+
    text_layout::text_layout(font const& font_, std::string_view utf8)
     : _impl{ std::make_unique<impl>(font_, utf8) }
    {
@@ -368,7 +364,7 @@ namespace cycfi::artist
 
    void text_layout::text(std::string_view utf8)
    {
-      _impl->text(utf8);
+      _impl = std::make_unique<impl>(_impl->get_font(), _impl->get_text_color(), utf8);
    }
 
    void text_layout::flow(float width, bool justify)
@@ -396,7 +392,6 @@ namespace cycfi::artist
    {
       return _impl->num_lines();
    }
-
 
    point text_layout::caret_point(std::size_t index) const
    {
