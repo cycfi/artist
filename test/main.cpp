@@ -847,7 +847,7 @@ namespace cycfi::artist
 
 TEST_CASE("Drawing")
 {
-   image pm{window_size };
+   image pm{ window_size };
    {
       offscreen_image ctx{ pm };
       canvas pm_cnv{ ctx.context() };
@@ -858,7 +858,7 @@ TEST_CASE("Drawing")
 
 TEST_CASE("Typography")
 {
-   image pm{window_size };
+   image pm{ window_size };
    {
       offscreen_image ctx{ pm };
       canvas pm_cnv{ ctx.context() };
@@ -869,7 +869,7 @@ TEST_CASE("Typography")
 
 TEST_CASE("Composite")
 {
-   image pm{window_size };
+   image pm{ window_size };
    {
       offscreen_image ctx{ pm };
       canvas pm_cnv{ ctx.context() };
@@ -880,7 +880,7 @@ TEST_CASE("Composite")
 
 TEST_CASE("DropShadow")
 {
-   image pm{window_size };
+   image pm{ window_size };
    {
       offscreen_image ctx{ pm };
       canvas pm_cnv{ ctx.context() };
@@ -891,7 +891,7 @@ TEST_CASE("DropShadow")
 
 TEST_CASE("Paths")
 {
-   image pm{window_size };
+   image pm{ window_size };
    {
       offscreen_image ctx{ pm };
       canvas pm_cnv{ ctx.context() };
@@ -902,7 +902,7 @@ TEST_CASE("Paths")
 
 TEST_CASE("Misc")
 {
-   image pm{window_size };
+   image pm{ window_size };
    {
       offscreen_image ctx{ pm };
       canvas pm_cnv{ ctx.context() };

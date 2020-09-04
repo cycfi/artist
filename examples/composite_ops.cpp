@@ -108,7 +108,7 @@ void composite_ops(canvas& cnv)
 
 void draw(canvas& cnv)
 {
-   image img{window_size };
+   image img{ window_size };
    {
       offscreen_image ctx{ img };
       canvas pm_cnv{ ctx.context() };
