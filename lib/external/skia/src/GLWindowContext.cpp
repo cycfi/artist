@@ -18,6 +18,12 @@
 #include "src/image/SkImage_Base.h"
 #include "tools/sk_app/GLWindowContext.h"
 
+#if defined(__APPLE__)
+# include <OpenGL/gl.h>
+#else
+# include <GL/gl.h>
+#endif
+
 namespace sk_app {
 
 GLWindowContext::GLWindowContext(const DisplayParams& params)
@@ -85,8 +91,10 @@ void GLWindowContext::swapBuffers() {
 }
 
 void GLWindowContext::resize(int w, int h) {
-    this->destroyContext();
-    this->initializeContext();
+    fSurface.reset();
+    fWidth = w;
+    fHeight = h;
+    glViewport(0, 0, fWidth, fHeight);
 }
 
 void GLWindowContext::setDisplayParams(const DisplayParams& params) {
