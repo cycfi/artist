@@ -52,7 +52,7 @@ namespace cycfi::artist
       class font                 _font;
       color                      _text_color;
       detail::hb_font            _hb_font;
-      std::string_view           _utf8;
+      std::string                _utf8;
       detail::hb_buffer          _buff;
       line_vector                _rows;
       SkPaint                    _paint;
@@ -123,6 +123,9 @@ namespace cycfi::artist
       auto justify =
          [&](std::size_t glyph_idx, bool must_break) -> float
          {
+             while (glyph_idx >= glyph_start && glyphs_info.glyphs[glyph_idx].codepoint == 0)
+                --glyph_idx;
+
             auto line_width =
                positions[glyph_idx-glyph_start] +
                (glyphs_info.positions[glyph_idx].x_advance * scalex)
@@ -155,11 +158,8 @@ namespace cycfi::artist
          [&](std::size_t utf8_idx, std::size_t& i, bool must_break)
          {
             auto glyph_idx = _buff.glyph_index(utf8_idx);
-            auto line_width = justify(glyph_idx, must_break);
-
+            auto line_width = (glyph_idx != glyph_start)? justify(glyph_idx, must_break) : 0;
             auto glyph_count = glyph_idx - glyph_start;
-            if (i == glyphs_info.count-1) // the last glyph?
-               ++glyph_count;
 
             std::vector<SkGlyphID> line_glyphs(glyph_count);
             for (auto j = 0; j != glyph_count; ++j)
