@@ -161,6 +161,10 @@ namespace cycfi::artist
             auto line_width = (glyph_idx != glyph_start)? justify(glyph_idx, must_break) : 0;
             auto glyph_count = glyph_idx - glyph_start;
 
+            // The last glyph is a printable codepoint?
+            if (i == glyphs_info.count-1 && glyphs_info.glyphs[i].codepoint)
+               ++glyph_count;
+
             std::vector<SkGlyphID> line_glyphs(glyph_count);
             for (auto j = 0; j != glyph_count; ++j)
                line_glyphs[j] = glyphs_info.glyphs[glyph_start + j].codepoint;
@@ -233,15 +237,18 @@ namespace cycfi::artist
 
       for (auto const& line : _rows)
       {
-         auto sk_cnv = cnv.impl();
-         SkPaint paint;
-         paint.setAntiAlias(true);
-         paint.setStyle(SkPaint::kFill_Style);
-         sk_cnv->drawTextBlob(
-            line.line
-            , p.x+line.pos.x, p.y+line.pos.y
-            , _paint
-         );
+         if (line.width > 0)
+         {
+            auto sk_cnv = cnv.impl();
+            SkPaint paint;
+            paint.setAntiAlias(true);
+            paint.setStyle(SkPaint::kFill_Style);
+            sk_cnv->drawTextBlob(
+               line.line
+               , p.x+line.pos.x, p.y+line.pos.y
+               , _paint
+            );
+         }
       }
    }
 
