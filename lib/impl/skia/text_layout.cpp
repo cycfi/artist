@@ -62,8 +62,8 @@ namespace cycfi::artist
     : _font{ font_ }
     , _hb_font(_font.impl()->getTypeface())
     , _text_color{ c }
-    , _utf8{ utf8 }
-    , _buff{ utf8 }
+    , _utf8{ std::string(utf8) + "\n" }
+    , _buff{ _utf8 }
    {
       init_linebreak();
 
