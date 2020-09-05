@@ -179,14 +179,19 @@ namespace cycfi::artist
    {
       auto scale = _state->_pre_scale;
       auto mat = _context->getTotalMatrix();
+      (void) mat.invert(&mat);
       SkPoint skp;
-      mat.mapXY(p.x, p.y, &skp);
-      return { skp.x() / scale, skp.y() / scale };
+      mat.mapXY(p.x * scale, p.y * scale, &skp);
+      return { skp.x(), skp.y() };
    }
 
    point canvas::user_to_device(point p)
    {
-      return {};
+      auto scale = _state->_pre_scale;
+      auto mat = _context->getTotalMatrix();
+      SkPoint skp;
+      mat.mapXY(p.x, p.y, &skp);
+      return { skp.x() / scale, skp.y() / scale };
    }
 
    affine_transform canvas::transform() const
