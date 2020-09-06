@@ -202,7 +202,6 @@ namespace cycfi::artist::unicode
             i++;
          s32.push_back(cp);
       }
-      std::u32string(s32).swap(s32);
       return s32;
    }
 }
