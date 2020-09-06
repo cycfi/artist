@@ -23,7 +23,6 @@ namespace cycfi::artist
    public:
 
       impl(font const& font_, std::string_view utf8);
-      impl(font const& font_, color c, std::string_view utf8);
       ~impl();
 
       struct row_info
@@ -38,19 +37,17 @@ namespace cycfi::artist
       };
 
       void                       flow(get_line_info const& glf, flow_info finfo);
-      void                       draw(canvas& cnv, point p);
+      void                       draw(canvas& cnv, point p, color c);
       point                      caret_point(std::size_t index) const;
       std::size_t                caret_index(point p) const;
       std::size_t                num_lines() const;
       class font&                get_font();
-      color                      get_text_color();
 
    private:
 
       using line_vector = std::vector<row_info>;
 
       class font                 _font;
-      color                      _text_color;
       detail::hb_font            _hb_font;
       std::string                _utf8;
       detail::hb_buffer          _buff;
@@ -58,10 +55,9 @@ namespace cycfi::artist
       SkPaint                    _paint;
    };
 
-   text_layout::impl::impl(class font const& font_, color c, std::string_view utf8)
+   text_layout::impl::impl(font const& font_, std::string_view utf8)
     : _font{ font_ }
     , _hb_font(_font.impl()->getTypeface())
-    , _text_color{ c }
     , _utf8{ std::string(utf8) + "\n" }
     , _buff{ _utf8 }
    {
@@ -69,14 +65,9 @@ namespace cycfi::artist
 
       _paint.setAntiAlias(true);
       _paint.setStyle(SkPaint::kFill_Style);
-      _paint.setColor4f({ c.red, c.green, c.blue, c.alpha }, nullptr);
 
       _buff.shape(_hb_font);
    }
-
-   text_layout::impl::impl(class font const& font_, std::string_view utf8)
-    : impl{ font_, colors::black, utf8 }
-   {}
 
    text_layout::impl::~impl()
    {
@@ -230,8 +221,9 @@ namespace cycfi::artist
       last.height = finfo.last_line_height;
    }
 
-   void  text_layout::impl::draw(canvas& cnv, point p)
+   void  text_layout::impl::draw(canvas& cnv, point p, color c)
    {
+      _paint.setColor4f({ c.red, c.green, c.blue, c.alpha }, nullptr);
       if (_rows.size() == 0)
          return;
 
@@ -340,18 +332,9 @@ namespace cycfi::artist
       return _font;
    }
 
-   color text_layout::impl::get_text_color()
-   {
-      return _text_color;
-   }
-
-   text_layout::text_layout(font const& font_, std::string_view utf8)
+   ////////////////////////////////////////////////////////////////////////////
+   text_layout::text_layout(font_descr font_, std::string_view utf8)
     : _impl{ std::make_unique<impl>(font_, utf8) }
-   {
-   }
-
-   text_layout::text_layout(font const& font_, color c, std::string_view utf8)
-    : _impl{ std::make_unique<impl>(font_, c, utf8) }
    {
    }
 
@@ -361,12 +344,13 @@ namespace cycfi::artist
 
    text_layout::text_layout(text_layout&& rhs) noexcept
     : _impl{ std::move(rhs._impl) }
+    , _text{ std::move(rhs._text) }
    {
    }
 
    void text_layout::text(std::string_view utf8)
    {
-      _impl = std::make_unique<impl>(_impl->get_font(), _impl->get_text_color(), utf8);
+      _impl = std::make_unique<impl>(_impl->get_font(), utf8);
    }
 
    void text_layout::flow(float width, bool justify)
@@ -385,9 +369,9 @@ namespace cycfi::artist
       _impl->flow(glf, finfo);
    }
 
-   void text_layout::draw(canvas& cnv, point p) const
+   void text_layout::draw(canvas& cnv, point p, color c) const
    {
-      _impl->draw(cnv, p);
+      _impl->draw(cnv, p, c);
    }
 
    std::size_t text_layout::num_lines() const
