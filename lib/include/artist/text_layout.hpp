@@ -41,6 +41,8 @@ namespace cycfi::artist
          float    last_line_height;
       };
 
+      enum break_enum { must_break, allow_break, no_break };
+
       using get_line_info = std::function<line_info(float y)>;
       static constexpr auto npos = std::size_t(-1);
 
@@ -57,6 +59,8 @@ namespace cycfi::artist
       point                   caret_point(std::size_t index) const;
       std::size_t             caret_index(float x, float y) const;
       std::size_t             caret_index(point p) const;
+      break_enum              line_break(std::size_t index) const;
+      break_enum              word_break(std::size_t index) const;
 
    private:
 
