@@ -246,8 +246,6 @@ namespace cycfi::artist
 
    point text_layout::impl::caret_point(std::size_t index) const
    {
-      return {};
-/*
       if (_rows.size() == 0)
          return { 0, 0 };
 
@@ -258,7 +256,7 @@ namespace cycfi::artist
       auto row_index = -1;
       if (index < _text.size())
       {
-         glyph_index = _buff.glyph_index(index);
+         glyph_index = glyphs_info.glyph_index(index);
       }
       else
       {
@@ -285,19 +283,15 @@ namespace cycfi::artist
       auto pos = glyph_index - row.glyph_index;
       auto offset = (pos < row.positions.size())? row.positions[pos] : row.width;
       return { row.pos.x + offset, row.pos.y };
-*/
    }
 
    std::size_t text_layout::impl::caret_index(point p) const
    {
-      return 0;
-/*
       if (_rows.size() == 0)
          return 0;
 
       auto glyphs_info = _buff.glyphs();
-      auto i = std::lower_bound(
-         _rows.begin(), _rows.end(), p.y,
+      auto i = std::lower_bound(_rows.begin(), _rows.end(), p.y,
          [](auto const& row, float y)
          {
             return row.pos.y < y;
@@ -322,10 +316,9 @@ namespace cycfi::artist
          }
       );
       if (j == l)
-         return is_last_row? _utf8.size()-1 : npos;
+         return is_last_row? _text.size()-1 : npos;
       auto index = i->glyph_index + (j-f);
       return glyphs_info.glyphs[index].cluster;
-*/
    }
 
    std::size_t text_layout::impl::num_lines() const
@@ -375,7 +368,10 @@ namespace cycfi::artist
 
    std::u32string_view text_layout::text() const
    {
-      return _impl->get_text();
+      auto s = _impl->get_text();
+      if (s.size())
+         return { s.data(), s.size()-1 };
+      return {};
    }
 
    void text_layout::flow(float width, bool justify)
