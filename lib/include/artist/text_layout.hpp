@@ -24,6 +24,7 @@ namespace cycfi::artist
    {
    public:
                            text_layout(font_descr font_, std::string_view utf8);
+                           text_layout(font_descr font_, std::u32string_view utf32);
                            text_layout(text_layout&& rhs) noexcept;
                            ~text_layout();
 
@@ -43,16 +44,19 @@ namespace cycfi::artist
       using get_line_info = std::function<line_info(float y)>;
       static constexpr auto npos = std::size_t(-1);
 
-      void                 text(std::string_view utf8);
-      void                 flow(float width, bool justify = false);
-      void                 flow(get_line_info const& glf, flow_info finfo);
-      void                 draw(canvas& cnv, point p, color c = colors::black) const;
-      void                 draw(canvas& cnv, float x, float y, color c = colors::black) const;
+      void                    text(std::string_view utf8);
+      void                    text(std::u32string_view utf32);
+      std::u32string_view     text() const;
 
-      std::size_t          num_lines() const;
-      point                caret_point(std::size_t index) const;
-      std::size_t          caret_index(float x, float y) const;
-      std::size_t          caret_index(point p) const;
+      void                    flow(float width, bool justify = false);
+      void                    flow(get_line_info const& glf, flow_info finfo);
+      void                    draw(canvas& cnv, point p, color c = colors::black) const;
+      void                    draw(canvas& cnv, float x, float y, color c = colors::black) const;
+
+      std::size_t             num_lines() const;
+      point                   caret_point(std::size_t index) const;
+      std::size_t             caret_index(float x, float y) const;
+      std::size_t             caret_index(point p) const;
 
    private:
 
@@ -60,7 +64,6 @@ namespace cycfi::artist
       using impl_ptr = std::unique_ptr<impl>;
 
       impl_ptr             _impl;
-      std::u32string       _text;
    };
 
    ////////////////////////////////////////////////////////////////////////////
