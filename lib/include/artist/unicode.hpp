@@ -8,19 +8,21 @@
 namespace cycfi::artist::unicode
 {
    ////////////////////////////////////////////////////////////////////////////
-   bool           is_space(char32_t cp);
-   bool           is_newline(char32_t cp);
-   bool           is_punctuation(char32_t cp);
+   bool              is_space(char32_t cp);
+   bool              is_newline(char32_t cp);
+   bool              is_punctuation(char32_t cp);
 
-   bool           is_space(char const* utf8);
-   bool           is_newline(char const* utf8);
-   bool           is_punctuation(char const* utf8);
+   bool              is_space(char const* utf8);
+   bool              is_newline(char const* utf8);
+   bool              is_punctuation(char const* utf8);
 
-   char32_t       decode_utf8(char32_t& state, char32_t& cp, char32_t byte);
-   char const*    next_utf8(char const* last, char const* utf8);
-   char const*    prev_utf8(char const* start, char const* utf8);
-   char32_t       codepoint(char const*& utf8);
-   char32_t       codepoint(char const* const& utf8);
+   char32_t          decode_utf8(char32_t& state, char32_t& cp, char32_t byte);
+   char const*       next_utf8(char const* last, char const* utf8);
+   char const*       prev_utf8(char const* start, char const* utf8);
+   char32_t          codepoint(char const*& utf8);
+   char32_t          codepoint(char const* const& utf8);
+
+   std::u32string    to_utf32(std::string_view s);
 
    ////////////////////////////////////////////////////////////////////////////
    inline bool is_space(char32_t cp)
@@ -186,6 +188,22 @@ namespace cycfi::artist::unicode
    {
       auto s = utf8;
       return codepoint(s);
+   }
+
+   inline std::u32string to_utf32(std::string_view s)
+   {
+      std::u32string s32;
+      char const* last = s.data() + s.size();
+      char32_t state = 0;
+      char32_t cp;
+      for (char const* i = s.data(); i != last; ++i)
+      {
+         while (decode_utf8(state, cp, uint8_t(*i)))
+            i++;
+         s32.push_back(cp);
+      }
+      std::u32string(s32).swap(s32);
+      return s32;
    }
 }
 
