@@ -31,7 +31,7 @@ namespace cycfi::artist
 
       void              clear_rows();
       void              flow(get_line_info const& glf, flow_info finfo);
-      void              draw(canvas& cnv, point p);
+      void              draw(canvas& cnv, point p, color c);
       void              text(std::string_view utf8);
       void              build_indices();
       point             caret_point(std::size_t index) const;
@@ -45,23 +45,17 @@ namespace cycfi::artist
       using indices = std::vector<std::size_t>;
 
       class font        _font;
-      color             _text_color;
       std::string_view  _utf8;
       rows              _rows;
       indices           _indices;
    };
 
-   text_layout::impl::impl(class font const& font_, color c, std::string_view utf8)
+   text_layout::impl::impl(class font const& font_, std::string_view utf8)
     : _font{ font_ }
-    , _text_color{ c }
     , _utf8{ utf8 }
    {
       build_indices();
    }
-
-   text_layout::impl::impl(class font const& font_, std::string_view utf8)
-    : impl{ font_, colors::black, utf8 }
-   {}
 
    text_layout::impl::~impl()
    {
@@ -148,15 +142,13 @@ namespace cycfi::artist
       CFRelease(attr_string);
    }
 
-   void text_layout::impl::draw(canvas& cnv, point p)
+   void text_layout::impl::draw(canvas& cnv, point p, color c)
    {
       if (_rows.size() == 0)
          return;
 
       auto ctx = CGContextRef(cnv.impl());
-      CGContextSetRGBFillColor(
-         ctx, _text_color.red, _text_color.green, _text_color.blue, _text_color.alpha
-      );
+      CGContextSetRGBFillColor(ctx, c.red, c.green, c.blue, c.alpha);
 
       for (auto const& line : _rows)
       {
@@ -278,13 +270,8 @@ namespace cycfi::artist
       return _font;
    }
 
-   text_layout::text_layout(font const& font_, std::string_view utf8)
+   text_layout::text_layout(font_descr font_, std::string_view utf8)
     : _impl{ std::make_unique<impl>(font_, utf8) }
-   {
-   }
-
-   text_layout::text_layout(font const& font_, color c, std::string_view utf8)
-    : _impl{ std::make_unique<impl>(font_, c, utf8) }
    {
    }
 
@@ -318,9 +305,9 @@ namespace cycfi::artist
       _impl->flow(line_info_f, { justify, lh, lh });
    }
 
-   void text_layout::draw(canvas& cnv, point p) const
+   void text_layout::draw(canvas& cnv, point p, color c) const
    {
-      _impl->draw(cnv, p);
+      _impl->draw(cnv, p, c);
    }
 
    std::size_t text_layout::num_lines() const
