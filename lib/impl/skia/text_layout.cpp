@@ -14,7 +14,6 @@
 #include <SkCanvas.h>
 #include "detail/harfbuzz.hpp"
 #include "linebreak.h"
-#include "opaque.hpp"
 
 namespace cycfi::artist
 {
@@ -41,7 +40,7 @@ namespace cycfi::artist
       point                      caret_point(std::size_t index) const;
       std::size_t                caret_index(point p) const;
       std::size_t                num_lines() const;
-      class font&                get_font();
+      font&                      get_font();
       std::u32string const&      get_text() const;
 
    private:
@@ -76,9 +75,9 @@ namespace cycfi::artist
 
    void text_layout::impl::flow(get_line_info const& glf, flow_info finfo)
    {
-      _rows.clear();
       if (_text.size() == 0)
          return;
+      _rows.clear();
 
       auto glyphs_info = _buff.glyphs();
       int hb_scalex, hb_scaley;

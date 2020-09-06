@@ -6,6 +6,7 @@
 #include <string_view>
 #include <artist/text_layout.hpp>
 #include <artist/canvas.hpp>
+#include <artist/unicode.hpp>
 #include <infra/utf8_utils.hpp>
 #include "osx_utils.hpp"
 #include <vector>
@@ -17,44 +18,40 @@ namespace cycfi::artist
    {
    public:
 
-      impl(font const& font_, std::string_view utf8);
-      impl(font const& font_, color c, std::string_view utf8);
+      impl(font const& font_, std::u32string_view utf32);
       ~impl();
 
       struct row_info
       {
-         point          pos;
-         float          width;
-         float          height;
-         CTLineRef      line;
+         point                pos;
+         float                width;
+         float                height;
+         CTLineRef            line;
       };
 
-      void              clear_rows();
-      void              flow(get_line_info const& glf, flow_info finfo);
-      void              draw(canvas& cnv, point p, color c);
-      void              text(std::string_view utf8);
-      void              build_indices();
-      point             caret_point(std::size_t index) const;
-      std::size_t       caret_index(point p) const;
-      std::size_t       num_lines() const;
-      class font&       font();
+      void                    flow(get_line_info const& glf, flow_info finfo);
+      void                    draw(canvas& cnv, point p, color c);
+      point                   caret_point(std::size_t index) const;
+      std::size_t             caret_index(point p) const;
+      std::size_t             num_lines() const;
+      font&                   get_font();
+      std::u32string const&   get_text() const;
 
    private:
 
       using rows = std::vector<row_info>;
-      using indices = std::vector<std::size_t>;
 
-      class font        _font;
-      std::string_view  _utf8;
-      rows              _rows;
-      indices           _indices;
+      void                    clear_rows();
+
+      class font              _font;
+      std::u32string          _text;
+      rows                    _rows;
    };
 
-   text_layout::impl::impl(class font const& font_, std::string_view utf8)
+   text_layout::impl::impl(font const& font_, std::u32string_view utf32)
     : _font{ font_ }
-    , _utf8{ utf8 }
+    , _text{ utf32 }
    {
-      build_indices();
    }
 
    text_layout::impl::~impl()
@@ -71,9 +68,9 @@ namespace cycfi::artist
 
    void text_layout::impl::flow(get_line_info const& glf, flow_info finfo)
    {
-      clear_rows();
-      if (_utf8.size() == 0)
+      if (_text.size() == 0)
          return;
+      clear_rows();
 
       NSFont* font = (__bridge NSFont*) _font.impl();
       CFStringRef keys[] = { kCTFontAttributeName, kCTForegroundColorFromContextAttributeName };
@@ -86,7 +83,7 @@ namespace cycfi::artist
          &kCFTypeDictionaryValueCallBacks
       );
 
-      auto text = detail::cf_string(_utf8.begin(), _utf8.end());
+      auto text = detail::cf_string(_text.data(), _text.data() + _text.size());
       auto attr_string =
          CFAttributedStringCreate(kCFAllocatorDefault, text, font_attributes);
       CFRelease(text);
@@ -157,67 +154,24 @@ namespace cycfi::artist
       }
    }
 
-   void text_layout::impl::text(std::string_view utf8)
-   {
-      if (utf8 != _utf8)
-      {
-         clear_rows();
-         _indices.clear();
-         _utf8 = utf8;
-         build_indices();
-      }
-   }
-
-   void text_layout::impl::build_indices()
-   {
-      _indices.clear();
-      if (_utf8.size() == 0)
-         return;
-
-      // Build the utf8 indices vector
-      char const* i = _utf8.data();
-      char const* last = i + _utf8.size();
-      while (i != last)
-      {
-         auto next = next_utf8(i, last);
-         _indices.push_back(i-_utf8.data());
-         i = next;
-      }
-      _indices.push_back(_utf8.size());
-   }
-
    point text_layout::impl::caret_point(std::size_t index) const
    {
       if (_rows.size() == 0)
          return { 0, 0 };
 
       // Find the glyph index from string index
-      auto glyph_index = index;
+      auto char_index = index;
       auto row_index = -1;
-      if (index < _utf8.size())
+      if (index >= _text.size())
       {
-         auto f = _indices.begin() + (index / 4);
-         auto l = _indices.begin() + std::min(index + 1, _indices.size());
-         auto i = std::lower_bound(f, l, index,
-            [](std::size_t index, std::size_t pos)
-            {
-               return index < pos;
-            }
-         );
-         if (i == _indices.end())
-            return { -1, -1 };
-         glyph_index = i - _indices.begin();
-      }
-      else
-      {
-         glyph_index = _indices.back();
+         char_index = _text.size();
          row_index = _rows.size() - 1;
       }
 
       // Find the row that includes the glyph index
       if (row_index == -1)
       {
-         auto i = std::lower_bound(_rows.begin(), _rows.end(), glyph_index,
+         auto i = std::lower_bound(_rows.begin(), _rows.end(), char_index,
             [](auto const& row, std::size_t pos)
             {
                auto rng = CTLineGetStringRange(row.line);
@@ -228,9 +182,10 @@ namespace cycfi::artist
             return { -1, -1 };
          row_index = i - _rows.begin();
       }
+
       // Now find the glyph position in the row
       auto const& row = _rows[row_index];
-      auto offset = CTLineGetOffsetForStringIndex(row.line, glyph_index, nullptr);
+      auto offset = CTLineGetOffsetForStringIndex(row.line, char_index, nullptr);
       return { float(row.pos.x + offset), row.pos.y };
    }
 
@@ -251,13 +206,13 @@ namespace cycfi::artist
 
       auto rng = CTLineGetStringRange(i->line);
       if (p.x <= i->pos.x)
-         return _indices[rng.location];
+         return rng.location;
 
       if (i != _rows.end()-1 && p.x >= (i->pos.x + i->width))
-         return _indices[rng.location + rng.length - 1];
+         return rng.location + rng.length - 1;
 
       auto index = CTLineGetStringIndexForPosition(i->line, { p.x - i->pos.x, 0 });
-      return _indices[index];
+      return index;
    }
 
    std::size_t text_layout::impl::num_lines() const
@@ -265,13 +220,24 @@ namespace cycfi::artist
       return _rows.size();
    }
 
-   class font& text_layout::impl::font()
+   class font& text_layout::impl::get_font()
    {
       return _font;
    }
 
+   std::u32string const& text_layout::impl::get_text() const
+   {
+      return _text;
+   }
+
+   ////////////////////////////////////////////////////////////////////////////
    text_layout::text_layout(font_descr font_, std::string_view utf8)
-    : _impl{ std::make_unique<impl>(font_, utf8) }
+    : _impl{ std::make_unique<impl>(font_, unicode::to_utf32(utf8)) }
+   {
+   }
+
+   text_layout::text_layout(font_descr font_, std::u32string_view utf32)
+    : _impl{ std::make_unique<impl>(font_, utf32) }
    {
    }
 
@@ -286,12 +252,17 @@ namespace cycfi::artist
 
    void text_layout::text(std::string_view utf8)
    {
-      _impl->text(utf8);
+      _impl = std::make_unique<impl>(_impl->get_font(), unicode::to_utf32(utf8));
    }
 
-   void text_layout::flow(get_line_info const& glf, flow_info finfo)
+   void text_layout::text(std::u32string_view utf32)
    {
-      _impl->flow(glf, finfo);
+      _impl = std::make_unique<impl>(_impl->get_font(), utf32);
+   }
+
+   std::u32string_view text_layout::text() const
+   {
+      return _impl->get_text();
    }
 
    void text_layout::flow(float width, bool justify)
@@ -301,8 +272,13 @@ namespace cycfi::artist
          return line_info{ 0, width };
       };
 
-      auto lh = _impl->font().line_height();
+      auto lh = _impl->get_font().line_height();
       _impl->flow(line_info_f, { justify, lh, lh });
+   }
+
+   void text_layout::flow(get_line_info const& glf, flow_info finfo)
+   {
+      _impl->flow(glf, finfo);
    }
 
    void text_layout::draw(canvas& cnv, point p, color c) const
