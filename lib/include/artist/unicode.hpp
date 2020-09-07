@@ -4,6 +4,7 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
 #include <string_view>
+#include <stdexcept>
 
 namespace cycfi::artist::unicode
 {
@@ -23,6 +24,7 @@ namespace cycfi::artist::unicode
    char32_t          codepoint(char const* const& utf8);
 
    std::u32string    to_utf32(std::string_view s);
+   bool              is_valid_utf8(std::string_view s);
 
    ////////////////////////////////////////////////////////////////////////////
    inline bool is_space(char32_t cp)
@@ -202,7 +204,22 @@ namespace cycfi::artist::unicode
             i++;
          s32.push_back(cp);
       }
+      if (state == utf8_reject)
+         throw std::runtime_error{ "Error: Invalid UTF8." };
       return s32;
+   }
+
+   inline bool is_valid_utf8(std::string_view s)
+   {
+      char const* last = s.data() + s.size();
+      char32_t state = 0;
+      char32_t cp;
+      for (char const* i = s.data(); i != last; ++i)
+      {
+         while (decode_utf8(state, cp, uint8_t(*i)))
+            i++;
+      }
+      return state != utf8_reject;
    }
 }
 
