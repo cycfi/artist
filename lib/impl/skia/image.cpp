@@ -26,13 +26,22 @@ using std::pair;
 
 namespace cycfi::artist
 {
-   static const map<img_fmt, pair<SkAlphaType, SkColorType>> _img_fmt_map_to_api_type = {
-      {img_fmt::INVALID, {SkAlphaType::kUnknown_SkAlphaType, SkColorType::kUnknown_SkColorType}},
-      {img_fmt::GRAY8, {SkAlphaType::kOpaque_SkAlphaType, SkColorType::kGray_8_SkColorType}},
-      {img_fmt::RGB16, {SkAlphaType::kOpaque_SkAlphaType, SkColorType::kRGB_565_SkColorType}},
-      {img_fmt::RGB32, {SkAlphaType::kOpaque_SkAlphaType, SkColorType::kRGB_888x_SkColorType}},
-      {img_fmt::RGBA32, {SkAlphaType::kOpaque_SkAlphaType, SkColorType::kRGBA_8888_SkColorType}}
-   };
+   pair<SkAlphaType, SkColorType> _map_img_fmt_to_api_type(const img_fmt& fmt)
+   {
+      switch(fmt)
+      {
+         case img_fmt::GRAY8:
+            return {SkAlphaType::kOpaque_SkAlphaType, SkColorType::kGray_8_SkColorType};
+         case img_fmt::RGB16:
+            return {SkAlphaType::kOpaque_SkAlphaType, SkColorType::kRGB_565_SkColorType};
+         case img_fmt::RGB32:
+            return {SkAlphaType::kOpaque_SkAlphaType, SkColorType::kRGB_888x_SkColorType};
+         case img_fmt::RGBA32:
+            return {SkAlphaType::kOpaque_SkAlphaType, SkColorType::kRGBA_8888_SkColorType};
+         default:
+            return {SkAlphaType::kUnknown_SkAlphaType, SkColorType::kUnknown_SkColorType};
+      }
+   }
 
    image::image(extent size)
     : _impl{ new artist::image_impl(size) }
@@ -70,7 +79,7 @@ namespace cycfi::artist
       SkAlphaType alpha_fmt;
       SkColorType byte_fmt;
       try {
-         std::tie(alpha_fmt, byte_fmt) = _img_fmt_map_to_api_type.at(fmt);
+         std::tie(alpha_fmt, byte_fmt) = _map_img_fmt_to_api_type(fmt);
       } catch(std::exception& /* e */) {
          throw std::runtime_error{ "Error: unrecognized format." };
       }

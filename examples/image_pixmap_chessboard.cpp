@@ -1,19 +1,11 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2020 Brent Soles
 
    Distributed under the MIT License (https://opensource.org/licenses/MIT)
 =============================================================================*/
 #include "app.hpp"
 
 using namespace cycfi::artist;
-
-bool constexpr is_little_endian() {
-   union {
-      uint32_t i;
-      char c[4];
-   } cmp = {0x01020304};
-   return !(cmp.c[0] == 1);
-}
 
 int constexpr rows = 8;
 int constexpr cols = 8;
@@ -25,7 +17,7 @@ size_t constexpr pix_buf_size = rows * cols * square_area;
 
 uint32_t constexpr white = 0xffffffff;
 // on little endian systems RGBA is formatted as ABGR for values
-std::function<uint32_t()> black = []() { return is_little_endian() ? 0xff000000 : 0x000000ff; };
+std::function<uint32_t()> black = []() { return cycfi::is_little_endian() ? 0xff000000 : 0x000000ff; };
 
 auto constexpr window_size = extent{
    static_cast<float>(cols * square_side),
