@@ -325,7 +325,7 @@ namespace cycfi::artist
          }
       );
       if (j == l)
-         return is_last_row? _utf8.size() : npos;
+         return is_last_row? _utf8.size()-1 : npos;
       auto index = i->glyph_index + (j-f);
       return glyphs_info.glyphs[index].cluster;
    }
