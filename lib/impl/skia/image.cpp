@@ -16,10 +16,24 @@
 
 #include "opaque.hpp"
 #include <stdexcept>
+#include <map>
 #include <string>
+#include <utility> // std::pair
+#include <iostream>
+
+using std::map;
+using std::pair;
 
 namespace cycfi::artist
 {
+   static const map<img_fmt, pair<SkAlphaType, SkColorType>> _img_fmt_map_to_api_type = {
+      {img_fmt::INVALID, {SkAlphaType::kUnknown_SkAlphaType, SkColorType::kUnknown_SkColorType}},
+      {img_fmt::GRAY8, {SkAlphaType::kOpaque_SkAlphaType, SkColorType::kGray_8_SkColorType}},
+      {img_fmt::RGB16, {SkAlphaType::kOpaque_SkAlphaType, SkColorType::kRGB_565_SkColorType}},
+      {img_fmt::RGB32, {SkAlphaType::kOpaque_SkAlphaType, SkColorType::kRGB_888x_SkColorType}},
+      {img_fmt::RGBA32, {SkAlphaType::kOpaque_SkAlphaType, SkColorType::kRGBA_8888_SkColorType}}
+   };
+
    image::image(extent size)
     : _impl{ new artist::image_impl(size) }
    {}
@@ -45,6 +59,28 @@ namespace cycfi::artist
 
       if (codec->getPixels(info, bitmap.getPixels(), bitmap.rowBytes()) != SkCodec::kSuccess)
          fail();
+   }
+
+   image::image(uint8_t* data, img_fmt fmt, extent size)
+    : _impl{ new artist::image_impl(SkBitmap{}) }
+   {
+      if (fmt == img_fmt::INVALID)
+         throw std::runtime_error{ "Error: Cannot initalize format: INVALID" };
+
+      SkAlphaType alpha_fmt;
+      SkColorType byte_fmt;
+      try {
+         std::tie(alpha_fmt, byte_fmt) = _img_fmt_map_to_api_type.at(fmt);
+      } catch(std::exception& /* e */) {
+         throw std::runtime_error{ "Error: unrecognized format." };
+      }
+
+      auto& bitmap = std::get<SkBitmap>(*_impl);
+      SkImageInfo skImgInfo = SkImageInfo::Make(size.x, size.y, byte_fmt, alpha_fmt);
+      if (!bitmap.tryAllocPixels(skImgInfo))
+         throw std::runtime_error{ "Error: Failed to initialize image from pixel buffer" };
+      
+      memcpy(bitmap.getPixels(), data, _pixmap_size(fmt, size));
    }
 
    image::~image()
@@ -169,6 +205,24 @@ namespace cycfi::artist
          };
 
       return std::visit(get_size, _impl->base());
+   }
+
+   size_t image::_pixmap_size(img_fmt fmt, extent size)
+   {
+      size_t fmt_bytes_per_pixel = ([&fmt]() {
+         switch (fmt) {
+            case img_fmt::GRAY8:
+               return 1;
+            case img_fmt::RGB16:
+               return 2;
+            case img_fmt::RGB32:
+            case img_fmt::RGBA32:
+               return 4;
+            default:
+               return 0;
+         }
+      })();
+      return static_cast<size_t>(size.x) * static_cast<size_t>(size.y) * fmt_bytes_per_pixel;
    }
 
    struct offscreen_image::state
