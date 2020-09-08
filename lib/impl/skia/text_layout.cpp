@@ -7,7 +7,7 @@
 #include <string>
 #include <artist/text_layout.hpp>
 #include <artist/canvas.hpp>
-#include <artist/unicode.hpp>
+#include <infra/utf8_utils.hpp>
 #include <vector>
 #include <SkFont.h>
 #include <SkTextBlob.h>
@@ -114,7 +114,7 @@ namespace cycfi::artist
             for (auto i = glyph_start; i != glyph_idx; ++i)
             {
                auto cl = glyphs_info.glyphs[i].cluster;
-               if (unicode::is_space(&_utf8[cl]))
+               if (is_space(&_utf8[cl]))
                   ++count;
             }
             return count;
@@ -140,9 +140,8 @@ namespace cycfi::artist
                   float offset = 0;
                   for (auto i = glyph_start; i != glyph_idx; ++i)
                   {
-                     using namespace unicode;
                      auto cl = glyphs_info.glyphs[i].cluster;
-                     if (unicode::is_space(&_utf8[cl]))
+                     if (is_space(&_utf8[cl]))
                         offset += extra;
                      positions[i-glyph_start] += offset;
                   }
