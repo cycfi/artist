@@ -58,7 +58,7 @@ namespace cycfi::artist
    text_layout::impl::impl(font const& font_, std::u32string_view utf32)
     : _font{ font_ }
     , _hb_font(_font.impl()->getTypeface())
-    , _text{ std::u32string(utf32) + U"\n" }
+    , _text{ utf32 }
     , _buff{ _text }
    {
       init_linebreak();
@@ -192,10 +192,11 @@ namespace cycfi::artist
       {
          positions.push_back(x + (glyphs_info.positions[glyph_idx].x_offset * scalex));
          x += glyphs_info.positions[glyph_idx].x_advance * scalex;
+         auto idx = glyphs_info.glyphs[glyph_idx].cluster;
 
-         if (auto idx = glyphs_info.glyphs[glyph_idx].cluster; brks[idx] == LINEBREAK_MUSTBREAK)
+         if (brks[idx] == LINEBREAK_MUSTBREAK || brks[idx] == LINEBREAK_INDETERMINATE)
          {
-            // We must break now
+            // We got a hard-break or we are at the end, so must break now
             new_line(idx, glyph_idx, true);
          }
          else if (x > linfo.width)
@@ -314,7 +315,7 @@ namespace cycfi::artist
          }
       );
       if (j == l)
-         return is_last_row? _text.size()-1 : npos;
+         return is_last_row? _text.size() : npos;
       auto index = i->glyph_index + (j-f);
       return glyphs_info.glyphs[index].cluster;
    }
@@ -366,8 +367,7 @@ namespace cycfi::artist
 
    std::u32string_view text_layout::text() const
    {
-      auto s = _impl->get_text();
-      return { s.data(), s.size()-1 };
+      return _impl->get_text();
    }
 
    void text_layout::flow(float width, bool justify)

@@ -30,6 +30,9 @@
  * @author  Andreas Röver
  */
 
+#ifndef EMOJIDEF_H
+#define EMOJIDEF_H
+
 #include "unibreakdef.h"
 
 /**
@@ -44,3 +47,5 @@ struct ExtendedPictograpic
 };
 
 bool ub_is_extended_pictographic(utf32_t ch);
+
+#endif /* EMOJIDEF_H */
