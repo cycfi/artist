@@ -61,7 +61,11 @@ namespace cycfi::artist
     , _text{ utf32 }
     , _buff{ _text }
    {
-      init_linebreak();
+      struct init_linebreak_
+      {
+         init_linebreak_() { init_linebreak(); }
+      };
+      static init_linebreak_ init;
 
       _paint.setAntiAlias(true);
       _paint.setStyle(SkPaint::kFill_Style);
