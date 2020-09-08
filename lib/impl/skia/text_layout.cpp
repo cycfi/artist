@@ -14,6 +14,7 @@
 #include <SkCanvas.h>
 #include "detail/harfbuzz.hpp"
 #include "linebreak.h"
+#include "wordbreak.h"
 
 namespace cycfi::artist
 {
@@ -35,6 +36,14 @@ namespace cycfi::artist
          std::vector<SkScalar>   positions;
       };
 
+      using break_enum = text_layout::break_enum;
+
+      struct break_info
+      {
+         break_enum              line : 4;
+         break_enum              word : 4;
+      };
+
       void                       flow(get_line_info const& glf, flow_info finfo);
       void                       draw(canvas& cnv, point p, color c);
       point                      caret_point(std::size_t index) const;
@@ -53,6 +62,7 @@ namespace cycfi::artist
       detail::hb_buffer          _buff;
       line_vector                _rows;
       SkPaint                    _paint;
+      std::vector<break_info>    _breaks;
    };
 
    text_layout::impl::impl(font const& font_, std::u32string_view utf32)
@@ -60,10 +70,15 @@ namespace cycfi::artist
     , _hb_font(_font.impl()->getTypeface())
     , _text{ utf32 }
     , _buff{ _text }
+    , _breaks{ utf32.size(), break_info{} }
    {
       struct init_linebreak_
       {
-         init_linebreak_() { init_linebreak(); }
+         init_linebreak_()
+         {
+            init_linebreak();
+            init_wordbreak();
+         }
       };
       static init_linebreak_ init;
 
@@ -71,6 +86,37 @@ namespace cycfi::artist
       _paint.setStyle(SkPaint::kFill_Style);
 
       _buff.shape(_hb_font);
+
+      std::string lbrks(_text.size(), 0);
+      set_linebreaks_utf32(
+         (utf32_t const*)_text.data()
+         , _text.size(), _buff.language(), lbrks.data()
+      );
+
+      std::string wbrks(_text.size(), 0);
+      set_wordbreaks_utf32(
+         (utf32_t const*)_text.data()
+         , _text.size(), _buff.language(), wbrks.data()
+      );
+
+      for (std::size_t i = 0; i != _breaks.size(); ++i)
+      {
+         auto info = break_info{};
+         switch (lbrks[i])
+         {
+            case LINEBREAK_MUSTBREAK:  info.line = must_break;    break;
+            case LINEBREAK_ALLOWBREAK: info.line = allow_break;   break;
+            case LINEBREAK_NOBREAK:    info.line = no_break;      break;
+            default:                   info.line = indeterminate; break;
+         }
+         switch (wbrks[i])
+         {
+            case WORDBREAK_BREAK:      info.word = allow_break;   break;
+            case WORDBREAK_NOBREAK:    info.word = no_break;      break;
+            default:                   info.word = indeterminate; break;
+         }
+         _breaks[i] = info;
+      }
    }
 
    text_layout::impl::~impl()
@@ -149,14 +195,14 @@ namespace cycfi::artist
          };
 
       auto new_line =
-         [&](std::size_t text_idx, std::size_t& glyph_idx, bool must_break)
+         [&](std::size_t text_idx, std::size_t& glyph_idx, bool must_break, bool indeterminate)
          {
             glyph_idx = glyphs_info.glyph_index(text_idx);
             auto line_width = (glyph_idx != glyph_start)? justify(glyph_idx, must_break) : 0;
             auto glyph_count = glyph_idx - glyph_start;
 
-            // The last glyph is a printable codepoint?
-            if (glyph_idx == glyphs_info.count-1 && glyphs_info.glyphs[glyph_idx].codepoint)
+            // The last glyph indeterminate?
+            if (indeterminate)
                ++glyph_count;
 
             std::vector<SkGlyphID> line_glyphs(glyph_count);
@@ -197,11 +243,12 @@ namespace cycfi::artist
          positions.push_back(x + (glyphs_info.positions[glyph_idx].x_offset * scalex));
          x += glyphs_info.positions[glyph_idx].x_advance * scalex;
          auto idx = glyphs_info.glyphs[glyph_idx].cluster;
+         bool indeterminate = brks[idx] == LINEBREAK_INDETERMINATE;
 
-         if (brks[idx] == LINEBREAK_MUSTBREAK || brks[idx] == LINEBREAK_INDETERMINATE)
+         if (brks[idx] == LINEBREAK_MUSTBREAK || indeterminate)
          {
             // We got a hard-break or we are at the end, so must break now
-            new_line(idx, glyph_idx, true);
+            new_line(idx, glyph_idx, true, indeterminate);
          }
          else if (x > linfo.width)
          {
@@ -214,7 +261,7 @@ namespace cycfi::artist
             auto pos = brks_line.find_last_of(char(LINEBREAK_ALLOWBREAK), brks_len-1);
 
             if (pos != brks_line.npos)
-               new_line(pos + start_line, glyph_idx, false);
+               new_line(pos + start_line, glyph_idx, false, false);
             else
                ; // deal with the case where we have to forcefully break the line
          }
