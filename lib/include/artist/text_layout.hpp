@@ -41,7 +41,7 @@ namespace cycfi::artist
          float    last_line_height;
       };
 
-      enum break_enum { must_break, allow_break, no_break };
+      enum break_enum : char { indeterminate, must_break, allow_break, no_break };
 
       using get_line_info = std::function<line_info(float y)>;
       static constexpr auto npos = std::size_t(-1);
