@@ -109,16 +109,18 @@ set(ARTIST_SOURCES
 )
 
 set(ARTIST_HEADERS
+   include/artist/affine_transform.hpp
    include/artist/canvas.hpp
    include/artist/circle.hpp
    include/artist/color.hpp
+   include/artist/detail
    include/artist/font.hpp
    include/artist/image.hpp
+   include/artist/path.hpp
    include/artist/point.hpp
    include/artist/rect.hpp
-   include/artist/text_layout.hpp
    include/artist/resources.hpp
-   include/artist/affine_transform.hpp
+   include/artist/text_layout.hpp
 )
 
 if (APPLE AND ARTIST_QUARTZ_2D)
