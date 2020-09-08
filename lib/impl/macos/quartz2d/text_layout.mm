@@ -6,7 +6,6 @@
 #include <string_view>
 #include <artist/text_layout.hpp>
 #include <artist/canvas.hpp>
-#include <artist/unicode.hpp>
 #include <infra/utf8_utils.hpp>
 #include "osx_utils.hpp"
 #include <vector>
@@ -232,7 +231,7 @@ namespace cycfi::artist
 
    ////////////////////////////////////////////////////////////////////////////
    text_layout::text_layout(font_descr font_, std::string_view utf8)
-    : _impl{ std::make_unique<impl>(font_, unicode::to_utf32(utf8)) }
+    : _impl{ std::make_unique<impl>(font_, to_utf32(utf8)) }
    {
    }
 
@@ -252,7 +251,7 @@ namespace cycfi::artist
 
    void text_layout::text(std::string_view utf8)
    {
-      _impl = std::make_unique<impl>(_impl->get_font(), unicode::to_utf32(utf8));
+      _impl = std::make_unique<impl>(_impl->get_font(), to_utf32(utf8));
    }
 
    void text_layout::text(std::u32string_view utf32)

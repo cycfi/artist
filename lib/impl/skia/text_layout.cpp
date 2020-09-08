@@ -7,7 +7,7 @@
 #include <string>
 #include <artist/text_layout.hpp>
 #include <artist/canvas.hpp>
-#include <artist/unicode.hpp>
+#include <infra/utf8_utils.hpp>
 #include <vector>
 #include <SkFont.h>
 #include <SkTextBlob.h>
@@ -105,7 +105,7 @@ namespace cycfi::artist
             for (auto i = glyph_start; i != glyph_idx; ++i)
             {
                auto cl = glyphs_info.glyphs[i].cluster;
-               if (unicode::is_space(_text[cl]))
+               if (is_space(_text[cl]))
                   ++count;
             }
             return count;
@@ -131,9 +131,8 @@ namespace cycfi::artist
                   float offset = 0;
                   for (auto i = glyph_start; i != glyph_idx; ++i)
                   {
-                     using namespace unicode;
                      auto cl = glyphs_info.glyphs[i].cluster;
-                     if (unicode::is_space(_text[cl]))
+                     if (is_space(_text[cl]))
                         offset += extra;
                      positions[i-glyph_start] += offset;
                   }
@@ -337,7 +336,7 @@ namespace cycfi::artist
 
    ////////////////////////////////////////////////////////////////////////////
    text_layout::text_layout(font_descr font_, std::string_view utf8)
-    : _impl{ std::make_unique<impl>(font_, unicode::to_utf32(utf8)) }
+    : _impl{ std::make_unique<impl>(font_, to_utf32(utf8)) }
    {
    }
 
@@ -357,7 +356,7 @@ namespace cycfi::artist
 
    void text_layout::text(std::string_view utf8)
    {
-      _impl = std::make_unique<impl>(_impl->get_font(), unicode::to_utf32(utf8));
+      _impl = std::make_unique<impl>(_impl->get_font(), to_utf32(utf8));
    }
 
    void text_layout::text(std::u32string_view utf32)
