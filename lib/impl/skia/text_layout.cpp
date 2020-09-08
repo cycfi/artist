@@ -41,7 +41,7 @@ namespace cycfi::artist
       std::size_t                caret_index(point p) const;
       std::size_t                num_lines() const;
       font&                      get_font();
-      std::u32string const&      get_text() const;
+      std::u32string_view        get_text() const;
 
    private:
 
@@ -329,7 +329,7 @@ namespace cycfi::artist
       return _font;
    }
 
-   std::u32string const& text_layout::impl::get_text() const
+   std::u32string_view text_layout::impl::get_text() const
    {
       return _text;
    }
@@ -367,9 +367,7 @@ namespace cycfi::artist
    std::u32string_view text_layout::text() const
    {
       auto s = _impl->get_text();
-      if (s.size())
-         return { s.data(), s.size()-1 };
-      return {};
+      return { s.data(), s.size()-1 };
    }
 
    void text_layout::flow(float width, bool justify)
