@@ -10,6 +10,8 @@
 #include "osx_utils.hpp"
 #include <vector>
 #include <algorithm>
+#include "linebreak.h"
+#include "wordbreak.h"
 
 namespace cycfi::artist
 {
@@ -28,13 +30,25 @@ namespace cycfi::artist
          CTLineRef            line;
       };
 
+      using break_enum = text_layout::break_enum;
+
+      struct break_info
+      {
+         break_enum           line : 4;
+         break_enum           word : 4;
+      };
+
       void                    flow(get_line_info const& glf, flow_info finfo);
       void                    draw(canvas& cnv, point p, color c);
       point                   caret_point(std::size_t index) const;
       std::size_t             caret_index(point p) const;
+
       std::size_t             num_lines() const;
       font&                   get_font();
       std::u32string const&   get_text() const;
+
+      break_enum              line_break(std::size_t index) const;
+      break_enum              word_break(std::size_t index) const;
 
    private:
 
@@ -45,12 +59,54 @@ namespace cycfi::artist
       class font              _font;
       std::u32string          _text;
       rows                    _rows;
+      std::vector<break_info> _breaks;
    };
 
    text_layout::impl::impl(font const& font_, std::u32string_view utf32)
     : _font{ font_ }
     , _text{ utf32 }
+    , _breaks{ utf32.size(), break_info{} }
    {
+      struct init_linebreak_
+      {
+         init_linebreak_()
+         {
+            init_linebreak();
+            init_wordbreak();
+         }
+      };
+      static init_linebreak_ init;
+
+      std::string lbrks(_text.size(), 0);
+      set_linebreaks_utf32(
+         (utf32_t const*)_text.data()
+         , _text.size(), "", lbrks.data() // $$$ fixme "" lang
+      );
+
+      std::string wbrks(_text.size(), 0);
+      set_wordbreaks_utf32(
+         (utf32_t const*)_text.data()
+         , _text.size(), "", wbrks.data() // $$$ fixme "" lang
+      );
+
+      for (std::size_t i = 0; i != _breaks.size(); ++i)
+      {
+         auto info = break_info{};
+         switch (lbrks[i])
+         {
+            case LINEBREAK_MUSTBREAK:  info.line = must_break;    break;
+            case LINEBREAK_ALLOWBREAK: info.line = allow_break;   break;
+            case LINEBREAK_NOBREAK:    info.line = no_break;      break;
+            default:                   info.line = indeterminate; break;
+         }
+         switch (wbrks[i])
+         {
+            case WORDBREAK_BREAK:      info.word = allow_break;   break;
+            case WORDBREAK_NOBREAK:    info.word = no_break;      break;
+            default:                   info.word = indeterminate; break;
+         }
+         _breaks[i] = info;
+      }
    }
 
    text_layout::impl::~impl()
@@ -229,6 +285,20 @@ namespace cycfi::artist
       return _text;
    }
 
+   text_layout::break_enum text_layout::impl::line_break(std::size_t index) const
+   {
+      if (index >= _breaks.size())
+         return indeterminate;
+      return _breaks[index].line;
+   }
+
+   text_layout::break_enum text_layout::impl::word_break(std::size_t index) const
+   {
+      if (index >= _breaks.size())
+         return indeterminate;
+      return _breaks[index].line;
+   }
+
    ////////////////////////////////////////////////////////////////////////////
    text_layout::text_layout(font_descr font_, std::string_view utf8)
     : _impl{ std::make_unique<impl>(font_, to_utf32(utf8)) }
@@ -298,6 +368,16 @@ namespace cycfi::artist
    std::size_t text_layout::caret_index(point p) const
    {
       return _impl->caret_index(p);
+   }
+
+   text_layout::break_enum text_layout::line_break(std::size_t index) const
+   {
+      return _impl->line_break(index);
+   }
+
+   text_layout::break_enum text_layout::word_break(std::size_t index) const
+   {
+      return _impl->word_break(index);
    }
 }
 

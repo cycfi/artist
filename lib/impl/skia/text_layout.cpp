@@ -48,9 +48,13 @@ namespace cycfi::artist
       void                       draw(canvas& cnv, point p, color c);
       point                      caret_point(std::size_t index) const;
       std::size_t                caret_index(point p) const;
+
       std::size_t                num_lines() const;
       font&                      get_font();
       std::u32string_view        get_text() const;
+
+      break_enum                 line_break(std::size_t index) const;
+      break_enum                 word_break(std::size_t index) const;
 
    private:
 
@@ -141,12 +145,6 @@ namespace cycfi::artist
       float y = 0;
       float x = 0;
       auto glyph_start = 0;
-
-      std::string brks(_text.size(), 0);
-      set_linebreaks_utf32(
-         (utf32_t const*)_text.data()
-         , _text.size(), _buff.language(), brks.data()
-      );
 
       auto num_spaces =
          [&](std::size_t glyph_idx) -> std::size_t
@@ -243,9 +241,9 @@ namespace cycfi::artist
          positions.push_back(x + (glyphs_info.positions[glyph_idx].x_offset * scalex));
          x += glyphs_info.positions[glyph_idx].x_advance * scalex;
          auto idx = glyphs_info.glyphs[glyph_idx].cluster;
-         bool indeterminate = brks[idx] == LINEBREAK_INDETERMINATE;
+         bool indeterminate = _breaks[idx].line == indeterminate;
 
-         if (brks[idx] == LINEBREAK_MUSTBREAK || indeterminate)
+         if (_breaks[idx].line == must_break || indeterminate)
          {
             // We got a hard-break or we are at the end, so must break now
             new_line(idx, glyph_idx, true, indeterminate);
@@ -256,14 +254,16 @@ namespace cycfi::artist
             std::size_t len = positions.size();
             auto start_line = glyphs_info.glyphs[glyph_start].cluster;
             auto end_line = glyphs_info.glyphs[glyph_start+len].cluster;
-            auto brks_len = end_line-start_line;
-            auto brks_line = brks.substr(start_line, brks_len);
-            auto pos = brks_line.find_last_of(char(LINEBREAK_ALLOWBREAK), brks_len-1);
 
-            if (pos != brks_line.npos)
-               new_line(pos + start_line, glyph_idx, false, false);
-            else
-               ; // deal with the case where we have to forcefully break the line
+            for (int i = end_line-1; i >= start_line; --i)
+            {
+               if (_breaks[i].line == allow_break)
+               {
+                  new_line(i, glyph_idx, false, false);
+                  break;
+               }
+            }
+            // $$$ deal with the case where we have to forcefully break the line $$$
          }
       }
       auto& last = _rows.back();
@@ -386,6 +386,20 @@ namespace cycfi::artist
       return _text;
    }
 
+   text_layout::break_enum text_layout::impl::line_break(std::size_t index) const
+   {
+      if (index >= _breaks.size())
+         return indeterminate;
+      return _breaks[index].line;
+   }
+
+   text_layout::break_enum text_layout::impl::word_break(std::size_t index) const
+   {
+      if (index >= _breaks.size())
+         return indeterminate;
+      return _breaks[index].line;
+   }
+
    ////////////////////////////////////////////////////////////////////////////
    text_layout::text_layout(font_descr font_, std::string_view utf8)
     : _impl{ std::make_unique<impl>(font_, to_utf32(utf8)) }
@@ -455,6 +469,16 @@ namespace cycfi::artist
    std::size_t text_layout::caret_index(point p) const
    {
       return _impl->caret_index(p);
+   }
+
+   text_layout::break_enum text_layout::line_break(std::size_t index) const
+   {
+      return _impl->line_break(index);
+   }
+
+   text_layout::break_enum text_layout::word_break(std::size_t index) const
+   {
+      return _impl->word_break(index);
    }
 }
 
