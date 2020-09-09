@@ -5,7 +5,24 @@
 ###############################################################################
 cmake_minimum_required(VERSION 3.7.2...3.15.0)
 
-if (ARTIST_SKIA OR ARTIST_QUARTZ_2D)
+add_library(libunibreak
+   external/libunibreak/src/emojidef.c
+   external/libunibreak/src/graphemebreak.c
+   external/libunibreak/src/linebreak.c
+   external/libunibreak/src/linebreakdata.c
+   external/libunibreak/src/linebreakdef.c
+   external/libunibreak/src/unibreakbase.c
+   external/libunibreak/src/unibreakdef.c
+   external/libunibreak/src/wordbreak.c
+)
+
+target_include_directories(
+   libunibreak
+   PUBLIC
+      external/libunibreak/src
+)
+
+if (ARTIST_SKIA)
 
    ############################################################################
    # Prebuilt binaries
@@ -26,13 +43,11 @@ if (ARTIST_SKIA OR ARTIST_QUARTZ_2D)
 
       set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/macos/src/prebuilt_binaries)
       set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
-      set(UNIBREAK_LIBRARY ${ARTIST_BINARIES}/libunibreak.a)
       set(HARFBUZZ_LIBRARY ${ARTIST_BINARIES}/libharfbuzz.a)
       find_package(opengl REQUIRED)
 
       set(ARTIST_DEPEPENDENCIES
          "${SKIA_LIBRARY}"
-         "${UNIBREAK_LIBRARY}"
          "${HARFBUZZ_LIBRARY}"
          PkgConfig::fontconfig
          ${OPENGL_LIBRARIES}
@@ -51,14 +66,12 @@ if (ARTIST_SKIA OR ARTIST_QUARTZ_2D)
 
       set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows-x64/src/prebuilt_binaries)
       set(SKIA_LIBRARY ${ARTIST_BINARIES}/skia.lib)
-      set(UNIBREAK_LIBRARY ${ARTIST_BINARIES}/unibreak.lib)
       set(HARFBUZZ_LIBRARY ${ARTIST_BINARIES}/harfbuzz.lib)
       set(FONTCONFIG_LIBRARY ${ARTIST_BINARIES}/fontconfig.lib)
       find_package(opengl REQUIRED)
 
       set(ARTIST_DEPEPENDENCIES
          "${SKIA_LIBRARY}"
-         "${UNIBREAK_LIBRARY}"
          "${HARFBUZZ_LIBRARY}"
          "${FONTCONFIG_LIBRARY}"
          ${OPENGL_LIBRARIES}
@@ -184,7 +197,11 @@ if (ARTIST_SKIA AND UNIX AND NOT APPLE)
    target_link_libraries(artist PUBLIC PkgConfig::fontconfig)
 endif()
 
-add_dependencies(artist prebuilt_binaries)
+add_dependencies(artist libunibreak)
+
+if (ARTIST_SKIA)
+   add_dependencies(artist prebuilt_binaries)
+endif()
 
 target_sources(artist
    PRIVATE ${ARTIST_SOURCES} ${ARTIST_IMPL}
@@ -289,16 +306,16 @@ target_compile_definitions(artist
 ###############################################################################
 # Libraries and linking
 
+target_link_libraries(artist
+   PRIVATE
+   libunibreak
+)
+
 if (ARTIST_SKIA)
    target_link_libraries(artist
    PRIVATE
       "${SKIA_LIBRARY}"
       "${ARTIST_DEPEPENDENCIES}"
-   )
-elseif (ARTIST_QUARTZ_2D)
-   target_link_libraries(artist
-   PRIVATE
-      "${UNIBREAK_LIBRARY}"
    )
 endif()
 
