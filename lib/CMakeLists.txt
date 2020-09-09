@@ -5,7 +5,7 @@
 ###############################################################################
 cmake_minimum_required(VERSION 3.7.2...3.15.0)
 
-if (ARTIST_SKIA)
+if (ARTIST_SKIA OR ARTIST_QUARTZ_2D)
 
    ############################################################################
    # Prebuilt binaries
@@ -184,9 +184,7 @@ if (ARTIST_SKIA AND UNIX AND NOT APPLE)
    target_link_libraries(artist PUBLIC PkgConfig::fontconfig)
 endif()
 
-if (ARTIST_SKIA)
-   add_dependencies(artist prebuilt_binaries)
-endif()
+add_dependencies(artist prebuilt_binaries)
 
 target_sources(artist
    PRIVATE ${ARTIST_SOURCES} ${ARTIST_IMPL}
@@ -199,6 +197,7 @@ target_include_directories(
       include
       infra/include
       infra/external/filesystem/include/
+      external/libunibreak/include/
 )
 
 if (ARTIST_SKIA)
@@ -216,7 +215,6 @@ if (ARTIST_SKIA)
          external/skia/include/ports
          external/skia/src/gpu
          external/skia/modules/skshaper/include
-         external/libunibreak/include/
          external/filesystem/include/
          external/harfbuzz/include/
          external/fontconfig/include/
@@ -296,6 +294,11 @@ if (ARTIST_SKIA)
    PRIVATE
       "${SKIA_LIBRARY}"
       "${ARTIST_DEPEPENDENCIES}"
+   )
+elseif (ARTIST_QUARTZ_2D)
+   target_link_libraries(artist
+   PRIVATE
+      "${UNIBREAK_LIBRARY}"
    )
 endif()
 
