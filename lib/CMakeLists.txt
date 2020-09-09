@@ -18,7 +18,7 @@ if (ARTIST_SKIA)
       ExternalProject_Add(prebuilt_binaries
          PREFIX "macos"
          URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/macos.zip
-         URL_MD5 3fc049d75f2524a47f6d64a9770b2b55
+         URL_MD5 66ffbf1c8272642bec4db4161f538b01
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
          INSTALL_COMMAND ""
