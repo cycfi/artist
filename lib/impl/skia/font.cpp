@@ -188,10 +188,17 @@ namespace cycfi::artist
             FcConfigDestroy(config);
       }
 
+
       font_entry const* match(font_descr descr)
       {
-         if (font_map().empty())
-            init_font_map();
+         struct font_init
+         {
+            font_init()
+            {
+               init_font_map();
+            }
+         };
+         static font_init init;
 
          std::istringstream str(std::string{ descr._families });
          std::string family;
