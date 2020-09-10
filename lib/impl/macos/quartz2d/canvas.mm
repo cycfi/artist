@@ -203,9 +203,9 @@ namespace cycfi::artist
       CGAffineTransform trans = CGAffineTransformMakeScale(1, -1);
       CGContextSetTextMatrix(ctx, trans);
 
-      CGRect user = { { 0, 0 }, { 100, 100 }};
-      auto device = CGContextConvertRectToDeviceSpace(ctx, user);
-      _state->scale(device.size.height / user.size.height);
+      CGPoint user = { 100, 100 };
+      auto device = CGContextConvertPointToDeviceSpace(ctx, user);
+      _state->scale(device.x / user.x);
    }
 
    canvas::~canvas()
@@ -214,11 +214,16 @@ namespace cycfi::artist
 
    void canvas::pre_scale(float sc)
    {
+      // Quartz-2D does not need to be pre-scaled because it already does this
+      // when setting up its context. But see how we take the actual pre-scale
+      // in the constructor.
    }
 
    float canvas::pre_scale() const
    {
-      return 1.0; // for now
+      // Quartz-2D does not need to be pre-scaled because it already does this
+      // when setting up its context.
+      return 1.0; // Pre-scale is always 1.0
    }
 
    void canvas::translate(point p)
