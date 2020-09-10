@@ -81,7 +81,6 @@ if (ARTIST_SKIA)
 
       find_package(Threads)
       find_package(PkgConfig REQUIRED)
-      pkg_check_modules(libunibreak REQUIRED IMPORTED_TARGET libunibreak)
       pkg_check_modules(harfbuzz REQUIRED IMPORTED_TARGET harfbuzz)
       pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
       pkg_check_modules(freetype2 REQUIRED IMPORTED_TARGET freetype2)
@@ -101,7 +100,6 @@ if (ARTIST_SKIA)
       set(ARTIST_DEPEPENDENCIES
          "${SKIA_LIBRARY}"
          ${CMAKE_DL_LIBS}
-         PkgConfig::libunibreak
          PkgConfig::harfbuzz
          PkgConfig::fontconfig
          PkgConfig::freetype2
