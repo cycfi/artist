@@ -192,7 +192,6 @@ namespace cycfi::artist
          }
       }
 
-
       font_entry const* match(font_descr descr)
       {
          struct font_init
