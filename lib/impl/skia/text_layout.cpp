@@ -196,12 +196,11 @@ namespace cycfi::artist
          [&](std::size_t text_idx, std::size_t& glyph_idx, bool must_break, bool indeterminate)
          {
             glyph_idx = glyphs_info.glyph_index(text_idx);
-            auto line_width = (glyph_idx != glyph_start)? justify(glyph_idx, must_break) : 0;
             auto glyph_count = glyph_idx - glyph_start;
-
-            // The last glyph indeterminate?
-            if (indeterminate)
+            if (indeterminate)  // Is the last glyph indeterminate?
                ++glyph_count;
+
+            auto line_width = glyph_count? justify(glyph_idx, must_break) : 0;
 
             std::vector<SkGlyphID> line_glyphs(glyph_count);
             for (auto j = 0; j != glyph_count; ++j)
@@ -266,9 +265,12 @@ namespace cycfi::artist
             // $$$ deal with the case where we have to forcefully break the line $$$
          }
       }
-      auto& last = _rows.back();
-      last.pos.y += finfo.last_line_height - finfo.line_height;
-      last.height = finfo.last_line_height;
+      if (_rows.size())
+      {
+         auto& last = _rows.back();
+         last.pos.y += finfo.last_line_height - finfo.line_height;
+         last.height = finfo.last_line_height;
+      }
    }
 
    void  text_layout::impl::draw(canvas& cnv, point p, color c)
