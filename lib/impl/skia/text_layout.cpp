@@ -253,16 +253,20 @@ namespace cycfi::artist
             std::size_t len = positions.size();
             auto start_line = glyphs_info.glyphs[glyph_start].cluster;
             auto end_line = glyphs_info.glyphs[glyph_start+len].cluster;
+            bool force_break = true;
 
             for (int i = end_line-1; i >= start_line; --i)
             {
                if (_breaks[i].line == allow_break)
                {
                   new_line(i, glyph_idx, false, false);
+                  force_break = false;
                   break;
                }
             }
-            // $$$ deal with the case where we have to forcefully break the line $$$
+            // deal with the case where we have to forcefully break the line
+            if (force_break)
+               new_line(end_line, glyph_idx, false, false);
          }
       }
       if (_rows.size())
