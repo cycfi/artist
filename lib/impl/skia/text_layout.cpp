@@ -144,7 +144,7 @@ namespace cycfi::artist
       auto linfo = glf(0);
       float y = 0;
       float x = 0;
-      auto glyph_start = 0;
+      std::size_t glyph_start = 0;
 
       auto num_spaces =
          [&](std::size_t glyph_idx) -> std::size_t
@@ -203,7 +203,7 @@ namespace cycfi::artist
             auto line_width = glyph_count? justify(glyph_idx, must_break) : 0;
 
             std::vector<SkGlyphID> line_glyphs(glyph_count);
-            for (auto j = 0; j != glyph_count; ++j)
+            for (std::size_t j = 0; j != glyph_count; ++j)
                line_glyphs[j] = glyphs_info.glyphs[glyph_start + j].codepoint;
 
             auto text_blob = SkTextBlob::MakeFromPosTextH(
@@ -255,7 +255,7 @@ namespace cycfi::artist
             auto end_line = glyphs_info.glyphs[glyph_start+len].cluster;
             bool force_break = true;
 
-            for (int i = end_line-1; i >= start_line; --i)
+            for (int i = end_line-1; i >= static_cast<int>(start_line); --i)
             {
                if (_breaks[i].line == allow_break)
                {
