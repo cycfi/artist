@@ -133,13 +133,8 @@ namespace cycfi::artist
       {
          FcInit();
          auto config = fc_config_ptr{ FcConfigCreate() };
-
-#if defined(__APPLE__)
-         auto app_fonts_path = get_user_fonts_directory();
-#else
-         auto app_fonts_path = fs::current_path() / "resources";
-#endif
-         FcConfigAppFontAddDir(config.get(), (FcChar8 const*)app_fonts_path.string().c_str());
+         auto user_fonts_path = get_user_fonts_directory();
+         FcConfigAppFontAddDir(config.get(), (FcChar8 const*)user_fonts_path.string().c_str());
          auto pat = fc_patern_ptr{ FcPatternCreate() };
          auto os = fc_object_set_ptr{
                      FcObjectSetBuild(
