@@ -37,7 +37,7 @@ if (ARTIST_SKIA)
 endif()
 
 if (ARTIST_SKIA AND WIN32)
-   ExternalProject_Add(dlls
+   ExternalProject_Add(windows_dlls
       PREFIX "windows-x64-dll"
       URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/windows-x64-dll.zip
       URL_MD5 4c07a5aa4bfddff268535244196f900f
