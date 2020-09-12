@@ -240,12 +240,12 @@ namespace cycfi::artist
          positions.push_back(x + (glyphs_info.positions[glyph_idx].x_offset * scalex));
          x += glyphs_info.positions[glyph_idx].x_advance * scalex;
          auto idx = glyphs_info.glyphs[glyph_idx].cluster;
-         bool indeterminate = _breaks[idx].line == indeterminate;
+         bool indeterminate_ = _breaks[idx].line == indeterminate;
 
-         if (_breaks[idx].line == must_break || indeterminate)
+         if (_breaks[idx].line == must_break || indeterminate_)
          {
             // We got a hard-break or we are at the end, so must break now
-            new_line(idx, glyph_idx, true, indeterminate);
+            new_line(idx, glyph_idx, true, indeterminate_);
          }
          else if (x > linfo.width)
          {
