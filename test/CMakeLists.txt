@@ -75,7 +75,7 @@ if (APPLE)
 elseif (MSVC)
    if (ARTIST_SKIA)
       set(GOLDEN_PATH windows_golden/skia)
-      add_dependencies(artist_test dlls)
+      add_dependencies(artist_test windows_dlls)
    endif()
 
    set(GOLDEN_DIR windows_golden)
