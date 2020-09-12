@@ -31,6 +31,7 @@ if (ARTIST_SKIA)
 
       find_package(PkgConfig REQUIRED)
       pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
+      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/macos/src/prebuilt_binaries)
 
       ExternalProject_Add(prebuilt_binaries
          PREFIX "macos"
@@ -42,7 +43,6 @@ if (ARTIST_SKIA)
          BUILD_BYPRODUCTS ${ARTIST_BINARIES}/libskia.a
       )
 
-      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/macos/src/prebuilt_binaries)
       set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
       set(HARFBUZZ_LIBRARY ${ARTIST_BINARIES}/libharfbuzz.a)
       find_package(opengl REQUIRED)
@@ -56,6 +56,8 @@ if (ARTIST_SKIA)
 
    elseif (MSVC)
 
+      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows-x64/src/prebuilt_binaries)
+
       ExternalProject_Add(prebuilt_binaries
          PREFIX "windows-x64"
          URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/windows-x64.zip
@@ -66,7 +68,6 @@ if (ARTIST_SKIA)
          BUILD_BYPRODUCTS ${ARTIST_BINARIES}/libskia.a
       )
 
-      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows-x64/src/prebuilt_binaries)
       set(SKIA_LIBRARY ${ARTIST_BINARIES}/skia.lib)
       set(HARFBUZZ_LIBRARY ${ARTIST_BINARIES}/harfbuzz.lib)
       set(FONTCONFIG_LIBRARY ${ARTIST_BINARIES}/fontconfig.lib)
