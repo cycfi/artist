@@ -38,7 +38,6 @@ public:
                   ~window();
 
    void           render();
-   void           swapBuffers();
 
 private:
 
