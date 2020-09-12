@@ -71,7 +71,7 @@ function(add_example name)
          /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup shcore.lib
       )
 
-      add_dependencies(${name} dlls)
+      add_dependencies(${name} windows_dlls)
 
       add_custom_command(
          TARGET ${name}
