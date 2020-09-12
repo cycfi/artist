@@ -131,9 +131,9 @@ namespace cycfi::artist
       return { 1.0, std::tan(sx), std::tan(sy), 1.0, 0.0, 0.0 };
    }
 
-   constexpr affine_transform affine_transform::translate(double tx, double ty) const
+   constexpr affine_transform affine_transform::translate(double tx_, double ty_) const
    {
-      return *this * make_translation(tx, ty);
+      return *this * make_translation(tx_, ty_);
    }
 
    constexpr affine_transform affine_transform::scale(double sx, double sy) const
