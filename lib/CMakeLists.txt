@@ -31,7 +31,10 @@ if (ARTIST_SKIA)
 
       find_package(PkgConfig REQUIRED)
       pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
+
       set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/macos/src/prebuilt_binaries)
+      set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
+      set(HARFBUZZ_LIBRARY ${ARTIST_BINARIES}/libharfbuzz.a)
 
       ExternalProject_Add(prebuilt_binaries
          PREFIX "macos"
@@ -40,11 +43,9 @@ if (ARTIST_SKIA)
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
          INSTALL_COMMAND ""
-         BUILD_BYPRODUCTS ${ARTIST_BINARIES}/libskia.a
+         BUILD_BYPRODUCTS ${SKIA_LIBRARY} ${HARFBUZZ_LIBRARY}
       )
 
-      set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
-      set(HARFBUZZ_LIBRARY ${ARTIST_BINARIES}/libharfbuzz.a)
       find_package(opengl REQUIRED)
 
       set(ARTIST_DEPEPENDENCIES
@@ -57,6 +58,9 @@ if (ARTIST_SKIA)
    elseif (MSVC)
 
       set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows-x64/src/prebuilt_binaries)
+      set(SKIA_LIBRARY ${ARTIST_BINARIES}/skia.lib)
+      set(HARFBUZZ_LIBRARY ${ARTIST_BINARIES}/harfbuzz.lib)
+      set(FONTCONFIG_LIBRARY ${ARTIST_BINARIES}/fontconfig.lib)
 
       ExternalProject_Add(prebuilt_binaries
          PREFIX "windows-x64"
@@ -65,12 +69,9 @@ if (ARTIST_SKIA)
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
          INSTALL_COMMAND ""
-         BUILD_BYPRODUCTS ${ARTIST_BINARIES}/libskia.a
+         BUILD_BYPRODUCTS ${SKIA_LIBRARY} ${HARFBUZZ_LIBRARY} ${FONTCONFIG_LIBRARY}
       )
 
-      set(SKIA_LIBRARY ${ARTIST_BINARIES}/skia.lib)
-      set(HARFBUZZ_LIBRARY ${ARTIST_BINARIES}/harfbuzz.lib)
-      set(FONTCONFIG_LIBRARY ${ARTIST_BINARIES}/fontconfig.lib)
       find_package(opengl REQUIRED)
 
       set(ARTIST_DEPEPENDENCIES
@@ -83,6 +84,7 @@ if (ARTIST_SKIA)
    elseif (UNIX)
 
       set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/linux-x64/src/prebuilt_binaries)
+      set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
 
       find_package(Threads)
       find_package(PkgConfig REQUIRED)
@@ -97,10 +99,8 @@ if (ARTIST_SKIA)
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
          INSTALL_COMMAND ""
-         BUILD_BYPRODUCTS ${ARTIST_BINARIES}/libskia.a
+         BUILD_BYPRODUCTS ${SKIA_LIBRARY}
       )
-
-      set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
 
       set(ARTIST_DEPEPENDENCIES
          "${SKIA_LIBRARY}"
