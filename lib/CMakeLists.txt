@@ -79,6 +79,8 @@ if (ARTIST_SKIA)
 
    elseif (UNIX)
 
+      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/linux-x64/src/prebuilt_binaries)
+
       find_package(Threads)
       find_package(PkgConfig REQUIRED)
       pkg_check_modules(harfbuzz REQUIRED IMPORTED_TARGET harfbuzz)
@@ -92,9 +94,9 @@ if (ARTIST_SKIA)
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
          INSTALL_COMMAND ""
+         BUILD_BYPRODUCTS ${ARTIST_BINARIES}/libskia.a
       )
 
-      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/linux-x64/src/prebuilt_binaries)
       set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
 
       set(ARTIST_DEPEPENDENCIES
