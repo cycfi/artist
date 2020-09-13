@@ -265,6 +265,21 @@ namespace cycfi::artist
       rhs.cnv = 0;
       return *this;
    }
+
+   // Declared in context.hpp
+   inline point device_to_user(point p, canvas& cnv)
+   {
+      return cnv.device_to_user(p);
+   }
+
+   // Declared in context.hpp
+   inline rect device_to_user(rect const& r, canvas& cnv)
+   {
+      return {
+         cnv.device_to_user(r.top_left())
+       , cnv.device_to_user(r.bottom_right())
+      };
+   }
 }
 
 #endif
