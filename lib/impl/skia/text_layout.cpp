@@ -373,6 +373,14 @@ namespace cycfi::artist
       );
       if (j == l)
          return is_last_row? _text.size() : npos;
+      if (j != f)
+      {
+         // Check the x position is before the middle of the glyph
+         auto prev_pos = *(j-1);
+         auto half_width = (*j - prev_pos) / 2;
+         if (p.x < prev_pos+half_width)
+            --j;
+      }
       auto index = i->glyph_index + (j-f);
       return glyphs_info.glyphs[index].cluster;
    }
