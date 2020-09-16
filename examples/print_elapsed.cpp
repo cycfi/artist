@@ -29,12 +29,8 @@ struct exp_moving_average
 
 void print_elapsed(canvas& cnv, point br, color bkd, color c)
 {
-#if defined(__APPLE__)
-   static font text_font = font_descr{ "Lucida Grande", 12 };
-#else
-   static font text_font = font_descr{ "Open Sans", 12 };
-#endif
-   static auto metrics = text_font.metrics();
+   static font open_sans = font_descr{ "Open Sans", 12 };
+   static auto metrics = open_sans.metrics();
    static auto height = metrics.ascent + metrics.leading + metrics.descent;
    static exp_moving_average<256> ma;
    static int refresh = 0;
@@ -48,13 +44,13 @@ void print_elapsed(canvas& cnv, point br, color bkd, color c)
       fps_str = std::to_string(1/ave) + " fps";
    }
 
-   auto width = text_font.measure_text(fps_str);
+   auto width = open_sans.measure_text(fps_str);
    cnv.fill_style(bkd);
    cnv.add_rect({ br.x - (width + 4), br.y - height, br.x, br.y });
    cnv.fill();
 
    cnv.fill_style(c);
-   cnv.font(text_font);
+   cnv.font(open_sans);
    cnv.text_align(cnv.right | cnv.bottom);
    cnv.fill_text(fps_str, { br.x-2, br.y });
 }
