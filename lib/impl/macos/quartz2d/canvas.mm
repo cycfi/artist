@@ -81,7 +81,9 @@ namespace cycfi::artist
       float             _scale;
    };
 
-   namespace
+#pragma clang diagnostic ignored "-Wvla-extension"
+
+    namespace
    {
       void make_gradient(std::vector<canvas::color_stop> const& space, CGGradientRef& gradient)
       {
