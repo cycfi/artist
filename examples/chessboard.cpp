@@ -10,7 +10,7 @@ using cycfi::is_little_endian;
 
 int constexpr rows = 8;
 int constexpr cols = 8;
-int constexpr square_side = 100;
+int constexpr square_side = 60;
 int constexpr square_area = square_side * square_side;
 int constexpr width = cols * square_side;
 int constexpr height = rows * square_side;
