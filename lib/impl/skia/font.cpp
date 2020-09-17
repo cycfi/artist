@@ -10,6 +10,7 @@
 #include <SkFontMetrics.h>
 #include <SkFontMgr.h>
 #include <infra/filesystem.hpp>
+#include <infra/support.hpp>
 
 # include <fontconfig/fontconfig.h>
 # include <map>
@@ -123,22 +124,24 @@ namespace cycfi::artist
          return map(fc::black, 100, fc_black, 220, std::min(w, 220));
       }
 
+      using fc_config_ptr = std::unique_ptr<FcConfig, deleter<FcConfig, FcConfigDestroy>>;
+      using fc_patern_ptr = std::unique_ptr<FcPattern, deleter<FcPattern, FcPatternDestroy>>;
+      using fc_object_set_ptr = std::unique_ptr<FcObjectSet, deleter<FcObjectSet, FcObjectSetDestroy>>;
+      using fc_font_set_ptr = std::unique_ptr<FcFontSet, deleter<FcFontSet, FcFontSetDestroy>>;
+
       void init_font_map()
       {
          FcInit();
-         FcConfig* config = FcConfigCreate();
-
-#if defined(__APPLE__)
-         auto app_fonts_path = get_user_fonts_directory();
-#else
-         auto app_fonts_path = fs::current_path() / "resources/fonts";
-#endif
-         FcConfigAppFontAddDir(config, (FcChar8 const*)app_fonts_path.string().c_str());
-         FcPattern*     pat = FcPatternCreate();
-         FcObjectSet*   os = FcObjectSetBuild(
-                                 FC_FAMILY, FC_FULLNAME, FC_WIDTH, FC_WEIGHT
-                               , FC_SLANT, FC_FILE, FC_INDEX, nullptr);
-         FcFontSet*     fs = FcFontList(config, pat, os);
+         auto config = fc_config_ptr{ FcConfigCreate() };
+         auto user_fonts_path = get_user_fonts_directory();
+         FcConfigAppFontAddDir(config.get(), (FcChar8 const*)user_fonts_path.string().c_str());
+         auto pat = fc_patern_ptr{ FcPatternCreate() };
+         auto os = fc_object_set_ptr{
+                     FcObjectSetBuild(
+                        FC_FAMILY, FC_FULLNAME, FC_WIDTH, FC_WEIGHT
+                      , FC_SLANT, FC_FILE, FC_INDEX, nullptr)
+                     };
+         auto fs = fc_font_set_ptr{ FcFontList(config.get(), pat.get(), os.get()) };
 
          for (int i=0; fs && i < fs->nfont; ++i)
          {
@@ -182,16 +185,18 @@ namespace cycfi::artist
                }
             }
          }
-         if (fs)
-            FcFontSetDestroy(fs);
-         if (config)
-            FcConfigDestroy(config);
       }
 
       font_entry const* match(font_descr descr)
       {
-         if (font_map().empty())
-            init_font_map();
+         struct font_init
+         {
+            font_init()
+            {
+               init_font_map();
+            }
+         };
+         static font_init init;
 
          std::istringstream str(std::string{ descr._families });
          std::string family;

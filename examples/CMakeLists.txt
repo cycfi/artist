@@ -11,6 +11,10 @@ if (UNIX AND NOT APPLE)
    pkg_check_modules(gtk3 REQUIRED IMPORTED_TARGET gtk+-3.0)
 endif()
 
+file(
+   GLOB artist_fonts ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/*.*
+)
+
 function(add_example name)
    if (APPLE)
 
@@ -30,7 +34,7 @@ function(add_example name)
          ${name} MACOSX_BUNDLE
          ${name}.cpp
          ${MAIN_APP}
-         ${${name}_fonts}
+         ${artist_fonts}
          ${${name}_images}
       )
 
@@ -44,7 +48,7 @@ function(add_example name)
       target_link_options(${name} PRIVATE -framework AppKit)
 
       set_source_files_properties(
-         ${${name}_fonts}
+         ${artist_fonts}
          ${${name}_images}
          PROPERTIES
          MACOSX_PACKAGE_LOCATION Resources
@@ -67,7 +71,7 @@ function(add_example name)
          /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup shcore.lib
       )
 
-      add_dependencies(${name} dlls)
+      add_dependencies(${name} windows_dlls)
 
       add_custom_command(
          TARGET ${name}
@@ -121,7 +125,7 @@ function(add_example name)
    if (UNIX OR MSVC)
 
       file(
-         COPY ${${name}_fonts}
+         COPY ${artist_fonts}
          DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/resources/fonts
       )
 
@@ -135,10 +139,6 @@ function(add_example name)
    target_link_libraries(${name} artist)
 
 endfunction()
-
-file(
-   GLOB typography_fonts ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/*.*
-)
 
 set(space_images
    ${CMAKE_CURRENT_LIST_DIR}/images/space.jpg

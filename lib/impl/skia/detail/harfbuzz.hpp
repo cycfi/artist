@@ -44,7 +44,7 @@ namespace cycfi::artist::detail
    class hb_buffer : non_copyable
    {
    public:
-                              hb_buffer(std::string_view utf8);
+                              hb_buffer(std::u32string_view utf32);
 
       void                    direction(hb_direction_t dir);
       void                    script(hb_script_t scr);
@@ -53,6 +53,8 @@ namespace cycfi::artist::detail
 
       struct glyphs_info
       {
+         int                  glyph_index(std::size_t index) const;
+
          unsigned int         count;
          hb_glyph_info_t*     glyphs;
          hb_glyph_position_t* positions;
@@ -60,16 +62,13 @@ namespace cycfi::artist::detail
 
       void                    shape(hb_font const& font);
       glyphs_info             glyphs() const;
-
       hb_buffer_t*            get() const { return _buffer.get(); }
-      int                     glyph_index(std::size_t index) const;
 
    private:
 
       using ptr_type = std::unique_ptr<hb_buffer_t, deleter<hb_buffer_t, hb_buffer_destroy>>;
 
       ptr_type             _buffer;
-      std::vector<int>     _map;
    };
 }
 

@@ -422,11 +422,10 @@ void typography(canvas& cnv)
 
    auto tlayout = text_layout{
       font_descr{ "Open Sans", 12 }.italic()
-    , rgba(220, 220, 220, 200)
     , text
    };
    tlayout.flow(350, true);
-   tlayout.draw(cnv, 20, 300);
+   tlayout.draw(cnv, 20, 300, rgba(220, 220, 220, 200));
 
    // Hit testing
    {
@@ -473,13 +472,12 @@ void typography(canvas& cnv)
       CHECK(text[i] == '\n');
 
       i = tlayout.caret_index(0, 147);
-      CHECK(i == 405);
-      char const* s = text.data()+i;
-      auto cp = codepoint(s);
+      CHECK(i == 403);
+      char32_t cp = *(tlayout.text().data()+i);
       CHECK(cp == 8288); // 'WORD JOINER' (U+2060)
 
       i = tlayout.caret_index(88, 147);
-      CHECK(i == text.size());
+      CHECK(i == tlayout.text().size());
    }
 
    // glyph_bounds
@@ -510,10 +508,10 @@ void typography(canvas& cnv)
       test_caret_pos(132);
       test_caret_pos(133);
       test_caret_pos(154);
+      test_caret_pos(325);
+      test_caret_pos(326);
       test_caret_pos(405);
       test_caret_pos(420);
-      test_caret_pos(425);
-      test_caret_pos(426);
    }
 }
 

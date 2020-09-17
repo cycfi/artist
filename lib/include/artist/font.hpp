@@ -345,9 +345,7 @@ namespace cycfi::artist
       return m.ascent + m.descent + m.leading;
    }
 
-#ifdef __APPLE__
    fs::path get_user_fonts_directory();
-#endif
 }
 
 #endif

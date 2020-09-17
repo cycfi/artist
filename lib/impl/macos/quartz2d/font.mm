@@ -79,6 +79,15 @@ namespace cycfi::artist
             break;
          }
       }
+      if (_ptr == nullptr)
+      {
+         _ptr = (__bridge font_impl_ptr)
+            [NSFont
+               systemFontOfSize : descr._size
+                         weight : weight
+            ];
+         CFRetain(_ptr);
+      }
    }
 
    font::font(font const& rhs)
