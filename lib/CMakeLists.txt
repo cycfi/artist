@@ -5,6 +5,23 @@
 ###############################################################################
 cmake_minimum_required(VERSION 3.7.2...3.15.0)
 
+add_library(libunibreak
+   external/libunibreak/src/emojidef.c
+   external/libunibreak/src/graphemebreak.c
+   external/libunibreak/src/linebreak.c
+   external/libunibreak/src/linebreakdata.c
+   external/libunibreak/src/linebreakdef.c
+   external/libunibreak/src/unibreakbase.c
+   external/libunibreak/src/unibreakdef.c
+   external/libunibreak/src/wordbreak.c
+)
+
+target_include_directories(
+   libunibreak
+   PUBLIC
+      external/libunibreak/src
+)
+
 if (ARTIST_SKIA)
 
    ############################################################################
@@ -15,30 +32,35 @@ if (ARTIST_SKIA)
       find_package(PkgConfig REQUIRED)
       pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
 
+      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/macos/src/prebuilt_binaries)
+      set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
+      set(HARFBUZZ_LIBRARY ${ARTIST_BINARIES}/libharfbuzz.a)
+
       ExternalProject_Add(prebuilt_binaries
          PREFIX "macos"
          URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/macos.zip
-         URL_MD5 3fc049d75f2524a47f6d64a9770b2b55
+         URL_MD5 66ffbf1c8272642bec4db4161f538b01
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
          INSTALL_COMMAND ""
+         BUILD_BYPRODUCTS ${SKIA_LIBRARY} ${HARFBUZZ_LIBRARY}
       )
 
-      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/macos/src/prebuilt_binaries)
-      set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
-      set(UNIBREAK_LIBRARY ${ARTIST_BINARIES}/libunibreak.a)
-      set(HARFBUZZ_LIBRARY ${ARTIST_BINARIES}/libharfbuzz.a)
       find_package(opengl REQUIRED)
 
       set(ARTIST_DEPEPENDENCIES
          "${SKIA_LIBRARY}"
-         "${UNIBREAK_LIBRARY}"
          "${HARFBUZZ_LIBRARY}"
          PkgConfig::fontconfig
          ${OPENGL_LIBRARIES}
       )
 
    elseif (MSVC)
+
+      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows-x64/src/prebuilt_binaries)
+      set(SKIA_LIBRARY ${ARTIST_BINARIES}/skia.lib)
+      set(HARFBUZZ_LIBRARY ${ARTIST_BINARIES}/harfbuzz.lib)
+      set(FONTCONFIG_LIBRARY ${ARTIST_BINARIES}/fontconfig.lib)
 
       ExternalProject_Add(prebuilt_binaries
          PREFIX "windows-x64"
@@ -47,18 +69,13 @@ if (ARTIST_SKIA)
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
          INSTALL_COMMAND ""
+         BUILD_BYPRODUCTS ${SKIA_LIBRARY} ${HARFBUZZ_LIBRARY} ${FONTCONFIG_LIBRARY}
       )
 
-      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows-x64/src/prebuilt_binaries)
-      set(SKIA_LIBRARY ${ARTIST_BINARIES}/skia.lib)
-      set(UNIBREAK_LIBRARY ${ARTIST_BINARIES}/unibreak.lib)
-      set(HARFBUZZ_LIBRARY ${ARTIST_BINARIES}/harfbuzz.lib)
-      set(FONTCONFIG_LIBRARY ${ARTIST_BINARIES}/fontconfig.lib)
       find_package(opengl REQUIRED)
 
       set(ARTIST_DEPEPENDENCIES
          "${SKIA_LIBRARY}"
-         "${UNIBREAK_LIBRARY}"
          "${HARFBUZZ_LIBRARY}"
          "${FONTCONFIG_LIBRARY}"
          ${OPENGL_LIBRARIES}
@@ -66,9 +83,11 @@ if (ARTIST_SKIA)
 
    elseif (UNIX)
 
+      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/linux-x64/src/prebuilt_binaries)
+      set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
+
       find_package(Threads)
       find_package(PkgConfig REQUIRED)
-      pkg_check_modules(libunibreak REQUIRED IMPORTED_TARGET libunibreak)
       pkg_check_modules(harfbuzz REQUIRED IMPORTED_TARGET harfbuzz)
       pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
       pkg_check_modules(freetype2 REQUIRED IMPORTED_TARGET freetype2)
@@ -80,15 +99,12 @@ if (ARTIST_SKIA)
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
          INSTALL_COMMAND ""
+         BUILD_BYPRODUCTS ${SKIA_LIBRARY}
       )
-
-      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/linux-x64/src/prebuilt_binaries)
-      set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
 
       set(ARTIST_DEPEPENDENCIES
          "${SKIA_LIBRARY}"
          ${CMAKE_DL_LIBS}
-         PkgConfig::libunibreak
          PkgConfig::harfbuzz
          PkgConfig::fontconfig
          PkgConfig::freetype2
@@ -109,16 +125,18 @@ set(ARTIST_SOURCES
 )
 
 set(ARTIST_HEADERS
+   include/artist/affine_transform.hpp
    include/artist/canvas.hpp
    include/artist/circle.hpp
    include/artist/color.hpp
+   include/artist/detail
    include/artist/font.hpp
    include/artist/image.hpp
+   include/artist/path.hpp
    include/artist/point.hpp
    include/artist/rect.hpp
-   include/artist/text_layout.hpp
    include/artist/resources.hpp
-   include/artist/affine_transform.hpp
+   include/artist/text_layout.hpp
 )
 
 if (APPLE AND ARTIST_QUARTZ_2D)
@@ -182,6 +200,8 @@ if (ARTIST_SKIA AND UNIX AND NOT APPLE)
    target_link_libraries(artist PUBLIC PkgConfig::fontconfig)
 endif()
 
+add_dependencies(artist libunibreak)
+
 if (ARTIST_SKIA)
    add_dependencies(artist prebuilt_binaries)
 endif()
@@ -197,6 +217,7 @@ target_include_directories(
       include
       infra/include
       infra/external/filesystem/include/
+      external/libunibreak/include/
 )
 
 if (ARTIST_SKIA)
@@ -214,7 +235,6 @@ if (ARTIST_SKIA)
          external/skia/include/ports
          external/skia/src/gpu
          external/skia/modules/skshaper/include
-         external/libunibreak/include/
          external/filesystem/include/
          external/harfbuzz/include/
          external/fontconfig/include/
@@ -252,7 +272,8 @@ endif()
 target_compile_options(artist PRIVATE
    $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic -ftemplate-backtrace-limit=0>
    $<$<CXX_COMPILER_ID:Clang>:-Wall -Wpedantic -ftemplate-backtrace-limit=0>
-   $<$<CXX_COMPILER_ID:MSVC>:/W4 /wd4244 /wd4305 /wd4996 /wd4267 /wd4018>
+   $<$<CXX_COMPILER_ID:AppleClang>:-Wall -Wpedantic -ftemplate-backtrace-limit=0>
+   $<$<CXX_COMPILER_ID:MSVC>:/W4 /wd4244 /wd4305 /wd4996 /wd4267 /wd4018 /wd5030 /wd4201 /utf-8>
 )
 
 ###############################################################################
@@ -288,6 +309,11 @@ target_compile_definitions(artist
 
 ###############################################################################
 # Libraries and linking
+
+target_link_libraries(artist
+   PRIVATE
+   libunibreak
+)
 
 if (ARTIST_SKIA)
    target_link_libraries(artist
