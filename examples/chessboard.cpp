@@ -6,6 +6,7 @@
 #include "app.hpp"
 
 using namespace cycfi::artist;
+using cycfi::is_little_endian;
 
 int constexpr rows = 8;
 int constexpr cols = 8;
@@ -17,7 +18,7 @@ size_t constexpr pix_buf_size = rows * cols * square_area;
 
 uint32_t constexpr white = 0xffffffff;
 // on little endian systems RGBA is formatted as ABGR for values
-std::function<uint32_t()> black = []() { return cycfi::is_little_endian() ? 0xff000000 : 0x000000ff; };
+std::function<uint32_t()> black = []() { return is_little_endian() ? 0xff000000 : 0x000000ff; };
 
 auto constexpr window_size = extent{
    static_cast<float>(cols * square_side),
@@ -27,24 +28,24 @@ auto constexpr window_size = extent{
 void draw(canvas& cnv)
 {
    // Create a chess board
-   std::shared_ptr<uint32_t> pix_buf(new uint32_t[pix_buf_size]);
+   std::unique_ptr<uint32_t> pix_buf(new uint32_t[pix_buf_size]);
    for (int y = 0; y < rows; y++)
    {
       uint32_t* row_slice = &(pix_buf.get()[y * rows * square_area]);
       uint32_t color = black();
       if (y % 2 != 0)
-        color = white;
+         color = white;
       for (int x = 0; x < cols * square_area; x++)
       {
-        if (x % square_side == 0)
-        {
-          if (color == white)
-            color = black();
-          else
-            color = white;
-        }
+         if (x % square_side == 0)
+         {
+            if (color == white)
+               color = black();
+            else
+               color = white;
+         }
 
-        row_slice[x] = color;
+         row_slice[x] = color;
       }
    }
 
