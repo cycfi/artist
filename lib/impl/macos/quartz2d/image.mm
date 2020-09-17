@@ -10,6 +10,23 @@
 
 namespace cycfi::artist
 {
+   std::tuple<CGColorSpaceRef, CGBitmapInfo, size_t, size_t, size_t> _map_img_fmt_to_info(const img_fmt& fmt)
+   {
+      switch(fmt)
+      {
+         case img_fmt::GRAY8:
+            return {CGColorSpaceCreateDeviceGray(), kCGImageAlphaNone, 1, 8, 8};
+         case img_fmt::RGB16:
+            return {CGColorSpaceCreateDeviceRGB(), kCGImageAlphaNoneSkipFirst, 4, 5, 16};
+         case img_fmt::RGB32:
+            return {CGColorSpaceCreateDeviceRGB(), kCGBitmapByteOrderDefault | kCGImageAlphaNone, 4, 8, 32};
+         case img_fmt::RGBA32:
+            return {CGColorSpaceCreateDeviceRGB(), kCGBitmapByteOrderDefault | kCGImageAlphaPremultipliedLast, 4, 8, 32};
+         default:
+            throw std::runtime_error("Unsupported image format");
+      }
+   }
+
    namespace
    {
       NSBitmapImageRep* get_bitmap(NSImage* image)
@@ -39,6 +56,32 @@ namespace cycfi::artist
       auto fs_path = find_file(path_);
       auto path = [NSString stringWithUTF8String : fs_path.c_str() ];
       auto img_ = [[NSImage alloc] initWithContentsOfFile : path];
+      _impl = (__bridge_retained image_impl_ptr) img_;
+   }
+
+   image::image(uint8_t* data, img_fmt fmt, extent size)
+   {
+      if (fmt == img_fmt::INVALID)
+         throw std::runtime_error{ "Error: Cannot initalize format: INVALID" };
+      auto [colorSpaceRef, bitmapInfo, componentsPerPixel, bitsPerComponent, bitsPerPixel] = _map_img_fmt_to_info(fmt);
+      size_t bufferLength = size.x * size.y * componentsPerPixel;
+      CGDataProviderRef provider = CGDataProviderCreateWithData(NULL, data, bufferLength, NULL);
+      size_t bytesPerRow = componentsPerPixel * size.x;
+      CGColorRenderingIntent renderingIntent = kCGRenderingIntentDefault;
+
+      CGImageRef iref = CGImageCreate(size.x,
+                                      size.y,
+                                      bitsPerComponent,
+                                      bitsPerPixel,
+                                      bytesPerRow,
+                                      colorSpaceRef,
+                                      bitmapInfo,
+                                      provider,
+                                      NULL,
+                                      YES,
+                                      renderingIntent);
+
+      auto img_ = [[NSImage alloc] initWithCGImage:iref size:NSMakeSize(size.x, size.y)];
       _impl = (__bridge_retained image_impl_ptr) img_;
    }
 
