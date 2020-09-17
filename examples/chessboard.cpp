@@ -50,9 +50,9 @@ void draw(canvas& cnv)
    }
 
    auto img = image(
-      reinterpret_cast<unsigned char*>(pix_buf.get()),
-      img_fmt::RGBA32,
-      { window_size.x, window_size.y }
+           reinterpret_cast<unsigned char*>(pix_buf.get()),
+           pixel_format::rgba32,
+           { window_size.x, window_size.y }
    );
    cnv.draw(img);
 }

@@ -26,17 +26,17 @@ using std::pair;
 
 namespace cycfi::artist
 {
-   pair<SkAlphaType, SkColorType> _map_img_fmt_to_api_type(const img_fmt& fmt)
+   pair<SkAlphaType, SkColorType> _map_img_fmt_to_api_type(const pixel_format& fmt)
    {
       switch(fmt)
       {
-         case img_fmt::GRAY8:
+         case pixel_format::gray8:
             return {SkAlphaType::kOpaque_SkAlphaType, SkColorType::kGray_8_SkColorType};
-         case img_fmt::RGB16:
+         case pixel_format::rgb16:
             return {SkAlphaType::kOpaque_SkAlphaType, SkColorType::kRGB_565_SkColorType};
-         case img_fmt::RGB32:
+         case pixel_format::rgb32:
             return {SkAlphaType::kOpaque_SkAlphaType, SkColorType::kRGB_888x_SkColorType};
-         case img_fmt::RGBA32:
+         case pixel_format::rgba32:
             return {SkAlphaType::kOpaque_SkAlphaType, SkColorType::kRGBA_8888_SkColorType};
          default:
             return {SkAlphaType::kUnknown_SkAlphaType, SkColorType::kUnknown_SkColorType};
@@ -70,10 +70,10 @@ namespace cycfi::artist
          fail();
    }
 
-   image::image(uint8_t* data, img_fmt fmt, extent size)
+   image::image(uint8_t* data, pixel_format fmt, extent size)
     : _impl{ new artist::image_impl(SkBitmap{}) }
    {
-      if (fmt == img_fmt::INVALID)
+      if (fmt == pixel_format::invalid)
          throw std::runtime_error{ "Error: Cannot initalize format: INVALID" };
 
       SkAlphaType alpha_fmt;
@@ -216,16 +216,16 @@ namespace cycfi::artist
       return std::visit(get_size, _impl->base());
    }
 
-   size_t image::_pixmap_size(img_fmt fmt, extent size)
+   size_t image::_pixmap_size(pixel_format fmt, extent size)
    {
       size_t fmt_bytes_per_pixel = ([&fmt]() {
          switch (fmt) {
-            case img_fmt::GRAY8:
+            case pixel_format::gray8:
                return 1;
-            case img_fmt::RGB16:
+            case pixel_format::rgb16:
                return 2;
-            case img_fmt::RGB32:
-            case img_fmt::RGBA32:
+            case pixel_format::rgb32:
+            case pixel_format::rgba32:
                return 4;
             default:
                return 0;

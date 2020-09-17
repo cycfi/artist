@@ -26,12 +26,13 @@ namespace cycfi::artist
    class image_impl;
    using image_impl_ptr = image_impl*;
 
-   enum class img_fmt {
-      INVALID = -1,
-      GRAY8,
-      RGB16,
-      RGB32,            // First byte is Alpha of 1, or ignored
-      RGBA32,           
+   enum class pixel_format
+   {
+      invalid = -1,
+      gray8,
+      rgb16,
+      rgb32,            // First byte is Alpha of 1, or ignored
+      rgba32,
    };
 
    ////////////////////////////////////////////////////////////////////////////
@@ -44,7 +45,7 @@ namespace cycfi::artist
       explicit          image(float sizex, float sizey);
       explicit          image(extent size);
       explicit          image(fs::path const& path_);
-      explicit          image(uint8_t* data, img_fmt fmt, extent size);
+      explicit          image(uint8_t* data, pixel_format fmt, extent size);
                         image(image const& rhs) = delete;
                         image(image&& rhs) noexcept;
                         ~image();
@@ -61,7 +62,7 @@ namespace cycfi::artist
       extent            bitmap_size() const;
 
    private:
-      size_t            _pixmap_size(img_fmt, extent size);
+      size_t            _pixmap_size(pixel_format, extent size);
 
       image_impl_ptr  _impl;
    };
