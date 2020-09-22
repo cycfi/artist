@@ -427,6 +427,17 @@ namespace cycfi::artist
          CGContextEOClip(CGContextRef(_context));
    }
 
+   rect canvas::clip_extent() const
+   {
+      auto r = CGContextGetClipBoundingBox(CGContextRef(_context));
+      return {
+         float(r.origin.x)
+       , float(r.origin.y)
+       , float(r.origin.x + r.size.width)
+       , float(r.origin.y + r.size.height)
+      };
+   }
+
    void canvas::clip(class path const& p)
    {
       auto ctx = CGContextRef(_context);

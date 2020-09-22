@@ -270,6 +270,13 @@ namespace cycfi::artist
       _context->clipPath(*p.impl(), true);
    }
 
+   rect canvas::clip_extent() const
+   {
+      SkRect r;
+      _context->getLocalClipBounds(&r);
+      return { r.left(), r.top(), r.right(), r.bottom() };
+   }
+
    bool canvas::point_in_path(point p) const
    {
       return _state->path().contains(p.x, p.y);
