@@ -10,18 +10,18 @@
 
 namespace cycfi::artist
 {
-   std::tuple<CGColorSpaceRef, CGBitmapInfo, size_t, size_t, size_t> _map_img_fmt_to_info(const img_fmt& fmt)
+   std::tuple<CGColorSpaceRef, CGBitmapInfo, size_t, size_t, size_t> _map_img_fmt_to_info(pixel_format const& fmt)
    {
       switch(fmt)
       {
-         case img_fmt::GRAY8:
-            return {CGColorSpaceCreateDeviceGray(), kCGImageAlphaNone, 1, 8, 8};
-         case img_fmt::RGB16:
-            return {CGColorSpaceCreateDeviceRGB(), kCGImageAlphaNoneSkipFirst, 4, 5, 16};
-         case img_fmt::RGB32:
-            return {CGColorSpaceCreateDeviceRGB(), kCGBitmapByteOrderDefault | kCGImageAlphaNone, 4, 8, 32};
-         case img_fmt::RGBA32:
-            return {CGColorSpaceCreateDeviceRGB(), kCGBitmapByteOrderDefault | kCGImageAlphaPremultipliedLast, 4, 8, 32};
+         case pixel_format::gray8:
+            return { CGColorSpaceCreateDeviceGray(), kCGImageAlphaNone, 1, 8, 8 };
+         case pixel_format::rgb16:
+            return { CGColorSpaceCreateDeviceRGB(), kCGImageAlphaNoneSkipFirst, 4, 5, 16 };
+         case pixel_format::rgb32:
+            return { CGColorSpaceCreateDeviceRGB(), kCGBitmapByteOrderDefault | kCGImageAlphaNone, 4, 8, 32 };
+         case pixel_format::rgba32:
+            return { CGColorSpaceCreateDeviceRGB(), kCGBitmapByteOrderDefault | kCGImageAlphaPremultipliedLast, 4, 8, 32 };
          default:
             throw std::runtime_error("Unsupported image format");
       }
@@ -59,13 +59,13 @@ namespace cycfi::artist
       _impl = (__bridge_retained image_impl_ptr) img_;
    }
 
-   image::image(uint8_t* data, img_fmt fmt, extent size)
+   image::image(uint8_t* data, pixel_format fmt, extent size)
    {
-      if (fmt == img_fmt::INVALID)
+      if (fmt == pixel_format::invalid)
          throw std::runtime_error{ "Error: Cannot initalize format: INVALID" };
       auto [colorSpaceRef, bitmapInfo, componentsPerPixel, bitsPerComponent, bitsPerPixel] = _map_img_fmt_to_info(fmt);
       size_t bufferLength = size.x * size.y * componentsPerPixel;
-      CGDataProviderRef provider = CGDataProviderCreateWithData(NULL, data, bufferLength, NULL);
+      CGDataProviderRef provider = CGDataProviderCreateWithData(nullptr, data, bufferLength, nullptr);
       size_t bytesPerRow = componentsPerPixel * size.x;
       CGColorRenderingIntent renderingIntent = kCGRenderingIntentDefault;
 
