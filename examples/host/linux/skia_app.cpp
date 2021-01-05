@@ -154,6 +154,12 @@ namespace cycfi::artist
       add_search_path(fs::current_path() / "resources/fonts");
       add_search_path(fs::current_path() / "resources/images");
    }
+
+   // This is declared in font.hpp
+   fs::path get_user_fonts_directory()
+   {
+      return fs::path(fs::current_path() / "resources/fonts");
+   }
 }
 
 int run_app(
