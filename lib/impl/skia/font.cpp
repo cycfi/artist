@@ -132,16 +132,16 @@ namespace cycfi::artist
       void init_font_map()
       {
          FcInit();
-         auto config = fc_config_ptr{ FcConfigCreate() };
+         FcConfig* config = FcConfigGetCurrent();
          auto user_fonts_path = get_user_fonts_directory();
-         FcConfigAppFontAddDir(config.get(), (FcChar8 const*)user_fonts_path.string().c_str());
+         FcConfigAppFontAddDir(config, (FcChar8 const*)user_fonts_path.string().c_str());
          auto pat = fc_patern_ptr{ FcPatternCreate() };
          auto os = fc_object_set_ptr{
                      FcObjectSetBuild(
                         FC_FAMILY, FC_FULLNAME, FC_WIDTH, FC_WEIGHT
                       , FC_SLANT, FC_FILE, FC_INDEX, nullptr)
                      };
-         auto fs = fc_font_set_ptr{ FcFontList(config.get(), pat.get(), os.get()) };
+         auto fs = fc_font_set_ptr{ FcFontList(config, pat.get(), os.get()) };
 
          for (int i=0; fs && i < fs->nfont; ++i)
          {
