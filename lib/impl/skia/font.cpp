@@ -55,25 +55,31 @@ namespace cycfi::artist
          return (a * (1.0 - f)) + (b * f);
       }
 
+      using skia_font_map_type = std::map<std::string, sk_sp<SkTypeface>>;
+
+      std::pair<skia_font_map_type&, std::mutex&> get_skia_font_map()
+      {
+         static skia_font_map_type map_;
+         static std::mutex mutex_;
+         return { map_, mutex_ };
+      }
+
       struct font_entry
       {
-         sk_sp<SkTypeface> cached_typeface;
-         std::string       file;
-         int               index    = 0;
-         uint8_t           weight   = font_constants::weight_normal;
-         uint8_t           slant    = font_constants::slant_normal;
-         uint8_t           stretch  = font_constants::stretch_normal;
+         std::string    full_name;
+         std::string    file;
+         int            index    = 0;
+         uint8_t        weight   = font_constants::weight_normal;
+         uint8_t        slant    = font_constants::slant_normal;
+         uint8_t        stretch  = font_constants::stretch_normal;
       };
 
       using font_map_type = std::map<std::string, std::vector<font_entry>>;
-      std::pair<font_map_type&, std::mutex&> get_font_map()
+      font_map_type& font_map()
       {
          static font_map_type font_map_;
-         static std::mutex mutex_;
-         return { font_map_, mutex_ };
+         return font_map_;
       }
-
-      constexpr auto font_map_default_font_family = "";
 
       enum
       {
@@ -126,32 +132,30 @@ namespace cycfi::artist
       void init_font_map()
       {
          FcInit();
-         FcConfig* config = FcConfigGetCurrent();
+         auto config = fc_config_ptr{ FcConfigCreate() };
          auto user_fonts_path = get_user_fonts_directory();
-         FcConfigAppFontAddDir(config, (FcChar8 const*)user_fonts_path.string().c_str());
+         FcConfigAppFontAddDir(config.get(), (FcChar8 const*)user_fonts_path.string().c_str());
          auto pat = fc_patern_ptr{ FcPatternCreate() };
          auto os = fc_object_set_ptr{
                      FcObjectSetBuild(
                         FC_FAMILY, FC_FULLNAME, FC_WIDTH, FC_WEIGHT
                       , FC_SLANT, FC_FILE, FC_INDEX, nullptr)
                      };
-         auto fs = fc_font_set_ptr{ FcFontList(config, pat.get(), os.get()) };
-
-         // The lock is not needed, since this is run on static initialization.
-         auto [font_map, font_map_mutex] = get_font_map();
+         auto fs = fc_font_set_ptr{ FcFontList(config.get(), pat.get(), os.get()) };
 
          for (int i=0; fs && i < fs->nfont; ++i)
          {
             FcPattern* font = fs->fonts[i];
-            FcChar8 *file, *family;
+            FcChar8 *file, *family, *full_name;
             int index;
             if (FcPatternGetString(font, FC_FILE, 0, &file) == FcResultMatch &&
                FcPatternGetString(font, FC_FAMILY, 0, &family) == FcResultMatch &&
+               FcPatternGetString(font, FC_FULLNAME, 0, &full_name) == FcResultMatch &&
                FcPatternGetInteger(font, FC_INDEX, 0, &index) == FcResultMatch
             )
             {
                font_entry entry;
-               entry.cached_typeface = nullptr;
+               entry.full_name = (const char*) full_name;
                entry.file = (const char*) file;
                entry.index = index;
 
@@ -170,12 +174,20 @@ namespace cycfi::artist
                std::string key = (const char*) family;
                trim(key);
 
-               font_map[key].push_back(std::move(entry));
+               if (auto it = font_map().find(key); it != font_map().end())
+               {
+                  it->second.push_back(entry);
+               }
+               else
+               {
+                  font_map()[key] = {};
+                  font_map()[key].push_back(entry);
+               }
             }
          }
       }
 
-      font_entry* match(font_map_type& font_map, font_descr descr)
+      font_entry const* match(font_descr descr)
       {
          struct font_init
          {
@@ -186,16 +198,15 @@ namespace cycfi::artist
          };
          static font_init init;
 
-         std::istringstream str(
-            std::string{ descr._families } + ", " + font_map_default_font_family);
+         std::istringstream str(std::string{ descr._families });
          std::string family;
          while (getline(str, family, ','))
          {
             trim(family);
-            if (auto i = font_map.find(family); i != font_map.end())
+            if (auto i = font_map().find(family); i != font_map().end())
             {
                int min = 10000;
-               std::vector<font_entry>::iterator best_match = i->second.end();
+               std::vector<font_entry>::const_iterator best_match = i->second.end();
                for (auto j = i->second.begin(); j != i->second.end(); ++j)
                {
                   auto const& item = *j;
@@ -231,22 +242,21 @@ namespace cycfi::artist
 
    font::font(font_descr descr)
    {
-      auto [font_map, font_map_mutex] = get_font_map();
-      std::lock_guard<std::mutex> lock(font_map_mutex);
-
-      auto match_ptr = match(font_map, descr);
+      auto match_ptr = match(descr);
       if (match_ptr)
       {
-         if (match_ptr->cached_typeface)
+         auto [skia_font_map, skia_font_map_mutex] = get_skia_font_map();
+         std::lock_guard<std::mutex> lock(skia_font_map_mutex);
+         if (auto it = skia_font_map.find(match_ptr->full_name); it != skia_font_map.end())
          {
-            _ptr = std::make_shared<SkFont>(match_ptr->cached_typeface, descr._size);
+            _ptr = std::make_shared<SkFont>(it->second, descr._size);
          }
          else
          {
             auto face = SkTypeface::MakeFromFile(match_ptr->file.c_str(), match_ptr->index);
             _ptr = std::make_shared<SkFont>(face, descr._size);
             if (_ptr)
-               match_ptr->cached_typeface = sk_ref_sp(_ptr->getTypeface());
+               skia_font_map[match_ptr->full_name] = face;
          }
       }
 
@@ -278,18 +288,7 @@ namespace cycfi::artist
          }
       }
       if (!_ptr)
-      {
-         family = font_map_default_font_family;
          _ptr = std::make_shared<SkFont>(default_face, descr._size);
-      }
-
-      font_entry entry;
-      entry.cached_typeface = sk_ref_sp(_ptr->getTypeface());
-      entry.weight = descr._weight;
-      entry.slant = descr._slant;
-      entry.stretch = descr._stretch;
-
-      font_map[family].push_back(std::move(entry));
    }
 
    font::font(font const& rhs)
