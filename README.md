@@ -1,6 +1,6 @@
-# ![Artist-Logo](https://cycfi.github.io/assets/img/artist/artist.png) Artist 2D Canvas Library
+# ![Artist-Logo](https://cycfi.github.io/assets/img/artist/logo.png) Artist 2D Canvas Library
 
-![alt Artist Sampler](https://cycfi.github.io/assets/img/artist/artist_sampler.jpg)
+![alt Artist Sampler](https://cycfi.github.io/assets/img/artist/sampler.jpg)
 
 ## Introduction
 
