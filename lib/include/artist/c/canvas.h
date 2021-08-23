@@ -20,13 +20,8 @@ extern "C" {
    typedef struct artist::canvas canvas;
    typedef struct artist::canvas_impl canvas_impl;
 
-   canvas* artist_canvas_create(canvas_impl* context_) {
-      return new artist::canvas(context_);
-   }
-
-   void artist_canvas_destroy(canvas* cnv) {
-      delete cnv;
-   }
+   canvas*           artist_canvas_create(canvas_impl* context_) { return new artist::canvas(context_); }
+   void              artist_canvas_destroy(canvas* cnv) { delete cnv; }
 
    void              artist_canvas_pre_scale(canvas* cnv, float sc) { cnv->pre_scale(sc); }
    float             artist_canvas_get_pre_scale(canvas* cnv) { return cnv->pre_scale(); }
@@ -118,20 +113,8 @@ extern "C" {
 
    ///////////////////////////////////////////////////////////////////////////////////
    // Styles
-
-   enum line_cap_enum
-   {
-      butt,
-      round,
-      square
-   };
-
-   enum join_enum
-   {
-      bevel_join,
-      round_join,
-      miter_join
-   };
+   typedef artist::line_cap_enum line_cap_enum;
+   typedef artist::join_enum join_enum;
 
    void              artist_canvas_fill_style(canvas* cnv, color c) { cnv->fill_style(c); }
    void              artist_canvas_stroke_style(canvas* cnv, color c) { cnv->stroke_style(c); }
@@ -146,107 +129,74 @@ extern "C" {
    void              artist_canvas_stroke_color(canvas* cnv, color c) { cnv->stroke_color(c); }
    void              artist_canvas_fill_color(canvas* cnv, color c) { cnv->fill_color(c); }
 
-   enum composite_op_enum
-   {
-      source_over,
-      source_atop,
-      source_in,
-      source_out,
-
-      destination_over,
-      destination_atop,
-      destination_in,
-      destination_out,
-
-      lighter,
-      darker,
-      copy,
-      xor_,
-
-      difference,
-      exclusion,
-      multiply,
-      screen,
-
-      color_dodge,
-      color_burn,
-      soft_light,
-      hard_light,
-
-      hue,
-      saturation,
-      color_op,
-      luminosity
-   };
+   typedef artist::composite_op_enum composite_op_enum;
 
    void              artist_canvas_global_composite_operation(canvas* cnv, composite_op_enum mode) { cnv->global_composite_operation(mode); }
    void              artist_canvas_composite_op(canvas* cnv, composite_op_enum mode) { cnv->composite_op(mode); }
 
    ///////////////////////////////////////////////////////////////////////////////////
    // Gradients
-   struct color_stop
-   {
-      float          offset;
-      struct color   color;
-   };
+   typedef artist::color_stop color_stop;
 
-   struct gradient
-   {
-      void  add_color_stop(canvas* cnv, color_stop cs);
-      void  add_color_stop(canvas* cnv, float offset, struct color color_);
-      std::vector<color_stop> color_space = {};
-   };
+   // TODO: Interop with C arrays
+   // struct gradient
+   // {
+   //    void  add_color_stop(canvas* cnv, color_stop cs);
+   //    void  add_color_stop(canvas* cnv, float offset, struct color color_);
+   //    std::vector<color_stop> color_space = {};
+   // };
 
-   struct linear_gradient : gradient
-   {
-      linear_gradient(float startx, float starty, float endx, float endy)
-         : start{ startx, starty }
-         , end{ endx, endy }
-      {}
+   // struct linear_gradient : gradient
+   // {
+   //    linear_gradient(float startx, float starty, float endx, float endy)
+   //       : start{ startx, starty }
+   //       , end{ endx, endy }
+   //    {}
 
-      linear_gradient(point start, point end)
-         : start{ start }
-         , end{ end }
-      {}
+   //    linear_gradient(point start, point end)
+   //       : start{ start }
+   //       , end{ end }
+   //    {}
 
-      point start = {};
-      point end = {};
-   };
+   //    point start = {};
+   //    point end = {};
+   // };
 
-   struct radial_gradient : gradient
-   {
-      radial_gradient(
-         float c1x, float c1y, float c1r,
-         float c2x, float c2y, float c2r
-      )
-         : c1{ c1x, c1y }
-         , c1_radius{ c1r }
-         , c2{ c2x, c2y }
-         , c2_radius{ c2r }
-      {}
+   // struct radial_gradient : gradient
+   // {
+   //    radial_gradient(
+   //       float c1x, float c1y, float c1r,
+   //       float c2x, float c2y, float c2r
+   //    )
+   //       : c1{ c1x, c1y }
+   //       , c1_radius{ c1r }
+   //       , c2{ c2x, c2y }
+   //       , c2_radius{ c2r }
+   //    {}
 
-      radial_gradient(
-         point c1, float c1r,
-         point c2, float c2r
-      )
-         : c1{ c1 }
-         , c1_radius{ c1r }
-         , c2{ c2 }
-         , c2_radius{ c2r }
-      {}
+   //    radial_gradient(
+   //       point c1, float c1r,
+   //       point c2, float c2r
+   //    )
+   //       : c1{ c1 }
+   //       , c1_radius{ c1r }
+   //       , c2{ c2 }
+   //       , c2_radius{ c2r }
+   //    {}
 
-      point c1 = {};
-      float c1_radius = {};
-      point c2 = c1;
-      float c2_radius = c1_radius;
-   };
+   //    point c1 = {};
+   //    float c1_radius = {};
+   //    point c2 = c1;
+   //    float c2_radius = c1_radius;
+   // };
 
    ///////////////////////////////////////////////////////////////////////////////////
    // More Styles
-   void              artist_canvas_linear_gradient_fill_style(canvas* cnv, linear_gradient const& gr) { cnv->fill_style(gr); }
-   void              artist_canvas_radial_gradient_fill_style(canvas* cnv, radial_gradient const& gr) { cnv->fill_style(gr); }
-   void              artist_canvas_linear_gradient_stroke_style(canvas* cnv, linear_gradient const& gr) { cnv->stroke_style(gr); }
-   void              artist_canvas_radial_gradient_stroke_style(canvas* cnv, radial_gradient const& gr) { cnv->stroke_style(gr); }
+   // TODO: Interop with C arrays for gradients
+   // void              artist_canvas_linear_gradient_fill_style(canvas* cnv, linear_gradient const& gr) { cnv->fill_style(gr); }
+   // void              artist_canvas_radial_gradient_fill_style(canvas* cnv, radial_gradient const& gr) { cnv->fill_style(gr); }
+   // void              artist_canvas_linear_gradient_stroke_style(canvas* cnv, linear_gradient const& gr) { cnv->stroke_style(gr); }
+   // void              artist_canvas_radial_gradient_stroke_style(canvas* cnv, radial_gradient const& gr) { cnv->stroke_style(gr); }
 
    ///////////////////////////////////////////////////////////////////////////////////
    // Fill Rule
@@ -271,28 +221,9 @@ extern "C" {
 
    ///////////////////////////////////////////////////////////////////////////////////
    // Text
-   enum text_halign     // Horizontal align
-   {
-      left,             // Default, align text horizontally to left.
-      center,           // Align text horizontally to center.
-      right             // Align text horizontally to right.
-   };
-
-   enum text_valign     // Vertical align
-   {
-      baseline = 4,     // Default, align text vertically to baseline.
-      top      = 8,     // Align text vertically to top.
-      middle   = 12,    // Align text vertically to middle.
-      bottom   = 16     // Align text vertically to bottom.
-   };
-
-   struct text_metrics
-   {
-      float       ascent;
-      float       descent;
-      float       leading;
-      point       size;
-   };
+   typedef artist::text_halign text_halign;
+   typedef artist::text_valign text_valign;
+   typedef artist::text_metrics text_metrics;
 
    // typedef struct  string_view;
    std::string_view*  artist_string_view_from_utf8(const char* str) {
