@@ -39,7 +39,7 @@ extern "C" {
                      float x, float y,
                      float width, float height,
                      float radius
-                  );
+                  ) { path->add_round_rect(x, y, width, height, radius); }
       void        artist_path_add_circle(path* path, float cx, float cy, float radius) { path->add_circle(cx, cy, radius); }
 
       void        artist_path_move_to(path* path, point p) { path->move_to(p); }
@@ -50,7 +50,7 @@ extern "C" {
                      point p, float radius,
                      float start_angle, float end_angle,
                      bool ccw = false
-                  );
+                  ) { path->arc(p, radius, start_angle, end_angle, ccw); }
 
       void        artist_path_quadratic_curve_to(path* path, point cp, point end) { path->quadratic_curve_to(cp, end); }
       void        artist_path_bezier_curve_to(path* path, point cp1, point cp2, point end) { path->bezier_curve_to(cp1, cp2, end); }
@@ -62,12 +62,13 @@ extern "C" {
                      float x1, float y1,
                      float x2, float y2,
                      float radius
-                  );
+                  ) { path->arc_to(x1, y1, x2, y2, radius); }
       void        artist_path_arc(
-                           float x, float y, float radius,
-                           float start_angle, float end_angle,
-                           bool ccw = false
-                        );
+                     path* path,
+                     float x, float y, float radius,
+                     float start_angle, float end_angle,
+                     bool ccw = false
+                  ) { path->arc(x, y, radius, start_angle, end_angle, ccw); }
 
       void        artist_path_quadratic_curve_to(path* path, float cpx, float cpy, float x, float y) { path->quadratic_curve_to(); }
       void        artist_path_bezier_curve_to(
@@ -75,7 +76,7 @@ extern "C" {
                      float cp1x, float cp1y,
                      float cp2x, float cp2y,
                      float x, float y
-                  );
+                  ) { path->bezier_curve_to(cp1x, cp1y, cp2x, cp2y, x, y); }
 
       typedef artist::fill_rule_enum fill_rule_enum;
 
