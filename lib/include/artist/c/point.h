@@ -11,16 +11,16 @@ extern "C" {
    ////////////////////////////////////////////////////////////////////////////
    // Points
    ////////////////////////////////////////////////////////////////////////////
-   using point = artist::point;
+   typedef struct artist::point point;
 
    ////////////////////////////////////////////////////////////////////////////
    // Sizes
    ////////////////////////////////////////////////////////////////////////////
-   using extent = artist::extent;
+   typedef struct artist::extent extent;
 
    inline point artist_point_move(point src, float dx, float dy) { return src.move(dx, dy); }
    inline point artist_point_move_to(point src, float x_, float y_) { return src.move_to(x_, y_); }
-   inline point artist_point_move_reflect(point src, point p) { return src.move((artist::point) {p.x, p.y}); }
+   inline point artist_point_move_reflect(point src, point p) { return src.move(p); }
 
 #ifdef __cplusplus
 }
