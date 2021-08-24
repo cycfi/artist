@@ -1,5 +1,6 @@
-#ifndef __ARTIST_H
-#define __ARTIST_H
+
+#ifndef __ARTIST_FONT_H
+#define __ARTIST_FONT_H
 
 #include <artist/font.hpp>
 
