@@ -6,17 +6,25 @@
 #ifndef __ARTIST_AFFINE_TRANSFORM_H
 #define __ARTIST_AFFINE_TRANSFORM_H
 
-#include <artist/affine_transform.hpp>
+#include <stdbool.h>
+#include <stddef.h>
 
 #include "point.h"
 
 #ifdef __cplusplus
-using namespace cycfi;
 extern "C" {
 #endif
 
-   typedef struct artist::affine_transform affine_transform;
+   typedef struct {
+      double a;
+      double b;
+      double c;
+      double d;
+      double tx;
+      double ty;
+   } affine_transform;
 
+   affine_transform           artist_affine_transform_identity();
    bool                       artist_affine_transform_is_identity(affine_transform t);
    affine_transform           artist_affine_transform_translate(affine_transform t, double tx, double ty);
    affine_transform           artist_affine_transform_scale(affine_transform t, double sx, double sy);
@@ -30,7 +38,7 @@ extern "C" {
 
    //                               template <std::size_t N>
    // void                       apply(point p[N]) const;
-   void                       artist_affine_transform_apply_points(affine_transform t, point* p, std::size_t n);
+   void                       artist_affine_transform_apply_points(affine_transform t, point* p, size_t n);
 
    affine_transform           artist_affine_transform_make_translation(double tx, double ty);
    affine_transform           artist_affine_transform_make_scale(double sx, double sy);

@@ -6,20 +6,53 @@
 #ifndef __ARTIST_FONT_H
 #define __ARTIST_FONT_H
 
-#include <artist/font.hpp>
-
 #include "strings.h"
 
 #ifdef __cplusplus
-using namespace cycfi;
 extern "C" {
 #endif
 
-   typedef artist::font_constants::weight_enum weight_enum;
-   typedef artist::font_constants::slant_enum slant_enum;
-   typedef artist::font_constants::stretch_enum stretch_enum;
+   enum weight_enum
+   {
+      thin              = 10,
+      extra_light       = 20,
+      light             = 30,
+      weight_normal     = 40,
+      medium            = 50,
+      semi_bold         = 60,
+      bold              = 70,
+      extra_bold        = 80,
+      black             = 90,
+      extra_black       = 95,
+   };
 
-   typedef struct artist::font_descr font_descr;
+   enum slant_enum
+   {
+      slant_normal      = 0,
+      italic            = 90,
+      oblique           = 100
+   };
+
+   enum stretch_enum
+   {
+      ultra_condensed   = 25,
+      extra_condensed   = 31,
+      condensed         = 38,
+      semi_condensed    = 44,
+      stretch_normal    = 50,
+      semi_expanded     = 57,
+      expanded          = 63,
+      extra_expanded    = 75,
+      ultra_expanded    = 100
+   };
+
+   typedef struct {
+      string_view*   _families;
+      float          _size;
+      uint8_t        _weight;
+      slant_enum     _slant;
+      uint8_t        _stretch;
+   } font_descr;
 
    font_descr     artist_font_descr_normal(font_descr f);
    font_descr     artist_font_descr_size(font_descr f, float size_);
@@ -52,13 +85,17 @@ extern "C" {
    font_descr     artist_font_descr_extra_expanded(font_descr f);
    font_descr     artist_font_descr_ultra_expanded(font_descr f);
 
-   typedef struct artist::font font;
+   typedef struct font font;
 
    font*          artist_font_create();
    font*          artist_font_create_with_descr(font_descr descr);
    void           artist_font_destroy(font* f);
 
-   typedef struct artist::font::metrics_info metrics_info;
+   typedef struct {
+      float       ascent;
+      float       descent;
+      float       leading;
+   } metrics_info;
 
    metrics_info   artist_font_metrics(font* f);
    float          artist_font_line_height(font* f);

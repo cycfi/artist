@@ -6,8 +6,6 @@
 #ifndef __ARTIST_CANVAS_H
 #define __ARTIST_CANVAS_H
 
-#include <artist/canvas.hpp>
-
 #include "affine_transform.h"
 #include "circle.h"
 #include "color.h"
@@ -19,12 +17,11 @@
 #include "strings.h"
 
 #ifdef __cplusplus
-using namespace cycfi;
 extern "C" {
 #endif
 
-   typedef struct artist::canvas canvas;
-   typedef struct artist::canvas_impl canvas_impl;
+   typedef struct canvas canvas;
+   typedef void canvas_impl;
 
    canvas*           artist_canvas_create(canvas_impl* context_);
    void              artist_canvas_destroy(canvas* cnv);
@@ -119,8 +116,19 @@ extern "C" {
 
    ///////////////////////////////////////////////////////////////////////////////////
    // Styles
-   typedef artist::canvas::line_cap_enum line_cap_enum;
-   typedef artist::canvas::join_enum join_enum;
+   enum line_cap_enum
+   {
+      butt,
+      round,
+      square
+   };
+
+   enum join_enum
+   {
+      bevel_join,
+      round_join,
+      miter_join
+   };
 
    void              artist_canvas_fill_style(canvas* cnv, color c);
    void              artist_canvas_stroke_style(canvas* cnv, color c);
@@ -135,14 +143,49 @@ extern "C" {
    void              artist_canvas_stroke_color(canvas* cnv, color c);
    void              artist_canvas_fill_color(canvas* cnv, color c);
 
-   typedef artist::canvas::composite_op_enum composite_op_enum;
+   enum composite_op_enum
+   {
+      source_over,
+      source_atop,
+      source_in,
+      source_out,
+
+      destination_over,
+      destination_atop,
+      destination_in,
+      destination_out,
+
+      lighter,
+      darker,
+      copy,
+      xor_,
+
+      difference,
+      exclusion,
+      multiply,
+      screen,
+
+      color_dodge,
+      color_burn,
+      soft_light,
+      hard_light,
+
+      hue,
+      saturation,
+      color_op,
+      luminosity
+   };
 
    void              artist_canvas_global_composite_operation(canvas* cnv, composite_op_enum mode);
    void              artist_canvas_composite_op(canvas* cnv, composite_op_enum mode);
 
    ///////////////////////////////////////////////////////////////////////////////////
    // Gradients
-   typedef artist::canvas::color_stop color_stop;
+   struct color_stop
+   {
+      float offset;
+      color color;
+   };
 
    // TODO: Interop with C arrays
    // struct gradient
@@ -207,7 +250,7 @@ extern "C" {
    ///////////////////////////////////////////////////////////////////////////////////
    // Fill Rule
 
-   void              artist_canvas_fill_rule(canvas* cnv, path::fill_rule_enum rule);
+   void              artist_canvas_fill_rule(canvas* cnv, fill_rule_enum rule);
 
    ///////////////////////////////////////////////////////////////////////////////////
    // Rectangles
@@ -227,9 +270,28 @@ extern "C" {
 
    ///////////////////////////////////////////////////////////////////////////////////
    // Text
-   typedef artist::canvas::text_halign text_halign;
-   typedef artist::canvas::text_valign text_valign;
-   typedef artist::canvas::text_metrics text_metrics;
+   enum text_halign     // Horizontal align
+   {
+      left,             // Default, align text horizontally to left.
+      center,           // Align text horizontally to center.
+      right             // Align text horizontally to right.
+   };
+
+   enum text_valign     // Vertical align
+   {
+      baseline = 4,     // Default, align text vertically to baseline.
+      top      = 8,     // Align text vertically to top.
+      middle   = 12,    // Align text vertically to middle.
+      bottom   = 16     // Align text vertically to bottom.
+   };
+
+   struct text_metrics
+   {
+      float       ascent;
+      float       descent;
+      float       leading;
+      point       size;
+   };
 
    void              artist_canvas_fill_text_pt(canvas* cnv, string_view* utf8, point p);
    void              artist_canvas_stroke_text_pt(canvas* cnv, string_view* utf8, point p);
@@ -245,12 +307,12 @@ extern "C" {
    ///////////////////////////////////////////////////////////////////////////////////
    // Pixmaps
 
-   void              artist_canvas_draw_pic_src_dst(canvas* cnv, image const& pic, rect const& src, rect const& dest);
-   void              artist_canvas_draw_pic_dst(canvas* cnv, image const& pic, rect const& dest);
-   void              artist_canvas_draw_pic_pos(canvas* cnv, image const& pic, point pos = {0, 0 });
-   void              artist_canvas_draw_pic_pos_scale(canvas* cnv, image const& pic, point pos, float scale);
-   void              artist_canvas_draw_pic_xy(canvas* cnv, image const& pic, float posx, float posy);
-   void              artist_canvas_draw_pic_xy_scale(canvas* cnv, image const& pic, float posx, float posy, float scale);
+   void              artist_canvas_draw_pic_src_dst(canvas* cnv, image* pic, rect const& src, rect const& dest);
+   void              artist_canvas_draw_pic_dst(canvas* cnv, image* pic, rect const& dest);
+   void              artist_canvas_draw_pic_pos(canvas* cnv, image* pic, point pos = {0, 0 });
+   void              artist_canvas_draw_pic_pos_scale(canvas* cnv, image* pic, point pos, float scale);
+   void              artist_canvas_draw_pic_xy(canvas* cnv, image* pic, float posx, float posy);
+   void              artist_canvas_draw_pic_xy_scale(canvas* cnv, image* pic, float posx, float posy, float scale);
 
 #ifdef __cplusplus
 }

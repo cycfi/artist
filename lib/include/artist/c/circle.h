@@ -6,20 +6,21 @@
 #ifndef __ARTIST_CIRCLE_H
 #define __ARTIST_CIRCLE_H
 
-#include <artist/circle.hpp>
-
 #include "point.h"
 #include "rect.h"
 
 #ifdef __cplusplus
-using namespace cycfi;
 extern "C" {
 #endif
 
    ////////////////////////////////////////////////////////////////////////////
    // Circles
    ////////////////////////////////////////////////////////////////////////////
-   using circle = artist::circle;
+   typedef struct {
+      float       cx;
+      float       cy;
+      float       radius;
+   } circle;
 
    rect        artist_circle_bounds(circle c);
 

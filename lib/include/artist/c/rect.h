@@ -6,19 +6,21 @@
 #ifndef __ARTIST_RECT_H
 #define __ARTIST_RECT_H
 
-#include <artist/rect.hpp>
-
 #include "point.h"
 
 #ifdef __cplusplus
-using namespace cycfi;
 extern "C" {
 #endif
 
    ////////////////////////////////////////////////////////////////////////////
    // rect
    ////////////////////////////////////////////////////////////////////////////
-   typedef struct artist::rect rect;
+   typedef struct {
+      float left;
+      float top;
+      float right;
+      float bottom;
+   } rect;
 
    rect     artist_rect_create_with_origin(point origin, float right, float bottom);
    rect     artist_rect_create_with_lt_br(point top_left, point bottom_right);

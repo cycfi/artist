@@ -6,19 +6,16 @@
 #ifndef __ARTIST_PATH_H
 #define __ARTIST_PATH_H
 
-#include <artist/path.hpp>
-
 #include "circle.h"
 #include "rect.h"
 #include "point.h"
 #include "strings.h"
 
 #ifdef __cplusplus
-using namespace cycfi;
 extern "C" {
 #endif
 
-   typedef struct artist::path path;
+   typedef struct path path;
 
    path*          artist_path_create();
    void           artist_path_destroy(path* path);
@@ -84,7 +81,11 @@ extern "C" {
                      float x, float y
                   );
 
-   typedef artist::path::fill_rule_enum fill_rule_enum;
+   enum fill_rule_enum
+   {
+      fill_winding,
+      fill_odd_even
+   };
 
    void           artist_path_fill_rule(path* path, fill_rule_enum rule);
 

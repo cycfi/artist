@@ -6,13 +6,11 @@
 #ifndef __ARTIST_STRINGS_H
 #define __ARTIST_STRINGS_H
 
-#include <string>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-   typedef std::string_view string_view;
+   typedef struct string_view string_view;
 
    string_view*   artist_string_view_from_utf8(const char* str);
    void           artist_string_view_destroy(string_view* str);
