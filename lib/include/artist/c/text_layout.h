@@ -13,11 +13,11 @@ extern "C" {
 
    typedef struct artist::text_layout text_layout;
 
-   text_layout*            artist_text_layout_create(font_descr font_, std::string_view* utf8) { return new artist::text_layout(font_ *utf8); }
+   text_layout*            artist_text_layout_create(font_descr font_, string_view* utf8) { return new artist::text_layout(font_ *utf8); }
    text_layout*            artist_text_layout_create_utf32(font_descr font_, std::u32string_view* utf32) { return new artist::text_layout(font_ *utf32); }
    void                    artist_text_layout_destroy(text_layout* layout) { delete layout; }
 
-   void                    artist_text_layout_set_text(text_layout* layout, std::string_view* utf8) { layout->set_text(*utf8); }
+   void                    artist_text_layout_set_text(text_layout* layout, string_view* utf8) { layout->set_text(*utf8); }
    void                    artist_text_layout_set_text_utf32(text_layout* layout, std::u32string_view* utf32) { layout->set_text(*utf32); }
    std::u32string_view     artist_text_layout_text(text_layout* layout) const { return layout->text(); }
 

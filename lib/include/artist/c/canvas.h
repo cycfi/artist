@@ -225,24 +225,16 @@ extern "C" {
    typedef artist::text_valign text_valign;
    typedef artist::text_metrics text_metrics;
 
-   // typedef struct  string_view;
-   std::string_view*  artist_string_view_from_utf8(const char* str) {
-      std::string_view* result = (std::string_view*) malloc(sizeof(std::strlen));
-      *result = std::string_view(str);
-      return result;
-   }
-   void              artist_string_view_destroy(std::string_view* str) { free(str); }
-
-   void              artist_canvas_fill_text(canvas* cnv, std::string_view* utf8, point p) { cnv->fill_text(*utf8, p); }
-   void              artist_canvas_stroke_text(canvas* cnv, std::string_view* utf8, point p) { cnv->stroke_text(*utf8, p); }
-   text_metrics      artist_canvas_measure_text(canvas* cnv, std::string_view* utf8) { cnv->measure_text(*utf8); }
+   void              artist_canvas_fill_text(canvas* cnv, string_view* utf8, point p) { cnv->fill_text(*utf8, p); }
+   void              artist_canvas_stroke_text(canvas* cnv, string_view* utf8, point p) { cnv->stroke_text(*utf8, p); }
+   text_metrics      artist_canvas_measure_text(canvas* cnv, string_view* utf8) { cnv->measure_text(*utf8); }
 
    void              artist_canvas_text_align(canvas* cnv, int align) { cnv->text_align(align); }
    void              artist_canvas_text_align(canvas* cnv, text_halign align) { cnv->text_align(align); }
    void              artist_canvas_text_baseline(canvas* cnv, text_valign align) { cnv->text_baseline(align); }
 
-   void              artist_canvas_fill_text(canvas* cnv, std::string_view* utf8, float x, float y) { cnv->fill_text(*utf8, x, y); }
-   void              artist_canvas_stroke_text(canvas* cnv, std::string_view* utf8, float x, float y) { cnv->stroke_text(*utf8, x, y); }
+   void              artist_canvas_fill_text(canvas* cnv, string_view* utf8, float x, float y) { cnv->fill_text(*utf8, x, y); }
+   void              artist_canvas_stroke_text(canvas* cnv, string_view* utf8, float x, float y) { cnv->stroke_text(*utf8, x, y); }
 
    ///////////////////////////////////////////////////////////////////////////////////
    // Pixmaps

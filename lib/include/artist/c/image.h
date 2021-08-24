@@ -34,7 +34,7 @@ extern "C" {
    void              artist_image_destroy(image* img) { delete img; }
 
    extent            artist_image_size(image* img) { return img->size(); }
-   void              artist_image_save_png(image* img, std::string_view* utf8) { img->save_png(*utf8); }
+   void              artist_image_save_png(image* img, string_view* utf8) { img->save_png(*utf8); }
 
    uint32_t*         artist_image_pixels(image* img) { return img->pixels(); }
    extent            artist_image_bitmap_size(image* img) { return img->bitmap_size(); }

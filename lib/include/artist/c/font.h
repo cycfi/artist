@@ -53,7 +53,7 @@ extern "C" {
 
    metrics_info   artist_font_metrics() { return f->metrics(); }
    float          artist_font_line_height() { return f->line_height(); }
-   float          artist_font_measure_text(std::string_view* str) { return f->measure_text(*str); }
+   float          artist_font_measure_text(string_view* str) { return f->measure_text(*str); }
 
 #ifdef __cplusplus
 }
