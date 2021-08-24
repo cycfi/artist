@@ -122,6 +122,16 @@ set(ARTIST_SOURCES
    src/artist/rect.cpp
    src/artist/resources.cpp
    src/artist/svg_path.cpp
+   src/artist/c/affine_transform.cpp
+   src/artist/c/canvas.cpp
+   src/artist/c/circle.cpp
+   src/artist/c/color.cpp
+   src/artist/c/font.cpp
+   src/artist/c/image.cpp
+   src/artist/c/path.cpp
+   src/artist/c/rect.cpp
+   src/artist/c/strings.cpp
+   src/artist/c/text_layout.cpp
 )
 
 set(ARTIST_HEADERS

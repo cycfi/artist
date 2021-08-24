@@ -1,5 +1,14 @@
+/*=============================================================================
+   Copyright (c) 2021 Chance Snow, Joel de Guzman
+
+   Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
+=============================================================================*/
 #ifndef __ARTIST_H
 #define __ARTIST_H
+
+////////////////////////////////////////////////////////////////////////////
+// Amalgamated C API
+////////////////////////////////////////////////////////////////////////////
 
 #include "canvas.h"
 #include "color.h"
