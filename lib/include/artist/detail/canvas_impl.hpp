@@ -6,6 +6,8 @@
 #if !defined(ARTIST_DETAIL_CANVAS_IMPL_MAY_3_2016)
 #define ARTIST_DETAIL_CANVAS_IMPL_MAY_3_2016
 
+#include <algorithm>
+
 namespace cycfi::artist
 {
    ////////////////////////////////////////////////////////////////////////////
@@ -85,6 +87,12 @@ namespace cycfi::artist
    inline void canvas::add_rect(float x, float y, float width, float height)
    {
       add_rect({ x, y, extent{ width, height } });
+   }
+
+   inline void canvas::add_round_rect(const rect& r, float radius)
+   {
+      radius = std::clamp(radius, 0.0f, std::min(r.width(), r.height()) / 2);
+      add_round_rect_impl(r, radius);
    }
 
    inline void canvas::add_round_rect(

@@ -89,14 +89,6 @@ namespace cycfi::artist
       );
    }
 
-   void path::add_round_rect(rect const& r, float radius)
-   {
-      CGPathAddRoundedRect(_impl, nullptr,
-         CGRect{ { r.left, r.top }, { r.width(), r.height() } }
-       , radius, radius
-      );
-   }
-
    void path::move_to(point p)
    {
       CGPathMoveToPoint(_impl, nullptr, p.x, p.y);
@@ -140,4 +132,13 @@ namespace cycfi::artist
    {
       CGPathAddCurveToPoint(_impl, nullptr, cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
    }
+
+   void path::add_round_rect_impl(rect const& r, float radius)
+   {
+      CGPathAddRoundedRect(_impl, nullptr,
+         CGRect{ { r.left, r.top }, { r.width(), r.height() } }
+       , radius, radius
+      );
+   }
+
 }
