@@ -45,10 +45,10 @@ if (ARTIST_SKIA AND WIN32)
       BUILD_COMMAND ""
       INSTALL_COMMAND ""
    )
-   set(FONTCONFIG_DLL ${CMAKE_CURRENT_BINARY_DIR}/windows-x64-dll/src/dlls/fontconfig.dll)
-   set(ICONV_DLL ${CMAKE_CURRENT_BINARY_DIR}/windows-x64-dll/src/dlls/libiconv.dll)
-   set(XML2_DLL ${CMAKE_CURRENT_BINARY_DIR}/windows-x64-dll/src/dlls/libxml2.dll)
-   set(FREETYPE_DLL ${CMAKE_CURRENT_BINARY_DIR}/windows-x64-dll/src/dlls/freetype.dll)
+   set(FONTCONFIG_DLL ${CMAKE_CURRENT_BINARY_DIR}/windows-x64-dll/src/windows_dlls/fontconfig.dll)
+   set(ICONV_DLL ${CMAKE_CURRENT_BINARY_DIR}/windows-x64-dll/src/windows_dlls/libiconv.dll)
+   set(XML2_DLL ${CMAKE_CURRENT_BINARY_DIR}/windows-x64-dll/src/windows_dlls/libxml2.dll)
+   set(FREETYPE_DLL ${CMAKE_CURRENT_BINARY_DIR}/windows-x64-dll/src/windows_dlls/freetype.dll
 endif()
 
 if (ARTIST_SKIA AND WIN32)
