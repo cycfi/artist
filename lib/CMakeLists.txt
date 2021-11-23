@@ -22,6 +22,18 @@ target_include_directories(
       external/libunibreak/src
 )
 
+if (WIN32)
+   target_compile_definitions(libunibreak
+      PUBLIC
+         WIN32_LEAN_AND_MEAN
+         NOMINMAX
+         _UNICODE
+   )
+   set_property(TARGET libunibreak PROPERTY
+      MSVC_RUNTIME_LIBRARY "MultiThreaded"
+   )
+endif()
+
 if (ARTIST_SKIA)
 
    ############################################################################
