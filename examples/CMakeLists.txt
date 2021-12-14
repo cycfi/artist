@@ -140,6 +140,44 @@ function(add_example name)
 
 endfunction()
 
+function(add_c_example name)
+   if (APPLE)
+      add_executable(
+         ${name}-c MACOSX_BUNDLE
+         ${name}.c
+         ${artist_fonts}
+         ${${name}_images}
+      )
+
+      message(STATUS ${CMAKE_CURRENT_SOURCE_DIR})
+
+      target_include_directories(
+         ${name}-c
+         PUBLIC
+         ${CMAKE_CURRENT_LIST_DIR}/../lib/include
+      )
+
+      set_target_properties(
+         ${name}
+         PROPERTIES
+         MACOSX_BUNDLE_INFO_PLIST
+         ${CMAKE_CURRENT_LIST_DIR}/../resources/macos/plist.in
+      )
+
+      target_link_options(${name} PRIVATE -framework AppKit)
+
+      set_source_files_properties(
+         ${artist_fonts}
+         ${${name}_images}
+         PROPERTIES
+         MACOSX_PACKAGE_LOCATION Resources
+      )
+   else()
+      message(FATAL_ERROR "Unsupported platform for artist C API!")
+   endif()
+
+endfunction()
+
 set(space_images
    ${CMAKE_CURRENT_LIST_DIR}/images/space.jpg
 )
@@ -159,3 +197,4 @@ add_example(paths)
 add_example(shadow)
 add_example(chessboard)
 
+add_c_example(paths)
