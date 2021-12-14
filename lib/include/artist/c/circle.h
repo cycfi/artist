@@ -20,14 +20,14 @@ extern "C" {
       float       cx;
       float       cy;
       float       radius;
-   } circle;
+   } artist_circle;
 
-   rect        artist_circle_bounds(circle c);
+   rect        artist_circle_bounds(artist_circle c);
 
-   point       artist_circle_center(circle c);
-   circle      artist_circle_inset(circle c, float x);
-   circle      artist_circle_move(circle c, float dx, float dy);
-   circle      artist_circle_move_to(circle c, float x, float y);
+   point       artist_circle_center(artist_circle c);
+   artist_circle      artist_circle_inset(artist_circle c, float x);
+   artist_circle      artist_circle_move(artist_circle c, float dx, float dy);
+   artist_circle      artist_circle_move_to(artist_circle c, float x, float y);
 
 #ifdef __cplusplus
 }

@@ -20,15 +20,15 @@ extern "C" {
       float green;
       float blue;
       float alpha;
-   } color;
+   } artist_color;
 
-   color artist_color_rgb_u32(uint32_t rgb);
-   color artist_color_rgba_u32(uint32_t rgba);
-   color artist_color_rgb(uint8_t r, uint8_t g, uint8_t b);
-   color artist_color_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
-   color artist_color_hsl(float h, float s, float l);
-   color artist_color_opacity(color src, float alpha_);
-   color artist_color_level(color src, float amount);
+   artist_color artist_color_rgb_u32(uint32_t rgb);
+   artist_color artist_color_rgba_u32(uint32_t rgba);
+   artist_color artist_color_rgb(uint8_t r, uint8_t g, uint8_t b);
+   artist_color artist_color_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+   artist_color artist_color_hsl(float h, float s, float l);
+   artist_color artist_color_opacity(artist_color src, float alpha_);
+   artist_color artist_color_level(color src, float amount);
 
 #ifdef __cplusplus
 }

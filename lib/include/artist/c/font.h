@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-   enum weight_enum
+   enum artist_weight_enum
    {
       thin              = 10,
       extra_light       = 20,
@@ -26,14 +26,14 @@ extern "C" {
       extra_black       = 95,
    };
 
-   enum slant_enum
+   enum artist_slant_enum
    {
       slant_normal      = 0,
       italic            = 90,
       oblique           = 100
    };
 
-   enum stretch_enum
+   enum artist_stretch_enum
    {
       ultra_condensed   = 25,
       extra_condensed   = 31,
@@ -47,59 +47,59 @@ extern "C" {
    };
 
    typedef struct {
-      string_view*   _families;
-      float          _size;
-      uint8_t        _weight;
-      slant_enum     _slant;
-      uint8_t        _stretch;
-   } font_descr;
+      string_view*      _families;
+      float             _size;
+      uint8_t           _weight;
+      artist_slant_enum _slant;
+      uint8_t           _stretch;
+   } artist_font_descr;
 
-   font_descr     artist_font_descr_normal(font_descr f);
-   font_descr     artist_font_descr_size(font_descr f, float size_);
+   artist_font_descr     artist_font_descr_normal(artist_font_descr f);
+   artist_font_descr     artist_font_descr_size(artist_font_descr f, float size_);
 
-   font_descr     artist_font_descr_weight(font_descr f, weight_enum w);
-   font_descr     artist_font_descr_thin(font_descr f);
-   font_descr     artist_font_descr_extra_light(font_descr f);
-   font_descr     artist_font_descr_light(font_descr f);
-   font_descr     artist_font_descr_weight_normal(font_descr f);
-   font_descr     artist_font_descr_medium(font_descr f);
-   font_descr     artist_font_descr_semi_bold(font_descr f);
-   font_descr     artist_font_descr_bold(font_descr f);
-   font_descr     artist_font_descr_extra_bold(font_descr f);
-   font_descr     artist_font_descr_black(font_descr f);
-   font_descr     artist_font_descr_extra_black(font_descr f);
+   artist_font_descr     artist_font_descr_weight(artist_font_descr f, artist_weight_enum w);
+   artist_font_descr     artist_font_descr_thin(artist_font_descr f);
+   artist_font_descr     artist_font_descr_extra_light(artist_font_descr f);
+   artist_font_descr     artist_font_descr_light(artist_font_descr f);
+   artist_font_descr     artist_font_descr_weight_normal(artist_font_descr f);
+   artist_font_descr     artist_font_descr_medium(artist_font_descr f);
+   artist_font_descr     artist_font_descr_semi_bold(artist_font_descr f);
+   artist_font_descr     artist_font_descr_bold(artist_font_descr f);
+   artist_font_descr     artist_font_descr_extra_bold(artist_font_descr f);
+   artist_font_descr     artist_font_descr_black(artist_font_descr f);
+   artist_font_descr     artist_font_descr_extra_black(artist_font_descr f);
 
-   font_descr     artist_font_descr_style(font_descr f, slant_enum s);
-   font_descr     artist_font_descr_slant_normal(font_descr f);
-   font_descr     artist_font_descr_italic(font_descr f);
-   font_descr     artist_font_descr_oblique(font_descr f);
+   artist_font_descr     artist_font_descr_style(artist_font_descr f, artist_slant_enum s);
+   artist_font_descr     artist_font_descr_slant_normal(artist_font_descr f);
+   artist_font_descr     artist_font_descr_italic(artist_font_descr f);
+   artist_font_descr     artist_font_descr_oblique(artist_font_descr f);
 
-   font_descr     artist_font_descr_stretch(font_descr f, stretch_enum s);
-   font_descr     artist_font_descr_ultra_condensed(font_descr f);
-   font_descr     artist_font_descr_extra_condensed(font_descr f);
-   font_descr     artist_font_descr_condensed(font_descr f);
-   font_descr     artist_font_descr_semi_condensed(font_descr f);
-   font_descr     artist_font_descr_stretch_normal(font_descr f);
-   font_descr     artist_font_descr_semi_expanded(font_descr f);
-   font_descr     artist_font_descr_expanded(font_descr f);
-   font_descr     artist_font_descr_extra_expanded(font_descr f);
-   font_descr     artist_font_descr_ultra_expanded(font_descr f);
+   artist_font_descr     artist_font_descr_stretch(artist_font_descr f, artist_stretch_enum s);
+   artist_font_descr     artist_font_descr_ultra_condensed(artist_font_descr f);
+   artist_font_descr     artist_font_descr_extra_condensed(artist_font_descr f);
+   artist_font_descr     artist_font_descr_condensed(artist_font_descr f);
+   artist_font_descr     artist_font_descr_semi_condensed(artist_font_descr f);
+   artist_font_descr     artist_font_descr_stretch_normal(artist_font_descr f);
+   artist_font_descr     artist_font_descr_semi_expanded(artist_font_descr f);
+   artist_font_descr     artist_font_descr_expanded(artist_font_descr f);
+   artist_font_descr     artist_font_descr_extra_expanded(artist_font_descr f);
+   artist_font_descr     artist_font_descr_ultra_expanded(artist_font_descr f);
 
-   typedef struct font font;
+   typedef struct artist_font artist_font;
 
-   font*          artist_font_create();
-   font*          artist_font_create_with_descr(font_descr descr);
-   void           artist_font_destroy(font* f);
+   artist_font*          artist_font_create();
+   artist_font*          artist_font_create_with_descr(artist_font_descr descr);
+   void           artist_font_destroy(artist_font* f);
 
    typedef struct {
       float       ascent;
       float       descent;
       float       leading;
-   } metrics_info;
+   } artist_metrics_info;
 
-   metrics_info   artist_font_metrics(font* f);
-   float          artist_font_line_height(font* f);
-   float          artist_font_measure_text(font* f, string_view* str);
+   artist_metrics_info   artist_font_metrics(artist_font* f);
+   float          artist_font_line_height(artist_font* f);
+   float          artist_font_measure_text(artist_font* f, string_view* str);
 
 #ifdef __cplusplus
 }
