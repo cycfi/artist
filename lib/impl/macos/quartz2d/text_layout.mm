@@ -192,6 +192,8 @@ namespace cycfi::artist
       last.pos.y += finfo.last_line_height - finfo.line_height;
       last.height = finfo.last_line_height;
       CFRelease(attr_string);
+      CFRelease(typesetter);
+      CFRelease(font_attributes);
    }
 
    void text_layout::impl::draw(canvas& cnv, point p, color c)
