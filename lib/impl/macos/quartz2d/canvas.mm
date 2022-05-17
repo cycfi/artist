@@ -54,8 +54,11 @@ namespace cycfi::artist
 
       void              save();
       void              restore();
-      float             scale() const                    { return _scale; }
-      void              scale(float sc)                  { _scale = sc; }
+
+      CGAffineTransform transform() const                { return _transform; }
+      void              transform(CGAffineTransform tfm) { _transform = tfm; }
+
+      CGAffineTransform transform_inv() const            { return CGAffineTransformInvert(_transform); }
 
    private:
 
@@ -78,7 +81,7 @@ namespace cycfi::artist
 
       state_info_stack  _stack;
       fill_rule_enum    _fill_rule = fill_rule_enum::fill_winding;
-      float             _scale;
+      CGAffineTransform _transform;
    };
 
 #pragma clang diagnostic ignored "-Wvla-extension"
@@ -205,9 +208,7 @@ namespace cycfi::artist
       CGAffineTransform trans = CGAffineTransformMakeScale(1, -1);
       CGContextSetTextMatrix(ctx, trans);
 
-      CGPoint user = { 100, 100 };
-      auto device = CGContextConvertPointToDeviceSpace(ctx, user);
-      _state->scale(device.x / user.x);
+      _state->transform(CGContextGetUserSpaceToDeviceSpaceTransform(CGContextRef(_context)));
    }
 
    canvas::~canvas()
@@ -251,20 +252,18 @@ namespace cycfi::artist
 
    point canvas::device_to_user(point p)
    {
-      auto scale = _state->scale();
-      auto up = CGContextConvertPointToUserSpace(
-         CGContextRef(_context), { p.x * scale, p.y * scale }
-      );
+      auto tp = CGPointApplyAffineTransform({p.x, p.y}, _state->transform());
+      auto up = CGContextConvertPointToUserSpace(CGContextRef(_context), tp);
       return { float(up.x), float(up.y) };
    }
 
    point canvas::user_to_device(point p)
    {
-      auto scale = _state->scale();
       auto dp = CGContextConvertPointToDeviceSpace(
          CGContextRef(_context), { p.x, p.y }
       );
-      return { float(dp.x / scale), float(dp.y / scale) };
+      auto tp = CGPointApplyAffineTransform(dp,_state->transform_inv());
+      return { float(tp.x), float(tp.y) };
    }
 
    affine_transform canvas::transform() const
@@ -707,6 +706,7 @@ namespace cycfi::artist
          auto line = CTLineCreateWithAttributedString(attr_string);
          width = CTLineGetTypographicBounds(line, &ascent, &descent, &leading);
          CFRelease(attr_string);
+         CFRelease(font_attributes);
          return line;
       }
 
