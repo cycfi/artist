@@ -70,7 +70,7 @@ namespace cycfi::artist
          fail();
    }
 
-   image::image(uint8_t* data, pixel_format fmt, extent size)
+   image::image(uint8_t const* data, pixel_format fmt, extent size)
     : _impl{ new artist::image_impl(SkBitmap{}) }
    {
       if (fmt == pixel_format::invalid)

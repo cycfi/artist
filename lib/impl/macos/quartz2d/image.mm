@@ -59,7 +59,7 @@ namespace cycfi::artist
       _impl = (__bridge_retained image_impl_ptr) img_;
    }
 
-   image::image(uint8_t* data, pixel_format fmt, extent size)
+   image::image(uint8_t const* data, pixel_format fmt, extent size)
    {
       if (fmt == pixel_format::invalid)
          throw std::runtime_error{ "Error: Cannot initalize format: INVALID" };
