@@ -70,7 +70,7 @@ namespace cycfi::artist
          fail();
    }
 
-   image::image(uint8_t* data, pixel_format fmt, extent size)
+   image::image(uint8_t const* data, pixel_format fmt, extent size)
     : _impl{ new artist::image_impl(SkBitmap{}) }
    {
       if (fmt == pixel_format::invalid)
@@ -88,7 +88,7 @@ namespace cycfi::artist
       SkImageInfo skImgInfo = SkImageInfo::Make(size.x, size.y, byte_fmt, alpha_fmt);
       if (!bitmap.tryAllocPixels(skImgInfo))
          throw std::runtime_error{ "Error: Failed to initialize image from pixel buffer" };
-      
+
       memcpy(bitmap.getPixels(), data, _pixmap_size(fmt, size));
    }
 
