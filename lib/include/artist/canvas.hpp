@@ -28,6 +28,9 @@ namespace cycfi::artist
    struct canvas_impl;
 #elif defined(ARTIST_SKIA)
    using canvas_impl = SkCanvas;
+#if defined(__APPLE__) && defined(__ARM_ARCH_ISA_A64)
+# error "Artist does not currently support Skia on Apple Silicon"
+#endif
 #endif
 
    class canvas

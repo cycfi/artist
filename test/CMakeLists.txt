@@ -16,12 +16,6 @@ if (APPLE)
       file(
          GLOB ARTIST_FONTS ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/*.*
       )
-      set_target_properties(
-         artist_test
-         PROPERTIES
-         MACOSX_BUNDLE_INFO_PLIST
-         ${CMAKE_CURRENT_LIST_DIR}/../resources/macos/plist.in
-      )
       set_source_files_properties(
          ${ARTIST_FONTS}
          PROPERTIES

@@ -36,7 +36,7 @@ namespace cycfi::artist
    };
 
    ////////////////////////////////////////////////////////////////////////////
-   // picture
+   // image
    ////////////////////////////////////////////////////////////////////////////
    class image
    {
@@ -45,7 +45,7 @@ namespace cycfi::artist
       explicit          image(float sizex, float sizey);
       explicit          image(extent size);
       explicit          image(fs::path const& path_);
-      explicit          image(uint8_t* data, pixel_format fmt, extent size);
+
                         image(image const& rhs) = delete;
                         image(image&& rhs) noexcept;
                         ~image();
@@ -62,9 +62,24 @@ namespace cycfi::artist
       extent            bitmap_size() const;
 
    private:
+
+      template <pixel_format fmt>
+      friend typename std::enable_if<(fmt == pixel_format::gray8), image>::type
+      make_image(std::uint8_t const* data, extent size);
+
+      template <pixel_format fmt>
+      friend typename std::enable_if<(fmt == pixel_format::rgb16), image>::type
+      make_image(std::uint16_t const* data, extent size);
+
+      template <pixel_format fmt>
+      friend typename std::enable_if<
+         (fmt == pixel_format::rgb32 || fmt == pixel_format::rgba32), image>::type
+      make_image(std::uint32_t const* data, extent size);
+
+      explicit          image(std::uint8_t const* data, pixel_format fmt, extent size);
       size_t            _pixmap_size(pixel_format, extent size);
 
-      image_impl_ptr  _impl;
+      image_impl_ptr    _impl;
    };
 
    using image_ptr = std::shared_ptr<image>;
@@ -94,8 +109,30 @@ namespace cycfi::artist
    ////////////////////////////////////////////////////////////////////////////
    // Inlines
    ////////////////////////////////////////////////////////////////////////////
+   template <pixel_format fmt>
+   inline typename std::enable_if<(fmt == pixel_format::gray8), image>::type
+   make_image(std::uint8_t const* data, extent size)
+   {
+      return image(data, pixel_format::gray8, size);
+   }
+
+   template <pixel_format fmt>
+   inline typename std::enable_if<(fmt == pixel_format::rgb16), image>::type
+   make_image(std::uint16_t const* data, extent size)
+   {
+      return image(reinterpret_cast<std::uint8_t const*>(data), pixel_format::rgb16, size);
+   }
+
+   template <pixel_format fmt>
+   inline typename std::enable_if<
+      (fmt == pixel_format::rgb32 || fmt == pixel_format::rgba32), image>::type
+   make_image(std::uint32_t const* data, extent size)
+   {
+      return image(reinterpret_cast<std::uint8_t const*>(data), pixel_format::rgb32, size);
+   }
+
    inline image::image(float sizex, float sizey)
-    : image(extent{sizex, sizey })
+    : image(extent{sizex, sizey})
    {
    }
 
