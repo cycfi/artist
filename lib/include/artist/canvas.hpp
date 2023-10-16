@@ -358,6 +358,8 @@ namespace cycfi::artist
 
       canvas_impl*      _context;
       canvas_state_ptr  _state;
+
+      void              add_round_rect_impl(const rect& r, float radius);
    };
 }
 

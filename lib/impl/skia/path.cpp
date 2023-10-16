@@ -82,11 +82,6 @@ namespace cycfi::artist
       _impl->addRect({ r.left, r.top, r.right, r.bottom });
    }
 
-   void path::add_round_rect(rect const& r, float radius)
-   {
-      _impl->addRoundRect({ r.left, r.top, r.right, r.bottom }, radius, radius);
-   }
-
    void path::add_circle(circle const& c)
    {
       _impl->addCircle(c.cx, c.cy, c.radius);
@@ -136,4 +131,10 @@ namespace cycfi::artist
    {
       _impl->setFillType(rule == fill_winding? SkPathFillType::kWinding : SkPathFillType::kEvenOdd);
    }
+
+   void path::add_round_rect_impl(rect const& r, float radius)
+   {
+      _impl->addRoundRect({ r.left, r.top, r.right, r.bottom }, radius, radius);
+   }
+
 }
