@@ -19,7 +19,7 @@ namespace cycfi::artist
          case pixel_format::rgb16:
             return { CGColorSpaceCreateDeviceRGB(), kCGImageAlphaNoneSkipFirst, 4, 5, 16 };
          case pixel_format::rgb32:
-            return { CGColorSpaceCreateDeviceRGB(), kCGBitmapByteOrderDefault | kCGImageAlphaNone, 4, 8, 32 };
+            return { CGColorSpaceCreateDeviceRGB(), kCGBitmapByteOrderDefault | kCGImageAlphaNoneSkipLast, 4, 8, 32 };
          case pixel_format::rgba32:
             return { CGColorSpaceCreateDeviceRGB(), kCGBitmapByteOrderDefault | kCGImageAlphaPremultipliedLast, 4, 8, 32 };
          default:

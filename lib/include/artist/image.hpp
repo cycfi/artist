@@ -113,14 +113,14 @@ namespace cycfi::artist
    inline typename std::enable_if<(fmt == pixel_format::gray8), image>::type
    make_image(std::uint8_t const* data, extent size)
    {
-      return image(data, pixel_format::gray8, size);
+      return image(data, fmt, size);
    }
 
    template <pixel_format fmt>
    inline typename std::enable_if<(fmt == pixel_format::rgb16), image>::type
    make_image(std::uint16_t const* data, extent size)
    {
-      return image(reinterpret_cast<std::uint8_t const*>(data), pixel_format::rgb16, size);
+      return image(reinterpret_cast<std::uint8_t const*>(data), fmt, size);
    }
 
    template <pixel_format fmt>
@@ -128,7 +128,7 @@ namespace cycfi::artist
       (fmt == pixel_format::rgb32 || fmt == pixel_format::rgba32), image>::type
    make_image(std::uint32_t const* data, extent size)
    {
-      return image(reinterpret_cast<std::uint8_t const*>(data), pixel_format::rgb32, size);
+      return image(reinterpret_cast<std::uint8_t const*>(data), fmt, size);
    }
 
    inline image::image(float sizex, float sizey)
