@@ -526,14 +526,6 @@ namespace cycfi::artist
       CGContextAddRect(CGContextRef(_context), CGRectMake(r.left, r.top, r.width(), r.height()));
    }
 
-   void canvas::add_round_rect(const rect& r, float radius)
-   {
-      if (radius > 0.0f)
-         detail::round_rect(*this, r, radius);
-      else
-         add_rect(r);
-   }
-
    void canvas::add_path(path const& p)
    {
       CGContextAddPath(CGContextRef(_context), p.impl());
@@ -985,4 +977,13 @@ namespace cycfi::artist
          hints          :  nil
       ];
    }
+
+   void canvas::add_round_rect_impl(const rect& r, float radius)
+   {
+      if (radius > 0.0f)
+         detail::round_rect(*this, r, radius);
+      else
+         add_rect(r);
+   }
+
 }

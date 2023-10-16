@@ -9,6 +9,7 @@
 #include <infra/support.hpp>
 #include <artist/rect.hpp>
 #include <artist/circle.hpp>
+#include <algorithm>
 #include <string_view>
 #include <cmath>
 
@@ -108,6 +109,8 @@ namespace cycfi::artist
 
       path_impl*        _impl;
 
+      void              add_round_rect_impl(rect const& r, float radius);
+
 #if defined(ARTIST_QUARTZ_2D)
       fill_rule_enum    _fill_rule = fill_winding;
 #endif
@@ -142,6 +145,12 @@ namespace cycfi::artist
    inline bool path::includes(float x, float y) const
    {
       return includes({ x, y });
+   }
+
+   inline void path::add_round_rect(rect const& r, float radius)
+   {
+      radius = std::clamp(radius, 0.0f, std::min(r.width(), r.height()) / 2);
+      add_round_rect_impl(r, radius);
    }
 
    inline void path::add_rect(float x, float y, float width, float height)
