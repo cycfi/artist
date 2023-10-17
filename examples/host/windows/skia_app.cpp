@@ -209,16 +209,27 @@ void window::destroy()
 
 namespace cycfi::artist
 {
+   void add_relative_paths(const fs::path& base, const fs::path& rel_path)
+   {
+      add_search_path(base / rel_path);
+      add_search_path(base.parent_path() / rel_path);
+   }
+
    void init_paths()
    {
-      add_search_path(fs::current_path() / "resources");
-      add_search_path(fs::current_path() / "resources/fonts");
-      add_search_path(fs::current_path() / "resources/images");
+      fs::path curr_dir = fs::current_path();
+      
+      add_relative_paths(curr_dir, "resources");
+      add_relative_paths(curr_dir, "resources/fonts");
+      add_relative_paths(curr_dir, "resources/images");
    }
 
    // This is declared in font.hpp
    fs::path get_user_fonts_directory()
    {
+      const fs::path fonts_dir = find_directory("fonts");
+      if (fs::exists(fonts_dir))
+         return fonts_dir;
       return fs::path(fs::current_path() / "resources/fonts");
    }
 }
