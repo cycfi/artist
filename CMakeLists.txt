@@ -9,6 +9,20 @@ include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 project(artist LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 
+# Ensure presence of Git submodules (when not using a source tarball)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
+   find_package(Git REQUIRED)
+   function(git_submodule_check dir)
+      if(NOT EXISTS "${dir}/CMakeLists.txt")
+         execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive -- ${dir}
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+            COMMAND_ERROR_IS_FATAL ANY)
+      endif()
+   endfunction()
+   git_submodule_check(lib/external/libunibreak)
+   git_submodule_check(lib/infra)
+endif()
+
 set(DEFAULT_BUILD_TYPE "Release")
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
    message(STATUS "Setting build type to '${DEFAULT_BUILD_TYPE}' as none was specified.")
