@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -218,7 +218,7 @@ namespace cycfi::artist
    void init_paths()
    {
       fs::path curr_dir = fs::current_path();
-      
+
       add_relative_paths(curr_dir, "resources");
       add_relative_paths(curr_dir, "resources/fonts");
       add_relative_paths(curr_dir, "resources/images");
