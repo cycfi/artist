@@ -6,7 +6,7 @@
 #include "app.hpp"
 
 using namespace cycfi::artist;
-auto constexpr window_size = extent{ 640.0f, 480.0f };
+auto constexpr window_size = extent{640.0f, 480.0f};
 
 float x_incr = 0.5;
 float y_incr = 0.5;
@@ -17,12 +17,12 @@ void draw(canvas& cnv)
 {
    cnv.save();
    cnv.fill_style(colors::white);
-   cnv.add_rect({ 0, 0, window_size });
+   cnv.add_rect({0, 0, window_size});
    cnv.fill();
 
    cnv.fill_style(colors::black);
-   cnv.shadow_style({ 4, 4 }, 6, colors::gray[30]);
-   cnv.add_round_rect({ 10, 10, x, y }, 10);
+   cnv.shadow_style({4, 4}, 6, colors::gray[30]);
+   cnv.add_round_rect({10, 10, x, y}, 10);
    cnv.fill();
 
    x += x_incr;

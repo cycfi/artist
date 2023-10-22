@@ -6,9 +6,9 @@
 #include "app.hpp"
 
 using namespace cycfi::artist;
-auto constexpr window_size = extent{ 640.0f, 480.0f };
+auto constexpr window_size = extent{640.0f, 480.0f};
 
-auto space = image{ "space.jpg" };
+auto space = image{"space.jpg"};
 auto size = space.size();
 float x_incr = 0.5;
 float y_incr = 0.5;

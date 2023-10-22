@@ -125,7 +125,7 @@ namespace cycfi::artist
             da += 2 * pi;
 
          // Approximate the arc using cubic spline segments.
-         float t[6] = { cosrx, sinrx, -sinrx, cosrx, cx, cy };
+         float t[6] = {cosrx, sinrx, -sinrx, cosrx, cx, cy};
 
          // Split arc into max 90 degree segments.
          // The loop assumes an iteration per end point
@@ -348,7 +348,7 @@ namespace cycfi::artist
 
                default:
                   throw std::runtime_error{
-                     std::string{ "Error: Invalid SVG path syntax here: " } + s
+                     std::string{"Error: Invalid SVG path syntax here: "} + s
                   };
             }
          }
@@ -365,11 +365,11 @@ namespace cycfi::artist
       // std::string_view is null-terminated and std::strtof can read past
       // the string-view's end which is undefined behavior. I wish I could
       // just use Boost.Spirit!
-      auto str = std::string{ svg_def.data(), svg_def.size() };
+      auto str = std::string{svg_def.data(), svg_def.size()};
       auto s = str.c_str();
       bool abs; char cmd;
 
-      path_builder builder{ *this };
+      path_builder builder{*this};
       while (*s)
       {
          skip_to_next(s);

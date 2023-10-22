@@ -87,7 +87,7 @@ namespace
 
             SkCanvas* gpu_canvas = state._surface->getCanvas();
             gpu_canvas->save();
-            auto cnv = canvas{ gpu_canvas };
+            auto cnv = canvas{gpu_canvas};
             cnv.pre_scale(state._scale);
 
             draw(cnv);
@@ -99,7 +99,7 @@ namespace
       auto start = std::chrono::steady_clock::now();
       draw_f();
       auto stop = std::chrono::steady_clock::now();
-      elapsed_ = std::chrono::duration<double>{ stop - start }.count();
+      elapsed_ = std::chrono::duration<double>{stop - start}.count();
 
       return true;
    }

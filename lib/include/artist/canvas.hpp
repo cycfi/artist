@@ -214,13 +214,13 @@ namespace cycfi::artist
       struct linear_gradient : gradient
       {
          linear_gradient(float startx, float starty, float endx, float endy)
-          : start{ startx, starty }
-          , end{ endx, endy }
+          : start{startx, starty}
+          , end{endx, endy}
          {}
 
          linear_gradient(point start, point end)
-          : start{ start }
-          , end{ end }
+          : start{start}
+          , end{end}
          {}
 
          point start = {};
@@ -233,20 +233,20 @@ namespace cycfi::artist
             float c1x, float c1y, float c1r,
             float c2x, float c2y, float c2r
          )
-          : c1{ c1x, c1y }
-          , c1_radius{ c1r }
-          , c2{ c2x, c2y }
-          , c2_radius{ c2r }
+          : c1{c1x, c1y}
+          , c1_radius{c1r}
+          , c2{c2x, c2y}
+          , c2_radius{c2r}
          {}
 
          radial_gradient(
             point c1, float c1r,
             point c2, float c2r
          )
-          : c1{ c1 }
-          , c1_radius{ c1r }
-          , c2{ c2 }
-          , c2_radius{ c2r }
+          : c1{c1}
+          , c1_radius{c1r}
+          , c2{c2}
+          , c2_radius{c2r}
          {}
 
          point c1 = {};
@@ -324,7 +324,7 @@ namespace cycfi::artist
 
       void              draw(image const& pic, rect const& src, rect const& dest);
       void              draw(image const& pic, rect const& dest);
-      void              draw(image const& pic, point pos = {0, 0 });
+      void              draw(image const& pic, point pos = {0, 0});
       void              draw(image const& pic, point pos, float scale);
       void              draw(image const& pic, float posx, float posy);
       void              draw(image const& pic, float posx, float posy, float scale);
@@ -347,7 +347,7 @@ namespace cycfi::artist
          canvas* cnv;
       };
 
-      state             new_state()   { return state{ *this }; }
+      state             new_state()   { return state{*this}; }
       void              save();
       void              restore();
 

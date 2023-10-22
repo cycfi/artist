@@ -29,7 +29,7 @@ struct exp_moving_average
 
 void print_elapsed(canvas& cnv, point br, color bkd, color c)
 {
-   static font open_sans = font_descr{ "Open Sans", 12 };
+   static font open_sans = font_descr{"Open Sans", 12};
    static auto metrics = open_sans.metrics();
    static auto height = metrics.ascent + metrics.leading + metrics.descent;
    static exp_moving_average<256> ma;
@@ -46,11 +46,11 @@ void print_elapsed(canvas& cnv, point br, color bkd, color c)
 
    auto width = open_sans.measure_text(fps_str);
    cnv.fill_style(bkd);
-   cnv.add_rect({ br.x - (width + 4), br.y - height, br.x, br.y });
+   cnv.add_rect({br.x - (width + 4), br.y - height, br.x, br.y});
    cnv.fill();
 
    cnv.fill_style(c);
    cnv.font(open_sans);
    cnv.text_align(cnv.right | cnv.bottom);
-   cnv.fill_text(fps_str, { br.x-2, br.y });
+   cnv.fill_text(fps_str, {br.x-2, br.y});
 }
