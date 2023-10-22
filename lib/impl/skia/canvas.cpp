@@ -652,7 +652,7 @@ namespace cycfi::artist
 
    void canvas::add_round_rect_impl(rect const& r, float radius)
    {
-      _state->path().addRoundRect({ r.left, r.top, r.right, r.bottom }, radius, radius);
+      _state->path().addRoundRect({r.left, r.top, r.right, r.bottom}, radius, radius);
    }
 
 }

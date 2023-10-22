@@ -55,7 +55,7 @@ namespace cycfi::artist
       else if (descr._stretch >= expanded)
          style |= NSExpandedFontMask;
 
-      std::istringstream str(std::string{ descr._families });
+      std::istringstream str(std::string{descr._families});
       std::string family;
       auto font_manager = [NSFontManager sharedFontManager];
 
@@ -137,7 +137,7 @@ namespace cycfi::artist
    float font::measure_text(std::string_view str) const
    {
       NSFont* font = (__bridge NSFont*) _ptr;
-      NSDictionary* attr = @{ NSFontAttributeName : font };
+      NSDictionary* attr = @{NSFontAttributeName : font};
       NSString* text = detail::ns_string(str);
       const CGSize textSize = [text sizeWithAttributes : attr];
       return textSize.width;

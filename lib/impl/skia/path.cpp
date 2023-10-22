@@ -134,7 +134,7 @@ namespace cycfi::artist
 
    void path::add_round_rect_impl(rect const& r, float radius)
    {
-      _impl->addRoundRect({ r.left, r.top, r.right, r.bottom }, radius, radius);
+      _impl->addRoundRect({r.left, r.top, r.right, r.bottom}, radius, radius);
    }
 
 }
