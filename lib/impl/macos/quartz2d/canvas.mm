@@ -65,7 +65,7 @@ namespace cycfi::artist
          CGGradientRef  _fill_gradient    = nullptr;
          style          _stroke_style     = colors::black;
          CGGradientRef  _stroke_gradient  = nullptr;
-         class font     _font             = font_descr{ "Helvetica Neue", 12 };
+         class font     _font             = font_descr{"Helvetica Neue", 12};
          int            _text_align       = canvas::baseline;
          mode_enum      _mode             = source_over;
       };
@@ -197,15 +197,15 @@ namespace cycfi::artist
    }
 
    canvas::canvas(canvas_impl* context_)
-    : _context{ context_ }
-    , _state{ std::make_unique<canvas_state>() }
+    : _context{context_}
+    , _state{std::make_unique<canvas_state>()}
    {
       // Flip text drawing vertically
       auto ctx = CGContextRef(_context);
       CGAffineTransform trans = CGAffineTransformMakeScale(1, -1);
       CGContextSetTextMatrix(ctx, trans);
 
-      CGPoint user = { 100, 100 };
+      CGPoint user = {100, 100};
       auto device = CGContextConvertPointToDeviceSpace(ctx, user);
       _state->scale(device.x / user.x);
    }
@@ -253,24 +253,24 @@ namespace cycfi::artist
    {
       auto scale = _state->scale();
       auto up = CGContextConvertPointToUserSpace(
-         CGContextRef(_context), { p.x * scale, p.y * scale }
+         CGContextRef(_context), {p.x * scale, p.y * scale}
       );
-      return { float(up.x), float(up.y) };
+      return {float(up.x), float(up.y)};
    }
 
    point canvas::user_to_device(point p)
    {
       auto scale = _state->scale();
       auto dp = CGContextConvertPointToDeviceSpace(
-         CGContextRef(_context), { p.x, p.y }
+         CGContextRef(_context), {p.x, p.y}
       );
-      return { float(dp.x / scale), float(dp.y / scale) };
+      return {float(dp.x / scale), float(dp.y / scale)};
    }
 
    affine_transform canvas::transform() const
    {
       auto [a, b, c, d, tx, ty] = CGContextGetCTM(CGContextRef(_context));
-      return affine_transform{ a, b, c, d, tx, ty };
+      return affine_transform{a, b, c, d, tx, ty};
    }
 
    void canvas::transform(affine_transform const& mat)
@@ -283,7 +283,7 @@ namespace cycfi::artist
       auto ctx = CGContextRef(_context);
       auto inv = CGAffineTransformInvert(CGContextGetCTM(ctx));
       CGContextConcatCTM(ctx, inv);
-      CGContextConcatCTM(ctx, { a, b, c, d, tx, ty });
+      CGContextConcatCTM(ctx, {a, b, c, d, tx, ty});
    }
 
    void canvas::save()
@@ -334,8 +334,8 @@ namespace cycfi::artist
             clip();  // Set to clip current path
             CGContextDrawLinearGradient(
                ctx, _state->fill_gradient(),
-               CGPoint{ style.start.x, style.start.y },
-               CGPoint{ style.end.x, style.end.y },
+               CGPoint{style.start.x, style.start.y},
+               CGPoint{style.end.x, style.end.y},
                kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
             );
             CGContextRestoreGState(ctx);
@@ -347,8 +347,8 @@ namespace cycfi::artist
             clip();  // Set to clip current path
             CGContextDrawRadialGradient(
                ctx, _state->fill_gradient(),
-               CGPoint{ style.c1.x, style.c1.y }, style.c1_radius,
-               CGPoint{ style.c2.x, style.c2.y }, style.c2_radius,
+               CGPoint{style.c1.x, style.c1.y}, style.c1_radius,
+               CGPoint{style.c2.x, style.c2.y}, style.c2_radius,
                kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation);
             CGContextRestoreGState(ctx);
          }
@@ -385,8 +385,8 @@ namespace cycfi::artist
             clip();  // Set to clip current path
             CGContextDrawLinearGradient(
                ctx, _state->stroke_gradient(),
-               CGPoint{ style.start.x, style.start.y },
-               CGPoint{ style.end.x, style.end.y },
+               CGPoint{style.start.x, style.start.y},
+               CGPoint{style.end.x, style.end.y},
                kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
             );
             CGContextRestoreGState(ctx);
@@ -400,8 +400,8 @@ namespace cycfi::artist
             clip();  // Set to clip current path
             CGContextDrawRadialGradient(
                ctx, _state->stroke_gradient(),
-               CGPoint{ style.c1.x, style.c1.y }, style.c1_radius,
-               CGPoint{ style.c2.x, style.c2.y }, style.c2_radius,
+               CGPoint{style.c1.x, style.c1.y}, style.c1_radius,
+               CGPoint{style.c2.x, style.c2.y}, style.c2_radius,
                kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
             );
             CGContextRestoreGState(ctx);
@@ -460,7 +460,7 @@ namespace cycfi::artist
       auto mode = _state->fill_rule() == path::fill_winding?
          kCGPathFillStroke : kCGPathEOFillStroke
          ;
-      return CGContextPathContainsPoint(CGContextRef(_context), { p.x, p.y }, mode);
+      return CGContextPathContainsPoint(CGContextRef(_context), {p.x, p.y}, mode);
    }
 
    void canvas::move_to(point p)
@@ -509,15 +509,15 @@ namespace cycfi::artist
 
          radius = std::min(radius, std::min(bounds.width(), bounds.height()));
          c.begin_path();
-         c.move_to(point{ x, y + radius });
-         c.line_to(point{ x, b - radius });
-         c.arc_to(point{ x, b }, point{ x + radius, b }, radius);
-         c.line_to(point{ r - radius, b });
-         c.arc_to(point{ r, b }, point{ r, b - radius }, radius);
-         c.line_to(point{ r, y + radius });
-         c.arc_to(point{ r, y }, point{ r - radius, y }, radius);
-         c.line_to(point{ x + radius, y });
-         c.arc_to(point{ x, y }, point{ x, y + radius }, radius);
+         c.move_to(point{x, y + radius});
+         c.line_to(point{x, b - radius});
+         c.arc_to(point{x, b }, point{ x + radius, b}, radius);
+         c.line_to(point{r - radius, b});
+         c.arc_to(point{r, b }, point{ r, b - radius}, radius);
+         c.line_to(point{r, y + radius});
+         c.arc_to(point{r, y }, point{ r - radius, y}, radius);
+         c.line_to(point{x + radius, y});
+         c.arc_to(point{x, y }, point{ x, y + radius}, radius);
       }
    }
 
@@ -681,8 +681,8 @@ namespace cycfi::artist
       )
       {
          NSFont* font = (__bridge NSFont*) font_.impl();
-         CFStringRef keys[] = { kCTFontAttributeName, kCTForegroundColorFromContextAttributeName };
-         CFTypeRef   values[] = { (__bridge const void*)font, kCFBooleanTrue };
+         CFStringRef keys[] = {kCTFontAttributeName, kCTForegroundColorFromContextAttributeName};
+         CFTypeRef   values[] = {(__bridge const void*)font, kCFBooleanTrue};
 
          CFDictionaryRef font_attributes = CFDictionaryCreate(
             kCFAllocatorDefault, (const void**)&keys,
@@ -788,7 +788,7 @@ namespace cycfi::artist
       {
          CGContextSaveGState(ctx);
          begin_path();
-         translate({ p.x, p.y });                  // Move to p
+         translate({p.x, p.y});                    // Move to p
          detail::add_line_to_path(ctx, line);      // Convert text to path and add
          clip();                                   // Set to clip current path
          apply();                                  // Apply the gradient
@@ -810,8 +810,8 @@ namespace cycfi::artist
                [&] {
                   CGContextDrawLinearGradient(
                      ctx, _state->fill_gradient(),
-                     CGPoint{ -p.x+style.start.x, -p.y+style.start.y },
-                     CGPoint{ -p.x+style.end.x, -p.y+style.end.y },
+                     CGPoint{-p.x+style.start.x, -p.y+style.start.y},
+                     CGPoint{-p.x+style.end.x, -p.y+style.end.y},
                      kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
                   );
                }
@@ -823,8 +823,8 @@ namespace cycfi::artist
                [&] {
                   CGContextDrawRadialGradient(
                      ctx, _state->fill_gradient(),
-                     CGPoint{ -p.x+style.c1.x, -p.y+style.c1.y }, style.c1_radius,
-                     CGPoint{ -p.x+style.c2.x, -p.y+style.c2.y }, style.c2_radius,
+                     CGPoint{-p.x+style.c1.x, -p.y+style.c1.y}, style.c1_radius,
+                     CGPoint{-p.x+style.c2.x, -p.y+style.c2.y}, style.c2_radius,
                      kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
                   );
                }
@@ -849,7 +849,7 @@ namespace cycfi::artist
       {
          CGContextSaveGState(ctx);
          begin_path();
-         translate({ p.x, p.y });                  // Move to p
+         translate({p.x, p.y});                    // Move to p
          detail::add_line_to_path(ctx, line);      // Convert text to path and add
          CGContextReplacePathWithStrokedPath(ctx); // Convert stroke to path
          clip();                                   // Set to clip current path
@@ -872,8 +872,8 @@ namespace cycfi::artist
                [&] {
                   CGContextDrawLinearGradient(
                      ctx, _state->stroke_gradient(),
-                     CGPoint{ -p.x+style.start.x, -p.y+style.start.y },
-                     CGPoint{ -p.x+style.end.x, -p.y+style.end.y },
+                     CGPoint{-p.x+style.start.x, -p.y+style.start.y},
+                     CGPoint{-p.x+style.end.x, -p.y+style.end.y},
                      kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
                   );
                }
@@ -885,8 +885,8 @@ namespace cycfi::artist
                [&] {
                   CGContextDrawRadialGradient(
                      ctx, _state->stroke_gradient(),
-                     CGPoint{ -p.x+style.c1.x, -p.y+style.c1.y }, style.c1_radius,
-                     CGPoint{ -p.x+style.c2.x, -p.y+style.c2.y }, style.c2_radius,
+                     CGPoint{-p.x+style.c1.x, -p.y+style.c1.y}, style.c1_radius,
+                     CGPoint{-p.x+style.c2.x, -p.y+style.c2.y}, style.c2_radius,
                      kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
                   );
                }
@@ -910,7 +910,7 @@ namespace cycfi::artist
          float(ascent)
        , float(descent)
        , float(leading)
-       , { float(width), float(ascent + descent + leading) }
+       , {float(width), float(ascent + descent + leading)}
       };
    }
 
@@ -932,8 +932,8 @@ namespace cycfi::artist
    void canvas::draw(image const& img_, rect const& src, rect const& dest)
    {
       auto  img = (__bridge NSImage*) img_.impl();
-      auto  src_ = NSRect{ { src.left, [img size].height - src.bottom }, { src.width(), src.height() } };
-      auto  dest_ = NSRect{ { dest.left, dest.top }, { dest.width(), dest.height() } };
+      auto  src_ = NSRect{{src.left, [img size].height - src.bottom}, {src.width(), src.height()}};
+      auto  dest_ = NSRect{{dest.left, dest.top}, {dest.width(), dest.height()}};
 
       NSCompositingOperation ns_mode;
       switch (_state->mode())
