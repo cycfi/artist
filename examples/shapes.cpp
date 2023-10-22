@@ -7,12 +7,12 @@
 
 using namespace cycfi::artist;
 using cycfi::pi;
-auto constexpr window_size = point{ 640.0f, 480.0f };
+auto constexpr window_size = point{640.0f, 480.0f};
 auto constexpr bkd_color = rgb(44, 42, 45);
 
 void background(canvas& cnv)
 {
-   cnv.add_rect({ { 0, 0 }, window_size });
+   cnv.add_rect({{0, 0}, window_size});
    cnv.fill_style(bkd_color);
    cnv.fill();
 }
@@ -101,7 +101,7 @@ void arc_to(canvas& cnv)
 
 void line_caps(canvas& cnv)
 {
-   auto where = point{ 160, 215 };
+   auto where = point{160, 215};
    auto spacing = 25;
    cnv.line_width(10);
 
@@ -148,7 +148,7 @@ void line_caps(canvas& cnv)
 
 void line_joins(canvas& cnv)
 {
-   auto where = point{ 290, 100 };
+   auto where = point{290, 100};
    cnv.line_width(10);
    cnv.line_cap(cnv.butt);
 
@@ -200,14 +200,14 @@ void line_joins(canvas& cnv)
 
 void bezier(canvas& cnv)
 {
-   auto where = point{ 450, 280 };
+   auto where = point{450, 280};
    auto height = 100;
    auto width = 120;
    auto xmove = 20;
-   auto start = point{ where.x, where.y };
-   auto cp1 = point{ where.x+xmove, where.y-height };
-   auto cp2 = point{ where.x+width-xmove, where.y-height };
-   auto end = point{ where.x+width, where.y };
+   auto start = point{where.x, where.y};
+   auto cp1 = point{where.x+xmove, where.y-height};
+   auto cp2 = point{where.x+width-xmove, where.y-height};
+   auto end = point{where.x+width, where.y};
 
    cnv.line_width(10);
    cnv.stroke_style(colors::dodger_blue.opacity(0.6));
@@ -234,12 +234,12 @@ void bezier(canvas& cnv)
 
 void quad(canvas& cnv)
 {
-   auto where = point{ 40, 420 };
+   auto where = point{40, 420};
    auto height = 100;
    auto width = 120;
-   auto start = point{ where.x, where.y };
-   auto cp = point{ where.x+(width/2), where.y-height };
-   auto end = point{ where.x+width, where.y };
+   auto start = point{where.x, where.y};
+   auto cp = point{where.x+(width/2), where.y-height};
+   auto end = point{where.x+width, where.y};
 
    cnv.line_width(10);
    cnv.stroke_style(colors::dodger_blue.opacity(0.6));
@@ -277,7 +277,7 @@ void linear_gradient(canvas& cnv)
 {
    auto x = 300.0f;
    auto y = 330.0f;
-   auto gr = canvas::linear_gradient{ x, y, x+300, y };
+   auto gr = canvas::linear_gradient{x, y, x+300, y};
    rainbow(gr);
 
    cnv.add_round_rect(x, y, 300, 80, 5);
@@ -287,13 +287,13 @@ void linear_gradient(canvas& cnv)
 
 void radial_gradient(canvas& cnv)
 {
-   auto center = point{ 208, 360 };
+   auto center = point{208, 360};
    auto radius = 65.0f;
-   auto gr = canvas::radial_gradient{ center, 5, center.move(15, 10), radius };
+   auto gr = canvas::radial_gradient{center, 5, center.move(15, 10), radius};
    gr.add_color_stop(0.0, colors::red);
    gr.add_color_stop(1.0, colors::black);
 
-   cnv.add_circle({ center.move(15, 10), radius - 10 });
+   cnv.add_circle({center.move(15, 10), radius - 10});
    cnv.fill_style(gr);
    cnv.fill();
 }

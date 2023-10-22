@@ -16,7 +16,7 @@ namespace cycfi::artist
    {
       static std::vector<fs::path> resource_paths;
       static std::mutex resource_paths_mutex;
-      return { resource_paths, resource_paths_mutex };
+      return {resource_paths, resource_paths_mutex};
    }
 
    void add_search_path(fs::path const& path, bool search_first)

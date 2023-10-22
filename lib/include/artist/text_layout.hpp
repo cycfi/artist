@@ -41,7 +41,7 @@ namespace cycfi::artist
          float    last_line_height;
       };
 
-      enum break_enum { indeterminate, must_break, allow_break, no_break };
+      enum break_enum {indeterminate, must_break, allow_break, no_break};
 
       using get_line_info = std::function<line_info(float y)>;
       static constexpr auto npos = std::size_t(-1);
@@ -75,7 +75,7 @@ namespace cycfi::artist
    ////////////////////////////////////////////////////////////////////////////
    inline void text_layout::draw(canvas& cnv, float x, float y, color c) const
    {
-      draw(cnv, { x, y }, c);
+      draw(cnv, {x, y}, c);
    }
 
    inline std::size_t text_layout::caret_index(float x, float y) const

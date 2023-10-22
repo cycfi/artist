@@ -68,7 +68,7 @@ namespace cycfi::artist
   rect path::bounds() const
   {
      auto const& r = _impl->getBounds();
-     return rect{ r.fLeft, r.fTop, r.fRight, r.fBottom };
+     return rect{r.fLeft, r.fTop, r.fRight, r.fBottom};
   }
 #endif
 
@@ -79,7 +79,12 @@ namespace cycfi::artist
 
    void path::add_rect(rect const& r)
    {
-      _impl->addRect({ r.left, r.top, r.right, r.bottom });
+      _impl->addRect({r.left, r.top, r.right, r.bottom});
+   }
+
+   void path::add_round_rect(rect const& r, float radius)
+   {
+      _impl->addRoundRect({r.left, r.top, r.right, r.bottom}, radius, radius);
    }
 
    void path::add_circle(circle const& c)
@@ -112,7 +117,7 @@ namespace cycfi::artist
       sweep = std::abs(sweep) * (ccw? -1 : 1);
 
        _impl->addArc(
-         { p.x-radius, p.y-radius, p.x+radius, p.y+radius },
+         {p.x-radius, p.y-radius, p.x+radius, p.y+radius},
          start, sweep
       );
    }

@@ -144,7 +144,7 @@ namespace cycfi::artist
 
    inline bool path::includes(float x, float y) const
    {
-      return includes({ x, y });
+      return includes({x, y});
    }
 
    inline void path::add_round_rect(rect const& r, float radius)
@@ -155,7 +155,7 @@ namespace cycfi::artist
 
    inline void path::add_rect(float x, float y, float width, float height)
    {
-      add_rect({ x, y, extent{ width, height } });
+      add_rect({x, y, extent{width, height}});
    }
 
    inline void path::add_round_rect(
@@ -164,22 +164,22 @@ namespace cycfi::artist
     , float radius
    )
    {
-      add_round_rect({ x, y, extent{ width, height } }, radius);
+      add_round_rect({x, y, extent{width, height}}, radius);
    }
 
    inline void path::add_circle(float cx, float cy, float radius)
    {
-      add_circle({ cx, cy, radius });
+      add_circle({cx, cy, radius});
    }
 
    inline void path::move_to(float x, float y)
    {
-      move_to({ x, y });
+      move_to({x, y});
    }
 
    inline void path::line_to(float x, float y)
    {
-      line_to({ x, y });
+      line_to({x, y});
    }
 
    inline void path::arc_to(
@@ -187,7 +187,7 @@ namespace cycfi::artist
       float x2, float y2,
       float radius)
    {
-      arc_to({ x1, y1 }, { x2, y2 }, radius);
+      arc_to({x1, y1}, {x2, y2}, radius);
    }
 
    inline void path::arc(
@@ -195,12 +195,12 @@ namespace cycfi::artist
       float start_angle, float end_angle,
       bool ccw)
    {
-      arc({ x, y }, radius, start_angle, end_angle, ccw);
+      arc({x, y}, radius, start_angle, end_angle, ccw);
    }
 
    inline void path::quadratic_curve_to(float cpx, float cpy, float x, float y)
    {
-      quadratic_curve_to({ cpx, cpy }, { x, y });
+      quadratic_curve_to({cpx, cpy}, {x, y});
    }
 
    inline void path::bezier_curve_to(
@@ -208,13 +208,13 @@ namespace cycfi::artist
       float cp2x, float cp2y,
       float x, float y)
    {
-      bezier_curve_to({ cp1x, cp1y }, { cp2x, cp2y }, { x, y });
+      bezier_curve_to({cp1x, cp1y}, {cp2x, cp2y}, {x, y});
    }
 
 #if !defined(ARTIST_SKIA)
    inline void path::add_circle(circle const& c)
    {
-      arc(point{ c.cx, c.cy }, c.radius, 0.0, 2 * pi);
+      arc(point{c.cx, c.cy}, c.radius, 0.0, 2 * pi);
    }
 #endif
 
@@ -252,7 +252,7 @@ namespace cycfi::artist
    inline rect path::bounds() const
    {
       auto const& r = _impl->getBounds();
-      return rect{ r.fLeft, r.fTop, r.fRight, r.fBottom };
+      return rect{r.fLeft, r.fTop, r.fRight, r.fBottom};
    }
 }
 

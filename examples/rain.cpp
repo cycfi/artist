@@ -19,7 +19,7 @@ constexpr auto persistence = 0.10;
 constexpr auto persistence = 0.04;
 #endif
 
-constexpr auto window_size = extent{ 640, 360 };
+constexpr auto window_size = extent{640, 360};
 constexpr auto w = window_size.x;
 constexpr auto h = window_size.y;
 constexpr int total = w;
@@ -39,7 +39,7 @@ float random_size()
 void rain(canvas& cnv)
 {
    cnv.fill_style(repaint_color.opacity(opacity));
-   cnv.fill_rect({ 0, 0, window_size });
+   cnv.fill_rect({0, 0, window_size});
    for (auto i = 0; i < total; ++i)
    {
       auto current_y = dots[i] - 1;
@@ -63,10 +63,10 @@ void rain(canvas& cnv)
 
 void draw(canvas& cnv)
 {
-   static auto offscreen = image{ window_size };
+   static auto offscreen = image{window_size};
    {
-      auto ctx = offscreen_image{ offscreen };
-      auto offscreen_cnv = canvas{ ctx.context() };
+      auto ctx = offscreen_image{offscreen};
+      auto offscreen_cnv = canvas{ctx.context()};
       rain(offscreen_cnv);
    }
    cnv.draw(offscreen);

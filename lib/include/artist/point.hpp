@@ -84,7 +84,7 @@ namespace cycfi::artist
 
    inline constexpr point point::reflect(point p) const
    {
-      return { x + (x - p.x), y + (y - p.y) };
+      return {x + (x - p.x), y + (y - p.y)};
    }
 }
 

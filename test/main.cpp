@@ -18,12 +18,12 @@ using namespace cycfi::artist;
 using namespace font_constants;
 using cycfi::codepoint;
 
-auto constexpr window_size = point{ 640.0f, 480.0f };
+auto constexpr window_size = point{640.0f, 480.0f};
 auto constexpr bkd_color = rgba(54, 52, 55, 255);
 
 void background(canvas& cnv)
 {
-   cnv.add_rect({ { 0, 0 }, window_size });
+   cnv.add_rect({{0, 0}, window_size});
    cnv.fill_style(bkd_color);
    cnv.fill();
 }
@@ -34,12 +34,12 @@ void balloon(canvas& cnv)
    cnv.begin_path();
    cnv.line_join(cnv.round_join);
    cnv.move_to(75, 25);
-   cnv.quadratic_curve_to({ 25, 25 }, { 25, 62.5 });
-   cnv.quadratic_curve_to({ 25, 100 }, { 50, 100 });
-   cnv.quadratic_curve_to({ 50, 120 }, { 30, 125 });
-   cnv.quadratic_curve_to({ 60, 120 }, { 65, 100 });
-   cnv.quadratic_curve_to({ 125, 100 }, { 125, 62.5 });
-   cnv.quadratic_curve_to({ 125, 25 }, { 75, 25 });
+   cnv.quadratic_curve_to({25, 25}, {25, 62.5});
+   cnv.quadratic_curve_to({25, 100}, {50, 100});
+   cnv.quadratic_curve_to({50, 120}, {30, 125});
+   cnv.quadratic_curve_to({60, 120}, {65, 100});
+   cnv.quadratic_curve_to({125, 100}, {125, 62.5});
+   cnv.quadratic_curve_to({125, 25}, {75, 25});
 }
 
 void heart(canvas& cnv)
@@ -47,14 +47,14 @@ void heart(canvas& cnv)
    // bezier_curve_to
    constexpr float y0 = 40, y1 = 50, y2 = 23, y3 = 90, y4 = 45, y5 = 75, y6 = 125;
    cnv.begin_path();
-   cnv.move_to({ 75, y0 });
-   cnv.bezier_curve_to({ 75, y4 }, { 70, y2 }, { 50, y2 });
-   cnv.bezier_curve_to({ 20, y2 }, { 20, y1 }, { 20, y1 });
-   cnv.bezier_curve_to({ 20, y5 }, { y0, y3 }, { 75, y6 });
-   cnv.bezier_curve_to({ 110, y3 }, { 130, y5 }, { 130, y1 });
-   cnv.bezier_curve_to({ 130, y1}, { 130, y2 }, { 100, y2 });
-   cnv.bezier_curve_to({ 85, y2 }, { 75, y4 }, { 75, y0 });
-   cnv.fill_style(color{ 0.2, 0, 0 }.opacity(0.4));
+   cnv.move_to({75, y0});
+   cnv.bezier_curve_to({75, y4}, {70, y2}, {50, y2});
+   cnv.bezier_curve_to({20, y2}, {20, y1}, {20, y1});
+   cnv.bezier_curve_to({20, y5}, {y0, y3}, {75, y6});
+   cnv.bezier_curve_to({110, y3}, {130, y5}, {130, y1});
+   cnv.bezier_curve_to({ 130, y1}, {130, y2}, {100, y2});
+   cnv.bezier_curve_to({85, y2}, {75, y4}, {75, y0});
+   cnv.fill_style(color{0.2, 0, 0}.opacity(0.4));
 }
 
 void basics(canvas& cnv)
@@ -94,7 +94,7 @@ void basics(canvas& cnv)
    cnv.translate(-100, 100);
    heart(cnv);
    cnv.line_width(2);
-   cnv.stroke_style(color{ 0.8, 0, 0 });
+   cnv.stroke_style(color{0.8, 0, 0});
    cnv.stroke_preserve();
    cnv.fill();
 }
@@ -123,7 +123,7 @@ void linear_gradient(canvas& cnv)
 {
    auto x = 300.0f;
    auto y = 20.0f;
-   auto gr = canvas::linear_gradient{ x, y, x+300, y };
+   auto gr = canvas::linear_gradient{x, y, x+300, y};
    rainbow(gr);
 
    cnv.add_round_rect(x, y, 300, 80, 5);
@@ -133,13 +133,13 @@ void linear_gradient(canvas& cnv)
 
 void radial_gradient(canvas& cnv)
 {
-   auto center = point{ 475, 90 };
+   auto center = point{475, 90};
    auto radius = 75.0f;
-   auto gr = canvas::radial_gradient{ center, 5, center.move(15, 10), radius };
+   auto gr = canvas::radial_gradient{center, 5, center.move(15, 10), radius};
    gr.add_color_stop(0.0, colors::red);
    gr.add_color_stop(1.0, colors::black);
 
-   cnv.add_circle({ center.move(15, 10), radius - 10 });
+   cnv.add_circle({center.move(15, 10), radius - 10});
    cnv.fill_style(gr);
    cnv.fill();
 }
@@ -148,7 +148,7 @@ void stroke_gradient(canvas& cnv)
 {
    auto x = 300.0f;
    auto y = 20.0f;
-   auto gr = canvas::linear_gradient{ x, y, x+300, y+80 };
+   auto gr = canvas::linear_gradient{x, y, x+300, y+80};
    gr.add_color_stop(0.0, colors::navy_blue);
    gr.add_color_stop(1.0, colors::maroon);
 
@@ -160,15 +160,15 @@ void stroke_gradient(canvas& cnv)
 
 void draw_pixmap(canvas& cnv)
 {
-   image pm{get_images_path() + "logo.png" };
+   image pm{get_images_path() + "logo.png"};
    auto x = 250.0f, y = 120.0f;
    cnv.draw(pm, x, y, 0.4);
 }
 
 void line_styles(canvas& cnv)
 {
-   auto where = point{ 500, 200 };
-   cnv.shadow_style({ 5.0, 5.0 }, 5, colors::black);
+   auto where = point{500, 200};
+   cnv.shadow_style({5.0, 5.0}, 5, colors::black);
 
    cnv.stroke_style(colors::gold);
    cnv.begin_path();
@@ -279,27 +279,27 @@ void typography(canvas& cnv)
    cnv.stroke_style(rgba(220, 220, 220, 200));
 
    // Regular
-   cnv.font(font_descr{ "Open Sans", 36 });
+   cnv.font(font_descr{"Open Sans", 36});
    cnv.fill_text("Regular", 20, 40);
 
    // Bold
-   cnv.font(font_descr{ "Open Sans", 36 }.bold());
+   cnv.font(font_descr{"Open Sans", 36}.bold());
    cnv.fill_text("Bold", 160, 40);
 
    // Light
-   cnv.font(font_descr{ "Open Sans", 36 }.light());
+   cnv.font(font_descr{"Open Sans", 36}.light());
    cnv.fill_text("Light", 250, 40);
 
    // Italic
-   cnv.font(font_descr{ "Open Sans", 36 }.italic());
+   cnv.font(font_descr{"Open Sans", 36}.italic());
    cnv.fill_text("Italic", 345, 40);
 
    // Condensed
-   cnv.font(font_descr{ "Open Sans Condensed, Open Sans", 36 }.condensed());
+   cnv.font(font_descr{"Open Sans Condensed, Open Sans", 36}.condensed());
    cnv.fill_text("Condensed", 430, 40);
 
    // Condensed Italic
-   cnv.font(font_descr{ "Open Sans Condensed, Open Sans", 36 }.italic().condensed());
+   cnv.font(font_descr{"Open Sans Condensed, Open Sans", 36}.italic().condensed());
    cnv.fill_text("Condensed Italic", 20, 115);
 
    // In the last two cases, the font family 'Open Sans Condensed' already
@@ -309,15 +309,15 @@ void typography(canvas& cnv)
    // Windows), or separate as a distinct family (e.g. MacOS).
 
    // Outline
-   cnv.font(font_descr{ "Open Sans", 36 }.bold());
+   cnv.font(font_descr{"Open Sans", 36}.bold());
    cnv.line_width(0.5);
    cnv.stroke_text("Outline", 210, 115);
 
-   cnv.font(font_descr{ "Open Sans", 52 }.bold());
+   cnv.font(font_descr{"Open Sans", 52}.bold());
 
    // Gradient Fill
    {
-      auto gr = canvas::linear_gradient{ { 360, 90 }, { 360, 140 } };
+      auto gr = canvas::linear_gradient{{360, 90}, {360, 140}};
       gr.add_color_stop(0.0, colors::navy_blue);
       gr.add_color_stop(1.0, colors::maroon);
       cnv.fill_style(gr);
@@ -327,7 +327,7 @@ void typography(canvas& cnv)
 
    // Outline Gradient Fill
    {
-      auto gr = canvas::linear_gradient{ { 360, 165 }, { 360, 215 } };
+      auto gr = canvas::linear_gradient{{360, 165}, {360, 215}};
       gr.add_color_stop(0.0, colors::medium_blue);
       gr.add_color_stop(1.0, colors::medium_violet_red);
       cnv.line_width(1.5);
@@ -336,21 +336,21 @@ void typography(canvas& cnv)
    }
 
 #if defined(__APPLE__) // CoreText supports ligatures right out of the box, but only for some fonts
-   cnv.font(font_descr{ "Lucida Grande", 52 }.bold());
+   cnv.font(font_descr{"Lucida Grande", 52}.bold());
 #else
-   cnv.font(font_descr{ "Open Sans", 52 }.bold());
+   cnv.font(font_descr{"Open Sans", 52}.bold());
 #endif
 
    cnv.fill_style(rgba(220, 220, 220, 200));
    cnv.fill_text("fi fl", 500, 190);
 
-   cnv.font(font_descr{ "Open Sans", 52 }.weight(semi_bold));
+   cnv.font(font_descr{"Open Sans", 52}.weight(semi_bold));
    {
       auto state = cnv.new_state();
 
       // Shadow
       cnv.fill_style(rgba(220, 220, 220, 200));
-      cnv.shadow_style({ 5.0, 5.0 }, 5, colors::black);
+      cnv.shadow_style({5.0, 5.0}, 5, colors::black);
       cnv.fill_text("Shadow", 20, 265);
 
       // Glow
@@ -366,14 +366,14 @@ void typography(canvas& cnv)
       CHECK(std::floor(m.size.y) == 70);
    }
 
-   cnv.move_to({ 500, 220 });
-   cnv.line_to({ 500, 480 });
+   cnv.move_to({500, 220});
+   cnv.line_to({500, 480});
    cnv.stroke_style(colors::red);
    cnv.line_width(0.5);
    cnv.stroke();
 
    cnv.fill_style(rgba(220, 220, 220, 200));
-   cnv.font(font_descr{ "Open Sans", 14 });
+   cnv.font(font_descr{"Open Sans", 14});
 
    char const* align_text[] = {
       "text_align(left)",
@@ -400,8 +400,8 @@ void typography(canvas& cnv)
    for (int i = 0; i != 7; ++i)
    {
       vstart += vspace;
-      cnv.move_to({ 400, vstart });
-      cnv.line_to({ 600, vstart });
+      cnv.move_to({400, vstart});
+      cnv.line_to({600, vstart});
       cnv.stroke();
       cnv.text_align(aligns[i]);
       cnv.fill_text(align_text[i], 500, vstart);
@@ -421,7 +421,7 @@ void typography(canvas& cnv)
       ;
 
    auto tlayout = text_layout{
-      font_descr{ "Open Sans", 12 }.italic()
+      font_descr{"Open Sans", 12}.italic()
     , text
    };
    tlayout.flow(350, true);
@@ -557,7 +557,7 @@ void composite_draw(canvas& cnv, point p, canvas::composite_op_enum mode)
 {
    {
       auto save = cnv.new_state();
-      cnv.add_rect({ p.x, p.y, p.x + 120, p.y + 130 });
+      cnv.add_rect({p.x, p.y, p.x + 120, p.y + 130});
       cnv.clip();
 
       cnv.global_composite_operation(cnv.source_over);
@@ -567,10 +567,10 @@ void composite_draw(canvas& cnv, point p, canvas::composite_op_enum mode)
 
    {
       auto save = cnv.new_state();
-      image pm{110, 110 };
+      image pm{110, 11};
       {
-         offscreen_image ctx{ pm };
-         canvas pm_cnv{ ctx.context() };
+         offscreen_image ctx{pm};
+         canvas pm_cnv{ctx.context()};
          pm_cnv.fill_style(colors::red);
          pm_cnv.add_circle(70, 70, 30);
          pm_cnv.fill();
@@ -587,33 +587,33 @@ void composite_draw(canvas& cnv, point p, canvas::composite_op_enum mode)
 
 void composite_ops(canvas& cnv)
 {
-   cnv.font(font_descr{ "Open Sans", 10 });
+   cnv.font(font_descr{"Open Sans", 10});
 
-   composite_draw(cnv, { 0, 0 }, cnv.source_over);
-   composite_draw(cnv, { 120, 0 }, cnv.source_atop);
-   composite_draw(cnv, { 240, 0 }, cnv.source_in);
-   composite_draw(cnv, { 360, 0 }, cnv.source_out);
+   composite_draw(cnv, {0, 0}, cnv.source_over);
+   composite_draw(cnv, {120, 0}, cnv.source_atop);
+   composite_draw(cnv, {240, 0}, cnv.source_in);
+   composite_draw(cnv, {360, 0}, cnv.source_out);
 
-   composite_draw(cnv, { 0, 120 }, cnv.destination_over);
-   composite_draw(cnv, { 120, 120 }, cnv.destination_atop);
-   composite_draw(cnv, { 240, 120 }, cnv.destination_in);
-   composite_draw(cnv, { 360, 120 }, cnv.destination_out);
+   composite_draw(cnv, {0, 120}, cnv.destination_over);
+   composite_draw(cnv, {120, 120}, cnv.destination_atop);
+   composite_draw(cnv, {240, 120}, cnv.destination_in);
+   composite_draw(cnv, {360, 120}, cnv.destination_out);
 
-   composite_draw(cnv, { 0, 240 }, cnv.lighter);
-   composite_draw(cnv, { 120, 240 }, cnv.darker);
-   composite_draw(cnv, { 240, 240 }, cnv.copy);
-   composite_draw(cnv, { 360, 240 }, cnv.xor_);
+   composite_draw(cnv, {0, 240}, cnv.lighter);
+   composite_draw(cnv, {120, 240}, cnv.darker);
+   composite_draw(cnv, {240, 240}, cnv.copy);
+   composite_draw(cnv, {360, 240}, cnv.xor_);
 }
 
 void drop_shadow(canvas& cnv)
 {
-   cnv.shadow_style({ 20, 20 }, 10, colors::black);
+   cnv.shadow_style({20, 20}, 10, colors::black);
    cnv.fill_style(colors::red);
    cnv.fill_rect(20, 20, 100, 80);
 
    cnv.scale(2, 2);
    cnv.translate(60, 0);
-   cnv.shadow_style({ 20, 20 }, 10, colors::black);
+   cnv.shadow_style({20, 20}, 10, colors::black);
    cnv.fill_style(colors::blue);
    cnv.fill_rect(20, 20, 100, 80);
 }
@@ -659,18 +659,18 @@ void paths(canvas& cnv)
       cnv.scale(0.5, 0.5);
 
       cnv.translate(-40, 0);
-      path p1{ "M 100 100 L 300 100 L 200 300 z" };
+      path p1{"M 100 100 L 300 100 L 200 300 z"};
       stroke_fill(p1, colors::green.opacity(0.5), colors::ivory);
 
       cnv.translate(220, 0);
-      path p2{ "M100,200 C100,100 250,100 250,200 S400,300 400,200" };
+      path p2{"M100,200 C100,100 250,100 250,200 S400,300 400,200"};
       stroke(p2, colors::light_sky_blue);
 
       cnv.translate(-150, 250);
-      path p3{ "M200,300 Q400,50 600,300 T1000,300" };
+      path p3{"M200,300 Q400,50 600,300 T1000,300"};
       stroke(p3, colors::light_sky_blue);
 
-      path p4{ "M200,300 L400,50 L600,300 L800,550 L1000,300" };
+      path p4{"M200,300 L400,50 L600,300 L800,550 L1000,300"};
       stroke(p4, colors::light_gray.opacity(0.5));
       dot(200, 300);
       dot(600, 300);
@@ -680,10 +680,10 @@ void paths(canvas& cnv)
       cnv.translate(150, -250);
 
       cnv.translate(350, 0);
-      path p5{ "M300,200 h-150 a150,150 0 1,0 150,-150 z" };
+      path p5{"M300,200 h-150 a150,150 0 1,0 150,-150 z"};
       stroke_fill(p5, colors::red.opacity(0.8), colors::ivory);
 
-      path p6{ "M275,175 v-150 a150,150 0 0,0 -150,150 z" };
+      path p6{"M275,175 v-150 a150,150 0 0,0 -150,150 z"};
       stroke_fill(p6, colors::blue.opacity(0.8), colors::ivory);
 
       cnv.translate(-350, 200);
@@ -776,8 +776,8 @@ void misc(canvas& cnv)
 
    {
       path p;
-      p.add_circle(circle{ 230, 230, 50 });
-      p.add_circle(circle{ 230, 230, 25 });
+      p.add_circle(circle{230, 230, 50});
+      p.add_circle(circle{230, 230, 25});
       p.fill_rule(path::fill_odd_even);
 
       CHECK(p.includes(230-50+5, 230));
@@ -794,9 +794,9 @@ void misc(canvas& cnv)
 
    // Test small offscreen hit testing and text measurements work
    {
-      image img{ 1, 1 };
-      offscreen_image offscr{ img };
-      canvas cnv{ offscr.context() };
+      image img{1, 1};
+      offscreen_image offscr{img};
+      canvas cnv{offscr.context()};
 
       cnv.add_circle(230, 230, 50);
       cnv.add_circle(230, 230, 25);
@@ -805,7 +805,7 @@ void misc(canvas& cnv)
       CHECK(cnv.point_in_path(230-50+5, 230));
       CHECK(!cnv.point_in_path(230, 230));
 
-      cnv.font(font_descr{ "Open Sans", 36 });
+      cnv.font(font_descr{"Open Sans", 36});
       auto m = cnv.measure_text("Hello, World");
       CHECK(std::floor(m.size.x) == 205);
       CHECK(std::floor(m.size.y)== 49);
@@ -845,10 +845,10 @@ namespace cycfi::artist
 
 TEST_CASE("Drawing")
 {
-   image pm{ window_size };
+   image pm{window_size};
    {
-      offscreen_image ctx{ pm };
-      canvas pm_cnv{ ctx.context() };
+      offscreen_image ctx{pm};
+      canvas pm_cnv{ctx.context()};
       test_draw(pm_cnv);
    }
    compare_golden(pm, "shapes_and_images");
@@ -856,10 +856,10 @@ TEST_CASE("Drawing")
 
 TEST_CASE("Typography")
 {
-   image pm{ window_size };
+   image pm{window_size};
    {
-      offscreen_image ctx{ pm };
-      canvas pm_cnv{ ctx.context() };
+      offscreen_image ctx{pm};
+      canvas pm_cnv{ctx.context()};
       typography(pm_cnv);
    }
    compare_golden(pm, "typography");
@@ -867,10 +867,10 @@ TEST_CASE("Typography")
 
 TEST_CASE("Composite")
 {
-   image pm{ window_size };
+   image pm{window_size};
    {
-      offscreen_image ctx{ pm };
-      canvas pm_cnv{ ctx.context() };
+      offscreen_image ctx{pm};
+      canvas pm_cnv{ctx.context()};
       composite_ops(pm_cnv);
    }
    compare_golden(pm, "composite_ops");
@@ -878,10 +878,10 @@ TEST_CASE("Composite")
 
 TEST_CASE("DropShadow")
 {
-   image pm{ window_size };
+   image pm{window_size};
    {
-      offscreen_image ctx{ pm };
-      canvas pm_cnv{ ctx.context() };
+      offscreen_image ctx{pm};
+      canvas pm_cnv{ctx.context()};
       drop_shadow(pm_cnv);
    }
    compare_golden(pm, "drop_shadow");
@@ -889,10 +889,10 @@ TEST_CASE("DropShadow")
 
 TEST_CASE("Paths")
 {
-   image pm{ window_size };
+   image pm{window_size};
    {
-      offscreen_image ctx{ pm };
-      canvas pm_cnv{ ctx.context() };
+      offscreen_image ctx{pm};
+      canvas pm_cnv{ctx.context()};
       paths(pm_cnv);
    }
    compare_golden(pm, "paths");
@@ -900,10 +900,10 @@ TEST_CASE("Paths")
 
 TEST_CASE("Misc")
 {
-   image pm{ window_size };
+   image pm{window_size};
    {
-      offscreen_image ctx{ pm };
-      canvas pm_cnv{ ctx.context() };
+      offscreen_image ctx{pm};
+      canvas pm_cnv{ctx.context()};
       misc(pm_cnv);
    }
    compare_golden(pm, "misc");

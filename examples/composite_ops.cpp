@@ -8,7 +8,7 @@
 using namespace cycfi::artist;
 constexpr auto xsize = 150.0f;
 constexpr auto ysize = 170.0f;
-auto constexpr window_size = point{ (xsize*4)*2, (ysize*3)+10 };
+auto constexpr window_size = point{(xsize*4)*2, (ysize*3)+10};
 auto constexpr bkd_color = colors::white;
 
 char const* mode_name(canvas::composite_op_enum mode)
@@ -48,14 +48,14 @@ char const* mode_name(canvas::composite_op_enum mode)
    return "";
 }
 
-image dest{"dest.png" };
-image src{"src.png" };
+image dest{"dest.png"};
+image src{"src.png"};
 
 void composite_draw(canvas& cnv, point p, canvas::composite_op_enum mode)
 {
    {
       auto save = cnv.new_state();
-      cnv.add_rect({ p.x, p.y, p.x + xsize, p.y + ysize });
+      cnv.add_rect({p.x, p.y, p.x + xsize, p.y + ysize});
       cnv.clip();
 
       cnv.global_composite_operation(canvas::source_over);
@@ -72,47 +72,47 @@ void composite_draw(canvas& cnv, point p, canvas::composite_op_enum mode)
 
 void composite_ops(canvas& cnv)
 {
-   cnv.font(font_descr{ "Open Sans", 10 });
+   cnv.font(font_descr{"Open Sans", 10});
 
    auto col2 = xsize*4;
 
-   composite_draw(cnv, { 0, 0 }, cnv.source_over);
-   composite_draw(cnv, { xsize, 0 }, cnv.source_atop);
-   composite_draw(cnv, { xsize*2, 0 }, cnv.source_in);
-   composite_draw(cnv, { xsize*3, 0 }, cnv.source_out);
+   composite_draw(cnv, {0, 0}, cnv.source_over);
+   composite_draw(cnv, {xsize, 0}, cnv.source_atop);
+   composite_draw(cnv, {xsize*2, 0}, cnv.source_in);
+   composite_draw(cnv, {xsize*3, 0}, cnv.source_out);
 
-   composite_draw(cnv, { 0, ysize }, cnv.destination_over);
-   composite_draw(cnv, { xsize, ysize }, cnv.destination_atop);
-   composite_draw(cnv, { xsize*2, ysize }, cnv.destination_in);
-   composite_draw(cnv, { xsize*3, ysize }, cnv.destination_out);
+   composite_draw(cnv, {0, ysize}, cnv.destination_over);
+   composite_draw(cnv, {xsize, ysize}, cnv.destination_atop);
+   composite_draw(cnv, {xsize*2, ysize}, cnv.destination_in);
+   composite_draw(cnv, {xsize*3, ysize}, cnv.destination_out);
 
-   composite_draw(cnv, { 0, ysize*2 }, cnv.lighter);
-   composite_draw(cnv, { xsize, ysize*2 }, cnv.darker);
-   composite_draw(cnv, { xsize*2, ysize*2 }, cnv.copy);
-   composite_draw(cnv, { xsize*3, ysize*2 }, cnv.xor_);
+   composite_draw(cnv, {0, ysize*2}, cnv.lighter);
+   composite_draw(cnv, {xsize, ysize*2}, cnv.darker);
+   composite_draw(cnv, {xsize*2, ysize*2}, cnv.copy);
+   composite_draw(cnv, {xsize*3, ysize*2}, cnv.xor_);
 
-   composite_draw(cnv, { col2, 0 }, cnv.difference);
-   composite_draw(cnv, { col2+xsize, 0 }, cnv.exclusion);
-   composite_draw(cnv, { col2+(xsize*2), 0 }, cnv.multiply);
-   composite_draw(cnv, { col2+(xsize*3), 0 }, cnv.screen);
+   composite_draw(cnv, {col2, 0}, cnv.difference);
+   composite_draw(cnv, {col2+xsize, 0}, cnv.exclusion);
+   composite_draw(cnv, {col2+(xsize*2), 0}, cnv.multiply);
+   composite_draw(cnv, {col2+(xsize*3), 0}, cnv.screen);
 
-   composite_draw(cnv, { col2, ysize }, cnv.color_dodge);
-   composite_draw(cnv, { col2+xsize, ysize }, cnv.color_burn);
-   composite_draw(cnv, { col2+(xsize*2), ysize }, cnv.soft_light);
-   composite_draw(cnv, { col2+(xsize*3), ysize }, cnv.hard_light);
+   composite_draw(cnv, {col2, ysize}, cnv.color_dodge);
+   composite_draw(cnv, {col2+xsize, ysize}, cnv.color_burn);
+   composite_draw(cnv, {col2+(xsize*2), ysize}, cnv.soft_light);
+   composite_draw(cnv, {col2+(xsize*3), ysize}, cnv.hard_light);
 
-   composite_draw(cnv, { col2, ysize*2 }, cnv.hue);
-   composite_draw(cnv, { col2+xsize, ysize*2 }, cnv.saturation);
-   composite_draw(cnv, { col2+(xsize*2), ysize*2 }, cnv.color_op);
-   composite_draw(cnv, { col2+(xsize*3), ysize*2 }, cnv.luminosity);
+   composite_draw(cnv, {col2, ysize*2}, cnv.hue);
+   composite_draw(cnv, {col2+xsize, ysize*2}, cnv.saturation);
+   composite_draw(cnv, {col2+(xsize*2), ysize*2}, cnv.color_op);
+   composite_draw(cnv, {col2+(xsize*3), ysize*2}, cnv.luminosity);
 }
 
 void draw(canvas& cnv)
 {
-   image img{ window_size };
+   image img{window_size};
    {
-      offscreen_image ctx{ img };
-      canvas pm_cnv{ ctx.context() };
+      offscreen_image ctx{img};
+      canvas pm_cnv{ctx.context()};
       composite_ops(pm_cnv);
    }
    cnv.draw(img);
