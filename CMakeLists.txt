@@ -7,7 +7,8 @@ cmake_minimum_required(VERSION 3.7.2...3.15.0)
 include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 
 project(artist LANGUAGES C CXX)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Ensure presence of Git submodules (when not using a source tarball)
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
