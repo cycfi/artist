@@ -127,7 +127,7 @@ namespace cycfi::artist
    }
 
 #if !defined(ARTIST_SKIA)
-   inline void canvas::add_circle(circle const& c)
+   inline void canvas::add_circle(struct circle const& c)
    {
       arc(point{c.cx, c.cy}, c.radius, 0.0, 2 * pi);
    }

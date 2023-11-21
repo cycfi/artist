@@ -318,7 +318,7 @@ namespace cycfi::artist
       _state->path().addRect({r.left, r.top, r.right, r.bottom});
    }
 
-   void canvas::add_circle(circle const& c)
+   void canvas::add_circle(struct circle const& c)
    {
       _state->path().addCircle(c.cx, c.cy, c.radius);
    }

@@ -130,6 +130,16 @@ namespace cycfi::artist
                            float x, float y
                         );
 
+      // Cairo canvas backward compaytibility
+
+                        [[deprecated("Use add_round_rect(r, radius) instead")]]
+      void              round_rect(const rect& r, float radius)
+                        { add_round_rect(r, radius); }
+
+                        [[deprecated("Use add_circle(c) instead")]]
+      void              circle(struct circle const& c)
+                        { add_circle(c); }
+
       ///////////////////////////////////////////////////////////////////////////////////
       // Styles
 
