@@ -13,7 +13,7 @@ namespace cycfi::artist
    {
    };
 
-   text_layout::text_layout(font const& font_, std::string_view utf8)
+   text_layout::text_layout(font_descr font_, std::string_view utf8)
    {
    }
 
@@ -29,7 +29,7 @@ namespace cycfi::artist
    {
    }
 
-   void text_layout::draw(canvas& cnv, point p) const
+   void text_layout::draw(canvas& cnv, point p, color c) const
    {
    }
 }

@@ -71,9 +71,9 @@ namespace cycfi::artist
    {
    }
 
-   void path::add_round_rect(rect const& r, float radius)
-   {
-   }
+//   void path::add_round_rect(rect const& r, float radius)
+//   {
+//   }
 
    void path::add_circle(struct circle const& c)
    {

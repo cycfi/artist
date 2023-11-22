@@ -206,7 +206,7 @@ namespace cycfi::artist
       cairo_rectangle(_context, r.left, r.top, r.width(), r.height());
    }
 
-   void canvas::add_round_rect(rect const& bounds, float radius)
+   void canvas::add_round_rect_impl(rect const& bounds, float radius)
    {
       auto x = bounds.left;
       auto y = bounds.top;

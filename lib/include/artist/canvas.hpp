@@ -29,12 +29,12 @@ namespace cycfi::artist
 #if defined(ARTIST_QUARTZ_2D)
    struct canvas_impl;
 #elif defined(ARTIST_SKIA)
-   using canvas_impl = SkCanvas;
-#elif defined(ARTIST_CAIRO)
-   using canvas_impl = cairo_t;
 #if defined(__APPLE__) && defined(__ARM_ARCH_ISA_A64)
 # error "Artist does not currently support Skia on Apple Silicon"
 #endif
+   using canvas_impl = SkCanvas;
+#elif defined(ARTIST_CAIRO)
+   using canvas_impl = cairo_t;
 #endif
 
    class canvas
