@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -7,12 +7,12 @@
 
 using namespace cycfi::artist;
 using namespace font_constants;
-auto constexpr window_size = point{ 640.0f, 480.0f };
+auto constexpr window_size = point{640.0f, 480.0f};
 auto constexpr bkd_color = rgb(44, 42, 45);
 
 void background(canvas& cnv)
 {
-   cnv.add_rect({ { 0, 0 }, window_size });
+   cnv.add_rect({{0, 0}, window_size});
    cnv.fill_style(bkd_color);
    cnv.fill();
 }
@@ -25,27 +25,27 @@ void typography(canvas& cnv)
    cnv.stroke_style(rgba(220, 220, 220, 200));
 
    // Regular
-   cnv.font(font_descr{ "Open Sans", 36 });
-   cnv.fill_text("Regular", { 20, 40 });
+   cnv.font(font_descr{"Open Sans", 36});
+   cnv.fill_text("Regular", {20, 40});
 
    // Bold
-   cnv.font(font_descr{ "Open Sans", 36 }.bold());
-   cnv.fill_text("Bold", { 160, 40 });
+   cnv.font(font_descr{"Open Sans", 36}.bold());
+   cnv.fill_text("Bold", {160, 40});
 
    // Light
-   cnv.font(font_descr{ "Open Sans", 36 }.light());
-   cnv.fill_text("Light", { 250, 40 });
+   cnv.font(font_descr{"Open Sans", 36}.light());
+   cnv.fill_text("Light", {250, 40});
 
    // Italic
-   cnv.font(font_descr{ "Open Sans", 36 }.italic());
-   cnv.fill_text("Italic", { 345, 40 });
+   cnv.font(font_descr{"Open Sans", 36}.italic());
+   cnv.fill_text("Italic", {345, 40});
 
    // Condensed
-   cnv.font(font_descr{ "Open Sans Condensed, Open Sans", 36 }.condensed());
+   cnv.font(font_descr{"Open Sans Condensed, Open Sans", 36}.condensed());
    cnv.fill_text("Condensed", 430, 40);
 
    // Condensed Italic
-   cnv.font(font_descr{ "Open Sans Condensed, Open Sans", 36 }.italic().condensed());
+   cnv.font(font_descr{"Open Sans Condensed, Open Sans", 36}.italic().condensed());
    cnv.fill_text("Condensed Italic", 20, 115);
 
    // In the last two cases, the font family 'Open Sans Condensed' already
@@ -55,62 +55,62 @@ void typography(canvas& cnv)
    // Windows), or separate as a distinct family (e.g. MacOS).
 
    // Outline
-   cnv.font(font_descr{ "Open Sans", 36 }.bold());
+   cnv.font(font_descr{"Open Sans", 36}.bold());
    cnv.line_width(0.5);
-   cnv.stroke_text("Outline", { 210, 115 });
+   cnv.stroke_text("Outline", {210, 115});
 
-   cnv.font(font_descr{ "Open Sans", 52 }.bold());
+   cnv.font(font_descr{"Open Sans", 52}.bold());
    // Gradient Fill
    {
-      auto gr = canvas::linear_gradient{ { 360, 90 }, { 360, 140 } };
+      auto gr = canvas::linear_gradient{{360, 90}, {360, 140}};
       gr.add_color_stop(0.0, colors::navy_blue);
       gr.add_color_stop(1.0, colors::maroon);
       cnv.fill_style(gr);
-      cnv.fill_text("Gradient", { 360, 115 });
-      cnv.stroke_text("Gradient", { 360, 115 });
+      cnv.fill_text("Gradient", {360, 115});
+      cnv.stroke_text("Gradient", {360, 115});
    }
 
    // Outline Gradient Fill
    {
-      auto gr = canvas::linear_gradient{ { 360, 165 }, { 360, 215 } };
+      auto gr = canvas::linear_gradient{{360, 165}, {360, 215}};
       gr.add_color_stop(0.0, colors::medium_blue);
       gr.add_color_stop(1.0, colors::medium_violet_red);
       cnv.line_width(1.5);
       cnv.stroke_style(gr);
-      cnv.stroke_text("Outline Gradient", { 20, 190 });
+      cnv.stroke_text("Outline Gradient", {20, 190});
    }
 
 #if defined(__APPLE__) // CoreText supports ligatures right out of the box, but only for some fonts
-   cnv.font(font_descr{ "Lucida Grande", 52 }.bold());
+   cnv.font(font_descr{"Lucida Grande", 52}.bold());
 #else
-   cnv.font(font_descr{ "Open Sans", 52 }.bold());
+   cnv.font(font_descr{"Open Sans", 52}.bold());
 #endif
    cnv.fill_style(rgba(220, 220, 220, 200));
    cnv.fill_text("fi fl", 500, 190);
 
-   cnv.font(font_descr{ "Open Sans", 52 }.weight(semi_bold));
+   cnv.font(font_descr{"Open Sans", 52}.weight(semi_bold));
    {
       auto state = cnv.new_state();
 
       // Shadow
       cnv.fill_style(rgba(220, 220, 220, 200));
-      cnv.shadow_style({ 5.0, 5.0 }, 5, colors::black);
-      cnv.fill_text("Shadow", { 20, 265 });
+      cnv.shadow_style({5.0, 5.0}, 5, colors::black);
+      cnv.fill_text("Shadow", {20, 265});
 
       // Glow
       cnv.fill_style(bkd_color);
       cnv.shadow_style(8, colors::light_sky_blue);
-      cnv.fill_text("Glow", { 250, 265 });
+      cnv.fill_text("Glow", {250, 265});
    }
 
-   cnv.move_to({ 500, 220 });
-   cnv.line_to({ 500, 480 });
+   cnv.move_to({500, 220});
+   cnv.line_to({500, 480});
    cnv.stroke_style(colors::red);
    cnv.line_width(0.5);
    cnv.stroke();
 
    cnv.fill_style(rgba(220, 220, 220, 200));
-   cnv.font(font_descr{ "Open Sans", 14 });
+   cnv.font(font_descr{"Open Sans", 14});
 
    char const* align_text[] = {
       "text_align(left)",
@@ -137,11 +137,11 @@ void typography(canvas& cnv)
    for (int i = 0; i != 7; ++i)
    {
       vstart += vspace;
-      cnv.move_to({ 400, vstart });
-      cnv.line_to({ 600, vstart });
+      cnv.move_to({400, vstart});
+      cnv.line_to({600, vstart});
       cnv.stroke();
       cnv.text_align(aligns[i]);
-      cnv.fill_text(align_text[i], { 500, vstart });
+      cnv.fill_text(align_text[i], {500, vstart});
    }
 
    std::string text =
@@ -158,12 +158,11 @@ void typography(canvas& cnv)
       ;
 
    auto tlayout = text_layout{
-      font_descr{ "Open Sans", 12 }.italic()
-    , rgba(220, 220, 220, 200)
+      font_descr{"Open Sans", 12}.italic()
     , text
    };
    tlayout.flow(350, true);
-   tlayout.draw(cnv, { 20, 300 });
+   tlayout.draw(cnv, {20, 300}, rgba(220, 220, 220, 200));
 }
 
 void draw(canvas& cnv)

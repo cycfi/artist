@@ -1,9 +1,11 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
+#include <algorithm>
 #include <artist/resources.hpp>
+#include <iostream>
 #include <mutex>
 #include <vector>
 
@@ -14,7 +16,7 @@ namespace cycfi::artist
    {
       static std::vector<fs::path> resource_paths;
       static std::mutex resource_paths_mutex;
-      return { resource_paths, resource_paths_mutex };
+      return {resource_paths, resource_paths_mutex};
    }
 
    void add_search_path(fs::path const& path, bool search_first)
@@ -42,26 +44,40 @@ namespace cycfi::artist
    {
       static resource_setter init_resources;
 
-      fs::path full_path;
-      if (fs::path(file).is_absolute())
+      if (file.is_absolute())
       {
          if (fs::exists(file))
-            full_path = file;
+            return file;
+         return fs::path{}; // Return an empty path if the file does not exist
       }
-      else
-      {
-         auto [resource_paths, resource_paths_mutex] = get_resource_paths();
-         std::lock_guard<std::mutex> guard(resource_paths_mutex);
-         for (auto const& path : resource_paths)
-         {
-            fs::path target = fs::path(path) / file;
-            if (fs::exists(target))
-            {
-               full_path = target.string();
-               break;
-            }
-         }
-      }
-      return full_path;
+
+      auto [resource_paths, resource_paths_mutex] = get_resource_paths();
+      std::lock_guard<std::mutex> guard(resource_paths_mutex);
+
+      auto it = std::find_if(resource_paths.begin(), resource_paths.end(), [&file](const fs::path &path)
+                             { return fs::exists(path / file); });
+
+      return (it != resource_paths.end()) ? (*it / file) : fs::path{};
    }
+
+   fs::path find_directory(fs::path const& dir)
+   {
+      static resource_setter init_resources;
+
+      if (dir.is_absolute())
+      {
+         if (fs::is_directory(dir))
+            return dir;
+         return fs::path{}; // Return an empty path if the directory does not exist
+      }
+
+      auto [resource_paths, resource_paths_mutex] = get_resource_paths();
+      std::lock_guard<std::mutex> guard(resource_paths_mutex);
+
+      auto it = std::find_if(resource_paths.begin(), resource_paths.end(), [&dir](const fs::path &path)
+                             { return fs::is_directory(path / dir); });
+
+      return (it != resource_paths.end()) ? (*it / dir) : fs::path{};
+   }
+
 }

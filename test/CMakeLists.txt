@@ -1,5 +1,5 @@
 ###############################################################################
-#  Copyright (c) 2016-2020 Joel de Guzman
+#  Copyright (c) 2016-2023 Joel de Guzman
 #
 #  Distributed under the MIT License (https://opensource.org/licenses/MIT)
 ###############################################################################
@@ -15,12 +15,6 @@ if (APPLE)
    if (ARTIST_QUARTZ_2D)
       file(
          GLOB ARTIST_FONTS ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/*.*
-      )
-      set_target_properties(
-         artist_test
-         PROPERTIES
-         MACOSX_BUNDLE_INFO_PLIST
-         ${CMAKE_CURRENT_LIST_DIR}/../resources/macos/plist.in
       )
       set_source_files_properties(
          ${ARTIST_FONTS}
@@ -75,7 +69,7 @@ if (APPLE)
 elseif (MSVC)
    if (ARTIST_SKIA)
       set(GOLDEN_PATH windows_golden/skia)
-      add_dependencies(artist_test dlls)
+      add_dependencies(artist_test windows_dlls)
    endif()
 
    set(GOLDEN_DIR windows_golden)

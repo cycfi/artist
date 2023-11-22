@@ -2,3 +2,6 @@
 [submodule "lib/infra"]
 	path = lib/infra
 	url = https://github.com/cycfi/infra
+[submodule "lib/external/libunibreak"]
+	path = lib/external/libunibreak
+	url = ../../adah1972/libunibreak.git

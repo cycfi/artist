@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -87,7 +87,7 @@ namespace
 
             SkCanvas* gpu_canvas = state._surface->getCanvas();
             gpu_canvas->save();
-            auto cnv = canvas{ gpu_canvas };
+            auto cnv = canvas{gpu_canvas};
             cnv.pre_scale(state._scale);
 
             draw(cnv);
@@ -99,7 +99,7 @@ namespace
       auto start = std::chrono::steady_clock::now();
       draw_f();
       auto stop = std::chrono::steady_clock::now();
-      elapsed_ = std::chrono::duration<double>{ stop - start }.count();
+      elapsed_ = std::chrono::duration<double>{stop - start}.count();
 
       return true;
    }
@@ -153,6 +153,12 @@ namespace cycfi::artist
       add_search_path(fs::current_path() / "resources");
       add_search_path(fs::current_path() / "resources/fonts");
       add_search_path(fs::current_path() / "resources/images");
+   }
+
+   // This is declared in font.hpp
+   fs::path get_user_fonts_directory()
+   {
+      return fs::path(fs::current_path() / "resources/fonts");
    }
 }
 

@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -110,7 +110,7 @@ using skia_context = std::unique_ptr<sk_app::WindowContext>;
    info.fMainView = self;
    _skia_context = sk_app::window_context_factory::MakeGLForMac(info, sk_app::DisplayParams());
 
-   NSRect user = { { 0, 0 }, { 100, 100 }};
+   NSRect user = {{0, 0}, { 100, 100}};
    NSRect backing_bounds = [self convertRectToBacking : user];
    _scale = backing_bounds.size.height / user.size.height;
 
@@ -127,7 +127,7 @@ using skia_context = std::unique_ptr<sk_app::WindowContext>;
    {
       SkCanvas* gpu_canvas = surface->getCanvas();
       gpu_canvas->save();
-      auto cnv = canvas{ gpu_canvas };
+      auto cnv = canvas{gpu_canvas};
       cnv.pre_scale(_scale);
 
       draw(cnv);
@@ -137,7 +137,7 @@ using skia_context = std::unique_ptr<sk_app::WindowContext>;
       _skia_context->swapBuffers();
    }
    auto stop = std::chrono::high_resolution_clock::now();
-   elapsed_ = std::chrono::duration<double>{ stop - start }.count();
+   elapsed_ = std::chrono::duration<double>{stop - start}.count();
 }
 
 -(BOOL) isFlipped

@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -135,8 +135,8 @@ namespace cycfi::artist
    }
 
    canvas::canvas(canvas_impl* context_)
-    : _context{ context_ }
-    , _state{ std::make_unique<canvas_state>() }
+    : _context{context_}
+    , _state{std::make_unique<canvas_state>()}
    {
    }
 
@@ -179,14 +179,19 @@ namespace cycfi::artist
    {
       auto scale = _state->_pre_scale;
       auto mat = _context->getTotalMatrix();
+      (void) mat.invert(&mat);
       SkPoint skp;
-      mat.mapXY(p.x, p.y, &skp);
-      return { skp.x() / scale, skp.y() / scale };
+      mat.mapXY(p.x * scale, p.y * scale, &skp);
+      return {skp.x(), skp.y()};
    }
 
    point canvas::user_to_device(point p)
    {
-      return {};
+      auto scale = _state->_pre_scale;
+      auto mat = _context->getTotalMatrix();
+      SkPoint skp;
+      mat.mapXY(p.x, p.y, &skp);
+      return {skp.x() / scale, skp.y() / scale};
    }
 
    affine_transform canvas::transform() const
@@ -194,7 +199,7 @@ namespace cycfi::artist
       auto mat = _context->getTotalMatrix();
       SkScalar sc[6];
       (void) mat.asAffine(sc);
-      return affine_transform{ sc[0], sc[1], sc[2], sc[3], sc[4], sc[5] };
+      return affine_transform{sc[0], sc[1], sc[2], sc[3], sc[4], sc[5]};
    }
 
    void canvas::transform(affine_transform const& mat)
@@ -205,7 +210,7 @@ namespace cycfi::artist
    void canvas::transform(double a, double b, double c, double d, double tx, double ty)
    {
       SkMatrix mat;
-      SkScalar sc[9] = { float(a), float(b), float(c), float(d), float(tx), float(ty) };
+      SkScalar sc[9] = {float(a), float(b), float(c), float(d), float(tx), float(ty)};
       mat.setAffine(sc);
       _context->setMatrix(mat);
    }
@@ -265,6 +270,13 @@ namespace cycfi::artist
       _context->clipPath(*p.impl(), true);
    }
 
+   rect canvas::clip_extent() const
+   {
+      SkRect r;
+      _context->getLocalClipBounds(&r);
+      return {r.left(), r.top(), r.right(), r.bottom()};
+   }
+
    bool canvas::point_in_path(point p) const
    {
       return _state->path().contains(p.x, p.y);
@@ -296,22 +308,17 @@ namespace cycfi::artist
       sweep = std::abs(sweep) * (ccw? -1 : 1);
 
       _state->path().addArc(
-         { p.x-radius, p.y-radius, p.x+radius, p.y+radius },
+         {p.x-radius, p.y-radius, p.x+radius, p.y+radius},
          start, sweep
       );
    }
 
    void canvas::add_rect(rect const& r)
    {
-      _state->path().addRect({ r.left, r.top, r.right, r.bottom });
+      _state->path().addRect({r.left, r.top, r.right, r.bottom});
    }
 
-   void canvas::add_round_rect(rect const& r, float radius)
-   {
-      _state->path().addRoundRect({ r.left, r.top, r.right, r.bottom }, radius, radius);
-   }
-
-   void canvas::add_circle(circle const& c)
+   void canvas::add_circle(struct circle const& c)
    {
       _state->path().addCircle(c.cx, c.cy, c.radius);
    }
@@ -323,7 +330,7 @@ namespace cycfi::artist
 
    void canvas::clear_rect(rect const& r)
    {
-      _context->drawRect({ r.left, r.top, r.right, r.bottom }, _state->clear_paint());
+      _context->drawRect({r.left, r.top, r.right, r.bottom}, _state->clear_paint());
    }
 
    void canvas::quadratic_curve_to(point cp, point end)
@@ -338,13 +345,13 @@ namespace cycfi::artist
 
    void canvas::fill_style(color c)
    {
-      _state->fill_paint().setColor4f({ c.red, c.green, c.blue, c.alpha }, nullptr);
+      _state->fill_paint().setColor4f({c.red, c.green, c.blue, c.alpha}, nullptr);
       _state->fill_paint().setShader(nullptr);
    }
 
    void canvas::stroke_style(color c)
    {
-      _state->stroke_paint().setColor4f({ c.red, c.green, c.blue, c.alpha }, nullptr);
+      _state->stroke_paint().setColor4f({c.red, c.green, c.blue, c.alpha}, nullptr);
       _state->stroke_paint().setShader(nullptr);
    }
 
@@ -395,7 +402,7 @@ namespace cycfi::artist
        , offset.y / scy
        , (blur * blur_factor) / scx
        , (blur * blur_factor) / scy
-       , SkColor4f{ c.red, c.green, c.blue, c.alpha }.toSkColor()
+       , SkColor4f{c.red, c.green, c.blue, c.alpha}.toSkColor()
        , SkDropShadowImageFilter::kDrawShadowAndForeground_ShadowMode
        , nullptr
       );
@@ -472,8 +479,8 @@ namespace cycfi::artist
       {
          paint.setColor(SkColorSetRGB(0, 0, 0));
          SkPoint points[2] = {
-            { gr.start.x, gr.start.y },
-            { gr.end.x, gr.end.y }
+            {gr.start.x, gr.start.y},
+            {gr.end.x, gr.end.y}
          };
          std::vector<SkColor4f> colors_;
          std::vector<SkScalar> pos;
@@ -497,8 +504,8 @@ namespace cycfi::artist
          convert_gradient(gr, colors_, pos);
          paint.setShader(
             SkGradientShader::MakeTwoPointConical(
-               { gr.c1.x, gr.c1.y }, gr.c1_radius
-             , { gr.c2.x, gr.c2.y }, gr.c2_radius
+               {gr.c1.x, gr.c1.y}, gr.c1_radius
+             , {gr.c2.x, gr.c2.y}, gr.c2_radius
              , colors_.data()
              , SkColorSpace::MakeSRGB()->makeLinearGamma()
              , pos.data(), colors_.size()
@@ -594,7 +601,7 @@ namespace cycfi::artist
          m.ascent
        , m.descent
        , m.leading
-       , { width, m.ascent + m.descent + m.leading }
+       , {width, m.ascent + m.descent + m.leading}
       };
    }
 
@@ -633,8 +640,8 @@ namespace cycfi::artist
             {
                _context->drawBitmapRect(
                   that,
-                  SkRect{ src.left, src.top, src.right, src.bottom },
-                  SkRect{ dest.left, dest.top, dest.right, dest.bottom },
+                  SkRect{src.left, src.top, src.right, src.bottom},
+                  SkRect{dest.left, dest.top, dest.right, dest.bottom},
                   &_state->fill_paint()
                );
             }
@@ -642,4 +649,10 @@ namespace cycfi::artist
 
       return std::visit(draw_picture, pic.impl()->base());
    }
+
+   void canvas::add_round_rect_impl(rect const& r, float radius)
+   {
+      _state->path().addRoundRect({r.left, r.top, r.right, r.bottom}, radius, radius);
+   }
+
 }

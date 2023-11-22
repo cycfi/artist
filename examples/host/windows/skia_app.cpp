@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -38,7 +38,6 @@ public:
                   ~window();
 
    void           render();
-   void           swapBuffers();
 
 private:
 
@@ -58,8 +57,8 @@ private:
 };
 
 window::window(extent size, color bkd, bool animate)
- : _size{ size }
- , _animate{ animate }
+ : _size{size}
+ , _animate{animate}
 {
    auto error = [](char const* msg){ throw std::runtime_error(msg); };
    auto style = WS_CAPTION | WS_SYSMENU | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
@@ -84,7 +83,7 @@ window::window(extent size, color bkd, bool animate)
 
    RECT frame;
    GetWindowRect(WND, &frame);
-   RECT rect = { 0, 0, LONG(size.x), LONG(size.y) };
+   RECT rect = {0, 0, LONG(size.x), LONG(size.y)};
    AdjustWindowRectExForDpi(&rect, style, false, WS_EX_APPWINDOW, dpi);
    frame.right = frame.left + (rect.right-rect.left);
    frame.bottom = frame.top + (rect.bottom-rect.top);
@@ -133,7 +132,7 @@ LRESULT CALLBACK handle_event(
             auto start = std::chrono::steady_clock::now();
             win->render();
             auto stop = std::chrono::steady_clock::now();
-            elapsed_ = std::chrono::duration<double>{ stop - start }.count();
+            elapsed_ = std::chrono::duration<double>{stop - start}.count();
          }
          break;
 
@@ -186,7 +185,7 @@ void window::render()
    {
       SkCanvas* gpu_canvas = surface->getCanvas();
       gpu_canvas->save();
-      auto cnv = canvas{ gpu_canvas };
+      auto cnv = canvas{gpu_canvas};
       cnv.pre_scale(_scale);
 
       draw(cnv);
@@ -210,11 +209,28 @@ void window::destroy()
 
 namespace cycfi::artist
 {
+   void add_relative_paths(const fs::path& base, const fs::path& rel_path)
+   {
+      add_search_path(base / rel_path);
+      add_search_path(base.parent_path() / rel_path);
+   }
+
    void init_paths()
    {
-      add_search_path(fs::current_path() / "resources");
-      add_search_path(fs::current_path() / "resources/fonts");
-      add_search_path(fs::current_path() / "resources/images");
+      fs::path curr_dir = fs::current_path();
+
+      add_relative_paths(curr_dir, "resources");
+      add_relative_paths(curr_dir, "resources/fonts");
+      add_relative_paths(curr_dir, "resources/images");
+   }
+
+   // This is declared in font.hpp
+   fs::path get_user_fonts_directory()
+   {
+      const fs::path fonts_dir = find_directory("fonts");
+      if (fs::exists(fonts_dir))
+         return fonts_dir;
+      return fs::path(fs::current_path() / "resources/fonts");
    }
 }
 
@@ -227,7 +243,7 @@ int run_app(
 )
 {
    SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE);
-   window win{ window_size, bkd, animate };
+   window win{window_size, bkd, animate};
 
    MSG msg;
    bool active = true;

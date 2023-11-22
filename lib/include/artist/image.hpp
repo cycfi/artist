@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -10,6 +10,7 @@
 #include <artist/resources.hpp>
 #include <infra/support.hpp>
 #include <string_view>
+#include <cstdint>
 #include <memory>
 
 #if defined(ARTIST_CAIRO)
@@ -38,6 +39,15 @@ namespace cycfi::artist
 
    using image_impl_ptr = image_impl*;
 
+   enum class pixel_format
+   {
+      invalid = -1,
+      gray8,
+      rgb16,
+      rgb32,            // First byte is Alpha of 1, or ignored
+      rgba32,
+   };
+
    ////////////////////////////////////////////////////////////////////////////
    // image
    ////////////////////////////////////////////////////////////////////////////
@@ -48,6 +58,7 @@ namespace cycfi::artist
       explicit          image(float sizex, float sizey);
       explicit          image(extent size);
       explicit          image(fs::path const& path_);
+                        image(image const& rhs) = delete;
                         image(image&& rhs) noexcept;
                         ~image();
 
@@ -63,7 +74,23 @@ namespace cycfi::artist
 
    private:
 
-      image_impl_ptr  _impl;
+      template <pixel_format fmt>
+      friend typename std::enable_if<(fmt == pixel_format::gray8), image>::type
+      make_image(std::uint8_t const* data, extent size);
+
+      template <pixel_format fmt>
+      friend typename std::enable_if<(fmt == pixel_format::rgb16), image>::type
+      make_image(std::uint16_t const* data, extent size);
+
+      template <pixel_format fmt>
+      friend typename std::enable_if<
+         (fmt == pixel_format::rgb32 || fmt == pixel_format::rgba32), image>::type
+      make_image(std::uint32_t const* data, extent size);
+
+      explicit          image(std::uint8_t const* data, pixel_format fmt, extent size);
+      size_t            _pixmap_size(pixel_format, extent size);
+
+      image_impl_ptr    _impl;
    };
 
    using image_ptr = std::shared_ptr<image>;
@@ -93,8 +120,30 @@ namespace cycfi::artist
    ////////////////////////////////////////////////////////////////////////////
    // Inlines
    ////////////////////////////////////////////////////////////////////////////
+   template <pixel_format fmt>
+   inline typename std::enable_if<(fmt == pixel_format::gray8), image>::type
+   make_image(std::uint8_t const* data, extent size)
+   {
+      return image(data, fmt, size);
+   }
+
+   template <pixel_format fmt>
+   inline typename std::enable_if<(fmt == pixel_format::rgb16), image>::type
+   make_image(std::uint16_t const* data, extent size)
+   {
+      return image(reinterpret_cast<std::uint8_t const*>(data), fmt, size);
+   }
+
+   template <pixel_format fmt>
+   inline typename std::enable_if<
+      (fmt == pixel_format::rgb32 || fmt == pixel_format::rgba32), image>::type
+   make_image(std::uint32_t const* data, extent size)
+   {
+      return image(reinterpret_cast<std::uint8_t const*>(data), fmt, size);
+   }
+
    inline image::image(float sizex, float sizey)
-    : image(extent{sizex, sizey })
+    : image(extent{sizex, sizey})
    {
    }
 

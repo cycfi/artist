@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -32,6 +32,9 @@ namespace cycfi::artist
    using canvas_impl = SkCanvas;
 #elif defined(ARTIST_CAIRO)
    using canvas_impl = cairo_t;
+#if defined(__APPLE__) && defined(__ARM_ARCH_ISA_A64)
+# error "Artist does not currently support Skia on Apple Silicon"
+#endif
 #endif
 
    class canvas
@@ -81,6 +84,7 @@ namespace cycfi::artist
 
       void              clip();
       void              clip(path const& p);
+      rect              clip_extent() const;
       bool              point_in_path(point p) const;
       bool              point_in_path(float x, float y) const;
       rect              fill_extent() const;
@@ -129,6 +133,16 @@ namespace cycfi::artist
                            float cp2x, float cp2y,
                            float x, float y
                         );
+
+      // Cairo canvas backward compaytibility
+
+                        [[deprecated("Use add_round_rect(r, radius) instead")]]
+      void              round_rect(const rect& r, float radius)
+                        { add_round_rect(r, radius); }
+
+                        [[deprecated("Use add_circle(c) instead")]]
+      void              circle(struct circle const& c)
+                        { add_circle(c); }
 
       ///////////////////////////////////////////////////////////////////////////////////
       // Styles
@@ -214,13 +228,13 @@ namespace cycfi::artist
       struct linear_gradient : gradient
       {
          linear_gradient(float startx, float starty, float endx, float endy)
-          : start{ startx, starty }
-          , end{ endx, endy }
+          : start{startx, starty}
+          , end{endx, endy}
          {}
 
          linear_gradient(point start, point end)
-          : start{ start }
-          , end{ end }
+          : start{start}
+          , end{end}
          {}
 
          point start = {};
@@ -233,20 +247,20 @@ namespace cycfi::artist
             float c1x, float c1y, float c1r,
             float c2x, float c2y, float c2r
          )
-          : c1{ c1x, c1y }
-          , c1_radius{ c1r }
-          , c2{ c2x, c2y }
-          , c2_radius{ c2r }
+          : c1{c1x, c1y}
+          , c1_radius{c1r}
+          , c2{c2x, c2y}
+          , c2_radius{c2r}
          {}
 
          radial_gradient(
             point c1, float c1r,
             point c2, float c2r
          )
-          : c1{ c1 }
-          , c1_radius{ c1r }
-          , c2{ c2 }
-          , c2_radius{ c2r }
+          : c1{c1}
+          , c1_radius{c1r}
+          , c2{c2}
+          , c2_radius{c2r}
          {}
 
          point c1 = {};
@@ -324,7 +338,7 @@ namespace cycfi::artist
 
       void              draw(image const& pic, rect const& src, rect const& dest);
       void              draw(image const& pic, rect const& dest);
-      void              draw(image const& pic, point pos = {0, 0 });
+      void              draw(image const& pic, point pos = {0, 0});
       void              draw(image const& pic, point pos, float scale);
       void              draw(image const& pic, float posx, float posy);
       void              draw(image const& pic, float posx, float posy, float scale);
@@ -347,7 +361,7 @@ namespace cycfi::artist
          canvas* cnv;
       };
 
-      state             new_state()   { return state{ *this }; }
+      state             new_state()   { return state{*this}; }
       void              save();
       void              restore();
 
@@ -358,6 +372,8 @@ namespace cycfi::artist
 
       canvas_impl*      _context;
       canvas_state_ptr  _state;
+
+      void              add_round_rect_impl(const rect& r, float radius);
    };
 }
 

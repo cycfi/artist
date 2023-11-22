@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -345,9 +345,7 @@ namespace cycfi::artist
       return m.ascent + m.descent + m.leading;
    }
 
-#ifdef __APPLE__
    fs::path get_user_fonts_directory();
-#endif
 }
 
 #endif

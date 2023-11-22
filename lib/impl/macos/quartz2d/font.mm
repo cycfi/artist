@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -17,14 +17,14 @@ namespace cycfi::artist
       inline void ltrim(std::string& s)
       {
          s.erase(s.begin(), std::find_if(s.begin(), s.end(),
-            [](int ch) { return !std::isspace(ch); }
+            [](int ch) { return ch != ' ' && ch != '"'; }
          ));
       }
 
       inline void rtrim(std::string& s)
       {
          s.erase(std::find_if(s.rbegin(), s.rend(),
-            [](int ch) { return !std::isspace(ch); }
+            [](int ch) { return ch != ' ' && ch != '"'; }
          ).base(), s.end());
       }
 
@@ -55,7 +55,7 @@ namespace cycfi::artist
       else if (descr._stretch >= expanded)
          style |= NSExpandedFontMask;
 
-      std::istringstream str(std::string{ descr._families });
+      std::istringstream str(std::string{descr._families});
       std::string family;
       auto font_manager = [NSFontManager sharedFontManager];
 
@@ -74,10 +74,17 @@ namespace cycfi::artist
 
          if (font)
          {
-            _ptr = (__bridge font_impl_ptr) font;
-            CFRetain(_ptr);
+            _ptr = (__bridge_retained font_impl_ptr) font;
             break;
          }
+      }
+      if (_ptr == nullptr)
+      {
+         _ptr = (__bridge_retained font_impl_ptr)
+            [NSFont
+               systemFontOfSize : descr._size
+                         weight : weight
+            ];
       }
    }
 
@@ -128,9 +135,9 @@ namespace cycfi::artist
    float font::measure_text(std::string_view str) const
    {
       NSFont* font = (__bridge NSFont*) _ptr;
-      NSDictionary* attr = @{ NSFontAttributeName : font };
+      NSDictionary* attr = @{NSFontAttributeName : font};
       NSString* text = detail::ns_string(str);
-      const CGSize textSize = [text sizeWithAttributes : attr];
+      const auto textSize = [text sizeWithAttributes : attr];
       return textSize.width;
    }
 }

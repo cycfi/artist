@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -7,23 +7,22 @@
 #include <string>
 #include <artist/text_layout.hpp>
 #include <artist/canvas.hpp>
-#include <artist/unicode.hpp>
+#include <infra/utf8_utils.hpp>
 #include <vector>
 #include <SkFont.h>
 #include <SkTextBlob.h>
 #include <SkCanvas.h>
 #include "detail/harfbuzz.hpp"
 #include "linebreak.h"
-#include "opaque.hpp"
+#include "wordbreak.h"
 
 namespace cycfi::artist
 {
-   class text_layout::impl
+   class text_layout::impl : non_copyable
    {
    public:
 
-      impl(font const& font_, std::string_view utf8);
-      impl(font const& font_, color c, std::string_view utf8);
+      impl(font const& font_, std::u32string_view utf32);
       ~impl();
 
       struct row_info
@@ -37,49 +36,92 @@ namespace cycfi::artist
          std::vector<SkScalar>   positions;
       };
 
+      using break_enum = text_layout::break_enum;
+
+      struct break_info
+      {
+         break_enum              line : 4;
+         break_enum              word : 4;
+      };
+
       void                       flow(get_line_info const& glf, flow_info finfo);
-      void                       draw(canvas& cnv, point p);
-      void                       text(std::string_view utf8);
+      void                       draw(canvas& cnv, point p, color c);
       point                      caret_point(std::size_t index) const;
       std::size_t                caret_index(point p) const;
+
       std::size_t                num_lines() const;
-      class font&                get_font();
+      font&                      get_font();
+      std::u32string_view        get_text() const;
+
+      break_enum                 line_break(std::size_t index) const;
+      break_enum                 word_break(std::size_t index) const;
 
    private:
 
       using line_vector = std::vector<row_info>;
 
-      class font              _font;
-      color                   _text_color;
-      detail::hb_font         _hb_font;
-      std::string_view        _utf8;
-      detail::hb_buffer       _buff;
-      line_vector             _rows;
-      SkPaint                 _paint;
+      class font                 _font;
+      detail::hb_font            _hb_font;
+      std::u32string             _text;
+      detail::hb_buffer          _buff;
+      line_vector                _rows;
+      SkPaint                    _paint;
+      std::vector<break_info>    _breaks;
    };
 
-   text_layout::impl::impl(class font const& font_, color c, std::string_view utf8)
-    : _font{ font_ }
+   text_layout::impl::impl(font const& font_, std::u32string_view utf32)
+    : _font{font_}
     , _hb_font(_font.impl()->getTypeface())
-    , _text_color{ c }
-    , _utf8{ utf8 }
-    , _buff{ utf8 }
+    , _text{utf32}
+    , _buff{_text}
+    , _breaks{utf32.size(), break_info{}}
    {
-      // $$$ For now... later, this should be extracted from the text, perhaps?
-      _buff.direction(HB_DIRECTION_LTR);
-      _buff.script(HB_SCRIPT_LATIN);
-      _buff.language("en");
-
-      init_linebreak();
+      struct init_linebreak_
+      {
+         init_linebreak_()
+         {
+            init_linebreak();
+            init_wordbreak();
+         }
+      };
+      static init_linebreak_ init;
 
       _paint.setAntiAlias(true);
       _paint.setStyle(SkPaint::kFill_Style);
-      _paint.setColor4f({ c.red, c.green, c.blue, c.alpha }, nullptr);
-   }
 
-   text_layout::impl::impl(class font const& font_, std::string_view utf8)
-    : impl{ font_, colors::black, utf8 }
-   {}
+      _buff.shape(_hb_font);
+
+      std::string lbrks(_text.size(), 0);
+      set_linebreaks_utf32(
+         (utf32_t const*)_text.data()
+         , _text.size(), _buff.language(), lbrks.data()
+      );
+
+      std::string wbrks(_text.size(), 0);
+      set_wordbreaks_utf32(
+         (utf32_t const*)_text.data()
+         , _text.size(), _buff.language(), wbrks.data()
+      );
+
+      for (std::size_t i = 0; i != _breaks.size(); ++i)
+      {
+         auto info = break_info{};
+         switch (lbrks[i])
+         {
+            case LINEBREAK_MUSTBREAK:  info.line = must_break;    break;
+            case LINEBREAK_ALLOWBREAK: info.line = allow_break;   break;
+            case LINEBREAK_NOBREAK:    info.line = no_break;      break;
+            default:                   info.line = indeterminate; break;
+         }
+         switch (wbrks[i])
+         {
+            case WORDBREAK_BREAK:      info.word = allow_break;   break;
+            case WORDBREAK_NOBREAK:    info.word = no_break;      break;
+            default:                   info.word = indeterminate; break;
+         }
+         _breaks[i] = info;
+      }
+   }
 
    text_layout::impl::~impl()
    {
@@ -87,13 +129,11 @@ namespace cycfi::artist
 
    void text_layout::impl::flow(get_line_info const& glf, flow_info finfo)
    {
-      _rows.clear();
-      if (_utf8.size() == 0)
+      if (_text.size() == 0)
          return;
+      _rows.clear();
 
-      _buff.shape(_hb_font);
       auto glyphs_info = _buff.glyphs();
-
       int hb_scalex, hb_scaley;
       hb_font_get_scale(_hb_font.get(), &hb_scalex, &hb_scaley);
       auto sc_font = _font.impl();
@@ -104,13 +144,7 @@ namespace cycfi::artist
       auto linfo = glf(0);
       float y = 0;
       float x = 0;
-      auto glyph_start = 0;
-
-      std::string brks(_utf8.size(), 0);
-      set_linebreaks_utf8(
-         (utf8_t const*)_utf8.data()
-         , _utf8.size(), _buff.language(), brks.data()
-      );
+      std::size_t glyph_start = 0;
 
       auto num_spaces =
          [&](std::size_t glyph_idx) -> std::size_t
@@ -119,7 +153,7 @@ namespace cycfi::artist
             for (auto i = glyph_start; i != glyph_idx; ++i)
             {
                auto cl = glyphs_info.glyphs[i].cluster;
-               if (unicode::is_space(&_utf8[cl]))
+               if (is_space(_text[cl]))
                   ++count;
             }
             return count;
@@ -128,6 +162,9 @@ namespace cycfi::artist
       auto justify =
          [&](std::size_t glyph_idx, bool must_break) -> float
          {
+             while (glyph_idx >= glyph_start && glyphs_info.glyphs[glyph_idx].codepoint == 0)
+                --glyph_idx;
+
             auto line_width =
                positions[glyph_idx-glyph_start] +
                (glyphs_info.positions[glyph_idx].x_advance * scalex)
@@ -142,9 +179,8 @@ namespace cycfi::artist
                   float offset = 0;
                   for (auto i = glyph_start; i != glyph_idx; ++i)
                   {
-                     using namespace unicode;
                      auto cl = glyphs_info.glyphs[i].cluster;
-                     if (unicode::is_space(&_utf8[cl]))
+                     if (is_space(_text[cl]))
                         offset += extra;
                      positions[i-glyph_start] += offset;
                   }
@@ -157,17 +193,17 @@ namespace cycfi::artist
          };
 
       auto new_line =
-         [&](std::size_t utf8_idx, std::size_t& i, bool must_break)
+         [&](std::size_t text_idx, std::size_t& glyph_idx, bool must_break, bool indeterminate)
          {
-            auto glyph_idx = _buff.glyph_index(utf8_idx);
-            auto line_width = justify(glyph_idx, must_break);
-
+            glyph_idx = glyphs_info.glyph_index(text_idx);
             auto glyph_count = glyph_idx - glyph_start;
-            if (i == glyphs_info.count-1) // the last glyph?
+            if (indeterminate)  // Is the last glyph indeterminate?
                ++glyph_count;
 
+            auto line_width = glyph_count? justify(glyph_idx, must_break) : 0;
+
             std::vector<SkGlyphID> line_glyphs(glyph_count);
-            for (auto j = 0; j != glyph_count; ++j)
+            for (std::size_t j = 0; j != glyph_count; ++j)
                line_glyphs[j] = glyphs_info.glyphs[glyph_start + j].codepoint;
 
             auto text_blob = SkTextBlob::MakeFromPosTextH(
@@ -182,7 +218,7 @@ namespace cycfi::artist
             positions.erase(positions.begin()+last_glyph, positions.end());
             _rows.push_back(
                row_info{
-                  point{ linfo.offset, y }
+                  point{linfo.offset, y}
                   , line_width
                   , finfo.line_height
                   , std::size_t(glyph_count)
@@ -193,22 +229,23 @@ namespace cycfi::artist
             );
 
             positions.clear();
-            i = glyph_idx;
             glyph_start = glyph_idx + 1;
             y += finfo.line_height;
             linfo = glf(y);
             x = 0;
          };
 
-      for (std::size_t i = 0; i != glyphs_info.count; ++i)
+      for (std::size_t glyph_idx = 0; glyph_idx != glyphs_info.count; ++glyph_idx)
       {
-         positions.push_back(x + (glyphs_info.positions[i].x_offset * scalex));
-         x += glyphs_info.positions[i].x_advance * scalex;
+         positions.push_back(x + (glyphs_info.positions[glyph_idx].x_offset * scalex));
+         x += glyphs_info.positions[glyph_idx].x_advance * scalex;
+         auto idx = glyphs_info.glyphs[glyph_idx].cluster;
+         bool indeterminate_ = _breaks[idx].line == indeterminate;
 
-         if (auto idx = glyphs_info.glyphs[i].cluster; brks[idx] == LINEBREAK_MUSTBREAK)
+         if (_breaks[idx].line == must_break || indeterminate_)
          {
-            // We must break now
-            new_line(idx, i, true);
+            // We got a hard-break or we are at the end, so must break now
+            new_line(idx, glyph_idx, true, indeterminate_);
          }
          else if (x > linfo.width)
          {
@@ -216,62 +253,66 @@ namespace cycfi::artist
             std::size_t len = positions.size();
             auto start_line = glyphs_info.glyphs[glyph_start].cluster;
             auto end_line = glyphs_info.glyphs[glyph_start+len].cluster;
-            auto brks_len = end_line-start_line;
-            auto brks_line = brks.substr(start_line, brks_len);
-            auto pos = brks_line.find_last_of(char(LINEBREAK_ALLOWBREAK), brks_len-1);
+            bool force_break = true;
 
-            if (pos != brks_line.npos)
-               new_line(pos + start_line, i, false);
-            else
-               ; // deal with the case where we have to forcefully break the line
+            for (int i = end_line-1; i >= static_cast<int>(start_line); --i)
+            {
+               if (_breaks[i].line == allow_break)
+               {
+                  new_line(i, glyph_idx, false, false);
+                  force_break = false;
+                  break;
+               }
+            }
+            // deal with the case where we have to forcefully break the line
+            if (force_break)
+               new_line(end_line, glyph_idx, false, false);
          }
       }
-      auto& last = _rows.back();
-      last.pos.y += finfo.last_line_height - finfo.line_height;
-      last.height = finfo.last_line_height;
+      if (_rows.size())
+      {
+         auto& last = _rows.back();
+         last.pos.y += finfo.last_line_height - finfo.line_height;
+         last.height = finfo.last_line_height;
+      }
    }
 
-   void  text_layout::impl::draw(canvas& cnv, point p)
+   void  text_layout::impl::draw(canvas& cnv, point p, color c)
    {
+      _paint.setColor4f({c.red, c.green, c.blue, c.alpha}, nullptr);
       if (_rows.size() == 0)
          return;
 
       for (auto const& line : _rows)
       {
-         auto sk_cnv = cnv.impl();
-         SkPaint paint;
-         paint.setAntiAlias(true);
-         paint.setStyle(SkPaint::kFill_Style);
-         sk_cnv->drawTextBlob(
-            line.line
-            , p.x+line.pos.x, p.y+line.pos.y
-            , _paint
-         );
-      }
-   }
-
-   void text_layout::impl::text(std::string_view utf8)
-   {
-      if (utf8 != _utf8)
-      {
-         _buff.text(utf8);
-         _rows.clear();
+         if (line.width > 0)
+         {
+            auto sk_cnv = cnv.impl();
+            SkPaint paint;
+            paint.setAntiAlias(true);
+            paint.setStyle(SkPaint::kFill_Style);
+            sk_cnv->drawTextBlob(
+               line.line
+               , p.x+line.pos.x, p.y+line.pos.y
+               , _paint
+            );
+         }
       }
    }
 
    point text_layout::impl::caret_point(std::size_t index) const
    {
       if (_rows.size() == 0)
-         return { 0, 0 };
+         return {0, 0};
 
       auto glyphs_info = _buff.glyphs();
 
       // Find the glyph index from string index
       auto glyph_index = index;
       auto row_index = -1;
-      if (index < _utf8.size())
+      if (index < _text.size())
       {
-         glyph_index = _buff.glyph_index(index);
+         glyph_index = glyphs_info.glyph_index(index);
       }
       else
       {
@@ -289,7 +330,7 @@ namespace cycfi::artist
             }
          );
          if (i == _rows.end())
-            return { -1, -1 };
+            return {-1, -1};
          row_index = i - _rows.begin();
       }
 
@@ -297,7 +338,7 @@ namespace cycfi::artist
       auto const& row = _rows[row_index];
       auto pos = glyph_index - row.glyph_index;
       auto offset = (pos < row.positions.size())? row.positions[pos] : row.width;
-      return { row.pos.x + offset, row.pos.y };
+      return {row.pos.x + offset, row.pos.y};
    }
 
    std::size_t text_layout::impl::caret_index(point p) const
@@ -306,8 +347,7 @@ namespace cycfi::artist
          return 0;
 
       auto glyphs_info = _buff.glyphs();
-      auto i = std::lower_bound(
-         _rows.begin(), _rows.end(), p.y,
+      auto i = std::lower_bound(_rows.begin(), _rows.end(), p.y,
          [](auto const& row, float y)
          {
             return row.pos.y < y;
@@ -332,7 +372,15 @@ namespace cycfi::artist
          }
       );
       if (j == l)
-         return is_last_row? _utf8.size() : npos;
+         return is_last_row? _text.size() : npos;
+      if (j != f)
+      {
+         // Check the x position is before the middle of the glyph
+         auto prev_pos = *(j-1);
+         auto half_width = (*j - prev_pos) / 2;
+         if (p.x < prev_pos+half_width)
+            --j;
+      }
       auto index = i->glyph_index + (j-f);
       return glyphs_info.glyphs[index].cluster;
    }
@@ -347,13 +395,33 @@ namespace cycfi::artist
       return _font;
    }
 
-   text_layout::text_layout(font const& font_, std::string_view utf8)
-    : _impl{ std::make_unique<impl>(font_, utf8) }
+   std::u32string_view text_layout::impl::get_text() const
+   {
+      return _text;
+   }
+
+   text_layout::break_enum text_layout::impl::line_break(std::size_t index) const
+   {
+      if (index >= _breaks.size())
+         return indeterminate;
+      return _breaks[index].line;
+   }
+
+   text_layout::break_enum text_layout::impl::word_break(std::size_t index) const
+   {
+      if (index >= _breaks.size())
+         return indeterminate;
+      return _breaks[index].line;
+   }
+
+   ////////////////////////////////////////////////////////////////////////////
+   text_layout::text_layout(font_descr font_, std::string_view utf8)
+    : _impl{std::make_unique<impl>(font_, to_utf32(utf8))}
    {
    }
 
-   text_layout::text_layout(font const& font_, color c, std::string_view utf8)
-    : _impl{ std::make_unique<impl>(font_, c, utf8) }
+   text_layout::text_layout(font_descr font_, std::u32string_view utf32)
+    : _impl{std::make_unique<impl>(font_, utf32)}
    {
    }
 
@@ -362,24 +430,34 @@ namespace cycfi::artist
    }
 
    text_layout::text_layout(text_layout&& rhs) noexcept
-    : _impl{ std::move(rhs._impl) }
+    : _impl{std::move(rhs._impl)}
    {
    }
 
    void text_layout::text(std::string_view utf8)
    {
-      _impl->text(utf8);
+      _impl = std::make_unique<impl>(_impl->get_font(), to_utf32(utf8));
+   }
+
+   void text_layout::text(std::u32string_view utf32)
+   {
+      _impl = std::make_unique<impl>(_impl->get_font(), utf32);
+   }
+
+   std::u32string_view text_layout::text() const
+   {
+      return _impl->get_text();
    }
 
    void text_layout::flow(float width, bool justify)
    {
       auto line_info_f = [width](float /*y*/)
       {
-         return line_info{ 0, width };
+         return line_info{0, width};
       };
 
       auto lh = _impl->get_font().line_height();
-      flow(line_info_f, { justify, lh, lh });
+      flow(line_info_f, {justify, lh, lh});
    }
 
    void text_layout::flow(get_line_info const& glf, flow_info finfo)
@@ -387,16 +465,15 @@ namespace cycfi::artist
       _impl->flow(glf, finfo);
    }
 
-   void text_layout::draw(canvas& cnv, point p) const
+   void text_layout::draw(canvas& cnv, point p, color c) const
    {
-      _impl->draw(cnv, p);
+      _impl->draw(cnv, p, c);
    }
 
    std::size_t text_layout::num_lines() const
    {
       return _impl->num_lines();
    }
-
 
    point text_layout::caret_point(std::size_t index) const
    {
@@ -406,6 +483,16 @@ namespace cycfi::artist
    std::size_t text_layout::caret_index(point p) const
    {
       return _impl->caret_index(p);
+   }
+
+   text_layout::break_enum text_layout::line_break(std::size_t index) const
+   {
+      return _impl->line_break(index);
+   }
+
+   text_layout::break_enum text_layout::word_break(std::size_t index) const
+   {
+      return _impl->word_break(index);
    }
 }
 

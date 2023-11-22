@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -52,7 +52,7 @@ namespace cycfi::artist::detail
    hb_font::hb_font(SkTypeface* tf)
    {
       int index;
-      hb_blob blob{ std::unique_ptr<SkStreamAsset>(tf->openStream(&index)) };
+      hb_blob blob{std::unique_ptr<SkStreamAsset>(tf->openStream(&index))};
       hb_face_t* face = hb_face_create(blob.get(), unsigned(index));
       SkASSERT(face);
       if (face)
@@ -83,19 +83,12 @@ namespace cycfi::artist::detail
       }
    }
 
-   hb_buffer::hb_buffer(std::string_view utf8)
+   hb_buffer::hb_buffer(std::u32string_view utf32)
     : _buffer(ptr_type(hb_buffer_create()))
    {
-      hb_buffer_add_utf8(_buffer.get(), utf8.data(), utf8.size(), 0, utf8.size());
-      _map.insert(_map.begin(), utf8.size(), -1);
-   }
-
-   void hb_buffer::text(std::string_view utf8)
-   {
-      hb_buffer_clear_contents(_buffer.get());
-      hb_buffer_add_utf8(_buffer.get(), utf8.data(), utf8.size(), 0, utf8.size());
-      _map.clear();
-      _map.insert(_map.begin(), utf8.size(), -1);
+      auto data = reinterpret_cast<uint32_t const*>(utf32.data());
+      hb_buffer_add_utf32(_buffer.get(), data, utf32.size(), 0, utf32.size());
+      hb_buffer_guess_segment_properties(_buffer.get());
    }
 
    void hb_buffer::direction(hb_direction_t dir)
@@ -121,12 +114,6 @@ namespace cycfi::artist::detail
    void hb_buffer::shape(hb_font const& font)
    {
       hb_shape(font.get(), _buffer.get(), nullptr, 0);
-
-      unsigned int count;
-      auto glyphs = hb_buffer_get_glyph_infos(_buffer.get(), &count);
-
-      for (unsigned int i = 0; i != count; ++i)
-         _map[glyphs[i].cluster] = i;
    }
 
    hb_buffer::glyphs_info hb_buffer::glyphs() const
@@ -137,15 +124,12 @@ namespace cycfi::artist::detail
       return info;
    }
 
-   int hb_buffer::glyph_index(std::size_t index) const
+   int hb_buffer::glyphs_info::glyph_index(std::size_t index) const
    {
-      auto i = _map[index];
-      while (i == -1 && index > 0)
-      {
-         --index;
-         i = _map[index];
-      }
-      return i;
+      for (int i = std::min<std::size_t>(index, count-1); i >=0; --i)
+         if (glyphs[i].cluster == index)
+            return &glyphs[i] - glyphs;
+      return -1;
    }
 }
 
