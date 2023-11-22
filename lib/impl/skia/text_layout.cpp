@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -70,11 +70,11 @@ namespace cycfi::artist
    };
 
    text_layout::impl::impl(font const& font_, std::u32string_view utf32)
-    : _font{ font_ }
+    : _font{font_}
     , _hb_font(_font.impl()->getTypeface())
-    , _text{ utf32 }
-    , _buff{ _text }
-    , _breaks{ utf32.size(), break_info{} }
+    , _text{utf32}
+    , _buff{_text}
+    , _breaks{utf32.size(), break_info{}}
    {
       struct init_linebreak_
       {
@@ -218,7 +218,7 @@ namespace cycfi::artist
             positions.erase(positions.begin()+last_glyph, positions.end());
             _rows.push_back(
                row_info{
-                  point{ linfo.offset, y }
+                  point{linfo.offset, y}
                   , line_width
                   , finfo.line_height
                   , std::size_t(glyph_count)
@@ -279,7 +279,7 @@ namespace cycfi::artist
 
    void  text_layout::impl::draw(canvas& cnv, point p, color c)
    {
-      _paint.setColor4f({ c.red, c.green, c.blue, c.alpha }, nullptr);
+      _paint.setColor4f({c.red, c.green, c.blue, c.alpha}, nullptr);
       if (_rows.size() == 0)
          return;
 
@@ -303,7 +303,7 @@ namespace cycfi::artist
    point text_layout::impl::caret_point(std::size_t index) const
    {
       if (_rows.size() == 0)
-         return { 0, 0 };
+         return {0, 0};
 
       auto glyphs_info = _buff.glyphs();
 
@@ -330,7 +330,7 @@ namespace cycfi::artist
             }
          );
          if (i == _rows.end())
-            return { -1, -1 };
+            return {-1, -1};
          row_index = i - _rows.begin();
       }
 
@@ -338,7 +338,7 @@ namespace cycfi::artist
       auto const& row = _rows[row_index];
       auto pos = glyph_index - row.glyph_index;
       auto offset = (pos < row.positions.size())? row.positions[pos] : row.width;
-      return { row.pos.x + offset, row.pos.y };
+      return {row.pos.x + offset, row.pos.y};
    }
 
    std::size_t text_layout::impl::caret_index(point p) const
@@ -416,12 +416,12 @@ namespace cycfi::artist
 
    ////////////////////////////////////////////////////////////////////////////
    text_layout::text_layout(font_descr font_, std::string_view utf8)
-    : _impl{ std::make_unique<impl>(font_, to_utf32(utf8)) }
+    : _impl{std::make_unique<impl>(font_, to_utf32(utf8))}
    {
    }
 
    text_layout::text_layout(font_descr font_, std::u32string_view utf32)
-    : _impl{ std::make_unique<impl>(font_, utf32) }
+    : _impl{std::make_unique<impl>(font_, utf32)}
    {
    }
 
@@ -430,7 +430,7 @@ namespace cycfi::artist
    }
 
    text_layout::text_layout(text_layout&& rhs) noexcept
-    : _impl{ std::move(rhs._impl) }
+    : _impl{std::move(rhs._impl)}
    {
    }
 
@@ -453,11 +453,11 @@ namespace cycfi::artist
    {
       auto line_info_f = [width](float /*y*/)
       {
-         return line_info{ 0, width };
+         return line_info{0, width};
       };
 
       auto lh = _impl->get_font().line_height();
-      flow(line_info_f, { justify, lh, lh });
+      flow(line_info_f, {justify, lh, lh});
    }
 
    void text_layout::flow(get_line_info const& glf, flow_info finfo)

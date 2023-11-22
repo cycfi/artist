@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -106,29 +106,29 @@ namespace cycfi::artist
 
    constexpr affine_transform make_translation(double tx, double ty)
    {
-      return { 1.0, 0.0, 0.0, 1.0, tx, ty };
+      return {1.0, 0.0, 0.0, 1.0, tx, ty};
    }
 
    constexpr affine_transform make_scale(double sx, double sy)
    {
-      return { sx, 0.0, 0.0, sy, 0.0, 0.0 };
+      return {sx, 0.0, 0.0, sy, 0.0, 0.0};
    }
 
    constexpr affine_transform make_scale(double sc)
    {
-      return { sc, 0.0, 0.0, sc, 0.0, 0.0 };
+      return {sc, 0.0, 0.0, sc, 0.0, 0.0};
    }
 
    inline affine_transform make_rotation(double rad)
    {
       auto s = std::sin(rad);
       auto c = std::cos(rad);
-      return { c, s, -s, c, 0.0, 0.0 };
+      return {c, s, -s, c, 0.0, 0.0};
    }
 
    inline affine_transform make_skew(double sx, double sy)
    {
-      return { 1.0, std::tan(sx), std::tan(sy), 1.0, 0.0, 0.0 };
+      return {1.0, std::tan(sx), std::tan(sy), 1.0, 0.0, 0.0};
    }
 
    constexpr affine_transform affine_transform::translate(double tx_, double ty_) const

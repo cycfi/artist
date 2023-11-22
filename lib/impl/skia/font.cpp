@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -70,7 +70,7 @@ namespace cycfi::artist
       {
          static font_map_type font_map_;
          static std::mutex mutex_;
-         return { font_map_, mutex_ };
+         return {font_map_, mutex_};
       }
 
       constexpr auto font_map_default_font_family = "";
@@ -129,13 +129,13 @@ namespace cycfi::artist
          FcConfig* config = FcConfigGetCurrent();
          auto user_fonts_path = get_user_fonts_directory();
          FcConfigAppFontAddDir(config, (FcChar8 const*)user_fonts_path.string().c_str());
-         auto pat = fc_patern_ptr{ FcPatternCreate() };
+         auto pat = fc_patern_ptr{FcPatternCreate()};
          auto os = fc_object_set_ptr{
                      FcObjectSetBuild(
                         FC_FAMILY, FC_FULLNAME, FC_WIDTH, FC_WEIGHT
                       , FC_SLANT, FC_FILE, FC_INDEX, nullptr)
                      };
-         auto fs = fc_font_set_ptr{ FcFontList(config, pat.get(), os.get()) };
+         auto fs = fc_font_set_ptr{FcFontList(config, pat.get(), os.get())};
 
          // The lock is not needed, since this is run on static initialization.
          auto [font_map, font_map_mutex] = get_font_map();
@@ -187,7 +187,7 @@ namespace cycfi::artist
          static font_init init;
 
          std::istringstream str(
-            std::string{ descr._families } + ", " + font_map_default_font_family);
+            std::string{descr._families} + ", " + font_map_default_font_family);
          std::string family;
          while (getline(str, family, ','))
          {
@@ -264,7 +264,7 @@ namespace cycfi::artist
       );
 
       auto default_face = SkTypeface::MakeFromName(nullptr, style);
-      std::istringstream str(std::string{ descr._families });
+      std::istringstream str(std::string{descr._families});
       std::string family;
 
       while (getline(str, family, ','))
@@ -322,7 +322,7 @@ namespace cycfi::artist
    {
       SkFontMetrics sk_metrics;
       _ptr->getMetrics(&sk_metrics);
-      return { -sk_metrics.fAscent, sk_metrics.fDescent, sk_metrics.fLeading };
+      return {-sk_metrics.fAscent, sk_metrics.fDescent, sk_metrics.fLeading};
    }
 
    float font::measure_text(std::string_view str) const

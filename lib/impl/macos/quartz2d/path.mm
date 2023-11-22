@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -63,7 +63,7 @@ namespace cycfi::artist
    bool path::includes(point p) const
    {
       return CGPathContainsPoint(
-         _impl, nullptr, { p.x, p.y }, _fill_rule == fill_odd_even
+         _impl, nullptr, {p.x, p.y}, _fill_rule == fill_odd_even
       );
    }
 
@@ -85,7 +85,7 @@ namespace cycfi::artist
    void path::add_rect(rect const& r)
    {
       CGPathAddRect(_impl, nullptr,
-         CGRect{ { r.left, r.top }, { r.width(), r.height() } }
+         CGRect{{ r.left, r.top}, {r.width(), r.height() }}
       );
    }
 
@@ -136,7 +136,7 @@ namespace cycfi::artist
    void path::add_round_rect_impl(rect const& r, float radius)
    {
       CGPathAddRoundedRect(_impl, nullptr,
-         CGRect{ { r.left, r.top }, { r.width(), r.height() } }
+         CGRect{{ r.left, r.top}, {r.width(), r.height() }}
        , radius, radius
       );
    }

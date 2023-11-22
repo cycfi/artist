@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -97,14 +97,14 @@ namespace cycfi::artist
       [&]()
       {
          auto ctx = NSGraphicsContext.currentContext.CGContext;
-         auto cnv = canvas{ (canvas_impl*) ctx };
+         auto cnv = canvas{(canvas_impl*) ctx};
          draw(cnv);
       };
 
    auto start = std::chrono::high_resolution_clock::now();
    draw_f();
    auto stop = std::chrono::high_resolution_clock::now();
-   elapsed_ = std::chrono::duration<double>{ stop - start }.count();
+   elapsed_ = std::chrono::duration<double>{stop - start}.count();
 }
 
 -(BOOL) isFlipped

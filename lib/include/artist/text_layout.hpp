@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -75,7 +75,7 @@ namespace cycfi::artist
    ////////////////////////////////////////////////////////////////////////////
    inline void text_layout::draw(canvas& cnv, float x, float y, color c) const
    {
-      draw(cnv, { x, y }, c);
+      draw(cnv, {x, y}, c);
    }
 
    inline std::size_t text_layout::caret_index(float x, float y) const
