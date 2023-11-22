@@ -196,6 +196,10 @@ namespace cycfi::artist
          path& _path;
          point p, prev_cp, prev_qp;
 
+         path_builder(path& path_)
+          : _path{path_}
+         {}
+
          void move_to(char const*& s, bool abs)
          {
             point m;
