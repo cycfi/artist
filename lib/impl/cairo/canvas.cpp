@@ -5,6 +5,7 @@
 =============================================================================*/
 #include <artist/canvas.hpp>
 #include <cairo.h>
+#include <stack>
 
 namespace cycfi::artist
 {

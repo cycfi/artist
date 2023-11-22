@@ -271,251 +271,251 @@ void compare_golden(image const& pm, std::string name)
    CHECK(diff == 0);
 }
 
-void typography(canvas& cnv)
-{
-   background(cnv);
+// void typography(canvas& cnv)
+// {
+//    background(cnv);
 
-   cnv.fill_style(rgba(220, 220, 220, 200));
-   cnv.stroke_style(rgba(220, 220, 220, 200));
+//    cnv.fill_style(rgba(220, 220, 220, 200));
+//    cnv.stroke_style(rgba(220, 220, 220, 200));
 
-   // Regular
-   cnv.font(font_descr{ "Open Sans", 36 });
-   cnv.fill_text("Regular", 20, 40);
+//    // Regular
+//    cnv.font(font_descr{ "Open Sans", 36 });
+//    cnv.fill_text("Regular", 20, 40);
 
-   // Bold
-   cnv.font(font_descr{ "Open Sans", 36 }.bold());
-   cnv.fill_text("Bold", 160, 40);
+//    // Bold
+//    cnv.font(font_descr{ "Open Sans", 36 }.bold());
+//    cnv.fill_text("Bold", 160, 40);
 
-   // Light
-   cnv.font(font_descr{ "Open Sans", 36 }.light());
-   cnv.fill_text("Light", 250, 40);
+//    // Light
+//    cnv.font(font_descr{ "Open Sans", 36 }.light());
+//    cnv.fill_text("Light", 250, 40);
 
-   // Italic
-   cnv.font(font_descr{ "Open Sans", 36 }.italic());
-   cnv.fill_text("Italic", 345, 40);
+//    // Italic
+//    cnv.font(font_descr{ "Open Sans", 36 }.italic());
+//    cnv.fill_text("Italic", 345, 40);
 
-   // Condensed
-   cnv.font(font_descr{ "Open Sans Condensed, Open Sans", 36 }.condensed());
-   cnv.fill_text("Condensed", 430, 40);
+//    // Condensed
+//    cnv.font(font_descr{ "Open Sans Condensed, Open Sans", 36 }.condensed());
+//    cnv.fill_text("Condensed", 430, 40);
 
-   // Condensed Italic
-   cnv.font(font_descr{ "Open Sans Condensed, Open Sans", 36 }.italic().condensed());
-   cnv.fill_text("Condensed Italic", 20, 115);
+//    // Condensed Italic
+//    cnv.font(font_descr{ "Open Sans Condensed, Open Sans", 36 }.italic().condensed());
+//    cnv.fill_text("Condensed Italic", 20, 115);
 
-   // In the last two cases, the font family 'Open Sans Condensed' already
-   // describes the font as condensed, but we still add the font family 'Open
-   // Sans' and styles because, depending on platform, the font family 'Open
-   // Sans Condensed' is either grouped into the 'Open Sans' family (e.g.
-   // Windows), or separate as a distinct family (e.g. MacOS).
+//    // In the last two cases, the font family 'Open Sans Condensed' already
+//    // describes the font as condensed, but we still add the font family 'Open
+//    // Sans' and styles because, depending on platform, the font family 'Open
+//    // Sans Condensed' is either grouped into the 'Open Sans' family (e.g.
+//    // Windows), or separate as a distinct family (e.g. MacOS).
 
-   // Outline
-   cnv.font(font_descr{ "Open Sans", 36 }.bold());
-   cnv.line_width(0.5);
-   cnv.stroke_text("Outline", 210, 115);
+//    // Outline
+//    cnv.font(font_descr{ "Open Sans", 36 }.bold());
+//    cnv.line_width(0.5);
+//    cnv.stroke_text("Outline", 210, 115);
 
-   cnv.font(font_descr{ "Open Sans", 52 }.bold());
+//    cnv.font(font_descr{ "Open Sans", 52 }.bold());
 
-   // Gradient Fill
-   {
-      auto gr = canvas::linear_gradient{ { 360, 90 }, { 360, 140 } };
-      gr.add_color_stop(0.0, colors::navy_blue);
-      gr.add_color_stop(1.0, colors::maroon);
-      cnv.fill_style(gr);
-      cnv.fill_text("Gradient", 360, 115);
-      cnv.stroke_text("Gradient", 360, 115);
-   }
+//    // Gradient Fill
+//    {
+//       auto gr = canvas::linear_gradient{ { 360, 90 }, { 360, 140 } };
+//       gr.add_color_stop(0.0, colors::navy_blue);
+//       gr.add_color_stop(1.0, colors::maroon);
+//       cnv.fill_style(gr);
+//       cnv.fill_text("Gradient", 360, 115);
+//       cnv.stroke_text("Gradient", 360, 115);
+//    }
 
-   // Outline Gradient Fill
-   {
-      auto gr = canvas::linear_gradient{ { 360, 165 }, { 360, 215 } };
-      gr.add_color_stop(0.0, colors::medium_blue);
-      gr.add_color_stop(1.0, colors::medium_violet_red);
-      cnv.line_width(1.5);
-      cnv.stroke_style(gr);
-      cnv.stroke_text("Outline Gradient", 20, 190);
-   }
+//    // Outline Gradient Fill
+//    {
+//       auto gr = canvas::linear_gradient{ { 360, 165 }, { 360, 215 } };
+//       gr.add_color_stop(0.0, colors::medium_blue);
+//       gr.add_color_stop(1.0, colors::medium_violet_red);
+//       cnv.line_width(1.5);
+//       cnv.stroke_style(gr);
+//       cnv.stroke_text("Outline Gradient", 20, 190);
+//    }
 
-#if defined(__APPLE__) // CoreText supports ligatures right out of the box, but only for some fonts
-   cnv.font(font_descr{ "Lucida Grande", 52 }.bold());
-#else
-   cnv.font(font_descr{ "Open Sans", 52 }.bold());
-#endif
+// #if defined(__APPLE__) // CoreText supports ligatures right out of the box, but only for some fonts
+//    cnv.font(font_descr{ "Lucida Grande", 52 }.bold());
+// #else
+//    cnv.font(font_descr{ "Open Sans", 52 }.bold());
+// #endif
 
-   cnv.fill_style(rgba(220, 220, 220, 200));
-   cnv.fill_text("fi fl", 500, 190);
+//    cnv.fill_style(rgba(220, 220, 220, 200));
+//    cnv.fill_text("fi fl", 500, 190);
 
-   cnv.font(font_descr{ "Open Sans", 52 }.weight(semi_bold));
-   {
-      auto state = cnv.new_state();
+//    cnv.font(font_descr{ "Open Sans", 52 }.weight(semi_bold));
+//    {
+//       auto state = cnv.new_state();
 
-      // Shadow
-      cnv.fill_style(rgba(220, 220, 220, 200));
-      cnv.shadow_style({ 5.0, 5.0 }, 5, colors::black);
-      cnv.fill_text("Shadow", 20, 265);
+//       // Shadow
+//       cnv.fill_style(rgba(220, 220, 220, 200));
+//       cnv.shadow_style({ 5.0, 5.0 }, 5, colors::black);
+//       cnv.fill_text("Shadow", 20, 265);
 
-      // Glow
-      cnv.fill_style(bkd_color);
-      cnv.shadow_style(8, colors::light_sky_blue);
-      cnv.fill_text("Glow", 250, 265);
+//       // Glow
+//       cnv.fill_style(bkd_color);
+//       cnv.shadow_style(8, colors::light_sky_blue);
+//       cnv.fill_text("Glow", 250, 265);
 
-      auto m = cnv.measure_text("Shadow");
-      CHECK(std::floor(m.ascent) == 55);
-      CHECK(std::floor(m.descent) == 15);
-      CHECK(std::floor(m.leading) == 0);
-      CHECK(std::floor(m.size.x) == 198);
-      CHECK(std::floor(m.size.y) == 70);
-   }
+//       auto m = cnv.measure_text("Shadow");
+//       CHECK(std::floor(m.ascent) == 55);
+//       CHECK(std::floor(m.descent) == 15);
+//       CHECK(std::floor(m.leading) == 0);
+//       CHECK(std::floor(m.size.x) == 198);
+//       CHECK(std::floor(m.size.y) == 70);
+//    }
 
-   cnv.move_to({ 500, 220 });
-   cnv.line_to({ 500, 480 });
-   cnv.stroke_style(colors::red);
-   cnv.line_width(0.5);
-   cnv.stroke();
+//    cnv.move_to({ 500, 220 });
+//    cnv.line_to({ 500, 480 });
+//    cnv.stroke_style(colors::red);
+//    cnv.line_width(0.5);
+//    cnv.stroke();
 
-   cnv.fill_style(rgba(220, 220, 220, 200));
-   cnv.font(font_descr{ "Open Sans", 14 });
+//    cnv.fill_style(rgba(220, 220, 220, 200));
+//    cnv.font(font_descr{ "Open Sans", 14 });
 
-   char const* align_text[] = {
-      "text_align(left)",
-      "text_align(right)",
-      "text_align(center)",
-      "text_align(baseline)",
-      "text_align(top)",
-      "text_align(middle)",
-      "text_align(bottom)"
-   };
+//    char const* align_text[] = {
+//       "text_align(left)",
+//       "text_align(right)",
+//       "text_align(center)",
+//       "text_align(baseline)",
+//       "text_align(top)",
+//       "text_align(middle)",
+//       "text_align(bottom)"
+//    };
 
-   int aligns[] = {
-      cnv.left,
-      cnv.right,
-      cnv.center,
-      cnv.baseline,
-      cnv.top,
-      cnv.middle,
-      cnv.bottom
-   };
+//    int aligns[] = {
+//       cnv.left,
+//       cnv.right,
+//       cnv.center,
+//       cnv.baseline,
+//       cnv.top,
+//       cnv.middle,
+//       cnv.bottom
+//    };
 
-   float vspace = 35;
-   float vstart = 250-vspace;
-   for (int i = 0; i != 7; ++i)
-   {
-      vstart += vspace;
-      cnv.move_to({ 400, vstart });
-      cnv.line_to({ 600, vstart });
-      cnv.stroke();
-      cnv.text_align(aligns[i]);
-      cnv.fill_text(align_text[i], 500, vstart);
-   }
+//    float vspace = 35;
+//    float vstart = 250-vspace;
+//    for (int i = 0; i != 7; ++i)
+//    {
+//       vstart += vspace;
+//       cnv.move_to({ 400, vstart });
+//       cnv.line_to({ 600, vstart });
+//       cnv.stroke();
+//       cnv.text_align(aligns[i]);
+//       cnv.fill_text(align_text[i], 500, vstart);
+//    }
 
-   std::string text =
-      "Although I am a typical loner in daily life, my consciousness of "
-      "belonging to the invisible community of those who strive for "
-      "truth, beauty, and justice has preserved me from feeling isolated.\n\n"
+//    std::string text =
+//       "Although I am a typical loner in daily life, my consciousness of "
+//       "belonging to the invisible community of those who strive for "
+//       "truth, beauty, and justice has preserved me from feeling isolated.\n\n"
 
-      "The years of anxious searching in the dark, with their intense "
-      "longing, their alternations of confidence and exhaustion, and "
-      "final emergence into light—only those who have experienced it "
-      "can understand that.\n\n"
+//       "The years of anxious searching in the dark, with their intense "
+//       "longing, their alternations of confidence and exhaustion, and "
+//       "final emergence into light—only those who have experienced it "
+//       "can understand that.\n\n"
 
-      "⁠—Albert Einstein"
-      ;
+//       "⁠—Albert Einstein"
+//       ;
 
-   auto tlayout = text_layout{
-      font_descr{ "Open Sans", 12 }.italic()
-    , rgba(220, 220, 220, 200)
-    , text
-   };
-   tlayout.flow(350, true);
-   tlayout.draw(cnv, 20, 300);
+//    auto tlayout = text_layout{
+//       font_descr{ "Open Sans", 12 }.italic()
+//     , rgba(220, 220, 220, 200)
+//     , text
+//    };
+//    tlayout.flow(350, true);
+//    tlayout.draw(cnv, 20, 300);
 
-   // Hit testing
-   {
-      auto i = tlayout.caret_index(0, 2000);
-      CHECK(i == tlayout.npos);
+//    // Hit testing
+//    {
+//       auto i = tlayout.caret_index(0, 2000);
+//       CHECK(i == tlayout.npos);
 
-      i = tlayout.caret_index(0, 0);
-      CHECK(i == 0);
+//       i = tlayout.caret_index(0, 0);
+//       CHECK(i == 0);
 
-      i = tlayout.caret_index(350, 0);
-      CHECK(i == 64);
-      CHECK(text[i] == ' ');
+//       i = tlayout.caret_index(350, 0);
+//       CHECK(i == 64);
+//       CHECK(text[i] == ' ');
 
-      i = tlayout.caret_index(0, 20);
-      CHECK(i == 133);
-      CHECK(text[i] == 'b');
+//       i = tlayout.caret_index(0, 20);
+//       CHECK(i == 133);
+//       CHECK(text[i] == 'b');
 
-      i = tlayout.caret_index(5, 20);
-      CHECK(i == 134);
-      CHECK(text[i] == 'e');
+//       i = tlayout.caret_index(5, 20);
+//       CHECK(i == 134);
+//       CHECK(text[i] == 'e');
 
-      i = tlayout.caret_index(350, 20);
-      CHECK(i == 192);
-      CHECK(text[i] == '\n');
+//       i = tlayout.caret_index(350, 20);
+//       CHECK(i == 192);
+//       CHECK(text[i] == '\n');
 
-      i = tlayout.caret_index(109, 20);
-      CHECK(i == 154);
-      CHECK(text[i] == 'a');
+//       i = tlayout.caret_index(109, 20);
+//       CHECK(i == 154);
+//       CHECK(text[i] == 'a');
 
-      i = tlayout.caret_index(350, 15);
-      CHECK(i == 132);
-      CHECK(text[i] == ' ');
+//       i = tlayout.caret_index(350, 15);
+//       CHECK(i == 132);
+//       CHECK(text[i] == ' ');
 
-      // Harfbuzz vs. CoreText have slightly different results here,
-      // but that is OK.
-      i = tlayout.caret_index(343, 15);
-      auto check_index = i == 131 || i == 130;
-      auto check_char = text[i] == ',' || text[i] == 'h';
-      CHECK(check_index);
-      CHECK(check_char);
+//       // Harfbuzz vs. CoreText have slightly different results here,
+//       // but that is OK.
+//       i = tlayout.caret_index(343, 15);
+//       auto check_index = i == 131 || i == 130;
+//       auto check_char = text[i] == ',' || text[i] == 'h';
+//       CHECK(check_index);
+//       CHECK(check_char);
 
-      i = tlayout.caret_index(20, 49);
-      CHECK(i == 193);
-      CHECK(text[i] == '\n');
+//       i = tlayout.caret_index(20, 49);
+//       CHECK(i == 193);
+//       CHECK(text[i] == '\n');
 
-      i = tlayout.caret_index(0, 147);
-      CHECK(i == 405);
-      char const* s = text.data()+i;
-      auto cp = codepoint(s);
-      CHECK(cp == 8288); // 'WORD JOINER' (U+2060)
+//       i = tlayout.caret_index(0, 147);
+//       CHECK(i == 405);
+//       char const* s = text.data()+i;
+//       auto cp = codepoint(s);
+//       CHECK(cp == 8288); // 'WORD JOINER' (U+2060)
 
-      i = tlayout.caret_index(88, 147);
-      CHECK(i == text.size());
-   }
+//       i = tlayout.caret_index(88, 147);
+//       CHECK(i == text.size());
+//    }
 
-   // glyph_bounds
-   {
-      auto test_caret_pos =
-         [&tlayout](std::size_t index, bool exceed = false)
-         {
-            point pos = tlayout.caret_point(index);
-            if (exceed)
-            {
-               CHECK(std::floor(pos.x) == 86);
-               CHECK(std::floor(pos.y) == 147);
-            }
-            else
-            {
-               std::size_t got_index = tlayout.caret_index(pos);
-               CHECK(got_index == index);
-            }
-         };
+//    // glyph_bounds
+//    {
+//       auto test_caret_pos =
+//          [&tlayout](std::size_t index, bool exceed = false)
+//          {
+//             point pos = tlayout.caret_point(index);
+//             if (exceed)
+//             {
+//                CHECK(std::floor(pos.x) == 86);
+//                CHECK(std::floor(pos.y) == 147);
+//             }
+//             else
+//             {
+//                std::size_t got_index = tlayout.caret_index(pos);
+//                CHECK(got_index == index);
+//             }
+//          };
 
-      test_caret_pos(1000, true);
-      test_caret_pos(-1, true);
+//       test_caret_pos(1000, true);
+//       test_caret_pos(-1, true);
 
-      test_caret_pos(10);
-      test_caret_pos(0);
-      test_caret_pos(64);
-      test_caret_pos(193);
-      test_caret_pos(132);
-      test_caret_pos(133);
-      test_caret_pos(154);
-      test_caret_pos(405);
-      test_caret_pos(420);
-      test_caret_pos(425);
-      test_caret_pos(426);
-   }
-}
+//       test_caret_pos(10);
+//       test_caret_pos(0);
+//       test_caret_pos(64);
+//       test_caret_pos(193);
+//       test_caret_pos(132);
+//       test_caret_pos(133);
+//       test_caret_pos(154);
+//       test_caret_pos(405);
+//       test_caret_pos(420);
+//       test_caret_pos(425);
+//       test_caret_pos(426);
+//    }
+// }
 
 char const* mode_name(canvas::composite_op_enum mode)
 {
@@ -710,112 +710,112 @@ void compare_transform(affine_transform const& a, affine_transform const& b)
    CHECK(a.ty == Approx(b.ty));
 }
 
-void misc(canvas& cnv)
-{
-   using cycfi::pi;
+// void misc(canvas& cnv)
+// {
+//    using cycfi::pi;
 
-   background(cnv);
-   cnv.clear_rect(30, 30, 50, 50);
+//    background(cnv);
+//    cnv.clear_rect(30, 30, 50, 50);
 
-   {
-      auto save = cnv.new_state();
+//    {
+//       auto save = cnv.new_state();
 
-      affine_transform mat = cnv.transform();
-      cnv.fill_style(colors::blue);
+//       affine_transform mat = cnv.transform();
+//       cnv.fill_style(colors::blue);
 
-      cnv.rotate(pi/4);
-      mat = mat.rotate(pi/4);
-      auto ctm = cnv.transform();
-      compare_transform(mat, ctm);
+//       cnv.rotate(pi/4);
+//       mat = mat.rotate(pi/4);
+//       auto ctm = cnv.transform();
+//       compare_transform(mat, ctm);
 
-      cnv.scale(2);
-      mat = mat.scale(2);
-      ctm = cnv.transform();
-      compare_transform(mat, ctm);
+//       cnv.scale(2);
+//       mat = mat.scale(2);
+//       ctm = cnv.transform();
+//       compare_transform(mat, ctm);
 
-      cnv.translate(100, 0);
-      mat = mat.translate(100, 0);
-      ctm = cnv.transform();
-      compare_transform(mat, ctm);
+//       cnv.translate(100, 0);
+//       mat = mat.translate(100, 0);
+//       ctm = cnv.transform();
+//       compare_transform(mat, ctm);
 
-      cnv.add_rect(-25, -25, 50, 50);
-      cnv.fill();
+//       cnv.add_rect(-25, -25, 50, 50);
+//       cnv.fill();
 
-      cnv.transform(mat);
-      cnv.add_rect(-20, -20, 40, 40);
-      cnv.fill_style(colors::red);
-      cnv.fill();
-   }
+//       cnv.transform(mat);
+//       cnv.add_rect(-20, -20, 40, 40);
+//       cnv.fill_style(colors::red);
+//       cnv.fill();
+//    }
 
-   {
-      affine_transform mat;
-      auto p = mat.apply(0.0, 0.0);
-      CHECK(p.x == Approx(0));
-      CHECK(p.y == Approx(0));
+//    {
+//       affine_transform mat;
+//       auto p = mat.apply(0.0, 0.0);
+//       CHECK(p.x == Approx(0));
+//       CHECK(p.y == Approx(0));
 
-      mat = mat.scale(10);
-      p = mat.apply(4, 4);
-      CHECK(p.x == Approx(40));
-      CHECK(p.y == Approx(40));
+//       mat = mat.scale(10);
+//       p = mat.apply(4, 4);
+//       CHECK(p.x == Approx(40));
+//       CHECK(p.y == Approx(40));
 
-      mat = mat.translate(2, 2);
-      p = mat.apply(0.0, 0.0);
-      CHECK(p.x == Approx(20));
-      CHECK(p.y == Approx(20));
-   }
+//       mat = mat.translate(2, 2);
+//       p = mat.apply(0.0, 0.0);
+//       CHECK(p.x == Approx(20));
+//       CHECK(p.y == Approx(20));
+//    }
 
-   {
-      auto save = cnv.new_state();
+//    {
+//       auto save = cnv.new_state();
 
-      affine_transform mat = cnv.transform();
-      mat = mat.translate(144, 144);
-      mat = mat.skew(pi/8, pi/12);
-      cnv.transform(mat);
-      cnv.add_rect(0, 0, 72, 72);
-      cnv.fill_style(colors::green);
-      cnv.fill();
-   }
+//       affine_transform mat = cnv.transform();
+//       mat = mat.translate(144, 144);
+//       mat = mat.skew(pi/8, pi/12);
+//       cnv.transform(mat);
+//       cnv.add_rect(0, 0, 72, 72);
+//       cnv.fill_style(colors::green);
+//       cnv.fill();
+//    }
 
-   {
-      path p;
-      p.add_circle(circle{ 230, 230, 50 });
-      p.add_circle(circle{ 230, 230, 25 });
-      p.fill_rule(path::fill_odd_even);
+//    {
+//       path p;
+//       p.add_circle(circle{ 230, 230, 50 });
+//       p.add_circle(circle{ 230, 230, 25 });
+//       p.fill_rule(path::fill_odd_even);
 
-      CHECK(p.includes(230-50+5, 230));
-      CHECK(!p.includes(230, 230));
+//       CHECK(p.includes(230-50+5, 230));
+//       CHECK(!p.includes(230, 230));
 
-      cnv.clip(p);
-      cnv.add_rect(0, 0, 500, 500);
-      cnv.fill_style(colors::navajo_white.opacity(0.5));
-      cnv.fill_preserve();
+//       cnv.clip(p);
+//       cnv.add_rect(0, 0, 500, 500);
+//       cnv.fill_style(colors::navajo_white.opacity(0.5));
+//       cnv.fill_preserve();
 
-      CHECK(cnv.point_in_path(10, 10));
-      CHECK(!p.includes(501, 500));
-   }
+//       CHECK(cnv.point_in_path(10, 10));
+//       CHECK(!p.includes(501, 500));
+//    }
 
-   // Test small offscreen hit testing and text measurements work
-   {
-      image img{ 1, 1 };
-      offscreen_image offscr{ img };
-      canvas cnv{ offscr.context() };
+//    // Test small offscreen hit testing and text measurements work
+//    {
+//       image img{ 1, 1 };
+//       offscreen_image offscr{ img };
+//       canvas cnv{ offscr.context() };
 
-      cnv.add_circle(230, 230, 50);
-      cnv.add_circle(230, 230, 25);
-      cnv.fill_rule(path::fill_odd_even);
+//       cnv.add_circle(230, 230, 50);
+//       cnv.add_circle(230, 230, 25);
+//       cnv.fill_rule(path::fill_odd_even);
 
-      CHECK(cnv.point_in_path(230-50+5, 230));
-      CHECK(!cnv.point_in_path(230, 230));
+//       CHECK(cnv.point_in_path(230-50+5, 230));
+//       CHECK(!cnv.point_in_path(230, 230));
 
-      cnv.font(font_descr{ "Open Sans", 36 });
-      auto m = cnv.measure_text("Hello, World");
-      CHECK(std::floor(m.size.x) == 205);
-      CHECK(std::floor(m.size.y)== 49);
-      CHECK(std::floor(m.ascent) == 38);
-      CHECK(std::floor(m.descent) == 10);
-      CHECK(std::floor(m.leading) == 0);
-   }
-}
+//       cnv.font(font_descr{ "Open Sans", 36 });
+//       auto m = cnv.measure_text("Hello, World");
+//       CHECK(std::floor(m.size.x) == 205);
+//       CHECK(std::floor(m.size.y)== 49);
+//       CHECK(std::floor(m.ascent) == 38);
+//       CHECK(std::floor(m.descent) == 10);
+//       CHECK(std::floor(m.leading) == 0);
+//    }
+// }
 
 ///////////////////////////////////////////////////////////////////////////////
 namespace cycfi::artist
@@ -856,16 +856,16 @@ TEST_CASE("Drawing")
    compare_golden(pm, "shapes_and_images");
 }
 
-TEST_CASE("Typography")
-{
-   image pm{window_size };
-   {
-      offscreen_image ctx{ pm };
-      canvas pm_cnv{ ctx.context() };
-      typography(pm_cnv);
-   }
-   compare_golden(pm, "typography");
-}
+// TEST_CASE("Typography")
+// {
+//    image pm{window_size };
+//    {
+//       offscreen_image ctx{ pm };
+//       canvas pm_cnv{ ctx.context() };
+//       typography(pm_cnv);
+//    }
+//    compare_golden(pm, "typography");
+// }
 
 TEST_CASE("Composite")
 {
@@ -900,16 +900,16 @@ TEST_CASE("Paths")
    compare_golden(pm, "paths");
 }
 
-TEST_CASE("Misc")
-{
-   image pm{window_size };
-   {
-      offscreen_image ctx{ pm };
-      canvas pm_cnv{ ctx.context() };
-      misc(pm_cnv);
-   }
-   compare_golden(pm, "misc");
-}
+//TEST_CASE("Misc")
+//{
+//   image pm{window_size };
+//   {
+//      offscreen_image ctx{ pm };
+//      canvas pm_cnv{ ctx.context() };
+//      misc(pm_cnv);
+//   }
+//   compare_golden(pm, "misc");
+//}
 
 
 

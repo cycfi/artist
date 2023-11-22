@@ -155,7 +155,7 @@ set(composite_ops_images
 )
 
 add_example(shapes)
-add_example(typography)
+# add_example(typography)
 add_example(rain)
 add_example(tauri)
 add_example(space)
