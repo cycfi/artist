@@ -55,5 +55,5 @@ peer-reviewed, Open Source, collaborative development effort.
 
 -------------------------------------------------------------------------------
 
-*Copyright (c) 2014-2020 Joel de Guzman. All rights reserved.*
+*Copyright (c) 2014-2023 Joel de Guzman. All rights reserved.*
 *Distributed under the [MIT License](https://opensource.org/licenses/MIT)*

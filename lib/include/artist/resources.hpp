@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -23,6 +23,8 @@ namespace cycfi::artist
    // Search for a file using the resource_paths. Returns an empty
    // path if file is not found.
    fs::path find_file(fs::path const& file);
+
+   fs::path find_directory(fs::path const& dir);
 
    // init_paths is called only one time. Platform specific implementations
    // provide their own init_paths function. It's main purpose is to set the

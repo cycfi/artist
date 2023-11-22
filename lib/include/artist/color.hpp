@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -144,7 +144,7 @@ namespace cycfi::artist
                break;
          }
       }
-      return { r, g, b, 1.0f };
+      return {r, g, b, 1.0f};
    }
 
    constexpr bool operator==(color const& a, color const& b)
@@ -164,7 +164,7 @@ namespace cycfi::artist
 
    constexpr color color::opacity(float alpha_) const
    {
-      return { red, green, blue, alpha_ };
+      return {red, green, blue, alpha_};
    }
 
    constexpr color color::level(float amount) const

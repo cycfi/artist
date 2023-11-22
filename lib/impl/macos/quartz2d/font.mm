@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -55,7 +55,7 @@ namespace cycfi::artist
       else if (descr._stretch >= expanded)
          style |= NSExpandedFontMask;
 
-      std::istringstream str(std::string{ descr._families });
+      std::istringstream str(std::string{descr._families});
       std::string family;
       auto font_manager = [NSFontManager sharedFontManager];
 
@@ -135,7 +135,7 @@ namespace cycfi::artist
    float font::measure_text(std::string_view str) const
    {
       NSFont* font = (__bridge NSFont*) _ptr;
-      NSDictionary* attr = @{ NSFontAttributeName : font };
+      NSDictionary* attr = @{NSFontAttributeName : font};
       NSString* text = detail::ns_string(str);
       const auto textSize = [text sizeWithAttributes : attr];
       return textSize.width;

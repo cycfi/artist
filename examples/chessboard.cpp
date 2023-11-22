@@ -49,7 +49,7 @@ void draw(canvas& cnv)
       }
    }
 
-   auto img = make_image<pixel_format::rgba32>(pix_buf.get(), { window_size.x, window_size.y });
+   auto img = make_image<pixel_format::rgba32>(pix_buf.get(), {window_size.x, window_size.y});
    cnv.draw(img);
 }
 

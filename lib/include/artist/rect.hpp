@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -152,7 +152,7 @@ namespace cycfi::artist
 
    constexpr extent rect::size() const
    {
-      return { width(), height() };
+      return {width(), height()};
    }
 
    constexpr void rect::size(extent size_)
@@ -163,22 +163,22 @@ namespace cycfi::artist
 
    constexpr point rect::top_left() const
    {
-      return { left, top };
+      return {left, top};
    }
 
    constexpr point rect::bottom_right() const
    {
-      return { right, bottom };
+      return {right, bottom};
    }
 
    constexpr point rect::top_right() const
    {
-      return { right, top };
+      return {right, top};
    }
 
    constexpr point rect::bottom_left() const
    {
-      return { left, bottom };
+      return {left, bottom};
    }
 
    constexpr rect rect::move(float dx, float dy) const
@@ -227,7 +227,7 @@ namespace cycfi::artist
 
    constexpr point center_point(rect const& r)
    {
-      return { r.left + (r.width() / 2.0f), r.top + (r.height() / 2.0f) };
+      return {r.left + (r.width() / 2.0f), r.top + (r.height() / 2.0f)};
    }
 
    constexpr float area(rect const& r)

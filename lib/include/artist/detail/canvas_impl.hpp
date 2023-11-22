@@ -1,5 +1,5 @@
 /*=============================================================================
-   Copyright (c) 2016-2020 Joel de Guzman
+   Copyright (c) 2016-2023 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
@@ -35,37 +35,37 @@ namespace cycfi::artist
 
    inline void canvas::translate(float x, float y)
    {
-      translate({ x, y });
+      translate({x, y});
    }
 
    inline void canvas::scale(float x, float y)
    {
-      scale({ x, y });
+      scale({x, y});
    }
 
    inline void canvas::scale(float xy)
    {
-      scale({ xy, xy });
+      scale({xy, xy});
    }
 
    inline point canvas::device_to_user(float x, float y)
    {
-      return device_to_user({ x, y });
+      return device_to_user({x, y});
    }
 
    inline point canvas::user_to_device(float x, float y)
    {
-      return user_to_device({ x, y });
+      return user_to_device({x, y});
    }
 
    inline void canvas::move_to(float x, float y)
    {
-      move_to({ x, y });
+      move_to({x, y});
    }
 
    inline void canvas::line_to(float x, float y)
    {
-      line_to({ x, y });
+      line_to({x, y});
    }
 
    inline void canvas::arc_to(
@@ -73,7 +73,7 @@ namespace cycfi::artist
       float x2, float y2,
       float radius)
    {
-      arc_to({ x1, y1 }, { x2, y2 }, radius);
+      arc_to({x1, y1}, {x2, y2}, radius);
    }
 
    inline void canvas::arc(
@@ -81,12 +81,12 @@ namespace cycfi::artist
       float start_angle, float end_angle,
       bool ccw)
    {
-      arc({ x, y }, radius, start_angle, end_angle, ccw);
+      arc({x, y}, radius, start_angle, end_angle, ccw);
    }
 
    inline void canvas::add_rect(float x, float y, float width, float height)
    {
-      add_rect({ x, y, extent{ width, height } });
+      add_rect({x, y, extent{width, height}});
    }
 
    inline void canvas::add_round_rect(const rect& r, float radius)
@@ -100,22 +100,22 @@ namespace cycfi::artist
       float width, float height,
       float radius)
    {
-      add_round_rect({ x, y, extent{ width, height } }, radius);
+      add_round_rect({x, y, extent{width, height}}, radius);
    }
 
    inline void canvas::add_circle(float cx, float cy, float radius)
    {
-      add_circle({ cx, cy, radius });
+      add_circle({cx, cy, radius});
    }
 
    inline void canvas::clear_rect(float x, float y, float width, float height)
    {
-      clear_rect({ x, y, extent{ width, height } });
+      clear_rect({x, y, extent{width, height}});
    }
 
    inline void canvas::quadratic_curve_to(float cpx, float cpy, float x, float y)
    {
-      quadratic_curve_to({ cpx, cpy }, { x, y });
+      quadratic_curve_to({cpx, cpy}, {x, y});
    }
 
    inline void canvas::bezier_curve_to(
@@ -123,13 +123,13 @@ namespace cycfi::artist
       float cp2x, float cp2y,
       float x, float y)
    {
-      bezier_curve_to({ cp1x, cp1y }, { cp2x, cp2y }, { x, y });
+      bezier_curve_to({cp1x, cp1y}, {cp2x, cp2y}, {x, y});
    }
 
 #if !defined(ARTIST_SKIA)
-   inline void canvas::add_circle(circle const& c)
+   inline void canvas::add_circle(struct circle const& c)
    {
-      arc(point{ c.cx, c.cy }, c.radius, 0.0, 2 * pi);
+      arc(point{c.cx, c.cy}, c.radius, 0.0, 2 * pi);
    }
 #endif
 
@@ -145,7 +145,7 @@ namespace cycfi::artist
 
    inline void canvas::shadow_style(float blur, color c)
    {
-      shadow_style({ 0.0f, 0.0f }, blur, c);
+      shadow_style({0.0f, 0.0f}, blur, c);
    }
 
    inline void canvas::gradient::add_color_stop(color_stop cs)
@@ -155,7 +155,7 @@ namespace cycfi::artist
 
    inline void canvas::gradient::add_color_stop(float offset, struct color color_)
    {
-      color_space.push_back({ offset, color_ });
+      color_space.push_back({offset, color_});
    }
 
    inline void canvas::fill_rect(rect const& r)
@@ -184,37 +184,37 @@ namespace cycfi::artist
 
    inline void canvas::fill_rect(float x, float y, float width, float height)
    {
-      fill_rect({ x, y, extent{ width, height } });
+      fill_rect({x, y, extent{width, height}});
    }
 
    inline void canvas::fill_round_rect(float x, float y, float width, float height, float radius)
    {
-      fill_round_rect({ x, y, extent{ width, height } }, radius);
+      fill_round_rect({x, y, extent{width, height}}, radius);
    }
 
    inline void canvas::stroke_rect(float x, float y, float width, float height)
    {
-      stroke_rect({ x, y, extent{ width, height } });
+      stroke_rect({x, y, extent{width, height}});
    }
 
    inline void canvas::stroke_round_rect(float x, float y, float width, float height, float radius)
    {
-      stroke_round_rect({ x, y, extent{ width, height } }, radius);
+      stroke_round_rect({x, y, extent{width, height}}, radius);
    }
 
    inline void canvas::fill_text(std::string_view utf8, float x, float y)
    {
-      fill_text(utf8, { x, y });
+      fill_text(utf8, {x, y});
    }
 
    inline void canvas::stroke_text(std::string_view utf8, float x, float y)
    {
-      stroke_text(utf8, { x, y });
+      stroke_text(utf8, {x, y});
    }
 
    inline void canvas::shadow_style(float offsetx, float offsety, float blur, color c)
    {
-      shadow_style({ offsetx, offsety }, blur, c);
+      shadow_style({offsetx, offsety}, blur, c);
    }
 
    inline void canvas::composite_op(composite_op_enum mode)
@@ -224,29 +224,29 @@ namespace cycfi::artist
 
    inline void canvas::draw(image const& pic, rect const& dest)
    {
-      draw(pic, { 0, 0, pic.size() }, dest);
+      draw(pic, {0, 0, pic.size()}, dest);
    }
 
    inline void canvas::draw(image const& pic, point pos)
    {
-      draw(pic, { 0, 0, pic.size() }, { pos, pic.size() });
+      draw(pic, {0, 0, pic.size()}, {pos, pic.size()});
    }
 
    inline void canvas::draw(image const& pic, point pos, float scale)
    {
       auto size = pic.size();
-      auto scaled = extent{ size.x*scale, size.y*scale };
-      draw(pic, { 0, 0, size }, {pos, scaled });
+      auto scaled = extent{size.x*scale, size.y*scale};
+      draw(pic, {0, 0, size}, {pos, scaled});
    }
 
    inline void canvas::draw(image const& pic, float posx, float posy)
    {
-      draw(pic, { posx, posy });
+      draw(pic, {posx, posy});
    }
 
    inline void canvas::draw(image const& pic, float posx, float posy, float scale)
    {
-      draw(pic, { posx, posy }, scale);
+      draw(pic, {posx, posy}, scale);
    }
 
    inline canvas::state::state(canvas& cnv_)
