@@ -567,7 +567,7 @@ void composite_draw(canvas& cnv, point p, canvas::composite_op_enum mode)
 
    {
       auto save = cnv.new_state();
-      image pm{110, 11};
+      image pm{110, 110};
       {
          offscreen_image ctx{pm};
          canvas pm_cnv{ctx.context()};
