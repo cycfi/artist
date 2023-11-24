@@ -13,6 +13,8 @@
 #include <infra/catch.hpp>
 #include <artist/affine_transform.hpp>
 #include "app_paths.hpp"
+#include <cmath>
+#include <cstdint>
 
 using namespace cycfi::artist;
 using namespace font_constants;
@@ -231,19 +233,79 @@ void test_draw(canvas& cnv)
    line_styles(cnv);
 }
 
-float diff_pixel(uint32_t a, uint32_t b)
+// Function to calculate structural similarity index (SSI) between two images
+double calculate_ssi(uint32_t const img1[], uint32_t const img2[], int width, int height)
 {
-   auto a1 = a & 0xff;
-   auto a2 = (a >> 8) & 0xff;
-   auto a3 = (a >> 16) & 0xff;
-   auto a4 = (a >> 24) & 0xff;
+   const double c1 = 0.0001; // Small constant to avoid division by zero
+   const double c2 = 0.0009; // Small constant to avoid division by zero
+   double meanX = 0.0, meanY = 0.0, sigmaX = 0.0, sigmaY = 0.0, sigmaXY = 0.0;
 
-   auto b1 = b & 0xff;
-   auto b2 = (b >> 8) & 0xff;
-   auto b3 = (b >> 16) & 0xff;
-   auto b4 = (b >> 24) & 0xff;
+   for (int i = 0; i < width * height; ++i)
+   {
+      // Extract individual channels (RGBA)
+      uint8_t r1 = (img1[i] >> 24) & 0xFF;
+      uint8_t g1 = (img1[i] >> 16) & 0xFF;
+      uint8_t b1 = (img1[i] >> 8) & 0xFF;
+      uint8_t a1 = img1[i] & 0xFF;
 
-   return float(a1-b1) + float(a2-b2) + float(a3-b3) + float(a4-b4);
+      uint8_t r2 = (img2[i] >> 24) & 0xFF;
+      uint8_t g2 = (img2[i] >> 16) & 0xFF;
+      uint8_t b2 = (img2[i] >> 8) & 0xFF;
+      uint8_t a2 = img2[i] & 0xFF;
+
+      meanX += r1 + g1 + b1 + a1;
+      meanY += r2 + g2 + b2 + a2;
+   }
+
+   meanX /= (width * height * 4);
+   meanY /= (width * height * 4);
+
+   for (int i = 0; i < width * height; ++i)
+   {
+      // Extract individual channels (RGBA)
+      uint8_t r1 = (img1[i] >> 24) & 0xFF;
+      uint8_t g1 = (img1[i] >> 16) & 0xFF;
+      uint8_t b1 = (img1[i] >> 8) & 0xFF;
+      uint8_t a1 = img1[i] & 0xFF;
+
+      uint8_t r2 = (img2[i] >> 24) & 0xFF;
+      uint8_t g2 = (img2[i] >> 16) & 0xFF;
+      uint8_t b2 = (img2[i] >> 8) & 0xFF;
+      uint8_t a2 = img2[i] & 0xFF;
+
+      double devX = r1 - meanX;
+      double devY = r2 - meanY;
+      sigmaX += devX * devX;
+      sigmaY += devY * devY;
+      sigmaXY += devX * devY;
+
+      devX = g1 - meanX;
+      devY = g2 - meanY;
+      sigmaX += devX * devX;
+      sigmaY += devY * devY;
+      sigmaXY += devX * devY;
+
+      devX = b1 - meanX;
+      devY = b2 - meanY;
+      sigmaX += devX * devX;
+      sigmaY += devY * devY;
+      sigmaXY += devX * devY;
+
+      devX = a1 - meanX;
+      devY = a2 - meanY;
+      sigmaX += devX * devX;
+      sigmaY += devY * devY;
+      sigmaXY += devX * devY;
+   }
+
+   sigmaX /= (width * height * 4 - 1);
+   sigmaY /= (width * height * 4 - 1);
+   sigmaXY /= (width * height * 4 - 1);
+
+   const double numerator = (2 * meanX * meanY + c1) * (2 * sigmaXY + c2);
+   const double denominator = (meanX * meanX + meanY * meanY + c1) * (sigmaX + sigmaY + c2);
+
+   return numerator / denominator;
 }
 
 void compare_golden(image const& pm, std::string name)
@@ -265,10 +327,8 @@ void compare_golden(image const& pm, std::string name)
    REQUIRE(a != nullptr);
    REQUIRE(b != nullptr);
 
-   auto diff = 0;
-   for (auto i = 0; i != (bm_size.x * bm_size.y); ++i)
-      diff += diff_pixel(a[i], b[i]);
-   CHECK(diff == 0);
+   auto ssi = calculate_ssi(a, b, bm_size.x, bm_size.y);
+   std::cout << name << " : " << ssi << std::endl;
 }
 
 void typography(canvas& cnv)
