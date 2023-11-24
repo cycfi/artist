@@ -335,7 +335,7 @@ void typography(canvas& cnv)
       cnv.stroke_text("Outline Gradient", 20, 190);
    }
 
-#if defined(__APPLE__) // CoreText supports ligatures right out of the box, but only for some fonts
+#if defined(ARTIST_QUARTZ_2D) // CoreText supports ligatures right out of the box, but only for some fonts
    cnv.font(font_descr{"Lucida Grande", 52}.bold());
 #else
    cnv.font(font_descr{"Open Sans", 52}.bold());
@@ -860,6 +860,9 @@ TEST_CASE("Typography")
    {
       offscreen_image ctx{pm};
       canvas pm_cnv{ctx.context()};
+
+      auto p = pm_cnv.device_to_user(100, 100);
+
       typography(pm_cnv);
    }
    compare_golden(pm, "typography");
