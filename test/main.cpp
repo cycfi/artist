@@ -233,77 +233,80 @@ void test_draw(canvas& cnv)
    line_styles(cnv);
 }
 
+// Function to extract RGBA values with generic component names Note: Using
+// generic names (x, y, z, w) to make the code agnostic about the order of
+// components within uint32_t values.
+void extract_rgba(uint32_t pixel, uint8_t& x, uint8_t& y, uint8_t& z, uint8_t& w)
+{
+   x = (pixel >> 24) & 0xFF;
+   y = (pixel >> 16) & 0xFF;
+   z = (pixel >> 8) & 0xFF;
+   w = pixel & 0xFF;
+}
+
 // Function to calculate structural similarity index (SSI) between two images
-double calculate_ssi(uint32_t const img1[], uint32_t const img2[], int width, int height)
+double calculate_ssi(uint32_t const  img1[], uint32_t const img2[], int const width, int const height)
 {
    const double c1 = 0.0001; // Small constant to avoid division by zero
    const double c2 = 0.0009; // Small constant to avoid division by zero
-   double meanX = 0.0, meanY = 0.0, sigmaX = 0.0, sigmaY = 0.0, sigmaXY = 0.0;
+   double mean_x = 0.0, mean_y = 0.0, sigma_x = 0.0, sigma_y = 0.0, sigma_xy = 0.0;
 
    for (int i = 0; i < width * height; ++i)
    {
-      // Extract individual channels (RGBA)
-      uint8_t r1 = (img1[i] >> 24) & 0xFF;
-      uint8_t g1 = (img1[i] >> 16) & 0xFF;
-      uint8_t b1 = (img1[i] >> 8) & 0xFF;
-      uint8_t a1 = img1[i] & 0xFF;
+      // Extract individual components using generic names x, y, z, w
+      uint8_t x1, y1, z1, w1;
+      uint8_t x2, y2, z2, w2;
 
-      uint8_t r2 = (img2[i] >> 24) & 0xFF;
-      uint8_t g2 = (img2[i] >> 16) & 0xFF;
-      uint8_t b2 = (img2[i] >> 8) & 0xFF;
-      uint8_t a2 = img2[i] & 0xFF;
+      extract_rgba(img1[i], x1, y1, z1, w1);
+      extract_rgba(img2[i], x2, y2, z2, w2);
 
-      meanX += r1 + g1 + b1 + a1;
-      meanY += r2 + g2 + b2 + a2;
+      mean_x += x1 + y1 + z1 + w1;
+      mean_y += x2 + y2 + z2 + w2;
    }
 
-   meanX /= (width * height * 4);
-   meanY /= (width * height * 4);
+   mean_x /= (width * height * 4);
+   mean_y /= (width * height * 4);
 
    for (int i = 0; i < width * height; ++i)
    {
-      // Extract individual channels (RGBA)
-      uint8_t r1 = (img1[i] >> 24) & 0xFF;
-      uint8_t g1 = (img1[i] >> 16) & 0xFF;
-      uint8_t b1 = (img1[i] >> 8) & 0xFF;
-      uint8_t a1 = img1[i] & 0xFF;
+      // Extract individual components using generic names x, y, z, w
+      uint8_t x1, y1, z1, w1;
+      uint8_t x2, y2, z2, w2;
 
-      uint8_t r2 = (img2[i] >> 24) & 0xFF;
-      uint8_t g2 = (img2[i] >> 16) & 0xFF;
-      uint8_t b2 = (img2[i] >> 8) & 0xFF;
-      uint8_t a2 = img2[i] & 0xFF;
+      extract_rgba(img1[i], x1, y1, z1, w1);
+      extract_rgba(img2[i], x2, y2, z2, w2);
 
-      double devX = r1 - meanX;
-      double devY = r2 - meanY;
-      sigmaX += devX * devX;
-      sigmaY += devY * devY;
-      sigmaXY += devX * devY;
+      double dev_x = x1 - mean_x;
+      double dev_y = x2 - mean_y;
+      sigma_x += dev_x * dev_x;
+      sigma_y += dev_y * dev_y;
+      sigma_xy += dev_x * dev_y;
 
-      devX = g1 - meanX;
-      devY = g2 - meanY;
-      sigmaX += devX * devX;
-      sigmaY += devY * devY;
-      sigmaXY += devX * devY;
+      dev_x = y1 - mean_x;
+      dev_y = y2 - mean_y;
+      sigma_x += dev_x * dev_x;
+      sigma_y += dev_y * dev_y;
+      sigma_xy += dev_x * dev_y;
 
-      devX = b1 - meanX;
-      devY = b2 - meanY;
-      sigmaX += devX * devX;
-      sigmaY += devY * devY;
-      sigmaXY += devX * devY;
+      dev_x = z1 - mean_x;
+      dev_y = z2 - mean_y;
+      sigma_x += dev_x * dev_x;
+      sigma_y += dev_y * dev_y;
+      sigma_xy += dev_x * dev_y;
 
-      devX = a1 - meanX;
-      devY = a2 - meanY;
-      sigmaX += devX * devX;
-      sigmaY += devY * devY;
-      sigmaXY += devX * devY;
+      dev_x = w1 - mean_x;
+      dev_y = w2 - mean_y;
+      sigma_x += dev_x * dev_x;
+      sigma_y += dev_y * dev_y;
+      sigma_xy += dev_x * dev_y;
    }
 
-   sigmaX /= (width * height * 4 - 1);
-   sigmaY /= (width * height * 4 - 1);
-   sigmaXY /= (width * height * 4 - 1);
+   sigma_x /= (width * height * 4 - 1);
+   sigma_y /= (width * height * 4 - 1);
+   sigma_xy /= (width * height * 4 - 1);
 
-   const double numerator = (2 * meanX * meanY + c1) * (2 * sigmaXY + c2);
-   const double denominator = (meanX * meanX + meanY * meanY + c1) * (sigmaX + sigmaY + c2);
+   const double numerator = (2 * mean_x * mean_y + c1) * (2 * sigma_xy + c2);
+   const double denominator = (mean_x * mean_x + mean_y * mean_y + c1) * (sigma_x + sigma_y + c2);
 
    return numerator / denominator;
 }
@@ -328,7 +331,8 @@ void compare_golden(image const& pm, std::string name)
    REQUIRE(b != nullptr);
 
    auto ssi = calculate_ssi(a, b, bm_size.x, bm_size.y);
-   std::cout << name << " : " << ssi << std::endl;
+   CHECK(ssi > 0.995);
+   std::cout << "SSI result for " << name << " : " << ssi << std::endl;
 }
 
 void typography(canvas& cnv)
