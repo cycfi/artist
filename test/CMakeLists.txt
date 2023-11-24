@@ -5,11 +5,16 @@
 ###############################################################################
 project(artist_test)
 
+file(
+   GLOB artist_fonts ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/*.*
+)
+
 if (APPLE)
 
    add_executable(
       artist_test MACOSX_BUNDLE
       main.cpp
+      ${artist_fonts}
    )
 
    if (ARTIST_QUARTZ_2D)
