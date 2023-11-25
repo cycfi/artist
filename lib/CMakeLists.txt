@@ -5,6 +5,8 @@
 ###############################################################################
 cmake_minimum_required(VERSION 3.7.2...3.15.0)
 
+cmake_policy(SET CMP0135 NEW)
+
 add_library(libunibreak
    external/libunibreak/src/emojidef.c
    external/libunibreak/src/graphemebreak.c
@@ -58,7 +60,7 @@ if (ARTIST_SKIA)
          BUILD_BYPRODUCTS ${SKIA_LIBRARY} ${HARFBUZZ_LIBRARY}
       )
 
-      find_package(opengl REQUIRED)
+      find_package(OpenGL REQUIRED)
 
       set(ARTIST_DEPEPENDENCIES
          "${SKIA_LIBRARY}"
@@ -84,7 +86,7 @@ if (ARTIST_SKIA)
          BUILD_BYPRODUCTS ${SKIA_LIBRARY} ${HARFBUZZ_LIBRARY} ${FONTCONFIG_LIBRARY}
       )
 
-      find_package(opengl REQUIRED)
+      find_package(OpenGL REQUIRED)
 
       set(ARTIST_DEPEPENDENCIES
          "${SKIA_LIBRARY}"
