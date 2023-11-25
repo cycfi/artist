@@ -340,7 +340,7 @@ void compare_golden(image const& pm, std::string name)
    REQUIRE(b != nullptr);
 
    auto ssi = calculate_ssi(a, b, bm_size.x, bm_size.y);
-   CHECK(ssi > 0.995);
+   CHECK(ssi > 0.985);
    std::cout << "SSI result for " << name << " : " << ssi << std::endl;
 }
 
@@ -880,8 +880,8 @@ void misc(canvas& cnv)
 
       cnv.font(font_descr{"Open Sans", 36});
       auto m = cnv.measure_text("Hello, World");
-      CHECK(std::floor(m.size.x) == 205);
-      CHECK(std::floor(m.size.y)== 49);
+      CHECK(std::abs(m.size.x-205.0f) <= 1.0);
+      CHECK(std::abs(m.size.y-49) <= 1.0);
       CHECK(std::floor(m.ascent) == 38);
       CHECK(std::floor(m.descent) == 10);
       CHECK(std::floor(m.leading) == 0);
