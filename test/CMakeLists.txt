@@ -157,3 +157,6 @@ add_definitions(
    -DFONTS_PATH="${CMAKE_CURRENT_BINARY_DIR}/resources/fonts/"
 )
 
+include(CTest)
+add_test(NAME artist_test COMMAND artist_test)
+
