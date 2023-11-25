@@ -11,11 +11,20 @@ file(
 
 if (APPLE)
 
-   add_executable(
-      artist_test MACOSX_BUNDLE
-      main.cpp
-      ${artist_fonts}
-   )
+   if (ARTIST_QUARTZ_2D)
+      add_executable(
+         artist_test MACOSX_BUNDLE
+         main.cpp
+         detail/osx_init.mm
+         ${artist_fonts}
+      )
+   else()
+      add_executable(
+         artist_test MACOSX_BUNDLE
+         main.cpp
+         ${artist_fonts}
+      )
+   endif()
 
    if (ARTIST_QUARTZ_2D)
       file(

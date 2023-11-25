@@ -23,6 +23,15 @@ using cycfi::codepoint;
 auto constexpr window_size = point{640.0f, 480.0f};
 auto constexpr bkd_color = rgba(54, 52, 55, 255);
 
+#if defined(ARTIST_QUARTZ_2D)
+   // Initialize the fonts and resources
+   struct resource_setter
+   {
+      resource_setter();
+   };
+   static resource_setter init_resources;
+#endif
+
 void background(canvas& cnv)
 {
    cnv.add_rect({{0, 0}, window_size});
