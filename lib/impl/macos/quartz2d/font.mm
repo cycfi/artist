@@ -9,6 +9,8 @@
 #include <sstream>
 #include <cmath>
 #include "osx_utils.hpp"
+#include <infra/assert.hpp>
+#include <artist/resources.hpp>
 
 namespace cycfi::artist
 {
