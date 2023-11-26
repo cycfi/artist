@@ -73,6 +73,13 @@ elseif (ARTIST_QUARTZ_2D AND APPLE)
    message(STATUS "Building Artist lib for MacOS with Quartz2D.")
 endif()
 
+if (APPLE)
+   if (NOT CMAKE_OSX_ARCHITECTURES)
+      set(CMAKE_OSX_ARCHITECTURES "arm64")
+   endif()
+   message(STATUS "Artist lib MacOS target processor: ${CMAKE_OSX_ARCHITECTURES}.")
+endif()
+
 add_subdirectory(lib)
 
 option(ARTIST_BUILD_EXAMPLES "build Artist library examples" ON)
