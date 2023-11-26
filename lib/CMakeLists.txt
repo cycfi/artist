@@ -49,22 +49,32 @@ if (ARTIST_SKIA)
       set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/macos/src/prebuilt_binaries)
       set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
       set(HARFBUZZ_LIBRARY ${ARTIST_BINARIES}/libharfbuzz.a)
+      set(PNG_LIBRARY ${ARTIST_BINARIES}/libthird_party__libpng.a)
+      set(ZLIB_LIBRARY ${ARTIST_BINARIES}/libthird_party__zlib.a)
+      set(WEBP_LIBRARY ${ARTIST_BINARIES}/libthird_party__libwebp.a)
+      set(WEBP_SSE_LIBRARY ${ARTIST_BINARIES}/libthird_party__libwebp_libwebp_sse41.a)
+      set(JPEG_LIBRARY ${ARTIST_BINARIES}/libthird_party__libjpeg-turbo_libjpeg.a)
 
-      ExternalProject_Add(prebuilt_binaries
-         PREFIX "macos"
-         URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/macos.zip
-         URL_MD5 66ffbf1c8272642bec4db4161f538b01
-         CONFIGURE_COMMAND ""
-         BUILD_COMMAND ""
-         INSTALL_COMMAND ""
-         BUILD_BYPRODUCTS ${SKIA_LIBRARY} ${HARFBUZZ_LIBRARY}
-      )
+      # ExternalProject_Add(prebuilt_binaries
+      #    PREFIX "macos"
+      #    URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/macos.zip
+      #    URL_MD5 66ffbf1c8272642bec4db4161f538b01
+      #    CONFIGURE_COMMAND ""
+      #    BUILD_COMMAND ""
+      #    INSTALL_COMMAND ""
+      #    BUILD_BYPRODUCTS ${SKIA_LIBRARY} ${HARFBUZZ_LIBRARY}
+      # )
 
       find_package(OpenGL REQUIRED)
 
       set(ARTIST_DEPEPENDENCIES
          "${SKIA_LIBRARY}"
          "${HARFBUZZ_LIBRARY}"
+         "${PNG_LIBRARY}"
+         "${ZLIB_LIBRARY}"
+         "${WEBP_LIBRARY}"
+         "${WEBP_SSE_LIBRARY}"
+         "${JPEG_LIBRARY}"
          PkgConfig::fontconfig
          ${OPENGL_LIBRARIES}
       )
@@ -167,11 +177,11 @@ if (ARTIST_SKIA)
 
    if (APPLE)
       set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
-         external/skia/src/GLWindowContext_mac.mm
+         external/skia/tools/sk_app/mac/GLWindowContext_mac.mm
       )
    elseif (MSVC)
       set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
-         external/skia/src/GLWindowContext_win.cpp
+         external/skia/tools/sk_app/win/GLWindowContext_win.cpp
       )
    endif()
 
@@ -182,7 +192,8 @@ if (ARTIST_SKIA)
       impl/skia/text_layout.cpp
       impl/skia/path.cpp
       impl/skia/detail/harfbuzz.cpp
-      external/skia/src/GLWindowContext.cpp
+      external/skia/tools/sk_app/GLWindowContext.cpp
+      external/skia/tools/sk_app/WindowContext.cpp
       ${ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT}
    )
 endif()
@@ -216,9 +227,9 @@ endif()
 
 add_dependencies(artist libunibreak)
 
-if (ARTIST_SKIA)
-   add_dependencies(artist prebuilt_binaries)
-endif()
+#if (ARTIST_SKIA)
+#   add_dependencies(artist prebuilt_binaries)
+#endif()
 
 target_sources(artist
    PRIVATE ${ARTIST_SOURCES} ${ARTIST_IMPL}
@@ -269,6 +280,14 @@ if (ARTIST_QUARTZ_2D)
    )
 endif()
 
+if (ARTIST_SKIA AND APPLE)
+   target_compile_definitions(
+      artist
+      PUBLIC
+        SK_GL
+   )
+endif()
+
 target_compile_features(artist PUBLIC cxx_std_17)
 
 if (IPO_SUPPORTED AND CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -297,7 +316,7 @@ if (APPLE)
    target_compile_definitions(artist PRIVATE
       ARTIST_CLASS_PREFIX=${ARTIST_CLASS_PREFIX}
    )
-   target_compile_options(artist PUBLIC "-fobjc-arc")
+   # target_compile_options(artist PUBLIC "-fobjc-arc")
 elseif (WIN32)
    target_compile_definitions(artist
       PUBLIC

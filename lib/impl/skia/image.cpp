@@ -151,7 +151,7 @@ namespace cycfi::artist
             }
             if constexpr(std::is_same_v<T, SkBitmap>)
             {
-               sk_canvas->drawBitmap(that, 0, 0);
+               sk_canvas->drawImage(that.asImage(), 0, 0);
             }
          };
 
