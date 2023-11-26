@@ -75,7 +75,7 @@ endif()
 
 if (APPLE)
    if (NOT CMAKE_OSX_ARCHITECTURES)
-      set(CMAKE_OSX_ARCHITECTURES "x86_64")
+      set(CMAKE_OSX_ARCHITECTURES ${CMAKE_SYSTEM_PROCESSOR})
    endif()
    if (${CMAKE_OSX_ARCHITECTURES} STREQUAL "arm64")
       message(STATUS "Artist lib MacOS target processor: arm64.")
