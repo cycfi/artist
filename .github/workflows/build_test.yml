@@ -114,6 +114,6 @@ jobs:
         endif()
 
     - name: Test
-      run: ctest --output-on-failure --test-dir build
+      run: ctest --verbose --test-dir build
       shell: bash
 
