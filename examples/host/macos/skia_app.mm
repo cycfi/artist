@@ -101,7 +101,6 @@ using skia_context = std::unique_ptr<sk_app::WindowContext>;
 - (void) dealloc
 {
    _task = nullptr;
-   [super dealloc];
 }
 
 - (void) start : (SkColor) bkd

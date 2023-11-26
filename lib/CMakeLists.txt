@@ -47,43 +47,36 @@ if (ARTIST_SKIA)
       pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
 
       if (${CMAKE_OSX_ARCHITECTURES} STREQUAL "arm64")
-         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/macos-arm64/src/prebuilt_binaries)
+         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/macos/arm64/src/prebuilt_binaries)
       elseif (${CMAKE_OSX_ARCHITECTURES} STREQUAL "x86_64")
-         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/macos-x86-64/src/prebuilt_binaries)
+         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/macos/x86-64/src/prebuilt_binaries)
       endif()
 
-      set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
-      set(HARFBUZZ_LIBRARY ${ARTIST_BINARIES}/libharfbuzz.a)
-      set(PNG_LIBRARY ${ARTIST_BINARIES}/libthird_party__libpng.a)
-      set(ZLIB_LIBRARY ${ARTIST_BINARIES}/libthird_party__zlib.a)
-      set(WEBP_LIBRARY ${ARTIST_BINARIES}/libthird_party__libwebp.a)
-      set(WEBP_SSE_LIBRARY ${ARTIST_BINARIES}/libthird_party__libwebp_libwebp_sse41.a)
-      set(JPEG_LIBRARY ${ARTIST_BINARIES}/libthird_party__libjpeg-turbo_libjpeg.a)
-      set(SKIA_SKCMS_LIBRARY ${ARTIST_BINARIES}/libmodules__skcms.a)
+      set(SKIA_LIBRARIES
+         ${ARTIST_BINARIES}/libskia.a
+         ${ARTIST_BINARIES}/libharfbuzz.a
+         ${ARTIST_BINARIES}/libthird_party__libpng.a
+         ${ARTIST_BINARIES}/libthird_party__zlib.a
+         ${ARTIST_BINARIES}/libthird_party__libwebp.a
+         ${ARTIST_BINARIES}/libthird_party__libwebp_libwebp_sse41.a
+         ${ARTIST_BINARIES}/libthird_party__libjpeg-turbo_libjpeg.a
+         ${ARTIST_BINARIES}/libmodules__skcms.a
+      )
 
       ExternalProject_Add(prebuilt_binaries
-         PREFIX "macos-arm64"
+         PREFIX "macos/arm64"
          URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/macos/skia/arm64/arm64.zip
          URL_MD5 5a8b2ef69844bdfff8f384538b63a962
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
          INSTALL_COMMAND ""
-         BUILD_BYPRODUCTS ${SKIA_LIBRARY} ${HARFBUZZ_LIBRARY} ${PNG_LIBRARY} ${ZLIB_LIBRARY} ${WEBP_LIBRARY} ${JPEG_LIBRARY} ${SKIA_SKCMS_LIBRARY}
-         LOG_DOWNLOAD ON      # Enable download logs
-         DOWNLOAD_NO_PROGRESS OFF  # Enable download progress display
+         BUILD_BYPRODUCTS ${SKIA_LIBRARIES}
       )
 
       find_package(OpenGL REQUIRED)
 
       set(ARTIST_DEPEPENDENCIES
-         "${SKIA_LIBRARY}"
-         "${HARFBUZZ_LIBRARY}"
-         "${PNG_LIBRARY}"
-         "${ZLIB_LIBRARY}"
-         "${WEBP_LIBRARY}"
-         "${WEBP_SSE_LIBRARY}"
-         "${JPEG_LIBRARY}"
-         "${SKIA_SKCMS_LIBRARY}"
+         "${SKIA_LIBRARIES}"
          PkgConfig::fontconfig
          ${OPENGL_LIBRARIES}
       )
@@ -187,6 +180,9 @@ if (ARTIST_SKIA)
    if (APPLE)
       set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
          external/skia/tools/sk_app/mac/GLWindowContext_mac.mm
+      )
+      set_source_files_properties(${ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT}
+         PROPERTIES COMPILE_FLAGS -fno-objc-arc
       )
    elseif (MSVC)
       set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
@@ -325,7 +321,7 @@ if (APPLE)
    target_compile_definitions(artist PRIVATE
       ARTIST_CLASS_PREFIX=${ARTIST_CLASS_PREFIX}
    )
-   # target_compile_options(artist PUBLIC "-fobjc-arc")
+   target_compile_options(artist PUBLIC "-fobjc-arc")
 elseif (WIN32)
    target_compile_definitions(artist
       PUBLIC
@@ -360,7 +356,6 @@ target_link_libraries(artist
 if (ARTIST_SKIA)
    target_link_libraries(artist
    PRIVATE
-      "${SKIA_LIBRARY}"
       "${ARTIST_DEPEPENDENCIES}"
    )
 endif()
