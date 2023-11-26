@@ -13,6 +13,7 @@
 #include "SkSurface.h"
 #include "SkCanvas.h"
 #include "SkPictureRecorder.h"
+#include "SkStream.h"
 
 #include "opaque.hpp"
 #include <stdexcept>

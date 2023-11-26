@@ -54,6 +54,7 @@ if (ARTIST_SKIA)
       set(WEBP_LIBRARY ${ARTIST_BINARIES}/libthird_party__libwebp.a)
       set(WEBP_SSE_LIBRARY ${ARTIST_BINARIES}/libthird_party__libwebp_libwebp_sse41.a)
       set(JPEG_LIBRARY ${ARTIST_BINARIES}/libthird_party__libjpeg-turbo_libjpeg.a)
+      set(SKIA_SKCMS_LIBRARY ${ARTIST_BINARIES}/libmodules__skcms.a)
 
       # ExternalProject_Add(prebuilt_binaries
       #    PREFIX "macos"
@@ -75,6 +76,7 @@ if (ARTIST_SKIA)
          "${WEBP_LIBRARY}"
          "${WEBP_SSE_LIBRARY}"
          "${JPEG_LIBRARY}"
+         "${SKIA_SKCMS_LIBRARY}"
          PkgConfig::fontconfig
          ${OPENGL_LIBRARIES}
       )

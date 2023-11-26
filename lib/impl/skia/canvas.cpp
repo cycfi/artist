@@ -9,6 +9,7 @@
 #include "opaque.hpp"
 
 #include <SkBitmap.h>
+#include <SkColorSpace.h>
 #include <SkData.h>
 #include <SkImage.h>
 #include <SkPicture.h>
