@@ -46,7 +46,12 @@ if (ARTIST_SKIA)
       find_package(PkgConfig REQUIRED)
       pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
 
-      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/macos/src/prebuilt_binaries)
+      if (${CMAKE_OSX_ARCHITECTURES} STREQUAL "arm64")
+         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/macos-arm64/src/prebuilt_binaries)
+      elseif (${CMAKE_OSX_ARCHITECTURES} STREQUAL "x86_64")
+         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/macos-x86-64/src/prebuilt_binaries)
+      endif()
+
       set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
       set(HARFBUZZ_LIBRARY ${ARTIST_BINARIES}/libharfbuzz.a)
       set(PNG_LIBRARY ${ARTIST_BINARIES}/libthird_party__libpng.a)
@@ -56,15 +61,17 @@ if (ARTIST_SKIA)
       set(JPEG_LIBRARY ${ARTIST_BINARIES}/libthird_party__libjpeg-turbo_libjpeg.a)
       set(SKIA_SKCMS_LIBRARY ${ARTIST_BINARIES}/libmodules__skcms.a)
 
-      # ExternalProject_Add(prebuilt_binaries
-      #    PREFIX "macos"
-      #    URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/macos.zip
-      #    URL_MD5 66ffbf1c8272642bec4db4161f538b01
-      #    CONFIGURE_COMMAND ""
-      #    BUILD_COMMAND ""
-      #    INSTALL_COMMAND ""
-      #    BUILD_BYPRODUCTS ${SKIA_LIBRARY} ${HARFBUZZ_LIBRARY}
-      # )
+      ExternalProject_Add(prebuilt_binaries
+         PREFIX "macos-arm64"
+         URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/macos/skia/arm64/arm64.zip
+         URL_MD5 5a8b2ef69844bdfff8f384538b63a962
+         CONFIGURE_COMMAND ""
+         BUILD_COMMAND ""
+         INSTALL_COMMAND ""
+         BUILD_BYPRODUCTS ${SKIA_LIBRARY} ${HARFBUZZ_LIBRARY} ${PNG_LIBRARY} ${ZLIB_LIBRARY} ${WEBP_LIBRARY} ${JPEG_LIBRARY} ${SKIA_SKCMS_LIBRARY}
+         LOG_DOWNLOAD ON      # Enable download logs
+         DOWNLOAD_NO_PROGRESS OFF  # Enable download progress display
+      )
 
       find_package(OpenGL REQUIRED)
 
@@ -229,9 +236,9 @@ endif()
 
 add_dependencies(artist libunibreak)
 
-#if (ARTIST_SKIA)
-#   add_dependencies(artist prebuilt_binaries)
-#endif()
+if (ARTIST_SKIA)
+  add_dependencies(artist prebuilt_binaries)
+endif()
 
 target_sources(artist
    PRIVATE ${ARTIST_SOURCES} ${ARTIST_IMPL}
