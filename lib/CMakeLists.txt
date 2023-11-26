@@ -48,8 +48,10 @@ if (ARTIST_SKIA)
 
       if (${CMAKE_OSX_ARCHITECTURES} STREQUAL "arm64")
          set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/macos/arm64/src/prebuilt_binaries)
+         set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/macos/skia/arm64/arm64.zip)
       elseif (${CMAKE_OSX_ARCHITECTURES} STREQUAL "x86_64")
          set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/macos/x86-64/src/prebuilt_binaries)
+         set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/macos/skia/x86-64/x86-64.zip)
       endif()
 
       set(SKIA_LIBRARIES
@@ -64,8 +66,8 @@ if (ARTIST_SKIA)
       )
 
       ExternalProject_Add(prebuilt_binaries
-         PREFIX "macos/arm64"
-         URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/macos/skia/arm64/arm64.zip
+         PREFIX "macos/${CMAKE_OSX_ARCHITECTURES}"
+         URL ${ARTIST_BINARIES_URL}
          URL_MD5 5a8b2ef69844bdfff8f384538b63a962
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
