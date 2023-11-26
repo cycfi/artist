@@ -7,6 +7,7 @@
 #define ARTIST_SKIA_OPAQUE_MARCH_22_2020
 
 #include "SkImage.h"
+#include "SkBitmap.h"
 #include <variant>
 
 namespace cycfi::artist
