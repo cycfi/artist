@@ -5,8 +5,6 @@
 ###############################################################################
 cmake_minimum_required(VERSION 3.7.2...3.15.0)
 
-cmake_policy(SET CMP0135 NEW)
-
 add_library(libunibreak
    external/libunibreak/src/emojidef.c
    external/libunibreak/src/graphemebreak.c
@@ -87,7 +85,18 @@ if (ARTIST_SKIA)
 
    elseif (MSVC)
 
-      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows-x64/src/prebuilt_binaries)
+      if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows/msvc/x86_64/src/prebuilt_binaries)
+         set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/windows/skia/msvc/x86_64/x86_64.zip)
+         set(ARTIST_BINARIES_MD5 038966e0d2711d887398a6cda78807aa)
+         set(ARTIST_BINARIES_PREFIX windows/msvc/x86_64)
+      elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
+         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows/clang/x86_64/src/prebuilt_binaries)
+         set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/windows/skia/clang/x86_64/x86_64.zip)
+         set(ARTIST_BINARIES_MD5 8b93d21ce616ce5859bae18346bc8736)
+         set(ARTIST_BINARIES_PREFIX windows/clang/x86_64)
+      endif()
+
       set(SKIA_LIBRARIES
          ${ARTIST_BINARIES}/skia.lib
          ${ARTIST_BINARIES}/harfbuzz.lib
@@ -102,9 +111,9 @@ if (ARTIST_SKIA)
       )
 
       ExternalProject_Add(prebuilt_binaries
-         PREFIX "windows-x64"
-         URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/windows-x64.zip
-         URL_MD5 69c3e3d54a065491f9a1915ece4c2a72
+         PREFIX "${ARTIST_BINARIES_PREFIX}"
+         URL ${ARTIST_BINARIES_URL}
+         URL_MD5 ${ARTIST_BINARIES_MD5}
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
          INSTALL_COMMAND ""
@@ -247,7 +256,7 @@ endif()
 add_dependencies(artist libunibreak)
 
 if (ARTIST_SKIA)
-  add_dependencies(artist prebuilt_binaries)
+ add_dependencies(artist prebuilt_binaries)
 endif()
 
 target_sources(artist
