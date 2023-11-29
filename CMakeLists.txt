@@ -9,6 +9,8 @@ include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 project(artist LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 
+cmake_policy(SET CMP0135 NEW)
+
 # Ensure presence of Git submodules (when not using a source tarball)
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
    find_package(Git REQUIRED)
@@ -85,6 +87,8 @@ if (APPLE)
       message(FATAL_ERROR "Unsupported MacOS compiler")
    endif()
 endif()
+
+message(STATUS "Compiler: ${CMAKE_C_COMPILER_ID}")
 
 add_subdirectory(lib)
 
