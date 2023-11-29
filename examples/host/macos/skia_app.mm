@@ -13,7 +13,6 @@
 #include "../../app.hpp"
 #include <artist/resources.hpp>
 
-//#include <GrContext.h>
 #include <gl/GrGLInterface.h>
 #include <SkImage.h>
 #include <SkSurface.h>

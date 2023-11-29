@@ -88,9 +88,18 @@ if (ARTIST_SKIA)
    elseif (MSVC)
 
       set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows-x64/src/prebuilt_binaries)
-      set(SKIA_LIBRARY ${ARTIST_BINARIES}/skia.lib)
-      set(HARFBUZZ_LIBRARY ${ARTIST_BINARIES}/harfbuzz.lib)
-      set(FONTCONFIG_LIBRARY ${ARTIST_BINARIES}/fontconfig.lib)
+      set(SKIA_LIBRARIES
+         ${ARTIST_BINARIES}/skia.lib
+         ${ARTIST_BINARIES}/harfbuzz.lib
+         ${ARTIST_BINARIES}/fontconfig.lib
+         ${ARTIST_BINARIES}/libjpeg.lib
+         ${ARTIST_BINARIES}/libpng.lib
+         ${ARTIST_BINARIES}/libwebp_sse41.lib
+         ${ARTIST_BINARIES}/libwebp.lib
+         ${ARTIST_BINARIES}/zlib.lib
+         ${ARTIST_BINARIES}/skcms.lib
+         ${ARTIST_BINARIES}/expat.lib
+      )
 
       ExternalProject_Add(prebuilt_binaries
          PREFIX "windows-x64"
@@ -99,17 +108,18 @@ if (ARTIST_SKIA)
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
          INSTALL_COMMAND ""
-         BUILD_BYPRODUCTS ${SKIA_LIBRARY} ${HARFBUZZ_LIBRARY} ${FONTCONFIG_LIBRARY}
+         BUILD_BYPRODUCTS ${SKIA_LIBRARIES}
       )
 
       find_package(OpenGL REQUIRED)
 
       set(ARTIST_DEPEPENDENCIES
-         "${SKIA_LIBRARY}"
-         "${HARFBUZZ_LIBRARY}"
-         "${FONTCONFIG_LIBRARY}"
+         "${SKIA_LIBRARIES}"
          ${OPENGL_LIBRARIES}
       )
+
+      set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+      set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Ob2 /Oi /Ot /GL /MT")
 
    elseif (UNIX)
 
@@ -289,7 +299,7 @@ if (ARTIST_QUARTZ_2D)
    )
 endif()
 
-if (ARTIST_SKIA AND APPLE)
+if (ARTIST_SKIA)
    target_compile_definitions(
       artist
       PUBLIC
@@ -364,6 +374,4 @@ if (ARTIST_SKIA)
    )
 endif()
 
-if (UNIX OR (WIN32 AND NOT MSVC))
-endif()
 
