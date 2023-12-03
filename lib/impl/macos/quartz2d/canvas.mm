@@ -699,6 +699,7 @@ namespace cycfi::artist
          auto line = CTLineCreateWithAttributedString(attr_string);
          width = CTLineGetTypographicBounds(line, &ascent, &descent, &leading);
          CFRelease(attr_string);
+         CFRelease(font_attributes);
          return line;
       }
 
