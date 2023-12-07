@@ -8,9 +8,11 @@
 #include <GL/gl.h>
 #include <GL/glx.h>
 
-#include "GrContext.h"
+#include "GrDirectContext.h"
 #include "gl/GrGLInterface.h"
 #include "SkImage.h"
+#include "SkColorSpace.h"
+#include "SkCanvas.h"
 #include "SkSurface.h"
 #include <chrono>
 
@@ -28,7 +30,7 @@ namespace
       guint    _timer_id = 0;
 
       sk_sp<const GrGLInterface> _xface;
-      sk_sp<GrContext>           _ctx;
+      sk_sp<GrDirectContext>     _ctx;
       sk_sp<SkSurface>           _surface;
    };
 
@@ -49,7 +51,7 @@ namespace
       glClearColor(state._bkd.red, state._bkd.green, state._bkd.blue, state._bkd.alpha);
       glClear(GL_COLOR_BUFFER_BIT);
       state._xface = GrGLMakeNativeInterface();
-      state._ctx = GrContext::MakeGL(state._xface);
+      state._ctx = GrDirectContext::MakeGL(state._xface);
    }
 
    gboolean render(GtkGLArea* area, GdkGLContext* context, gpointer user_data)
