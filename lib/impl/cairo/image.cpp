@@ -68,14 +68,20 @@ namespace cycfi::artist
             }
 
             stbi_image_free(src_data);
+            
+            cairo_surface_flush(_impl);
+            // Flag the surface as dirty
+            cairo_surface_mark_dirty(_impl);
          }
       }
-
+ 
+      if( cairo_surface_status(_impl) != CAIRO_STATUS_SUCCESS ) {
+          cairo_surface_destroy(_impl);
+          _impl = nullptr;
+      }
+      
       if (!_impl)
          throw std::runtime_error{ "Failed to load pixmap: " + path_.string() };
-
-      // Flag the surface as dirty
-      cairo_surface_mark_dirty(_impl);
    }
 
    image::~image()
@@ -116,18 +122,29 @@ namespace cycfi::artist
       return {};
    }
 
+   struct offscreen_image::state {
+       cairo_t* _context = nullptr;
+   };
+
    offscreen_image::offscreen_image(image& img)
     : _image(img)
+    , _state(new offscreen_image::state{})
    {
    }
 
    offscreen_image::~offscreen_image()
    {
+      if( _state->_context ) {
+          cairo_destroy( _state->_context );
+      }
    }
 
    canvas_impl* offscreen_image::context() const
    {
-      return nullptr;
+      if( !_state->_context ) {
+          _state->_context = cairo_create(_image.impl());
+      }
+      return _state->_context;
    }
 }
 
