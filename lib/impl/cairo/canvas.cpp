@@ -7,6 +7,8 @@
 #include <cairo.h>
 #include <stack>
 
+#include "font_impl.h"
+
 namespace cycfi::artist
 {
    class canvas::canvas_state
@@ -25,6 +27,7 @@ namespace cycfi::artist
 
       void              apply_fill_style();
       void              apply_stroke_style();
+      float             pre_scale = 1.0f;
 
       using state_stack = std::stack<info>;
 
@@ -60,8 +63,10 @@ namespace cycfi::artist
    {
    }
 
-   void canvas::pre_scale(float scale)
+   void canvas::pre_scale(float sc)
    {
+      scale({sc,sc});
+      _state->pre_scale = sc;
    }
 
    void canvas::translate(point p)
@@ -77,6 +82,20 @@ namespace cycfi::artist
    void canvas::scale(point p)
    {
       cairo_scale(_context, p.x, p.y);
+   }
+
+   point canvas::device_to_user(point p) {
+       double x = p.x * _state->pre_scale;
+       double y = p.y * _state->pre_scale;
+       cairo_device_to_user_distance(_context, &x, &y);
+       return {float(x),float(y)};
+   }
+
+   point canvas::user_to_device(point p) {
+       double x = p.x;
+       double y = p.y;
+       cairo_user_to_device_distance(_context, &x, &y);
+       return {float(x / _state->pre_scale),float(y / _state->pre_scale)};
    }
 
    void canvas::save()
@@ -100,6 +119,10 @@ namespace cycfi::artist
    void canvas::close_path()
    {
       cairo_close_path(_context);
+   }
+
+   void canvas::fill_rule(path::fill_rule_enum rule) {
+      //TODO
    }
 
    void canvas::fill()
@@ -129,6 +152,11 @@ namespace cycfi::artist
    void canvas::clip()
    {
       cairo_clip(_context);
+   }
+
+   bool canvas::point_in_path(point p) const {
+      // not sure how to implement this on cairo
+      return false;
    }
 
    void canvas::move_to(point p)
@@ -399,6 +427,10 @@ namespace cycfi::artist
 
    void canvas::font(class font const& font_)
    {
+      if( font_.impl() ) {
+          cairo_set_font_face(_context,font_.impl()->font_face);
+          cairo_set_font_size(_context,font_.impl()->size);
+      }
    }
 
    namespace

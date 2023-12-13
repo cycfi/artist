@@ -20,6 +20,9 @@ namespace cycfi::artist
 #if defined(ARTIST_SKIA)
    using font_impl = SkFont;
    using font_impl_ptr = std::shared_ptr<SkFont>;
+#elif defined(ARTIST_CAIRO)
+   struct font_impl;
+   using font_impl_ptr = std::shared_ptr<font_impl>;
 #else
    struct font_impl;
    using font_impl_ptr = font_impl*;
