@@ -7,6 +7,8 @@
 #include <cairo.h>
 #include <stack>
 
+#include "font_impl.h"
+
 namespace cycfi::artist
 {
    class canvas::canvas_state
@@ -425,6 +427,10 @@ namespace cycfi::artist
 
    void canvas::font(class font const& font_)
    {
+      if( font_.impl() ) {
+          cairo_set_font_face(_context,font_.impl()->font_face);
+          cairo_set_font_size(_context,font_.impl()->size);
+      }
    }
 
    namespace
