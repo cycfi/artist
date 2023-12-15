@@ -274,7 +274,7 @@ namespace cycfi::artist
       auto af = CGContextGetCTM(CGContextRef(_context));
 
       // Undo the initial transform
-      auto xaf = CGAffineTransformConcat(_state->get_inv_affine(), af);
+      auto xaf = CGAffineTransformConcat(af, _state->get_inv_affine());
 
       // Map the point to the inverted `xaf` transform
       auto up = CGPointApplyAffineTransform({p.x, p.y}, CGAffineTransformInvert(xaf));
@@ -288,7 +288,7 @@ namespace cycfi::artist
       auto af = CGContextGetCTM(CGContextRef(_context));
 
       // Undo the initial transform
-      auto xaf = CGAffineTransformConcat(_state->get_inv_affine(), af);
+      auto xaf = CGAffineTransformConcat(af, _state->get_inv_affine());
 
       // Map the point to the `xaf` transform
       auto up = CGPointApplyAffineTransform({p.x, p.y}, xaf);
