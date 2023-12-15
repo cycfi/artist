@@ -57,6 +57,11 @@ namespace cycfi::artist
       float             scale() const                    { return _scale; }
       void              scale(float sc)                  { _scale = sc; }
 
+      using cg_affine = CGAffineTransform;
+
+      void              get_inv_affine(CGContextRef context);
+      cg_affine const&  get_inv_affine() const;
+
    private:
 
       struct state_info
@@ -79,11 +84,12 @@ namespace cycfi::artist
       state_info_stack  _stack;
       fill_rule_enum    _fill_rule = fill_rule_enum::fill_winding;
       float             _scale;
+      CGAffineTransform _inv_affine;
    };
 
 #pragma clang diagnostic ignored "-Wvla-extension"
 
-    namespace
+   namespace
    {
       void make_gradient(std::vector<canvas::color_stop> const& space, CGGradientRef& gradient)
       {
@@ -196,6 +202,17 @@ namespace cycfi::artist
          _stack.pop();
    }
 
+   void canvas::canvas_state::get_inv_affine(CGContextRef context)
+   {
+      _inv_affine = CGAffineTransformInvert(CGContextGetCTM(context));
+   }
+
+   CGAffineTransform const&
+   canvas::canvas_state::get_inv_affine() const
+   {
+      return _inv_affine;
+   }
+
    canvas::canvas(canvas_impl* context_)
     : _context{context_}
     , _state{std::make_unique<canvas_state>()}
@@ -208,6 +225,8 @@ namespace cycfi::artist
       CGPoint user = {100, 100};
       auto device = CGContextConvertPointToDeviceSpace(ctx, user);
       _state->scale(device.x / user.x);
+
+      _state->get_inv_affine(ctx);
    }
 
    canvas::~canvas()
@@ -251,20 +270,30 @@ namespace cycfi::artist
 
    point canvas::device_to_user(point p)
    {
-      auto scale = _state->scale();
-      auto up = CGContextConvertPointToUserSpace(
-         CGContextRef(_context), {p.x * scale, p.y * scale}
-      );
+      // Get the current transform
+      auto af = CGContextGetCTM(CGContextRef(_context));
+
+      // Undo the initial transform
+      auto xaf = CGAffineTransformConcat(af, _state->get_inv_affine());
+
+      // Map the point to the inverted `xaf` transform
+      auto up = CGPointApplyAffineTransform({p.x, p.y}, CGAffineTransformInvert(xaf));
+
       return {float(up.x), float(up.y)};
    }
 
    point canvas::user_to_device(point p)
    {
-      auto scale = _state->scale();
-      auto dp = CGContextConvertPointToDeviceSpace(
-         CGContextRef(_context), {p.x, p.y}
-      );
-      return {float(dp.x / scale), float(dp.y / scale)};
+      // Get the current transform
+      auto af = CGContextGetCTM(CGContextRef(_context));
+
+      // Undo the initial transform
+      auto xaf = CGAffineTransformConcat(af, _state->get_inv_affine());
+
+      // Map the point to the `xaf` transform
+      auto up = CGPointApplyAffineTransform({p.x, p.y}, xaf);
+
+      return {float(up.x), float(up.y)};
    }
 
    affine_transform canvas::transform() const
@@ -699,6 +728,7 @@ namespace cycfi::artist
          auto line = CTLineCreateWithAttributedString(attr_string);
          width = CTLineGetTypographicBounds(line, &ascent, &descent, &leading);
          CFRelease(attr_string);
+         CFRelease(font_attributes);
          return line;
       }
 
