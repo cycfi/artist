@@ -113,10 +113,7 @@ namespace
       return true;
    }
 
-   // $$$ TODO: Investigate $$$
-   // Somehow, this prevents us from having linker errors
-   // Without this, we get undefined reference to `glXGetCurrentContext'
-   auto proc = &glXGetProcAddress;
+   static auto proc = &glXGetProcAddress;
 
    void activate(GtkApplication* app, gpointer user_data)
    {
