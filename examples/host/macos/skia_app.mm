@@ -13,10 +13,10 @@
 #include "../../app.hpp"
 #include <artist/resources.hpp>
 
-#include <GrContext.h>
 #include <gl/GrGLInterface.h>
 #include <SkImage.h>
 #include <SkSurface.h>
+#include <SkCanvas.h>
 #include <tools/sk_app/DisplayParams.h>
 #include <tools/sk_app/WindowContext.h>
 #include <tools/sk_app/mac/WindowContextFactory_mac.h>

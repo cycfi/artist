@@ -105,15 +105,46 @@ namespace cycfi::artist
    {
       auto path = [NSString stringWithUTF8String : std::string{path_}.c_str() ];
       auto image = (__bridge NSImage*) _impl;
-      auto ref = [image CGImageForProposedRect : nullptr
-                                       context : nullptr
-                                         hints : nullptr];
-      auto* rep = [[NSBitmapImageRep alloc] initWithCGImage : ref];
-      [rep setSize:[image size]];
 
-      auto* data = [rep representationUsingType : NSBitmapImageFileTypePNG
-                                     properties : @{}];
-      [data writeToFile : path atomically : YES];
+      // Get the size of the original image
+      NSSize imageSize = [image size];
+
+      // Create an NSBitmapImageRep with the same dimensions as the original image
+      NSBitmapImageRep *bitmapRep = [[NSBitmapImageRep alloc]
+         initWithBitmapDataPlanes : NULL
+         pixelsWide : imageSize.width
+         pixelsHigh : imageSize.height
+         bitsPerSample : 8
+         samplesPerPixel : 4  // RGBA format
+         hasAlpha : YES
+         isPlanar : NO
+         colorSpaceName : NSDeviceRGBColorSpace
+         bytesPerRow : 0
+         bitsPerPixel : 0
+      ];
+
+      // Set the properties for the PNG file
+      NSDictionary *properties = @{
+         NSImageCompressionFactor :  @1.0, // Compression factor (1.0 means no compression)
+         NSImageColorSyncProfileData :  [NSNull null], // No color profile
+         NSImageInterlaced :  @NO // Non-interlaced
+      };
+
+      // Set the current graphics context to the NSBitmapImageRep
+      [NSGraphicsContext saveGraphicsState];
+      [NSGraphicsContext setCurrentContext : [NSGraphicsContext graphicsContextWithBitmapImageRep : bitmapRep]];
+
+      // Draw the original image onto the NSBitmapImageRep
+      [image drawAtPoint : NSZeroPoint fromRect : NSZeroRect operation : NSCompositingOperationCopy fraction : 1.0];
+
+      // Restore the graphics state
+      [NSGraphicsContext restoreGraphicsState];
+
+      // Convert the NSBitmapImageRep to NSData with PNG format
+      NSData* data = [bitmapRep representationUsingType : NSBitmapImageFileTypePNG properties : properties];
+
+      // Write the data to the file
+     [data writeToFile : path atomically : YES];
    }
 
    uint32_t* image::pixels()

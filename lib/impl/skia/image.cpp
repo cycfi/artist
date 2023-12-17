@@ -13,6 +13,7 @@
 #include "SkSurface.h"
 #include "SkCanvas.h"
 #include "SkPictureRecorder.h"
+#include "SkStream.h"
 
 #include "opaque.hpp"
 #include <stdexcept>
@@ -151,7 +152,7 @@ namespace cycfi::artist
             }
             if constexpr(std::is_same_v<T, SkBitmap>)
             {
-               sk_canvas->drawBitmap(that, 0, 0);
+               sk_canvas->drawImage(that.asImage(), 0, 0);
             }
          };
 
