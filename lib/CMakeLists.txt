@@ -132,19 +132,25 @@ if (ARTIST_SKIA)
 
    elseif (UNIX)
 
-      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/linux-x64/src/prebuilt_binaries)
-      set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
+      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/linux/x86_64/src/prebuilt_binaries)
+      set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/linux/skia/x86_64/libskia.a.zip)
+      set(ARTIST_BINARIES_MD5 18def70ddce24ea79a7a308163dfbda3)
+      set(ARTIST_BINARIES_PREFIX linux/x86_64)
 
       find_package(Threads)
       find_package(PkgConfig REQUIRED)
+      find_package(OpenGL REQUIRED)
+
       pkg_check_modules(harfbuzz REQUIRED IMPORTED_TARGET harfbuzz)
       pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
       pkg_check_modules(freetype2 REQUIRED IMPORTED_TARGET freetype2)
 
+      set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
+
       ExternalProject_Add(prebuilt_binaries
-         PREFIX "linux-x64"
-         URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/linux-x64.zip
-         URL_MD5 2032e39233c9b627550fc0b5558fe335
+         PREFIX "${ARTIST_BINARIES_PREFIX}"
+         URL ${ARTIST_BINARIES_URL}
+         URL_MD5 ${ARTIST_BINARIES_MD5}
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
          INSTALL_COMMAND ""
@@ -158,6 +164,8 @@ if (ARTIST_SKIA)
          PkgConfig::fontconfig
          PkgConfig::freetype2
          Threads::Threads
+         OpenGL::OpenGL
+         OpenGL::GLX
       )
 
    endif()
@@ -241,7 +249,7 @@ source_group("Header Files\\artist"
    ${ARTIST_HEADERS}
 )
 
-add_library(artist)
+add_library(artist STATIC)
 
 if (NOT MSVC)
    find_package(PkgConfig REQUIRED)
