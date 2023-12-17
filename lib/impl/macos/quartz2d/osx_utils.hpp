@@ -43,7 +43,7 @@ namespace cycfi::artist::detail
 
    inline NSString* ns_string(char const* f, char const* l)
    {
-      return (__bridge NSString*) cf_string(f, l);
+      return (__bridge_transfer NSString*) cf_string(f, l);
    }
 
    inline NSString* ns_string(std::string_view str)

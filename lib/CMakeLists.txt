@@ -44,70 +44,113 @@ if (ARTIST_SKIA)
       find_package(PkgConfig REQUIRED)
       pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
 
-      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/macos/src/prebuilt_binaries)
-      set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
-      set(HARFBUZZ_LIBRARY ${ARTIST_BINARIES}/libharfbuzz.a)
+      if (${CMAKE_OSX_ARCHITECTURES} STREQUAL "arm64")
+         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/macos/arm64/src/prebuilt_binaries)
+         set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/macos/skia/arm64/arm64.zip)
+         set(ARTIST_BINARIES_MD5 5a8b2ef69844bdfff8f384538b63a962)
+      elseif (${CMAKE_OSX_ARCHITECTURES} STREQUAL "x86_64")
+         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/macos/x86_64/src/prebuilt_binaries)
+         set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/macos/skia/x86_64/x86_64.zip)
+         set(ARTIST_BINARIES_MD5 553b7073295cf9650c54a79478658761)
+      endif()
+
+      set(SKIA_LIBRARIES
+         ${ARTIST_BINARIES}/libskia.a
+         ${ARTIST_BINARIES}/libharfbuzz.a
+         ${ARTIST_BINARIES}/libthird_party__libpng.a
+         ${ARTIST_BINARIES}/libthird_party__zlib.a
+         ${ARTIST_BINARIES}/libthird_party__libwebp.a
+         ${ARTIST_BINARIES}/libthird_party__libwebp_libwebp_sse41.a
+         ${ARTIST_BINARIES}/libthird_party__libjpeg-turbo_libjpeg.a
+         ${ARTIST_BINARIES}/libmodules__skcms.a
+      )
 
       ExternalProject_Add(prebuilt_binaries
-         PREFIX "macos"
-         URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/macos.zip
-         URL_MD5 66ffbf1c8272642bec4db4161f538b01
+         PREFIX "macos/${CMAKE_OSX_ARCHITECTURES}"
+         URL ${ARTIST_BINARIES_URL}
+         URL_MD5 ${ARTIST_BINARIES_MD5}
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
          INSTALL_COMMAND ""
-         BUILD_BYPRODUCTS ${SKIA_LIBRARY} ${HARFBUZZ_LIBRARY}
+         BUILD_BYPRODUCTS ${SKIA_LIBRARIES}
       )
 
-      find_package(opengl REQUIRED)
+      find_package(OpenGL REQUIRED)
 
       set(ARTIST_DEPEPENDENCIES
-         "${SKIA_LIBRARY}"
-         "${HARFBUZZ_LIBRARY}"
+         "${SKIA_LIBRARIES}"
          PkgConfig::fontconfig
          ${OPENGL_LIBRARIES}
       )
 
    elseif (MSVC)
 
-      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows-x64/src/prebuilt_binaries)
-      set(SKIA_LIBRARY ${ARTIST_BINARIES}/skia.lib)
-      set(HARFBUZZ_LIBRARY ${ARTIST_BINARIES}/harfbuzz.lib)
-      set(FONTCONFIG_LIBRARY ${ARTIST_BINARIES}/fontconfig.lib)
+      if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows/msvc/x86_64/src/prebuilt_binaries)
+         set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/windows/skia/msvc/x86_64/x86_64.zip)
+         set(ARTIST_BINARIES_MD5 038966e0d2711d887398a6cda78807aa)
+         set(ARTIST_BINARIES_PREFIX windows/msvc/x86_64)
+      elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
+         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows/clang/x86_64/src/prebuilt_binaries)
+         set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/windows/skia/clang/x86_64/x86_64.zip)
+         set(ARTIST_BINARIES_MD5 8b93d21ce616ce5859bae18346bc8736)
+         set(ARTIST_BINARIES_PREFIX windows/clang/x86_64)
+      endif()
+
+      set(SKIA_LIBRARIES
+         ${ARTIST_BINARIES}/skia.lib
+         ${ARTIST_BINARIES}/harfbuzz.lib
+         ${ARTIST_BINARIES}/fontconfig.lib
+         ${ARTIST_BINARIES}/libjpeg.lib
+         ${ARTIST_BINARIES}/libpng.lib
+         ${ARTIST_BINARIES}/libwebp_sse41.lib
+         ${ARTIST_BINARIES}/libwebp.lib
+         ${ARTIST_BINARIES}/zlib.lib
+         ${ARTIST_BINARIES}/skcms.lib
+         ${ARTIST_BINARIES}/expat.lib
+      )
 
       ExternalProject_Add(prebuilt_binaries
-         PREFIX "windows-x64"
-         URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/windows-x64.zip
-         URL_MD5 69c3e3d54a065491f9a1915ece4c2a72
+         PREFIX "${ARTIST_BINARIES_PREFIX}"
+         URL ${ARTIST_BINARIES_URL}
+         URL_MD5 ${ARTIST_BINARIES_MD5}
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
          INSTALL_COMMAND ""
-         BUILD_BYPRODUCTS ${SKIA_LIBRARY} ${HARFBUZZ_LIBRARY} ${FONTCONFIG_LIBRARY}
+         BUILD_BYPRODUCTS ${SKIA_LIBRARIES}
       )
 
-      find_package(opengl REQUIRED)
+      find_package(OpenGL REQUIRED)
 
       set(ARTIST_DEPEPENDENCIES
-         "${SKIA_LIBRARY}"
-         "${HARFBUZZ_LIBRARY}"
-         "${FONTCONFIG_LIBRARY}"
+         "${SKIA_LIBRARIES}"
          ${OPENGL_LIBRARIES}
       )
 
+      set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+      set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Ob2 /Oi /Ot /GL /MT")
+
    elseif (UNIX)
 
-      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/linux-x64/src/prebuilt_binaries)
-      set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
+      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/linux/x86_64/src/prebuilt_binaries)
+      set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/linux/skia/x86_64/libskia.a.zip)
+      set(ARTIST_BINARIES_MD5 18def70ddce24ea79a7a308163dfbda3)
+      set(ARTIST_BINARIES_PREFIX linux/x86_64)
 
       find_package(Threads)
       find_package(PkgConfig REQUIRED)
+      find_package(OpenGL REQUIRED)
+
       pkg_check_modules(harfbuzz REQUIRED IMPORTED_TARGET harfbuzz)
       pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
       pkg_check_modules(freetype2 REQUIRED IMPORTED_TARGET freetype2)
 
+      set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
+
       ExternalProject_Add(prebuilt_binaries
-         PREFIX "linux-x64"
-         URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/linux-x64.zip
-         URL_MD5 2032e39233c9b627550fc0b5558fe335
+         PREFIX "${ARTIST_BINARIES_PREFIX}"
+         URL ${ARTIST_BINARIES_URL}
+         URL_MD5 ${ARTIST_BINARIES_MD5}
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
          INSTALL_COMMAND ""
@@ -121,6 +164,8 @@ if (ARTIST_SKIA)
          PkgConfig::fontconfig
          PkgConfig::freetype2
          Threads::Threads
+         OpenGL::OpenGL
+         OpenGL::GLX
       )
 
    endif()
@@ -165,11 +210,14 @@ if (ARTIST_SKIA)
 
    if (APPLE)
       set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
-         external/skia/src/GLWindowContext_mac.mm
+         external/skia/tools/sk_app/mac/GLWindowContext_mac.mm
+      )
+      set_source_files_properties(${ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT}
+         PROPERTIES COMPILE_FLAGS -fno-objc-arc
       )
    elseif (MSVC)
       set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
-         external/skia/src/GLWindowContext_win.cpp
+         external/skia/tools/sk_app/win/GLWindowContext_win.cpp
       )
    endif()
 
@@ -180,7 +228,8 @@ if (ARTIST_SKIA)
       impl/skia/text_layout.cpp
       impl/skia/path.cpp
       impl/skia/detail/harfbuzz.cpp
-      external/skia/src/GLWindowContext.cpp
+      external/skia/tools/sk_app/GLWindowContext.cpp
+      external/skia/tools/sk_app/WindowContext.cpp
       ${ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT}
    )
 endif()
@@ -215,7 +264,7 @@ endif()
 add_dependencies(artist libunibreak)
 
 if (ARTIST_SKIA)
-   add_dependencies(artist prebuilt_binaries)
+ add_dependencies(artist prebuilt_binaries)
 endif()
 
 target_sources(artist
@@ -264,6 +313,14 @@ if (ARTIST_QUARTZ_2D)
       artist
       PUBLIC
          ARTIST_QUARTZ_2D
+   )
+endif()
+
+if (ARTIST_SKIA)
+   target_compile_definitions(
+      artist
+      PUBLIC
+        SK_GL
    )
 endif()
 
@@ -330,11 +387,8 @@ target_link_libraries(artist
 if (ARTIST_SKIA)
    target_link_libraries(artist
    PRIVATE
-      "${SKIA_LIBRARY}"
       "${ARTIST_DEPEPENDENCIES}"
    )
 endif()
 
-if (UNIX OR (WIN32 AND NOT MSVC))
-endif()
 

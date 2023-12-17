@@ -5,12 +5,26 @@
 ###############################################################################
 project(artist_test)
 
+file(
+   GLOB artist_fonts ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/*.*
+)
+
 if (APPLE)
 
-   add_executable(
-      artist_test MACOSX_BUNDLE
-      main.cpp
-   )
+   if (ARTIST_QUARTZ_2D)
+      add_executable(
+         artist_test MACOSX_BUNDLE
+         main.cpp
+         detail/osx_init.mm
+         ${artist_fonts}
+      )
+   else()
+      add_executable(
+         artist_test MACOSX_BUNDLE
+         main.cpp
+         ${artist_fonts}
+      )
+   endif()
 
    if (ARTIST_QUARTZ_2D)
       file(
@@ -142,4 +156,7 @@ add_definitions(
    -DIMAGES_PATH="${CMAKE_CURRENT_BINARY_DIR}/images/"
    -DFONTS_PATH="${CMAKE_CURRENT_BINARY_DIR}/resources/fonts/"
 )
+
+include(CTest)
+add_test(NAME artist_test COMMAND artist_test)
 

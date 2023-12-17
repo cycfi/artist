@@ -74,19 +74,17 @@ namespace cycfi::artist
 
          if (font)
          {
-            _ptr = (__bridge font_impl_ptr) font;
-            CFRetain(_ptr);
+            _ptr = (__bridge_retained font_impl_ptr) font;
             break;
          }
       }
       if (_ptr == nullptr)
       {
-         _ptr = (__bridge font_impl_ptr)
+         _ptr = (__bridge_retained font_impl_ptr)
             [NSFont
                systemFontOfSize : descr._size
                          weight : weight
             ];
-         CFRetain(_ptr);
       }
    }
 
@@ -139,7 +137,7 @@ namespace cycfi::artist
       NSFont* font = (__bridge NSFont*) _ptr;
       NSDictionary* attr = @{NSFontAttributeName : font};
       NSString* text = detail::ns_string(str);
-      const CGSize textSize = [text sizeWithAttributes : attr];
+      const auto textSize = [text sizeWithAttributes : attr];
       return textSize.width;
    }
 }

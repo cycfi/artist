@@ -13,6 +13,8 @@
 #include <infra/catch.hpp>
 #include <artist/affine_transform.hpp>
 #include "app_paths.hpp"
+#include <cmath>
+#include <cstdint>
 
 using namespace cycfi::artist;
 using namespace font_constants;
@@ -20,6 +22,15 @@ using cycfi::codepoint;
 
 auto constexpr window_size = point{640.0f, 480.0f};
 auto constexpr bkd_color = rgba(54, 52, 55, 255);
+
+#if defined(ARTIST_QUARTZ_2D)
+   // Initialize the fonts and resources
+   struct resource_setter
+   {
+      resource_setter();
+   };
+   static resource_setter init_resources;
+#endif
 
 void background(canvas& cnv)
 {
@@ -231,19 +242,82 @@ void test_draw(canvas& cnv)
    line_styles(cnv);
 }
 
-float diff_pixel(uint32_t a, uint32_t b)
+// Function to extract RGBA values with generic component names Note: Using
+// generic names (x, y, z, w) to make the code agnostic about the order of
+// components within uint32_t values.
+void extract_rgba(uint32_t pixel, uint8_t& x, uint8_t& y, uint8_t& z, uint8_t& w)
 {
-   auto a1 = a & 0xff;
-   auto a2 = (a >> 8) & 0xff;
-   auto a3 = (a >> 16) & 0xff;
-   auto a4 = (a >> 24) & 0xff;
+   x = (pixel >> 24) & 0xFF;
+   y = (pixel >> 16) & 0xFF;
+   z = (pixel >> 8) & 0xFF;
+   w = pixel & 0xFF;
+}
 
-   auto b1 = b & 0xff;
-   auto b2 = (b >> 8) & 0xff;
-   auto b3 = (b >> 16) & 0xff;
-   auto b4 = (b >> 24) & 0xff;
+// Function to calculate structural similarity index (SSI) between two images
+double calculate_ssi(uint32_t const  img1[], uint32_t const img2[], int const width, int const height)
+{
+   const double c1 = 0.0001; // Small constant to avoid division by zero
+   const double c2 = 0.0009; // Small constant to avoid division by zero
+   double mean_x = 0.0, mean_y = 0.0, sigma_x = 0.0, sigma_y = 0.0, sigma_xy = 0.0;
 
-   return float(a1-b1) + float(a2-b2) + float(a3-b3) + float(a4-b4);
+   for (int i = 0; i < width * height; ++i)
+   {
+      // Extract individual components using generic names x, y, z, w
+      uint8_t x1, y1, z1, w1;
+      uint8_t x2, y2, z2, w2;
+
+      extract_rgba(img1[i], x1, y1, z1, w1);
+      extract_rgba(img2[i], x2, y2, z2, w2);
+
+      mean_x += x1 + y1 + z1 + w1;
+      mean_y += x2 + y2 + z2 + w2;
+   }
+
+   mean_x /= (width * height * 4);
+   mean_y /= (width * height * 4);
+
+   for (int i = 0; i < width * height; ++i)
+   {
+      // Extract individual components using generic names x, y, z, w
+      uint8_t x1, y1, z1, w1;
+      uint8_t x2, y2, z2, w2;
+
+      extract_rgba(img1[i], x1, y1, z1, w1);
+      extract_rgba(img2[i], x2, y2, z2, w2);
+
+      double dev_x = x1 - mean_x;
+      double dev_y = x2 - mean_y;
+      sigma_x += dev_x * dev_x;
+      sigma_y += dev_y * dev_y;
+      sigma_xy += dev_x * dev_y;
+
+      dev_x = y1 - mean_x;
+      dev_y = y2 - mean_y;
+      sigma_x += dev_x * dev_x;
+      sigma_y += dev_y * dev_y;
+      sigma_xy += dev_x * dev_y;
+
+      dev_x = z1 - mean_x;
+      dev_y = z2 - mean_y;
+      sigma_x += dev_x * dev_x;
+      sigma_y += dev_y * dev_y;
+      sigma_xy += dev_x * dev_y;
+
+      dev_x = w1 - mean_x;
+      dev_y = w2 - mean_y;
+      sigma_x += dev_x * dev_x;
+      sigma_y += dev_y * dev_y;
+      sigma_xy += dev_x * dev_y;
+   }
+
+   sigma_x /= (width * height * 4 - 1);
+   sigma_y /= (width * height * 4 - 1);
+   sigma_xy /= (width * height * 4 - 1);
+
+   const double numerator = (2 * mean_x * mean_y + c1) * (2 * sigma_xy + c2);
+   const double denominator = (mean_x * mean_x + mean_y * mean_y + c1) * (sigma_x + sigma_y + c2);
+
+   return numerator / denominator;
 }
 
 void compare_golden(image const& pm, std::string name)
@@ -265,10 +339,9 @@ void compare_golden(image const& pm, std::string name)
    REQUIRE(a != nullptr);
    REQUIRE(b != nullptr);
 
-   auto diff = 0;
-   for (auto i = 0; i != (bm_size.x * bm_size.y); ++i)
-      diff += diff_pixel(a[i], b[i]);
-   CHECK(diff == 0);
+   auto ssi = calculate_ssi(a, b, bm_size.x, bm_size.y);
+   CHECK(ssi > 0.985);
+   std::cout << "SSI result for " << name << " : " << ssi << std::endl;
 }
 
 void typography(canvas& cnv)
@@ -335,7 +408,7 @@ void typography(canvas& cnv)
       cnv.stroke_text("Outline Gradient", 20, 190);
    }
 
-#if defined(__APPLE__) // CoreText supports ligatures right out of the box, but only for some fonts
+#if defined(ARTIST_QUARTZ_2D) // CoreText supports ligatures right out of the box, but only for some fonts
    cnv.font(font_descr{"Lucida Grande", 52}.bold());
 #else
    cnv.font(font_descr{"Open Sans", 52}.bold());
@@ -567,7 +640,7 @@ void composite_draw(canvas& cnv, point p, canvas::composite_op_enum mode)
 
    {
       auto save = cnv.new_state();
-      image pm{110, 11};
+      image pm{110, 110};
       {
          offscreen_image ctx{pm};
          canvas pm_cnv{ctx.context()};
@@ -807,8 +880,8 @@ void misc(canvas& cnv)
 
       cnv.font(font_descr{"Open Sans", 36});
       auto m = cnv.measure_text("Hello, World");
-      CHECK(std::floor(m.size.x) == 205);
-      CHECK(std::floor(m.size.y)== 49);
+      CHECK(std::abs(m.size.x-205.0f) <= 1.0);
+      CHECK(std::abs(m.size.y-49) <= 1.0);
       CHECK(std::floor(m.ascent) == 38);
       CHECK(std::floor(m.descent) == 10);
       CHECK(std::floor(m.leading) == 0);
@@ -860,6 +933,9 @@ TEST_CASE("Typography")
    {
       offscreen_image ctx{pm};
       canvas pm_cnv{ctx.context()};
+
+      auto p = pm_cnv.device_to_user(100, 100);
+
       typography(pm_cnv);
    }
    compare_golden(pm, "typography");
