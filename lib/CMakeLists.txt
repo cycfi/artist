@@ -200,7 +200,7 @@ source_group("Header Files\\artist"
    ${ARTIST_HEADERS}
 )
 
-add_library(artist)
+add_library(artist STATIC)
 
 if (NOT MSVC)
    find_package(PkgConfig REQUIRED)
