@@ -5,6 +5,8 @@
 ###############################################################################
 cmake_minimum_required(VERSION 3.7.2...3.15.0)
 
+cmake_policy(SET CMP0135 NEW)
+
 add_library(libunibreak
    external/libunibreak/src/emojidef.c
    external/libunibreak/src/graphemebreak.c
