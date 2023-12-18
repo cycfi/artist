@@ -5,7 +5,7 @@
 ###############################################################################
 cmake_minimum_required(VERSION 3.7.2...3.15.0)
 
-if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24")
+if (POLICY CMP0135)
    cmake_policy(SET CMP0135 NEW)
 endif()
 

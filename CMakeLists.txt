@@ -9,7 +9,7 @@ include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 project(artist LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 
-if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24")
+if (POLICY CMP0135)
    cmake_policy(SET CMP0135 NEW)
 endif()
 
