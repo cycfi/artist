@@ -9,7 +9,9 @@ include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 project(artist LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 
-cmake_policy(SET CMP0135 NEW)
+if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24")
+   cmake_policy(SET CMP0135 NEW)
+endif()
 
 # Ensure presence of Git submodules (when not using a source tarball)
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
