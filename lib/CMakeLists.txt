@@ -92,12 +92,12 @@ if (ARTIST_SKIA)
       if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
          set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows/msvc/x86_64/src/prebuilt_binaries)
          set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/windows/skia/msvc/x86_64/x86_64.zip)
-         set(ARTIST_BINARIES_MD5 038966e0d2711d887398a6cda78807aa)
+         set(ARTIST_BINARIES_MD5 93b0a532f87c1068bc2adabf19da086d)
          set(ARTIST_BINARIES_PREFIX windows/msvc/x86_64)
       elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
          set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows/clang/x86_64/src/prebuilt_binaries)
          set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/windows/skia/clang/x86_64/x86_64.zip)
-         set(ARTIST_BINARIES_MD5 8b93d21ce616ce5859bae18346bc8736)
+         set(ARTIST_BINARIES_MD5 b2bc06c19cd61f93505b7e37eaf489db)
          set(ARTIST_BINARIES_PREFIX windows/clang/x86_64)
       endif()
 
@@ -105,6 +105,11 @@ if (ARTIST_SKIA)
          ${ARTIST_BINARIES}/skia.lib
          ${ARTIST_BINARIES}/harfbuzz.lib
          ${ARTIST_BINARIES}/fontconfig.lib
+         ${ARTIST_BINARIES}/freetype.lib
+         ${ARTIST_BINARIES}/bz2.lib
+         ${ARTIST_BINARIES}/brotlicommon.lib
+         ${ARTIST_BINARIES}/brotlienc.lib
+         ${ARTIST_BINARIES}/brotlidec.lib
          ${ARTIST_BINARIES}/libjpeg.lib
          ${ARTIST_BINARIES}/libpng.lib
          ${ARTIST_BINARIES}/libwebp_sse41.lib
