@@ -83,7 +83,6 @@ if (APPLE)
 elseif (MSVC)
    if (ARTIST_SKIA)
       set(GOLDEN_PATH windows_golden/skia)
-      add_dependencies(artist_test windows_dlls)
    endif()
 
    set(GOLDEN_DIR windows_golden)
@@ -92,35 +91,6 @@ elseif (MSVC)
    file(
       COPY windows_golden
       DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-   )
-
-   add_custom_command(
-      TARGET artist_test
-      POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-         "${FONTCONFIG_DLL}"
-         $<TARGET_FILE_DIR:artist_test>
-   )
-   add_custom_command(
-      TARGET artist_test
-      POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-         "${ICONV_DLL}"
-         $<TARGET_FILE_DIR:artist_test>
-   )
-   add_custom_command(
-      TARGET artist_test
-      POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-         "${XML2_DLL}"
-         $<TARGET_FILE_DIR:artist_test>
-   )
-   add_custom_command(
-      TARGET artist_test
-      POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-         "${FREETYPE_DLL}"
-         $<TARGET_FILE_DIR:artist_test>
    )
 
 elseif (UNIX)
