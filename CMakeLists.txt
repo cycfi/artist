@@ -9,11 +9,15 @@ include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 project(artist LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 
+if (POLICY CMP0135)
+   cmake_policy(SET CMP0135 NEW)
+endif()
+
 # Ensure presence of Git submodules (when not using a source tarball)
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
    find_package(Git REQUIRED)
    function(git_submodule_check dir)
-      if(NOT EXISTS "${dir}/CMakeLists.txt")
+      if (NOT EXISTS "${dir}/CMakeLists.txt")
          execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive -- ${dir}
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             COMMAND_ERROR_IS_FATAL ANY)
@@ -72,6 +76,21 @@ elseif (ARTIST_SKIA AND APPLE)
 elseif (ARTIST_QUARTZ_2D AND APPLE)
    message(STATUS "Building Artist lib for MacOS with Quartz2D.")
 endif()
+
+if (APPLE)
+   if (NOT CMAKE_OSX_ARCHITECTURES)
+      set(CMAKE_OSX_ARCHITECTURES ${CMAKE_SYSTEM_PROCESSOR})
+   endif()
+   if (${CMAKE_OSX_ARCHITECTURES} STREQUAL "arm64")
+      message(STATUS "Artist lib MacOS target processor: arm64.")
+   elseif (${CMAKE_OSX_ARCHITECTURES} STREQUAL "x86_64")
+      message(STATUS "Artist lib MacOS target processor: x86_64.")
+   else()
+      message(FATAL_ERROR "Unsupported MacOS compiler")
+   endif()
+endif()
+
+message(STATUS "Compiler: ${CMAKE_C_COMPILER_ID}")
 
 add_subdirectory(lib)
 

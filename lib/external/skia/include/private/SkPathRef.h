@@ -10,7 +10,6 @@
 
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPoint.h"
-#include "include/core/SkRRect.h"
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
 #include "include/private/SkIDChangeListener.h"
@@ -21,9 +20,32 @@
 
 #include <atomic>
 #include <limits>
+#include <tuple>
 
 class SkRBuffer;
 class SkWBuffer;
+class SkRRect;
+
+enum class SkPathConvexity {
+    kConvex,
+    kConcave,
+    kUnknown,
+};
+
+enum class SkPathFirstDirection {
+    kCW,         // == SkPathDirection::kCW
+    kCCW,        // == SkPathDirection::kCCW
+    kUnknown,
+};
+
+// These are computed from a stream of verbs
+struct SkPathVerbAnalysis {
+    bool     valid;
+    int      points, weights;
+    unsigned segmentMask;
+};
+SkPathVerbAnalysis sk_path_analyze_verbs(const uint8_t verbs[], int count);
+
 
 /**
  * Holds the path verbs and points. It is versioned by a generation ID. None of its public methods
@@ -42,6 +64,26 @@ class SkWBuffer;
 
 class SK_API SkPathRef final : public SkNVRefCnt<SkPathRef> {
 public:
+    SkPathRef(SkTDArray<SkPoint> points, SkTDArray<uint8_t> verbs, SkTDArray<SkScalar> weights,
+              unsigned segmentMask)
+        : fPoints(std::move(points))
+        , fVerbs(std::move(verbs))
+        , fConicWeights(std::move(weights))
+    {
+        fBoundsIsDirty = true;    // this also invalidates fIsFinite
+        fGenerationID = 0;        // recompute
+        fSegmentMask = segmentMask;
+        fIsOval = false;
+        fIsRRect = false;
+        // The next two values don't matter unless fIsOval or fIsRRect are true.
+        fRRectOrOvalIsCCW = false;
+        fRRectOrOvalStartIdx = 0xAC;
+        SkDEBUGCODE(fEditorsAttached.store(0);)
+
+        this->computeBounds();  // do this now, before we worry about multiple owners/threads
+        SkDEBUGCODE(this->validate();)
+    }
+
     class Editor {
     public:
         Editor(sk_sp<SkPathRef>* pathRef,
@@ -204,21 +246,7 @@ public:
         return SkToBool(fIsOval);
     }
 
-    bool isRRect(SkRRect* rrect, bool* isCCW, unsigned* start) const {
-        if (fIsRRect) {
-            if (rrect) {
-                *rrect = this->getRRect();
-            }
-            if (isCCW) {
-                *isCCW = SkToBool(fRRectOrOvalIsCCW);
-            }
-            if (start) {
-                *start = fRRectOrOvalStartIdx;
-            }
-        }
-        return SkToBool(fIsRRect);
-    }
-
+    bool isRRect(SkRRect* rrect, bool* isCCW, unsigned* start) const;
 
     bool hasComputedBounds() const {
         return !fBoundsIsDirty;
@@ -258,6 +286,8 @@ public:
     int countPoints() const { return fPoints.count(); }
     int countVerbs() const { return fVerbs.count(); }
     int countWeights() const { return fConicWeights.count(); }
+
+    size_t approximateBytesUsed() const;
 
     /**
      * Returns a pointer one beyond the first logical verb (last verb in memory order).
@@ -312,6 +342,7 @@ public:
     void addGenIDChangeListener(sk_sp<SkIDChangeListener>);   // Threadsafe.
     int genIDChangeListenerCount();                           // Threadsafe
 
+    bool dataMatchesVerbs() const;
     bool isValid() const;
     SkDEBUGCODE(void validate() const { SkASSERT(this->isValid()); } )
 
@@ -339,9 +370,6 @@ private:
     }
 
     void copy(const SkPathRef& ref, int additionalReserveVerbs, int additionalReservePoints);
-
-    // Doesn't read fSegmentMask, but (re)computes it from the verbs array
-    unsigned computeSegmentMask() const;
 
     // Return true if the computed bounds are finite.
     static bool ComputePtBounds(SkRect* bounds, const SkPathRef& ref) {
@@ -487,6 +515,7 @@ private:
     friend class PathRefTest_Private;
     friend class ForceIsRRect_Private; // unit test isRRect
     friend class SkPath;
+    friend class SkPathBuilder;
     friend class SkPathPriv;
 };
 

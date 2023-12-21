@@ -12,8 +12,10 @@
 #include "include/core/SkColor.h"
 #include "include/core/SkImage.h"
 #include "include/core/SkImageInfo.h"
-#include "include/core/SkYUVAIndex.h"
-#include "include/core/SkYUVASizeInfo.h"
+#include "include/core/SkSurfaceProps.h"
+#include "include/core/SkYUVAPixmaps.h"
+
+#include <optional>
 
 class GrRecordingContext;
 class GrSurfaceProxyView;
@@ -56,7 +58,7 @@ public:
      *  Can this generator be used to produce images that will be drawable to the specified context
      *  (or to CPU, if context is nullptr)?
      */
-    bool isValid(GrContext* context) const {
+    bool isValid(GrRecordingContext* context) const {
         return this->onIsValid(context);
     }
 
@@ -84,34 +86,33 @@ public:
      */
     bool getPixels(const SkImageInfo& info, void* pixels, size_t rowBytes);
 
+    bool getPixels(const SkPixmap& pm) {
+        return this->getPixels(pm.info(), pm.writable_addr(), pm.rowBytes());
+    }
+
     /**
-     *  If decoding to YUV is supported, this returns true.  Otherwise, this
-     *  returns false and does not modify any of the parameters.
+     *  If decoding to YUV is supported, this returns true. Otherwise, this
+     *  returns false and the caller will ignore output parameter yuvaPixmapInfo.
      *
-     *  @param sizeInfo    Output parameter indicating the sizes and required
-     *                     allocation widths of the Y, U, V, and A planes.
-     *  @param yuvaIndices How the YUVA planes are organized/used
-     *  @param colorSpace  Output parameter.
+     * @param  supportedDataTypes Indicates the data type/planar config combinations that are
+     *                            supported by the caller. If the generator supports decoding to
+     *                            YUV(A), but not as a type in supportedDataTypes, this method
+     *                            returns false.
+     *  @param yuvaPixmapInfo Output parameter that specifies the planar configuration, subsampling,
+     *                        orientation, chroma siting, plane color types, and row bytes.
      */
-    bool queryYUVA8(SkYUVASizeInfo* sizeInfo,
-                    SkYUVAIndex yuvaIndices[SkYUVAIndex::kIndexCount],
-                    SkYUVColorSpace* colorSpace) const;
+    bool queryYUVAInfo(const SkYUVAPixmapInfo::SupportedDataTypes& supportedDataTypes,
+                       SkYUVAPixmapInfo* yuvaPixmapInfo) const;
 
     /**
      *  Returns true on success and false on failure.
-     *  This always attempts to perform a full decode.  If the client only
-     *  wants size, it should call queryYUVA8().
+     *  This always attempts to perform a full decode. To get the planar
+     *  configuration without decoding use queryYUVAInfo().
      *
-     *  @param sizeInfo    Needs to exactly match the values returned by the
-     *                     query, except the WidthBytes may be larger than the
-     *                     recommendation (but not smaller).
-     *  @param yuvaIndices Needs to exactly match the values returned by the query.
-     *  @param planes      Memory for the Y, U, V, and A planes. Note that, depending on the
-     *                     settings in yuvaIndices, anywhere from 1..4 planes could be returned.
+     *  @param yuvaPixmaps  Contains preallocated pixmaps configured according to a successful call
+     *                      to queryYUVAInfo().
      */
-    bool getYUVA8Planes(const SkYUVASizeInfo& sizeInfo,
-                        const SkYUVAIndex yuvaIndices[SkYUVAIndex::kIndexCount],
-                        void* planes[]);
+    bool getYUVAPlanes(const SkYUVAPixmaps& yuvaPixmaps);
 
 #if SK_SUPPORT_GPU
     /**
@@ -130,7 +131,7 @@ public:
      *          return false;
      *      }
      *
-     *  Regarding the GrContext parameter:
+     *  Regarding the GrRecordingContext parameter:
      *
      *  It must be non-NULL. The generator should only succeed if:
      *  - its internal context is the same
@@ -146,7 +147,7 @@ public:
      *  retained by the generator (kDraw).
      */
     GrSurfaceProxyView generateTexture(GrRecordingContext*, const SkImageInfo& info,
-                                       const SkIPoint& origin, GrMipMapped, GrImageTexGenPolicy);
+                                       const SkIPoint& origin, GrMipmapped, GrImageTexGenPolicy);
 
 #endif
 
@@ -154,8 +155,12 @@ public:
      *  If the default image decoder system can interpret the specified (encoded) data, then
      *  this returns a new ImageGenerator for it. Otherwise this returns NULL. Either way
      *  the caller is still responsible for managing their ownership of the data.
+     *  By default, images will be converted to premultiplied pixels. The alpha type can be
+     *  overridden by specifying kPremul_SkAlphaType or kUnpremul_SkAlphaType. Specifying
+     *  kOpaque_SkAlphaType is not supported, and will return NULL.
      */
-    static std::unique_ptr<SkImageGenerator> MakeFromEncoded(sk_sp<SkData>);
+    static std::unique_ptr<SkImageGenerator> MakeFromEncoded(
+            sk_sp<SkData>, std::optional<SkAlphaType> = std::nullopt);
 
     /** Return a new image generator backed by the specified picture.  If the size is empty or
      *  the picture is NULL, this returns NULL.
@@ -165,7 +170,8 @@ public:
     static std::unique_ptr<SkImageGenerator> MakeFromPicture(const SkISize&, sk_sp<SkPicture>,
                                                              const SkMatrix*, const SkPaint*,
                                                              SkImage::BitDepth,
-                                                             sk_sp<SkColorSpace>);
+                                                             sk_sp<SkColorSpace>,
+                                                             SkSurfaceProps props = {});
 
 protected:
     static constexpr int kNeedNewImageUniqueID = 0;
@@ -175,15 +181,20 @@ protected:
     virtual sk_sp<SkData> onRefEncodedData() { return nullptr; }
     struct Options {};
     virtual bool onGetPixels(const SkImageInfo&, void*, size_t, const Options&) { return false; }
-    virtual bool onIsValid(GrContext*) const { return true; }
-    virtual bool onQueryYUVA8(SkYUVASizeInfo*, SkYUVAIndex[SkYUVAIndex::kIndexCount],
-                              SkYUVColorSpace*) const { return false; }
-    virtual bool onGetYUVA8Planes(const SkYUVASizeInfo&, const SkYUVAIndex[SkYUVAIndex::kIndexCount],
-                                  void*[4] /*planes*/) { return false; }
+    virtual bool onIsValid(GrRecordingContext*) const { return true; }
+    virtual bool onQueryYUVAInfo(const SkYUVAPixmapInfo::SupportedDataTypes&,
+                                 SkYUVAPixmapInfo*) const { return false; }
+    virtual bool onGetYUVAPlanes(const SkYUVAPixmaps&) { return false; }
 #if SK_SUPPORT_GPU
     // returns nullptr
     virtual GrSurfaceProxyView onGenerateTexture(GrRecordingContext*, const SkImageInfo&,
-                                                 const SkIPoint&, GrMipMapped, GrImageTexGenPolicy);
+                                                 const SkIPoint&, GrMipmapped, GrImageTexGenPolicy);
+
+    // Most internal SkImageGenerators produce textures and views that use kTopLeft_GrSurfaceOrigin.
+    // If the generator may produce textures with different origins (e.g.
+    // GrAHardwareBufferImageGenerator) it should override this function to return the correct
+    // origin.
+    virtual GrSurfaceOrigin origin() const { return kTopLeft_GrSurfaceOrigin; }
 #endif
 
 private:
@@ -195,7 +206,8 @@ private:
     // This is our default impl, which may be different on different platforms.
     // It is called from NewFromEncoded() after it has checked for any runtime factory.
     // The SkData will never be NULL, as that will have been checked by NewFromEncoded.
-    static std::unique_ptr<SkImageGenerator> MakeFromEncodedImpl(sk_sp<SkData>);
+    static std::unique_ptr<SkImageGenerator> MakeFromEncodedImpl(sk_sp<SkData>,
+                                                                 std::optional<SkAlphaType>);
 
     SkImageGenerator(SkImageGenerator&&) = delete;
     SkImageGenerator(const SkImageGenerator&) = delete;

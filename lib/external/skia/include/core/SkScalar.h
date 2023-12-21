@@ -145,14 +145,16 @@ static inline bool SkScalarNearlyEqual(SkScalar x, SkScalar y,
     return SkScalarAbs(x-y) <= tolerance;
 }
 
+#define SK_ScalarSinCosNearlyZero   (SK_Scalar1 / (1 << 16))
+
 static inline float SkScalarSinSnapToZero(SkScalar radians) {
     float v = SkScalarSin(radians);
-    return SkScalarNearlyZero(v) ? 0.0f : v;
+    return SkScalarNearlyZero(v, SK_ScalarSinCosNearlyZero) ? 0.0f : v;
 }
 
 static inline float SkScalarCosSnapToZero(SkScalar radians) {
     float v = SkScalarCos(radians);
-    return SkScalarNearlyZero(v) ? 0.0f : v;
+    return SkScalarNearlyZero(v, SK_ScalarSinCosNearlyZero) ? 0.0f : v;
 }
 
 /** Linearly interpolate between A and B, based on t.
@@ -167,14 +169,13 @@ static inline SkScalar SkScalarInterp(SkScalar A, SkScalar B, SkScalar t) {
 }
 
 /** Interpolate along the function described by (keys[length], values[length])
-    for the passed searchKey.  SearchKeys outside the range keys[0]-keys[Length]
-    clamp to the min or max value.  This function was inspired by a desire
-    to change the multiplier for thickness in fakeBold; therefore it assumes
-    the number of pairs (length) will be small, and a linear search is used.
+    for the passed searchKey. SearchKeys outside the range keys[0]-keys[Length]
+    clamp to the min or max value. This function assumes the number of pairs
+    (length) will be small and a linear search is used.
+
     Repeated keys are allowed for discontinuous functions (so long as keys is
-    monotonically increasing), and if key is the value of a repeated scalar in
-    keys, the first one will be used.  However, that may change if a binary
-    search is used.
+    monotonically increasing). If key is the value of a repeated scalar in
+    keys the first one will be used.
 */
 SkScalar SkScalarInterpFunc(SkScalar searchKey, const SkScalar keys[],
                             const SkScalar values[], int length);

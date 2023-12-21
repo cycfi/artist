@@ -9,6 +9,7 @@
 #include "opaque.hpp"
 
 #include <SkBitmap.h>
+#include <SkColorSpace.h>
 #include <SkData.h>
 #include <SkImage.h>
 #include <SkPicture.h>
@@ -17,7 +18,7 @@
 #include <SkPath.h>
 #include <SkGradientShader.h>
 #include <SkImageFilter.h>
-#include <SkDropShadowImageFilter.h>
+#include <SkImageFilters.h>
 #include <SkTextBlob.h>
 #include <SkTypeface.h>
 #include <SkFont.h>
@@ -397,13 +398,12 @@ namespace cycfi::artist
       auto scx = matrix.getScaleX() / _state->_pre_scale;
       auto scy = matrix.getScaleY() / _state->_pre_scale;
 
-      auto shadow = SkDropShadowImageFilter::Make(
+      auto shadow = SkImageFilters::DropShadow(
          offset.x / scx
        , offset.y / scy
        , (blur * blur_factor) / scx
        , (blur * blur_factor) / scy
        , SkColor4f{c.red, c.green, c.blue, c.alpha}.toSkColor()
-       , SkDropShadowImageFilter::kDrawShadowAndForeground_ShadowMode
        , nullptr
       );
 
@@ -638,11 +638,13 @@ namespace cycfi::artist
             }
             if constexpr(std::is_same_v<T, SkBitmap>)
             {
-               _context->drawBitmapRect(
-                  that,
+               _context->drawImageRect(
+                  that.asImage(),
                   SkRect{src.left, src.top, src.right, src.bottom},
                   SkRect{dest.left, dest.top, dest.right, dest.bottom},
-                  &_state->fill_paint()
+                  SkSamplingOptions(),
+                  &_state->fill_paint(),
+                  SkCanvas::kStrict_SrcRectConstraint
                );
             }
          };

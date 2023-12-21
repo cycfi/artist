@@ -8,7 +8,6 @@
 #ifndef SkSurfaceCharacterization_DEFINED
 #define SkSurfaceCharacterization_DEFINED
 
-#include "include/gpu/GrTypes.h"
 
 #include "include/core/SkColorSpace.h"
 #include "include/core/SkImageInfo.h"
@@ -17,12 +16,11 @@
 
 class SkColorSpace;
 
-#include "include/gpu/GrBackendSurface.h"
 
 #if SK_SUPPORT_GPU
-// TODO: remove the GrContext.h include once Flutter is updated
-#include "include/gpu/GrContext.h"
+#include "include/gpu/GrBackendSurface.h"
 #include "include/gpu/GrContextThreadSafeProxy.h"
+#include "include/gpu/GrTypes.h"
 
 /** \class SkSurfaceCharacterization
     A surface characterization contains all the information Ganesh requires to makes its internal
@@ -36,6 +34,10 @@ public:
     enum class Textureable : bool { kNo = false, kYes = true };
     enum class MipMapped : bool { kNo = false, kYes = true };
     enum class UsesGLFBO0 : bool { kNo = false, kYes = true };
+    // This flag indicates that the backing VkImage for this Vulkan surface will have the
+    // VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT set. This bit allows skia to handle advanced blends
+    // more optimally in a shader by being able to directly read the dst values.
+    enum class VkRTSupportsInputAttachment : bool { kNo = false, kYes = true };
     // This flag indicates if the surface is wrapping a raw Vulkan secondary command buffer.
     enum class VulkanSecondaryCBCompatible : bool { kNo = false, kYes = true };
 
@@ -101,6 +103,9 @@ public:
     bool isTextureable() const { return Textureable::kYes == fIsTextureable; }
     bool isMipMapped() const { return MipMapped::kYes == fIsMipMapped; }
     bool usesGLFBO0() const { return UsesGLFBO0::kYes == fUsesGLFBO0; }
+    bool vkRTSupportsInputAttachment() const {
+        return VkRTSupportsInputAttachment::kYes == fVkRTSupportsInputAttachment;
+    }
     bool vulkanSecondaryCBCompatible() const {
         return VulkanSecondaryCBCompatible::kYes == fVulkanSecondaryCBCompatible;
     }
@@ -130,6 +135,7 @@ private:
                               Textureable isTextureable,
                               MipMapped isMipMapped,
                               UsesGLFBO0 usesGLFBO0,
+                              VkRTSupportsInputAttachment vkRTSupportsInputAttachment,
                               VulkanSecondaryCBCompatible vulkanSecondaryCBCompatible,
                               GrProtected isProtected,
                               const SkSurfaceProps& surfaceProps)
@@ -142,9 +148,14 @@ private:
             , fIsTextureable(isTextureable)
             , fIsMipMapped(isMipMapped)
             , fUsesGLFBO0(usesGLFBO0)
+            , fVkRTSupportsInputAttachment(vkRTSupportsInputAttachment)
             , fVulkanSecondaryCBCompatible(vulkanSecondaryCBCompatible)
             , fIsProtected(isProtected)
             , fSurfaceProps(surfaceProps) {
+        if (fSurfaceProps.flags() & SkSurfaceProps::kDynamicMSAA_Flag) {
+            // Dynamic MSAA is not currently supported with DDL.
+            *this = {};
+        }
         SkDEBUGCODE(this->validate());
     }
 
@@ -157,31 +168,29 @@ private:
              Textureable isTextureable,
              MipMapped isMipMapped,
              UsesGLFBO0 usesGLFBO0,
+             VkRTSupportsInputAttachment vkRTSupportsInputAttachment,
              VulkanSecondaryCBCompatible vulkanSecondaryCBCompatible,
              GrProtected isProtected,
              const SkSurfaceProps& surfaceProps) {
-        SkASSERT(MipMapped::kNo == isMipMapped || Textureable::kYes == isTextureable);
-        SkASSERT(Textureable::kNo == isTextureable || UsesGLFBO0::kNo == usesGLFBO0);
+        if (surfaceProps.flags() & SkSurfaceProps::kDynamicMSAA_Flag) {
+            // Dynamic MSAA is not currently supported with DDL.
+            *this = {};
+        } else {
+            fContextInfo = contextInfo;
+            fCacheMaxResourceBytes = cacheMaxResourceBytes;
 
-        SkASSERT(VulkanSecondaryCBCompatible::kNo == vulkanSecondaryCBCompatible ||
-                 UsesGLFBO0::kNo == usesGLFBO0);
-        SkASSERT(Textureable::kNo == isTextureable ||
-                 VulkanSecondaryCBCompatible::kNo == vulkanSecondaryCBCompatible);
-
-        fContextInfo = contextInfo;
-        fCacheMaxResourceBytes = cacheMaxResourceBytes;
-
-        fImageInfo = ii;
-        fBackendFormat = backendFormat;
-        fOrigin = origin;
-        fSampleCnt = sampleCnt;
-        fIsTextureable = isTextureable;
-        fIsMipMapped = isMipMapped;
-        fUsesGLFBO0 = usesGLFBO0;
-        fVulkanSecondaryCBCompatible = vulkanSecondaryCBCompatible;
-        fIsProtected = isProtected;
-        fSurfaceProps = surfaceProps;
-
+            fImageInfo = ii;
+            fBackendFormat = backendFormat;
+            fOrigin = origin;
+            fSampleCnt = sampleCnt;
+            fIsTextureable = isTextureable;
+            fIsMipMapped = isMipMapped;
+            fUsesGLFBO0 = usesGLFBO0;
+            fVkRTSupportsInputAttachment = vkRTSupportsInputAttachment;
+            fVulkanSecondaryCBCompatible = vulkanSecondaryCBCompatible;
+            fIsProtected = isProtected;
+            fSurfaceProps = surfaceProps;
+        }
         SkDEBUGCODE(this->validate());
     }
 
@@ -195,12 +204,14 @@ private:
     Textureable                     fIsTextureable;
     MipMapped                       fIsMipMapped;
     UsesGLFBO0                      fUsesGLFBO0;
+    VkRTSupportsInputAttachment     fVkRTSupportsInputAttachment;
     VulkanSecondaryCBCompatible     fVulkanSecondaryCBCompatible;
     GrProtected                     fIsProtected;
     SkSurfaceProps                  fSurfaceProps;
 };
 
 #else// !SK_SUPPORT_GPU
+class GrBackendFormat;
 
 class SK_API SkSurfaceCharacterization {
 public:
@@ -237,6 +248,7 @@ public:
     bool isTextureable() const { return false; }
     bool isMipMapped() const { return false; }
     bool usesGLFBO0() const { return false; }
+    bool vkRTSupportsAttachmentInput() const { return false; }
     bool vulkanSecondaryCBCompatible() const { return false; }
     SkColorSpace* colorSpace() const { return nullptr; }
     sk_sp<SkColorSpace> refColorSpace() const { return nullptr; }

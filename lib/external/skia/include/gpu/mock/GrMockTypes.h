@@ -9,7 +9,7 @@
 #define GrMockOptions_DEFINED
 
 #include "include/gpu/GrTypes.h"
-#include "include/private/GrTypesPriv.h"
+#include "include/private/gpu/ganesh/GrTypesPriv.h"
 
 class GrBackendFormat;
 
@@ -79,6 +79,15 @@ private:
     int           fID;
 };
 
+struct GrMockSurfaceInfo {
+    uint32_t fSampleCount = 1;
+    uint32_t fLevelCount = 0;
+    GrProtected fProtected = GrProtected::kNo;
+
+    GrColorType fColorType = GrColorType::kUnknown;
+    SkImage::CompressionType fCompressionType = SkImage::CompressionType::kNone;
+};
+
 /**
  * A pointer to this type is used as the GrBackendContext when creating a Mock GrContext. It can be
  * used to specify capability options for the mock context. If nullptr is used a default constructed
@@ -108,18 +117,18 @@ struct GrMockOptions {
     };
 
     // GrCaps options.
-    bool fMipMapSupport = false;
-    bool fInstanceAttribSupport = false;
+    bool fMipmapSupport = false;
+    bool fDrawInstancedSupport = false;
     bool fHalfFloatVertexAttributeSupport = false;
     uint32_t fMapBufferFlags = 0;
     int fMaxTextureSize = 2048;
     int fMaxRenderTargetSize = 2048;
+    int fMaxWindowRectangles = 0;
     int fMaxVertexAttributes = 16;
     ConfigOptions fConfigOptions[kGrColorTypeCnt];
     ConfigOptions fCompressedOptions[SkImage::kCompressionTypeCount];
 
     // GrShaderCaps options.
-    bool fGeometryShaderSupport = false;
     bool fIntegerSupport = false;
     bool fFlatInterpolationSupport = false;
     int fMaxVertexSamplers = 0;

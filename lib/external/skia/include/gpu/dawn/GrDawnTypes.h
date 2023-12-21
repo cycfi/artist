@@ -8,6 +8,8 @@
 #ifndef GrDawnTypes_DEFINED
 #define GrDawnTypes_DEFINED
 
+#include "include/gpu/GrTypes.h"
+
 #ifdef Always
 #undef Always
 static constexpr int Always = 2;
@@ -20,7 +22,7 @@ static constexpr int Success = 0;
 #undef None
 static constexpr int None = 0L;
 #endif
-#include "dawn/webgpu_cpp.h"
+#include "webgpu/webgpu_cpp.h"
 
 struct GrDawnTextureInfo {
     wgpu::Texture       fTexture;
@@ -80,6 +82,14 @@ struct GrDawnRenderTargetInfo {
                fFormat == other.fFormat &&
                fLevelCount == other.fLevelCount;
     }
+};
+
+struct GrDawnSurfaceInfo {
+    uint32_t fSampleCount = 1;
+    uint32_t fLevelCount = 0;
+    GrProtected fProtected = GrProtected::kNo;
+
+    wgpu::TextureFormat fFormat;
 };
 
 #endif

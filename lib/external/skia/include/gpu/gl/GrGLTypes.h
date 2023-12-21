@@ -62,11 +62,13 @@ enum class GrGLFormat {
     kR8,
     kALPHA8,
     kLUMINANCE8,
+    kLUMINANCE8_ALPHA8,
     kBGRA8,
     kRGB565,
     kRGBA16F,
     kR16F,
     kRGB8,
+    kRGBX8,
     kRG8,
     kRGB10_A2,
     kRGBA4,
@@ -81,7 +83,14 @@ enum class GrGLFormat {
     kRG16F,
     kLUMINANCE16F,
 
-    kLast = kLUMINANCE16F
+    kLastColorFormat = kLUMINANCE16F,
+
+    // Depth/Stencil formats
+    kSTENCIL_INDEX8,
+    kSTENCIL_INDEX16,
+    kDEPTH24_STENCIL8,
+
+    kLast = kDEPTH24_STENCIL8
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -184,6 +193,15 @@ struct GrGLFramebufferInfo {
     bool operator==(const GrGLFramebufferInfo& that) const {
         return fFBOID == that.fFBOID && fFormat == that.fFormat;
     }
+};
+
+struct GrGLSurfaceInfo {
+    uint32_t fSampleCount = 1;
+    uint32_t fLevelCount = 0;
+    GrProtected fProtected = GrProtected::kNo;
+
+    GrGLenum fTarget = 0;
+    GrGLenum fFormat = 0;
 };
 
 #endif
