@@ -55,21 +55,6 @@ if (ARTIST_SKIA)
 endif()
 
 if (ARTIST_SKIA AND WIN32)
-   ExternalProject_Add(windows_dlls
-      PREFIX "windows-x64-dll"
-      URL https://github.com/cycfi/artist/releases/download/prebuilt-binaries/windows-x64-dll.zip
-      URL_MD5 4c07a5aa4bfddff268535244196f900f
-      CONFIGURE_COMMAND ""
-      BUILD_COMMAND ""
-      INSTALL_COMMAND ""
-   )
-   set(FONTCONFIG_DLL ${CMAKE_CURRENT_BINARY_DIR}/windows-x64-dll/src/windows_dlls/fontconfig.dll)
-   set(ICONV_DLL ${CMAKE_CURRENT_BINARY_DIR}/windows-x64-dll/src/windows_dlls/libiconv.dll)
-   set(XML2_DLL ${CMAKE_CURRENT_BINARY_DIR}/windows-x64-dll/src/windows_dlls/libxml2.dll)
-   set(FREETYPE_DLL ${CMAKE_CURRENT_BINARY_DIR}/windows-x64-dll/src/windows_dlls/freetype.dll)
-endif()
-
-if (ARTIST_SKIA AND WIN32)
    message(STATUS "Building Artist lib for Win32 with Skia.")
 elseif (ARTIST_SKIA AND APPLE)
    message(STATUS "Building Artist lib for MacOS with Skia.")
