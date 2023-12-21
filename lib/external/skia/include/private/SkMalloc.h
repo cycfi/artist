@@ -64,9 +64,8 @@ static inline void* sk_calloc_throw(size_t size) {
 }
 
 static inline void* sk_calloc_canfail(size_t size) {
-#if defined(IS_FUZZING_WITH_LIBFUZZER)
-    // The Libfuzzer environment is very susceptible to OOM, so to avoid those
-    // just pretend we can't allocate more than 200kb.
+#if defined(SK_BUILD_FOR_FUZZER)
+    // To reduce the chance of OOM, pretend we can't allocate more than 200kb.
     if (size > 200000) {
         return nullptr;
     }
@@ -79,13 +78,16 @@ SK_API extern void* sk_calloc_throw(size_t count, size_t elemSize);
 SK_API extern void* sk_malloc_throw(size_t count, size_t elemSize);
 SK_API extern void* sk_realloc_throw(void* buffer, size_t count, size_t elemSize);
 
+// Returns the true usable size provided by the underlying allocator, or 0 if
+// querying the allocation size is not supported.
+SK_API extern size_t sk_malloc_usable_size(void* buffer);
+
 /**
  *  These variants return nullptr on failure
  */
 static inline void* sk_malloc_canfail(size_t size) {
-#if defined(IS_FUZZING_WITH_LIBFUZZER)
-    // The Libfuzzer environment is very susceptible to OOM, so to avoid those
-    // just pretend we can't allocate more than 200kb.
+#if defined(SK_BUILD_FOR_FUZZER)
+    // To reduce the chance of OOM, pretend we can't allocate more than 200kb.
     if (size > 200000) {
         return nullptr;
     }

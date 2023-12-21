@@ -11,7 +11,7 @@
 #include "include/core/SkRefCnt.h"
 #include "include/private/SkFixed.h"
 #include "include/private/SkOnce.h"
-#include "include/third_party/skcms/skcms.h"
+#include "modules/skcms/skcms.h"
 #include <memory>
 
 class SkData;
@@ -57,7 +57,7 @@ static constexpr skcms_TransferFunction kPQ =
 static constexpr skcms_TransferFunction kHLG =
     {-3.0f, 2.0f, 2.0f, 1/0.17883277f, 0.28466892f, 0.55991073f, 0.0f };
 
-}
+}  // namespace SkNamedTransferFn
 
 namespace SkNamedGamut {
 
@@ -86,8 +86,6 @@ static constexpr skcms_Matrix3x3 kDisplayP3 = {{
     {  0.241182f,   0.692236f,  0.0665819f },
     { -0.00104941f, 0.0418818f, 0.784378f  },
 }};
-// TODO: skia:9792 We originally misnamed this matrix... delete this incorrect alias?
-static constexpr skcms_Matrix3x3 kDCIP3 = kDisplayP3;
 
 static constexpr skcms_Matrix3x3 kRec2020 = {{
     {  0.673459f,   0.165661f,  0.125100f  },
@@ -101,7 +99,7 @@ static constexpr skcms_Matrix3x3 kXYZ = {{
     { 0.0f, 0.0f, 1.0f },
 }};
 
-}
+}  // namespace SkNamedGamut
 
 class SK_API SkColorSpace : public SkNVRefCnt<SkColorSpace> {
 public:

@@ -10,15 +10,18 @@
 
 #include "include/core/SkBlendMode.h"
 #include "include/core/SkColor.h"
-#include "include/core/SkFilterQuality.h"
 #include "include/core/SkRefCnt.h"
 #include "include/private/SkTo.h"
 
+#include <optional>
+
+class SkBlender;
 class SkColorFilter;
 class SkColorSpace;
 struct SkRect;
 class SkImageFilter;
 class SkMaskFilter;
+class SkMatrix;
 class SkPath;
 class SkPathEffect;
 class SkShader;
@@ -141,22 +144,6 @@ public:
         return !(a == b);
     }
 
-    /** Returns a hash generated from SkPaint values and pointers.
-        Identical hashes guarantee that the paints are
-        equivalent, but differing hashes do not guarantee that the paints have differing
-        contents.
-
-        If operator==(const SkPaint& a, const SkPaint& b) returns true for two paints,
-        their hashes are also equal.
-
-        The hash returned is platform and implementation specific.
-
-        @return  a shallow hash
-
-        example: https://fiddle.skia.org/c/@Paint_getHash
-    */
-    uint32_t getHash() const;
-
     /** Sets all SkPaint contents to their initial values. This is equivalent to replacing
         SkPaint with the result of SkPaint().
 
@@ -189,22 +176,6 @@ public:
     */
     void setDither(bool dither) { fBitfields.fDither = static_cast<unsigned>(dither); }
 
-    /** Returns SkFilterQuality, the image filtering level. A lower setting
-        draws faster; a higher setting looks better when the image is scaled.
-    */
-    SkFilterQuality getFilterQuality() const {
-        return (SkFilterQuality)fBitfields.fFilterQuality;
-    }
-
-    /** Sets SkFilterQuality, the image filtering level. A lower setting
-        draws faster; a higher setting looks better when the image is scaled.
-        Does not check to see if quality is valid.
-
-        example: https://fiddle.skia.org/c/@Color_Methods
-        example: https://fiddle.skia.org/c/@Paint_setFilterQuality
-    */
-    void setFilterQuality(SkFilterQuality quality);
-
     /** \enum SkPaint::Style
         Set Style to fill, stroke, or both fill and stroke geometry.
         The stroke and fill
@@ -235,6 +206,11 @@ public:
     */
     void setStyle(Style style);
 
+    /**
+     *  Set paint's style to kStroke if true, or kFill if false.
+     */
+    void setStroke(bool);
+
     /** Retrieves alpha and RGB, unpremultiplied, packed into 32 bits.
         Use helpers SkColorGetA(), SkColorGetR(), SkColorGetG(), and SkColorGetB() to extract
         a color component.
@@ -244,7 +220,7 @@ public:
     SkColor getColor() const { return fColor4f.toSkColor(); }
 
     /** Retrieves alpha and RGB, unpremultiplied, as four floating point values. RGB are
-        are extended sRGB values (sRGB gamut, and encoded with the sRGB transfer function).
+        extended sRGB values (sRGB gamut, and encoded with the sRGB transfer function).
 
         @return  unpremultiplied RGBA
     */
@@ -280,7 +256,9 @@ public:
     float getAlphaf() const { return fColor4f.fA; }
 
     // Helper that scales the alpha by 255.
-    uint8_t getAlpha() const { return sk_float_round2int(this->getAlphaf() * 255); }
+    uint8_t getAlpha() const {
+        return static_cast<uint8_t>(sk_float_round2int(this->getAlphaf() * 255));
+    }
 
     /** Replaces alpha, leaving RGB
         unchanged. An out of range value triggers an assert in the debug
@@ -316,9 +294,10 @@ public:
     */
     SkScalar getStrokeWidth() const { return fWidth; }
 
-    /** Sets the thickness of the pen used by the paint to
-        outline the shape.
-        Has no effect if width is less than zero.
+    /** Sets the thickness of the pen used by the paint to outline the shape.
+        A stroke-width of zero is treated as "hairline" width. Hairlines are always exactly one
+        pixel wide in device space (their thickness does not change as the canvas is scaled).
+        Negative stroke-widths are invalid; setting a negative width will have no effect.
 
         @param width  zero thickness for hairline; greater than zero for pen thickness
 
@@ -416,6 +395,9 @@ public:
     bool getFillPath(const SkPath& src, SkPath* dst, const SkRect* cullRect,
                      SkScalar resScale = 1) const;
 
+    bool getFillPath(const SkPath& src, SkPath* dst, const SkRect* cullRect,
+                     const SkMatrix& ctm) const;
+
     /** Returns the filled equivalent of the stroked path.
 
         Replaces dst with the src path modified by SkPathEffect and style stroke.
@@ -487,25 +469,57 @@ public:
     */
     void setColorFilter(sk_sp<SkColorFilter> colorFilter);
 
-    /** Returns SkBlendMode.
-        By default, returns SkBlendMode::kSrcOver.
+    /** If the current blender can be represented as a SkBlendMode enum, this returns that
+     *  enum in the optional's value(). If it cannot, then the returned optional does not
+     *  contain a value.
+     */
+    std::optional<SkBlendMode> asBlendMode() const;
 
-        @return  mode used to combine source color with destination color
-    */
-    SkBlendMode getBlendMode() const { return (SkBlendMode)fBitfields.fBlendMode; }
+    /**
+     *  Queries the blender, and if it can be represented as a SkBlendMode, return that mode,
+     *  else return the defaultMode provided.
+     */
+    SkBlendMode getBlendMode_or(SkBlendMode defaultMode) const;
 
-    /** Returns true if SkBlendMode is SkBlendMode::kSrcOver, the default.
+    /** Returns true iff the current blender claims to be equivalent to SkBlendMode::kSrcOver.
+     *
+     *  Also returns true of the current blender is nullptr.
+     */
+    bool isSrcOver() const;
 
-        @return  true if SkBlendMode is SkBlendMode::kSrcOver
-    */
-    bool isSrcOver() const { return (SkBlendMode)fBitfields.fBlendMode == SkBlendMode::kSrcOver; }
+    /** Helper method for calling setBlender().
+     *
+     *  This sets a blender that implements the specified blendmode enum.
+     */
+    void setBlendMode(SkBlendMode mode);
 
-    /** Sets SkBlendMode to mode.
-        Does not check for valid input.
+    /** Returns the user-supplied blend function, if one has been set.
+     *  Does not alter SkBlender's SkRefCnt.
+     *
+     *  A nullptr blender signifies the default SrcOver behavior.
+     *
+     *  @return  the SkBlender assigned to this paint, otherwise nullptr
+     */
+    SkBlender* getBlender() const { return fBlender.get(); }
 
-        @param mode  SkBlendMode used to combine source color and destination
-    */
-    void setBlendMode(SkBlendMode mode) { fBitfields.fBlendMode = (unsigned)mode; }
+    /** Returns the user-supplied blend function, if one has been set.
+     *  Increments the SkBlender's SkRefCnt by one.
+     *
+     *  A nullptr blender signifies the default SrcOver behavior.
+     *
+     *  @return  the SkBlender assigned to this paint, otherwise nullptr
+     */
+    sk_sp<SkBlender> refBlender() const;
+
+    /** Sets the current blender, increasing its refcnt, and if a blender is already
+     *  present, decreasing that object's refcnt.
+     *
+     *  A nullptr blender signifies the default SrcOver behavior.
+     *
+     *  For convenience, you can call setBlendMode() if the blend effect can be expressed
+     *  as one of those values.
+     */
+    void setBlender(sk_sp<SkBlender> blender);
 
     /** Returns SkPathEffect if set, or nullptr.
         Does not alter SkPathEffect SkRefCnt.
@@ -589,7 +603,6 @@ public:
 
         @param imageFilter  how SkImage is sampled when transformed
 
-        example: https://fiddle.skia.org/c/@Draw_Looper_Methods
         example: https://fiddle.skia.org/c/@Paint_setImageFilter
     */
     void setImageFilter(sk_sp<SkImageFilter> imageFilter);
@@ -639,23 +652,7 @@ public:
         @param storage  computed bounds of geometry; may not be nullptr
         @return         fast computed bounds
     */
-    const SkRect& computeFastBounds(const SkRect& orig, SkRect* storage) const {
-        // Things like stroking, etc... will do math on the bounds rect, assuming that it's sorted.
-        SkASSERT(orig.isSorted());
-        SkPaint::Style style = this->getStyle();
-        // ultra fast-case: filling with no effects that affect geometry
-        if (kFill_Style == style) {
-            uintptr_t effects = 0;
-            effects |= reinterpret_cast<uintptr_t>(this->getMaskFilter());
-            effects |= reinterpret_cast<uintptr_t>(this->getPathEffect());
-            effects |= reinterpret_cast<uintptr_t>(this->getImageFilter());
-            if (!effects) {
-                return orig;
-            }
-        }
-
-        return this->doComputeFastBounds(orig, storage, style);
-    }
+    const SkRect& computeFastBounds(const SkRect& orig, SkRect* storage) const;
 
     /**     (to be made private)
 
@@ -687,6 +684,7 @@ private:
     sk_sp<SkMaskFilter>   fMaskFilter;
     sk_sp<SkColorFilter>  fColorFilter;
     sk_sp<SkImageFilter>  fImageFilter;
+    sk_sp<SkBlender>      fBlender;
 
     SkColor4f       fColor4f;
     SkScalar        fWidth;
@@ -698,12 +696,12 @@ private:
             unsigned    fCapType : 2;
             unsigned    fJoinType : 2;
             unsigned    fStyle : 2;
-            unsigned    fFilterQuality : 2;
-            unsigned    fBlendMode : 8; // only need 5-6?
-            unsigned    fPadding : 14;  // 14==32-1-1-2-2-2-2-8
+            unsigned    fPadding : 24;  // 24 == 32 -1-1-2-2-2
         } fBitfields;
         uint32_t fBitfieldsUInt;
     };
+
+    friend class SkPaintPriv;
 };
 
 #endif

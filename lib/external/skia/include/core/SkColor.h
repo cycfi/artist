@@ -8,9 +8,11 @@
 #ifndef SkColor_DEFINED
 #define SkColor_DEFINED
 
-#include "include/core/SkImageInfo.h"
+#include "include/core/SkAlphaType.h"
 #include "include/core/SkScalar.h"
 #include "include/core/SkTypes.h"
+
+#include <array>
 
 /** \file SkColor.h
 
@@ -230,6 +232,21 @@ enum class SkColorChannel {
     kLastEnum = kA,
 };
 
+/** Used to represent the channels available in a color type or texture format as a mask. */
+enum SkColorChannelFlag : uint32_t {
+    kRed_SkColorChannelFlag    = 1 << static_cast<uint32_t>(SkColorChannel::kR),
+    kGreen_SkColorChannelFlag  = 1 << static_cast<uint32_t>(SkColorChannel::kG),
+    kBlue_SkColorChannelFlag   = 1 << static_cast<uint32_t>(SkColorChannel::kB),
+    kAlpha_SkColorChannelFlag  = 1 << static_cast<uint32_t>(SkColorChannel::kA),
+    kGray_SkColorChannelFlag   = 0x10,
+    // Convenience values
+    kGrayAlpha_SkColorChannelFlags = kGray_SkColorChannelFlag | kAlpha_SkColorChannelFlag,
+    kRG_SkColorChannelFlags        = kRed_SkColorChannelFlag | kGreen_SkColorChannelFlag,
+    kRGB_SkColorChannelFlags       = kRG_SkColorChannelFlags | kBlue_SkColorChannelFlag,
+    kRGBA_SkColorChannelFlags      = kRGB_SkColorChannelFlags | kAlpha_SkColorChannelFlag,
+};
+static_assert(0 == (kGray_SkColorChannelFlag & kRGBA_SkColorChannelFlags), "bitfield conflict");
+
 /** \struct SkRGBA4f
     RGBA color value, holding four floating point components. Color components are always in
     a known order. kAT determines if the SkRGBA4f's R, G, and B components are premultiplied
@@ -293,6 +310,9 @@ struct SkRGBA4f {
         @return       pointer to array [fR, fG, fB, fA]
     */
     float* vec() { return &fR; }
+
+    /** As a std::array<float, 4> */
+    std::array<float, 4> array() const { return {fR, fG, fB, fA}; }
 
     /** Returns one component. Asserts if index is out of range and SK_DEBUG is defined.
 
@@ -385,6 +405,11 @@ struct SkRGBA4f {
     uint32_t toBytes_RGBA() const;
     static SkRGBA4f FromBytes_RGBA(uint32_t color);
 
+    /**
+      Returns a copy of the SkRGBA4f but with alpha component set to 1.0f.
+
+      @return         opaque color
+    */
     SkRGBA4f makeOpaque() const {
         return { fR, fG, fB, 1.0f };
     }

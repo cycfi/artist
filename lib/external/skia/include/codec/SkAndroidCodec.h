@@ -9,9 +9,25 @@
 #define SkAndroidCodec_DEFINED
 
 #include "include/codec/SkCodec.h"
+#include "include/core/SkAlphaType.h"
+#include "include/core/SkColorSpace.h"
+#include "include/core/SkColorType.h"
 #include "include/core/SkEncodedImageFormat.h"
-#include "include/core/SkStream.h"
+#include "include/core/SkImageInfo.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkSize.h"
 #include "include/core/SkTypes.h"
+#include "include/private/SkEncodedInfo.h"
+#include "include/private/SkNoncopyable.h"
+#include "modules/skcms/skcms.h"
+
+#include <cstddef>
+#include <memory>
+
+class SkData;
+class SkPngChunkReader;
+class SkStream;
+struct SkIRect;
 
 /**
  *  Abstract interface defining image codec functionality that is necessary for
@@ -19,31 +35,23 @@
  */
 class SK_API SkAndroidCodec : SkNoncopyable {
 public:
+    /**
+     * Deprecated.
+     *
+     * Now that SkAndroidCodec supports multiframe images, there are multiple
+     * ways to handle compositing an oriented frame on top of an oriented frame
+     * with different tradeoffs. SkAndroidCodec now ignores the orientation and
+     * forces the client to handle it.
+     */
     enum class ExifOrientationBehavior {
-        /**
-         *  Ignore any exif orientation markers in the data.
-         *
-         *  getInfo's width and height will match the header of the image, and
-         *  no processing will be done to match the marker.
-         */
         kIgnore,
-
-        /**
-         *  Respect the exif orientation marker.
-         *
-         *  getInfo's width and height will represent what they should be after
-         *  applying the orientation. For example, if the marker specifies a
-         *  rotation by 90 degrees, they will be swapped relative to the header.
-         *  getAndroidPixels will apply the orientation as well.
-         */
         kRespect,
     };
 
     /**
      *  Pass ownership of an SkCodec to a newly-created SkAndroidCodec.
      */
-    static std::unique_ptr<SkAndroidCodec> MakeFromCodec(std::unique_ptr<SkCodec>,
-            ExifOrientationBehavior = ExifOrientationBehavior::kIgnore);
+    static std::unique_ptr<SkAndroidCodec> MakeFromCodec(std::unique_ptr<SkCodec>);
 
     /**
      *  If this stream represents an encoded image that we know how to decode,
@@ -54,8 +62,6 @@ public:
      *
      *  If NULL is returned, the stream is deleted immediately. Otherwise, the
      *  SkCodec takes ownership of it, and will delete it when done with it.
-     *
-     *  ExifOrientationBehavior is set to kIgnore.
      */
     static std::unique_ptr<SkAndroidCodec> MakeFromStream(std::unique_ptr<SkStream>,
                                                           SkPngChunkReader* = nullptr);
@@ -66,13 +72,13 @@ public:
      *
      *  The SkPngChunkReader handles unknown chunks in PNGs.
      *  See SkCodec.h for more details.
-     *
-     *  ExifOrientationBehavior is set to kIgnore.
      */
     static std::unique_ptr<SkAndroidCodec> MakeFromData(sk_sp<SkData>, SkPngChunkReader* = nullptr);
 
     virtual ~SkAndroidCodec();
 
+    // TODO: fInfo is now just a cache of SkCodec's SkImageInfo. No need to
+    // cache and return a reference here, once Android call-sites are updated.
     const SkImageInfo& getInfo() const { return fInfo; }
 
     /**
@@ -195,31 +201,11 @@ public:
     //        called SkAndroidCodec.  On the other hand, it's may be a bit confusing to call
     //        these Options when SkCodec has a slightly different set of Options.  Maybe these
     //        should be DecodeOptions or SamplingOptions?
-    struct AndroidOptions {
+    struct AndroidOptions : public SkCodec::Options {
         AndroidOptions()
-            : fZeroInitialized(SkCodec::kNo_ZeroInitialized)
-            , fSubset(nullptr)
+            : SkCodec::Options()
             , fSampleSize(1)
         {}
-
-        /**
-         *  Indicates is destination pixel memory is zero initialized.
-         *
-         *  The default is SkCodec::kNo_ZeroInitialized.
-         */
-        SkCodec::ZeroInitialized fZeroInitialized;
-
-        /**
-         *  If not NULL, represents a subset of the original image to decode.
-         *
-         *  Must be within the bounds returned by getInfo().
-         *
-         *  If the EncodedFormat is SkEncodedImageFormat::kWEBP, the top and left
-         *  values must be even.
-         *
-         *  The default is NULL, meaning a decode of the entire image.
-         */
-        SkIRect* fSubset;
 
         /**
          *  The client may provide an integer downscale factor for the decode.
@@ -277,7 +263,7 @@ public:
     SkCodec* codec() const { return fCodec.get(); }
 
 protected:
-    SkAndroidCodec(SkCodec*, ExifOrientationBehavior = ExifOrientationBehavior::kIgnore);
+    SkAndroidCodec(SkCodec*);
 
     virtual SkISize onGetSampledDimensions(int sampleSize) const = 0;
 
@@ -288,7 +274,6 @@ protected:
 
 private:
     const SkImageInfo               fInfo;
-    const ExifOrientationBehavior   fOrientationBehavior;
     std::unique_ptr<SkCodec>        fCodec;
 };
 #endif // SkAndroidCodec_DEFINED
