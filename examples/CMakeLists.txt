@@ -71,40 +71,6 @@ function(add_example name)
          /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup shcore.lib
       )
 
-      add_dependencies(${name} windows_dlls)
-
-      add_custom_command(
-         TARGET ${name}
-         POST_BUILD
-         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${FONTCONFIG_DLL}"
-            $<TARGET_FILE_DIR:${name}>
-      )
-
-      add_custom_command(
-         TARGET ${name}
-         POST_BUILD
-         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${ICONV_DLL}"
-            $<TARGET_FILE_DIR:${name}>
-      )
-
-      add_custom_command(
-         TARGET ${name}
-         POST_BUILD
-         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${XML2_DLL}"
-            $<TARGET_FILE_DIR:${name}>
-      )
-
-      add_custom_command(
-         TARGET ${name}
-         POST_BUILD
-         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${FREETYPE_DLL}"
-            $<TARGET_FILE_DIR:${name}>
-      )
-
    elseif (UNIX)
 
       add_executable(
