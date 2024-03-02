@@ -45,9 +45,15 @@ elseif (MSVC)
       artist_test
       main.cpp
    )
-   set_property(TARGET artist_test PROPERTY
-      MSVC_RUNTIME_LIBRARY "MultiThreaded"
-   )
+   if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
+      set_property(TARGET artist_test PROPERTY
+         MSVC_RUNTIME_LIBRARY "MultiThreaded"
+      )
+   else()
+      set_property(TARGET artist_test PROPERTY
+         MSVC_RUNTIME_LIBRARY "MultiThreadedDebug"
+      )
+   endif()
 
 elseif (UNIX)
 
