@@ -3,13 +3,9 @@
 #
 #  Distributed under the MIT License (https://opensource.org/licenses/MIT)
 ###############################################################################
-cmake_minimum_required(VERSION 3.7.2...3.15.0)
+add_subdirectory(infra)
 
-if (POLICY CMP0135)
-   cmake_policy(SET CMP0135 NEW)
-endif()
-
-add_library(libunibreak
+set(LIBUNIBREAK_FILES
    external/libunibreak/src/emojidef.c
    external/libunibreak/src/graphemebreak.c
    external/libunibreak/src/linebreak.c
@@ -19,6 +15,11 @@ add_library(libunibreak
    external/libunibreak/src/unibreakdef.c
    external/libunibreak/src/wordbreak.c
 )
+add_library(libunibreak ${LIBUNIBREAK_FILES})
+
+if(CYCFI_USE_EMPTY_SOURCE_GROUPS)
+   source_group("" FILES ${LIBUNIBREAK_FILES})
+endif()
 
 target_include_directories(
    libunibreak
@@ -219,7 +220,7 @@ set(ARTIST_HEADERS
    include/artist/canvas.hpp
    include/artist/circle.hpp
    include/artist/color.hpp
-   include/artist/detail
+   include/artist/detail/canvas_impl.hpp
    include/artist/font.hpp
    include/artist/image.hpp
    include/artist/path.hpp
@@ -267,17 +268,27 @@ if (ARTIST_SKIA)
    )
 endif()
 
-source_group("Source Files\\artist"
+if(CYCFI_USE_EMPTY_SOURCE_GROUPS)
+   set(_artist_hdr  "")
+   set(_artist_src  "")
+   set(_artist_impl "")
+else()
+   set(_artist_hdr  "Header Files\\artist")
+   set(_artist_src  "Source Files\\artist")
+   set(_artist_impl "Source Files\\impl")
+endif()
+
+source_group("${_artist_src}"
    FILES
    ${ARTIST_SOURCES}
 )
 
-source_group("Source Files\\impl"
+source_group("${_artist_impl}"
    FILES
    ${ARTIST_IMPL}
 )
 
-source_group("Header Files\\artist"
+source_group("${_artist_hdr}"
    FILES
    ${ARTIST_HEADERS}
 )
@@ -402,8 +413,6 @@ elseif (WIN32)
          MSVC_RUNTIME_LIBRARY "MultiThreadedDebug"
       )
    endif()
-
-
 endif()
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
