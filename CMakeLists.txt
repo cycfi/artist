@@ -24,6 +24,31 @@ if(CMAKE_CXX_STANDARD LESS 17)
    set(CMAKE_CXX_STANDARD 17)
 endif()
 
+# TODO: Move compiler settings to a settings module
+if (APPLE)
+   if (NOT CMAKE_OSX_ARCHITECTURES)
+      set(CMAKE_OSX_ARCHITECTURES ${CMAKE_SYSTEM_PROCESSOR})
+   endif()
+   if (${CMAKE_OSX_ARCHITECTURES} STREQUAL "arm64")
+      message(STATUS "Artist lib macOS target processor: arm64.")
+   elseif (${CMAKE_OSX_ARCHITECTURES} STREQUAL "x86_64")
+      message(STATUS "Artist lib macOS target processor: x86_64.")
+   else()
+      message(FATAL_ERROR "Unsupported macOS compiler")
+   endif()
+endif()
+message(STATUS "Compiler: ${CMAKE_C_COMPILER_ID}")
+
+set(ARTIST_HOST_SYSTEM_NAME ${CMAKE_HOST_SYSTEM_NAME})
+if (ARTIST_HOST_SYSTEM_NAME STREQUAL "Darwin")
+   set(ARTIST_HOST_SYSTEM_NAME "macOS")
+   set(ARTIST_BACKEND_NAME "Quartz2D")
+else()
+   set(ARTIST_BACKEND_NAME "Skia")
+endif()
+message(STATUS "Building Artist library for ${ARTIST_HOST_SYSTEM_NAME} ${CMAKE_HOST_SYSTEM_VERSION}\
+ using ${ARTIST_BACKEND_NAME} backend.")
+
 ###############################################################################
 # Module utilities
 ###############################################################################
@@ -44,29 +69,6 @@ if (CYCFI_ENABLE_LTO)
       message(STATUS "Link-time optimization supported. Will be enabled in Release build type")
    endif()
 endif()
-
-if (ARTIST_SKIA AND WIN32)
-   message(STATUS "Building Artist lib for Win32 with Skia.")
-elseif (ARTIST_SKIA AND APPLE)
-   message(STATUS "Building Artist lib for MacOS with Skia.")
-elseif (ARTIST_QUARTZ_2D AND APPLE)
-   message(STATUS "Building Artist lib for MacOS with Quartz2D.")
-endif()
-
-# TODO: Move compiler settings to a settings module
-if (APPLE)
-   if (NOT CMAKE_OSX_ARCHITECTURES)
-      set(CMAKE_OSX_ARCHITECTURES ${CMAKE_SYSTEM_PROCESSOR})
-   endif()
-   if (${CMAKE_OSX_ARCHITECTURES} STREQUAL "arm64")
-      message(STATUS "Artist lib MacOS target processor: arm64.")
-   elseif (${CMAKE_OSX_ARCHITECTURES} STREQUAL "x86_64")
-      message(STATUS "Artist lib MacOS target processor: x86_64.")
-   else()
-      message(FATAL_ERROR "Unsupported MacOS compiler")
-   endif()
-endif()
-message(STATUS "Compiler: ${CMAKE_C_COMPILER_ID}")
 
 ###############################################################################
 # Options
