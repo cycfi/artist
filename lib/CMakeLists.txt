@@ -1,7 +1,7 @@
 ###############################################################################
-#  Copyright (c) 2016-2023 Joel de Guzman
-#
-#  Distributed under the MIT License (https://opensource.org/licenses/MIT)
+# SPDX-FileCopyrightText:  2016-2024 Joel de Guzman
+# SPDX-FileContributor:    Modified by Andrea Zanellato
+# SPDX-License-Identifier: MIT
 ###############################################################################
 add_subdirectory(infra)
 
