@@ -4,7 +4,6 @@
 #  Distributed under the MIT License (https://opensource.org/licenses/MIT)
 ###############################################################################
 cmake_minimum_required(VERSION 3.18.0)
-include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 
 project(artist LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
