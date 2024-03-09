@@ -53,14 +53,16 @@ message(STATUS "Building Artist library for ${ARTIST_HOST_SYSTEM_NAME} ${CMAKE_H
 # Module utilities
 ###############################################################################
 
-include(BuildType)    # Default build type.
-include(GitUtilities) # git_submodule_check().
-include(OptionEx)     # Conditional based options, adding a [default: ON/OFF] to the documentation.
+include(BuildType) # Default build type.
+include(OptionEx)  # Conditional based options, adding a [default: ON/OFF] to the documentation.
 include(CheckIPOSupported)
 
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
-   git_submodule_check(lib/external/libunibreak)
-   git_submodule_check(lib/infra)
+if (CYCFI_ENABLE_GIT_SUBMODULE_CHECK)
+   if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
+      include(GitUtilities)
+      git_submodule_check(lib/external/libunibreak)
+      git_submodule_check(lib/infra)
+   endif()
 endif()
 
 if (CYCFI_ENABLE_LTO)
