@@ -233,20 +233,6 @@ namespace cycfi::artist
    {
    }
 
-   void canvas::pre_scale(float sc)
-   {
-      // Quartz-2D does not need to be pre-scaled because it already does this
-      // when setting up its context. But see how we take the actual pre-scale
-      // in the constructor.
-   }
-
-   float canvas::pre_scale() const
-   {
-      // Quartz-2D does not need to be pre-scaled because it already does this
-      // when setting up its context.
-      return 1.0; // Pre-scale is always 1.0
-   }
-
    void canvas::translate(point p)
    {
       CGContextTranslateCTM(CGContextRef(_context), p.x, p.y);
@@ -621,8 +607,9 @@ namespace cycfi::artist
 
    void canvas::shadow_style(point offset, float blur, color c)
    {
+      auto [scx, scy] = device_to_user({1.0, 1.0});
       CGContextSetShadowWithColor(
-         CGContextRef(_context), CGSizeMake(offset.x, -offset.y), blur,
+         CGContextRef(_context), CGSizeMake(offset.x/scx, -offset.y/scx), blur,
          [
             [NSColor
                colorWithRed : c.red

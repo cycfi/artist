@@ -47,9 +47,6 @@ namespace cycfi::artist
       explicit          operator bool() const;
       bool              operator!() const;
 
-      void              pre_scale(float sc);
-      float             pre_scale() const;
-
       ///////////////////////////////////////////////////////////////////////////////////
       // Transforms
       void              translate(point p);
