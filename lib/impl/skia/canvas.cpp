@@ -47,8 +47,8 @@ namespace cycfi::artist
 
       void              save();
       void              restore();
-
-      float             _pre_scale = 1.0;
+      affine_transform  get_inv_affine() const;
+      void              set_inv_affine(affine_transform xf);
 
       static SkPaint&   get_fill_paint(canvas const& cnv);
 
@@ -79,6 +79,7 @@ namespace cycfi::artist
 
       state_info_stack  _stack;
       SkPaint           _clear_paint;
+      affine_transform  _inv_affine;
    };
 
    canvas::canvas_state::canvas_state()
@@ -135,25 +136,25 @@ namespace cycfi::artist
       return cnv._state->fill_paint();
    }
 
+   affine_transform canvas::canvas_state::get_inv_affine() const
+   {
+      return _inv_affine;
+   }
+
+   void canvas::canvas_state::set_inv_affine(affine_transform xf)
+   {
+      _inv_affine = xf;
+   }
+
    canvas::canvas(canvas_impl* context_)
     : _context{context_}
     , _state{std::make_unique<canvas_state>()}
    {
+      _state->set_inv_affine(transform().invert());
    }
 
    canvas::~canvas()
    {
-   }
-
-   void canvas::pre_scale(float sc)
-   {
-      scale(sc, sc);
-      _state->_pre_scale = sc;
-   }
-
-   float canvas::pre_scale() const
-   {
-      return _state->_pre_scale;
    }
 
    void canvas::translate(point p)
@@ -178,21 +179,30 @@ namespace cycfi::artist
 
    point canvas::device_to_user(point p)
    {
-      auto scale = _state->_pre_scale;
-      auto mat = _context->getTotalMatrix();
-      (void) mat.invert(&mat);
-      SkPoint skp;
-      mat.mapXY(p.x * scale, p.y * scale, &skp);
-      return {skp.x(), skp.y()};
+      // Get the current transform
+      auto af = transform();
+
+      // Undo the initial transform
+      auto xaf = af * _state->get_inv_affine();
+
+      // Map the point to the inverted `xaf` transform
+      auto up = xaf.invert().apply(p);
+
+      return {float(up.x), float(up.y)};
    }
 
    point canvas::user_to_device(point p)
    {
-      auto scale = _state->_pre_scale;
-      auto mat = _context->getTotalMatrix();
-      SkPoint skp;
-      mat.mapXY(p.x, p.y, &skp);
-      return {skp.x() / scale, skp.y() / scale};
+      // Get the current transform
+      auto af = transform();
+
+      // Undo the initial transform
+      auto xaf = af * _state->get_inv_affine();
+
+      // Map the point to the `xaf` transform
+      auto up = xaf.apply(p);
+
+      return {float(up.x), float(up.y)};
    }
 
    affine_transform canvas::transform() const
@@ -392,11 +402,8 @@ namespace cycfi::artist
 
    void canvas::shadow_style(point offset, float blur, color c)
    {
-      constexpr auto blur_factor = 0.4f;
-
-      auto matrix = _context->getTotalMatrix();
-      auto scx = matrix.getScaleX() / _state->_pre_scale;
-      auto scy = matrix.getScaleY() / _state->_pre_scale;
+      constexpr auto blur_factor = 1.0f;
+      auto [scx, scy] = device_to_user({1.0, 1.0});
 
       auto shadow = SkImageFilters::DropShadow(
          offset.x / scx
