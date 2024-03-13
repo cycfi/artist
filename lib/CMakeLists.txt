@@ -250,6 +250,7 @@ if (ARTIST_SKIA)
    elseif (MSVC)
       set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
          external/skia/tools/sk_app/win/GLWindowContext_win.cpp
+         external/skia/tools/sk_app/win/RasterWindowContext_win.cpp
       )
    endif()
 
