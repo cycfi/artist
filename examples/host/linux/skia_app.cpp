@@ -88,9 +88,9 @@ namespace
             }
 
             SkCanvas* gpu_canvas = state._surface->getCanvas();
+            gpu_canvas->scale(state._scale, state._scale);
             gpu_canvas->save();
             auto cnv = canvas{gpu_canvas};
-            cnv.pre_scale(state._scale);
 
             draw(cnv);
 
