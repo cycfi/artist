@@ -403,7 +403,9 @@ namespace cycfi::artist
    void canvas::shadow_style(point offset, float blur, color c)
    {
       constexpr auto blur_factor = 1.0f;
-      auto [scx, scy] = device_to_user({1.0, 1.0});
+      auto matrix = _context->getTotalMatrix();
+      float scx = matrix.getScaleX();
+      float scy = matrix.getScaleY();
 
       auto shadow = SkImageFilters::DropShadow(
          offset.x / scx
