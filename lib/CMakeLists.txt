@@ -242,6 +242,7 @@ if (ARTIST_SKIA)
    if (APPLE)
       set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
          external/skia/tools/sk_app/mac/GLWindowContext_mac.mm
+         external/skia/tools/sk_app/mac/RasterWindowContext_mac.mm
       )
       set_source_files_properties(${ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT}
          PROPERTIES COMPILE_FLAGS -fno-objc-arc
@@ -261,6 +262,8 @@ if (ARTIST_SKIA)
       impl/skia/detail/harfbuzz.cpp
       external/skia/tools/sk_app/GLWindowContext.cpp
       external/skia/tools/sk_app/WindowContext.cpp
+      external/skia/tools/ToolUtils.cpp
+      external/skia/tools/SkMetaData.cpp
       ${ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT}
    )
 endif()
