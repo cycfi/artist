@@ -607,9 +607,8 @@ namespace cycfi::artist
 
    void canvas::shadow_style(point offset, float blur, color c)
    {
-      auto [scx, scy] = device_to_user({1.0, 1.0});
       CGContextSetShadowWithColor(
-         CGContextRef(_context), CGSizeMake(offset.x/scx, -offset.y/scx), blur,
+         CGContextRef(_context), CGSizeMake(offset.x, -offset.y), blur,
          [
             [NSColor
                colorWithRed : c.red

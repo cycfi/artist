@@ -127,8 +127,8 @@ using skia_context = std::unique_ptr<sk_app::WindowContext>;
    {
       SkCanvas* gpu_canvas = surface->getCanvas();
       gpu_canvas->save();
+      gpu_canvas->scale(_scale, _scale);
       auto cnv = canvas{gpu_canvas};
-      cnv.pre_scale(_scale);
 
       draw(cnv);
 
