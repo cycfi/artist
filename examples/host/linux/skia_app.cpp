@@ -3,7 +3,6 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#include "../../app.hpp"
 #include <gtk/gtk.h>
 #include <GL/gl.h>
 #include <GL/glx.h>
@@ -14,32 +13,12 @@
 #include "SkColorSpace.h"
 #include "SkCanvas.h"
 #include "SkSurface.h"
-#include <chrono>
-
-using namespace cycfi::artist;
-float elapsed_ = 0;  // rendering elapsed time
 
 namespace
 {
-   struct view_state
-   {
-      extent   _size = {};
-      float    _scale = 1.0;
-      bool     _animate = false;
-      color    _bkd = colors::white;
-      guint    _timer_id = 0;
-
-      sk_sp<const GrGLInterface> _xface;
-      sk_sp<GrDirectContext>     _ctx;
-      sk_sp<SkSurface>           _surface;
-   };
-
-   void close_window(GtkWidget*, gpointer user_data)
-   {
-      view_state& state = *reinterpret_cast<view_state*>(user_data);
-      if (state._timer_id)
-         g_source_remove(state._timer_id);
-   }
+   sk_sp<const GrGLInterface> gl_interface;
+   sk_sp<GrDirectContext>     gr_context;
+   sk_sp<SkSurface>           skia_surface;
 
    void realize(GtkGLArea* area, gpointer user_data)
    {
@@ -47,61 +26,42 @@ namespace
       if (gtk_gl_area_get_error (area) != NULL)
          return;
 
-      view_state& state = *reinterpret_cast<view_state*>(user_data);
-      glClearColor(state._bkd.red, state._bkd.green, state._bkd.blue, state._bkd.alpha);
+      glClearColor(0, 0, 0, 1);
       glClear(GL_COLOR_BUFFER_BIT);
-      state._xface = GrGLMakeNativeInterface();
-      state._ctx = GrDirectContext::MakeGL(state._xface);
+      gl_interface = GrGLMakeNativeInterface();
+      gr_context = GrDirectContext::MakeGL(gl_interface);
    }
 
    gboolean render(GtkGLArea* area, GdkGLContext* context, gpointer user_data)
    {
-      view_state& state = *reinterpret_cast<view_state*>(user_data);
-      auto error = [](char const* msg) { throw std::runtime_error(msg); };
+      if (!skia_surface)
+      {
+         GrGLint buffer;
+         glGetIntegerv(GL_FRAMEBUFFER_BINDING, &buffer);
+         GrGLFramebufferInfo info;
+         info.fFBOID = (GrGLuint) buffer;
+         SkColorType colorType = kRGBA_8888_SkColorType;
 
-      auto draw_f =
-         [&]()
-         {
-            if (!state._surface)
-            {
-               GrGLint buffer;
-               glGetIntegerv(GL_FRAMEBUFFER_BINDING, &buffer);
-               GrGLFramebufferInfo info;
-               info.fFBOID = (GrGLuint) buffer;
-               SkColorType colorType = kRGBA_8888_SkColorType;
+         info.fFormat = GL_RGBA8;
+         GrBackendRenderTarget target(640, 480, 0, 8, info);
 
-               info.fFormat = GL_RGBA8;
-               GrBackendRenderTarget target(
-                  state._size.x*state._scale
-                , state._size.y*state._scale
-                , 0, 8, info
-               );
+         skia_surface =
+            SkSurface::MakeFromBackendRenderTarget(
+               gr_context.get(), target,
+               kBottomLeft_GrSurfaceOrigin, colorType, nullptr, nullptr
+            );
 
-               state._surface =
-                  SkSurface::MakeFromBackendRenderTarget(
-                     state._ctx.get(), target,
-                     kBottomLeft_GrSurfaceOrigin, colorType, nullptr, nullptr
-                  );
+         if (!skia_surface)
+            throw std::runtime_error("Error: SkSurface::MakeRenderTarget returned null");
+      }
 
-               if (!state._surface)
-                  error("Error: SkSurface::MakeRenderTarget returned null");
-            }
+      SkCanvas* gpu_canvas = skia_surface->getCanvas();
+      gpu_canvas->save();
 
-            SkCanvas* gpu_canvas = state._surface->getCanvas();
-            gpu_canvas->save();
-            gpu_canvas->scale(state._scale, state._scale);
-            auto cnv = canvas{gpu_canvas};
+      // Drawing here...
 
-            draw(cnv);
-
-            gpu_canvas->restore();
-            state._surface->flush();
-         };
-
-      auto start = std::chrono::steady_clock::now();
-      draw_f();
-      auto stop = std::chrono::steady_clock::now();
-      elapsed_ = std::chrono::duration<double>{stop - start}.count();
+      gpu_canvas->restore();
+      skia_surface->flush();
 
       return true;
    }
@@ -113,19 +73,10 @@ namespace
       return true;
    }
 
-   static auto proc = &glXGetProcAddress;
-
    void activate(GtkApplication* app, gpointer user_data)
    {
-      auto error = [](char const* msg) { throw std::runtime_error(msg); };
-      if (!proc)
-         error("Error: glXGetProcAddress is null");
-
-      view_state& state = *reinterpret_cast<view_state*>(user_data);
       auto* window = gtk_application_window_new(app);
       gtk_window_set_title(GTK_WINDOW(window), "Drawing Area");
-
-      g_signal_connect(window, "destroy", G_CALLBACK(close_window), user_data);
 
       // create a GtkGLArea instance
       auto* gl_area = gtk_gl_area_new();
@@ -134,16 +85,28 @@ namespace
       g_signal_connect(gl_area, "render", G_CALLBACK(render), user_data);
       g_signal_connect(gl_area, "realize", G_CALLBACK(realize), user_data);
 
-      gtk_window_resize(GTK_WINDOW(window), state._size.x, state._size.y);
+      gtk_window_resize(GTK_WINDOW(window), 640, 480);
       gtk_widget_show_all(window);
 
       auto w = gtk_widget_get_window(GTK_WIDGET(window));
-      state._scale = gdk_window_get_scale_factor(w);
-
-      if (state._animate)
-         state._timer_id = g_timeout_add(1000 / 60, animate, gl_area);
    }
 }
+
+int main(int argc, char const* argv[])
+{
+   auto* app = gtk_application_new("org.gtk-skia.example", G_APPLICATION_FLAGS_NONE);
+   g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
+   int status = g_application_run(G_APPLICATION(app), argc, const_cast<char**>(argv));
+   g_object_unref(app);
+
+   return status;
+}
+
+#include <artist/resources.hpp>
+#include <filesystem>
+namespace fs = std::filesystem;
+
+float elapsed_ = 0;  // rendering elapsed time
 
 namespace cycfi::artist
 {
@@ -160,27 +123,3 @@ namespace cycfi::artist
       return fs::path(fs::current_path() / "resources/fonts");
    }
 }
-
-int run_app(
-   int argc
- , char const* argv[]
- , extent window_size
- , color background_color
- , bool animate
-)
-{
-   view_state state;
-   state._size = window_size;
-   state._animate = animate;
-   state._bkd = background_color;
-
-   auto* app = gtk_application_new("org.gtk-skia.example", G_APPLICATION_FLAGS_NONE);
-   g_signal_connect(app, "activate", G_CALLBACK(activate), &state);
-   int status = g_application_run(G_APPLICATION(app), argc, const_cast<char**>(argv));
-   g_object_unref(app);
-
-   return status;
-}
-
-
-
