@@ -34,6 +34,11 @@ namespace cycfi::artist
    constexpr bool operator==(color const& a, color const& b);
    constexpr bool operator!=(color const& a, color const& b);
 
+   constexpr color operator+(color const& a, color const& b);
+   constexpr color operator-(color const& a, color const& b);
+   constexpr color operator*(color const& a, float b);
+   constexpr color operator*(float a, color const& b);
+
    ////////////////////////////////////////////////////////////////////////////
    // Inlines
    ////////////////////////////////////////////////////////////////////////////
@@ -174,6 +179,26 @@ namespace cycfi::artist
       r.green  *= amount;
       r.blue   *= amount;
       return r;
+   }
+
+   constexpr color operator+(color const& a, color const& b)
+   {
+     return color(a.red + b.red, a.green + b.green, a.blue + b.blue, a.alpha + b.alpha*(1.0-a.alpha));
+   }
+
+   constexpr color operator-(color const& a, color const& b)
+   {
+     return color(a.red - b.red, a.green - b.green, a.blue - b.blue, a.alpha + b.alpha*(1.0-a.alpha));
+   }
+
+   constexpr color operator*(color const& a, float b)
+   {
+     return color(a.red * b, a.green * b, a.blue * b, a.alpha);
+   }
+
+   constexpr color operator*(float a, color const& b)
+   {
+     return color(a * b.red, a * b.green, a * b.blue, b.alpha);
    }
 
    ////////////////////////////////////////////////////////////////////////////
