@@ -44,13 +44,16 @@ namespace
    void realize(GtkGLArea* area, gpointer user_data)
    {
       gtk_gl_area_make_current(area);
-      if (gtk_gl_area_get_error(area) != NULL)
-         return;
+      if (gtk_gl_area_get_error(area) != nullptr)
+         throw std::runtime_error("Error. gtk_gl_area_get_error failed");
 
       view_state& state = *reinterpret_cast<view_state*>(user_data);
       glClearColor(state._bkd.red, state._bkd.green, state._bkd.blue, state._bkd.alpha);
       glClear(GL_COLOR_BUFFER_BIT);
-      state._ctx = GrDirectContext::MakeGL(state._xface);
+      if (state._xface = GrGLMakeNativeInterface(); state._xface == nullptr)
+         throw std::runtime_error("Error. GLMakeNativeInterface failed");
+      if (state._ctx = GrDirectContext::MakeGL(state._xface); state._ctx == nullptr)
+         throw std::runtime_error("Error. GrDirectContext::MakeGL failed");
    }
 
    gboolean render(GtkGLArea* area, GdkGLContext* context, gpointer user_data)
@@ -127,7 +130,7 @@ namespace
       g_signal_connect(window, "destroy", G_CALLBACK(close_window), user_data);
 
       GtkWidget* widget = nullptr;
-      if (state._xface = GrGLMakeNativeInterface(); state._xface != nullptr)
+      try
       {
          // create a GtkGLArea instance
          GtkWidget* gl_area = gtk_gl_area_new();
@@ -136,14 +139,15 @@ namespace
 
          g_signal_connect(gl_area, "render", G_CALLBACK(render), user_data);
          g_signal_connect(gl_area, "realize", G_CALLBACK(realize), user_data);
+
+         gtk_window_resize(GTK_WINDOW(window), state._size.x, state._size.y);
+         gtk_widget_show_all(window);
       }
-      else
+      catch (std::runtime_error const& e)
       {
          // GPU rendering not available
       }
 
-      gtk_window_resize(GTK_WINDOW(window), state._size.x, state._size.y);
-      gtk_widget_show_all(window);
 
       auto w = gtk_widget_get_window(GTK_WIDGET(window));
       state._scale = gdk_window_get_scale_factor(w);
