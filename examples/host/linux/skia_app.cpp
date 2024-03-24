@@ -10,6 +10,7 @@
 
 #include "GrDirectContext.h"
 #include "gl/GrGLInterface.h"
+#include "gl/GrGLAssembleInterface.h"
 #include "SkImage.h"
 #include "SkColorSpace.h"
 #include "SkCanvas.h"
@@ -51,7 +52,18 @@ namespace
       glClearColor(state._bkd.red, state._bkd.green, state._bkd.blue, state._bkd.alpha);
       glClear(GL_COLOR_BUFFER_BIT);
       if (state._xface = GrGLMakeNativeInterface(); state._xface == nullptr)
-         throw std::runtime_error("Error. GLMakeNativeInterface failed");
+      {
+         //backup plan. see https://gist.github.com/ad8e/dd150b775ae6aa4d5cf1a092e4713add?permalink_comment_id=4680136#gistcomment-4680136
+         state._xface = GrGLMakeAssembledInterface(
+			   nullptr, (GrGLGetProc) *
+               [](void*, const char* p) -> void*
+               {
+                  return (void*)glXGetProcAddress((const GLubyte*)p);
+               }
+            );
+         if (state._xface == nullptr)
+            throw std::runtime_error("Error. GLMakeNativeInterface failed");
+      }
       if (state._ctx = GrDirectContext::MakeGL(state._xface); state._ctx == nullptr)
          throw std::runtime_error("Error. GrDirectContext::MakeGL failed");
    }
@@ -130,24 +142,16 @@ namespace
       g_signal_connect(window, "destroy", G_CALLBACK(close_window), user_data);
 
       GtkWidget* widget = nullptr;
-      try
-      {
-         // create a GtkGLArea instance
-         GtkWidget* gl_area = gtk_gl_area_new();
-         widget = gl_area;
-         gtk_container_add(GTK_CONTAINER(window), gl_area);
+      // create a GtkGLArea instance
+      GtkWidget* gl_area = gtk_gl_area_new();
+      widget = gl_area;
+      gtk_container_add(GTK_CONTAINER(window), gl_area);
 
-         g_signal_connect(gl_area, "render", G_CALLBACK(render), user_data);
-         g_signal_connect(gl_area, "realize", G_CALLBACK(realize), user_data);
+      g_signal_connect(gl_area, "render", G_CALLBACK(render), user_data);
+      g_signal_connect(gl_area, "realize", G_CALLBACK(realize), user_data);
 
-         gtk_window_resize(GTK_WINDOW(window), state._size.x, state._size.y);
-         gtk_widget_show_all(window);
-      }
-      catch (std::runtime_error const& e)
-      {
-         // GPU rendering not available
-      }
-
+      gtk_window_resize(GTK_WINDOW(window), state._size.x, state._size.y);
+      gtk_widget_show_all(window);
 
       auto w = gtk_widget_get_window(GTK_WIDGET(window));
       state._scale = gdk_window_get_scale_factor(w);
@@ -187,12 +191,22 @@ int run_app(
    state._bkd = background_color;
 
    auto* app = gtk_application_new("org.gtk-skia.example", G_APPLICATION_FLAGS_NONE);
-   g_signal_connect(app, "activate", G_CALLBACK(activate), &state);
-   int status = g_application_run(G_APPLICATION(app), argc, const_cast<char**>(argv));
+   int status = 0;
+
+   try
+   {
+      g_signal_connect(app, "activate", G_CALLBACK(activate), &state);
+      int status = g_application_run(G_APPLICATION(app), argc, const_cast<char**>(argv));
+   }
+   catch (std::runtime_error const& e)
+   {
+      // GPU rendering not available
+      g_printerr(e.what());
+      int status = 1;
+   }
    g_object_unref(app);
 
    return status;
 }
-
 
 
