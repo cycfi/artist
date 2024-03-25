@@ -63,9 +63,15 @@ function(add_example name)
          print_elapsed.cpp
       )
 
-      set_property(TARGET ${name} PROPERTY
-         MSVC_RUNTIME_LIBRARY "MultiThreaded"
-      )
+      if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
+         set_property(TARGET ${name} PROPERTY
+            MSVC_RUNTIME_LIBRARY "MultiThreaded"
+         )
+      else()
+         set_property(TARGET ${name} PROPERTY
+            MSVC_RUNTIME_LIBRARY "MultiThreadedDebug"
+         )
+      endif()
 
       target_link_options(${name} PRIVATE
          /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup shcore.lib

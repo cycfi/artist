@@ -33,9 +33,15 @@ if (WIN32)
          NOMINMAX
          _UNICODE
    )
-   set_property(TARGET libunibreak PROPERTY
-      MSVC_RUNTIME_LIBRARY "MultiThreaded"
-   )
+   if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
+      set_property(TARGET libunibreak PROPERTY
+         MSVC_RUNTIME_LIBRARY "MultiThreadedDebug"
+      )
+   else()
+      set_property(TARGET libunibreak PROPERTY
+         MSVC_RUNTIME_LIBRARY "MultiThreaded"
+      )
+   endif()
 endif()
 
 if (ARTIST_SKIA)
@@ -91,10 +97,19 @@ if (ARTIST_SKIA)
 
       if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
          set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows/msvc/x86_64/src/prebuilt_binaries)
-         set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/windows/skia/msvc/x86_64/x86_64.zip)
-         set(ARTIST_BINARIES_MD5 93b0a532f87c1068bc2adabf19da086d)
-         set(ARTIST_BINARIES_PREFIX windows/msvc/x86_64)
+         if (CMAKE_BUILD_TYPE STREQUAL "Release")
+            set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/windows/skia/msvc/x86_64/x86_64.zip)
+            set(ARTIST_BINARIES_MD5 93b0a532f87c1068bc2adabf19da086d)
+            set(ARTIST_BINARIES_PREFIX windows/msvc/x86_64)
+         else()
+            set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/windows/skia/msvc/x86_64-dbg/x86_64-dbg.zip)
+            set(ARTIST_BINARIES_MD5 b2e5f3927c3b6b3f41ca1c51c8b6a55f)
+            set(ARTIST_BINARIES_PREFIX windows/msvc/x86_64)
+         endif()
       elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
+         if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+            message(WARNING "Warning: There are no precompiled binaries built using MTd for Clang. Use MT.")
+         endif()
          set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows/clang/x86_64/src/prebuilt_binaries)
          set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/windows/skia/clang/x86_64/x86_64.zip)
          set(ARTIST_BINARIES_MD5 b2bc06c19cd61f93505b7e37eaf489db)
@@ -227,6 +242,7 @@ if (ARTIST_SKIA)
    if (APPLE)
       set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
          external/skia/tools/sk_app/mac/GLWindowContext_mac.mm
+         external/skia/tools/sk_app/mac/RasterWindowContext_mac.mm
       )
       set_source_files_properties(${ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT}
          PROPERTIES COMPILE_FLAGS -fno-objc-arc
@@ -234,6 +250,7 @@ if (ARTIST_SKIA)
    elseif (MSVC)
       set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
          external/skia/tools/sk_app/win/GLWindowContext_win.cpp
+         external/skia/tools/sk_app/win/RasterWindowContext_win.cpp
       )
    endif()
 
@@ -246,6 +263,8 @@ if (ARTIST_SKIA)
       impl/skia/detail/harfbuzz.cpp
       external/skia/tools/sk_app/GLWindowContext.cpp
       external/skia/tools/sk_app/WindowContext.cpp
+      external/skia/tools/ToolUtils.cpp
+      external/skia/tools/SkMetaData.cpp
       ${ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT}
    )
 endif()
@@ -280,7 +299,7 @@ endif()
 add_dependencies(artist libunibreak)
 
 if (ARTIST_SKIA)
- add_dependencies(artist prebuilt_binaries)
+   add_dependencies(artist prebuilt_binaries)
 endif()
 
 target_sources(artist
@@ -376,9 +395,17 @@ elseif (WIN32)
          NOMINMAX
          _UNICODE
    )
-   set_property(TARGET artist PROPERTY
-      MSVC_RUNTIME_LIBRARY "MultiThreaded"
-   )
+   if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
+      set_property(TARGET artist PROPERTY
+         MSVC_RUNTIME_LIBRARY "MultiThreaded"
+      )
+   else()
+      set_property(TARGET artist PROPERTY
+         MSVC_RUNTIME_LIBRARY "MultiThreadedDebug"
+      )
+   endif()
+
+
 endif()
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
