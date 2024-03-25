@@ -44,9 +44,11 @@ namespace
 
    void realize(GtkGLArea* area, gpointer user_data)
    {
+      auto error = [](char const* msg) { throw std::runtime_error(msg); };
+
       gtk_gl_area_make_current(area);
       if (gtk_gl_area_get_error(area) != nullptr)
-         throw std::runtime_error("Error. gtk_gl_area_get_error failed");
+         error("Error. gtk_gl_area_get_error failed");
 
       view_state& state = *reinterpret_cast<view_state*>(user_data);
       glClearColor(state._bkd.red, state._bkd.green, state._bkd.blue, state._bkd.alpha);
@@ -62,10 +64,10 @@ namespace
                }
             );
          if (state._xface == nullptr)
-            throw std::runtime_error("Error. GLMakeNativeInterface failed");
+            error("Error. GLMakeNativeInterface failed");
       }
       if (state._ctx = GrDirectContext::MakeGL(state._xface); state._ctx == nullptr)
-         throw std::runtime_error("Error. GrDirectContext::MakeGL failed");
+         error("Error. GrDirectContext::MakeGL failed");
    }
 
    gboolean render(GtkGLArea* area, GdkGLContext* context, gpointer user_data)
