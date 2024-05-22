@@ -119,6 +119,51 @@ void transformed(canvas& cnv)
    basics(cnv);
 }
 
+namespace detail
+{
+   struct corner_radii
+   {
+      float top_left, top_right, bottom_right, bottom_left;
+      corner_radii operator+(float v) const;
+      corner_radii operator-(float v) const;
+   };
+}
+
+void draw_round_rect(canvas& cnv, rect bounds, detail::corner_radii radius)
+{
+   auto l = bounds.left;
+   auto t = bounds.top;
+   auto r = bounds.right;
+   auto b = bounds.bottom;
+   radius.top_left =     std::min(radius.top_left,     std::min(bounds.width(), bounds.height()) / 2);
+   radius.top_right =    std::min(radius.top_right,    std::min(bounds.width(), bounds.height()) / 2);
+   radius.bottom_right = std::min(radius.bottom_right, std::min(bounds.width(), bounds.height()) / 2);
+   radius.bottom_left =  std::min(radius.bottom_left,  std::min(bounds.width(), bounds.height()) / 2);
+
+   cnv.begin_path();
+   cnv.arc({r-radius.bottom_right, b-radius.bottom_right}, radius.bottom_right, 0,        M_PI*0.5);
+   cnv.arc({l+radius.bottom_left,  b-radius.bottom_left }, radius.bottom_left,  M_PI*0.5, M_PI    );
+   cnv.arc({l+radius.top_left,     t+radius.top_left    }, radius.top_left,     M_PI,     M_PI*1.5);
+   cnv.arc({r-radius.top_right,    t+radius.top_right   }, radius.top_right,    M_PI*1.5, 0       );
+   cnv.close_path();
+}
+
+void basics2(canvas& cnv)
+{
+   auto state = cnv.new_state();
+
+   // cnv.add_round_rect(20, 20, 200, 100, 50);
+
+   draw_round_rect(cnv, {20, 20, 220, 120}, {15, 40, 40, 15});
+
+   cnv.fill_style(colors::navy_blue);
+   cnv.fill_preserve();
+
+   cnv.stroke_style(colors::antique_white.opacity(0.8));
+   cnv.line_width(3);
+   cnv.stroke();
+}
+
 void rainbow(canvas::gradient& gr)
 {
    gr.add_color_stop(0.0/6, colors::red);
@@ -240,6 +285,12 @@ void test_draw(canvas& cnv)
    stroke_gradient(cnv);
    draw_pixmap(cnv);
    line_styles(cnv);
+}
+
+void test_draw2(canvas& cnv)
+{
+   background(cnv);
+   basics2(cnv);
 }
 
 // Function to extract RGBA values with generic component names Note: Using
@@ -925,6 +976,17 @@ TEST_CASE("Drawing")
       test_draw(pm_cnv);
    }
    compare_golden(pm, "shapes_and_images");
+}
+
+TEST_CASE("Drawing2")
+{
+   image pm{window_size};
+   {
+      offscreen_image ctx{pm};
+      canvas pm_cnv{ctx.context()};
+      test_draw2(pm_cnv);
+   }
+   compare_golden(pm, "shapes2");
 }
 
 TEST_CASE("Typography")
