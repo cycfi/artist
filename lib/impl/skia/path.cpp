@@ -107,6 +107,11 @@ namespace cycfi::artist
       float start_angle, float end_angle,
       bool ccw)
    {
+      if (radius <= 0)
+      {
+         line_to(p);
+         return;
+      }
       auto start = start_angle * 180 / pi;
       auto sweep = (end_angle - start_angle) * 180 / pi;
       if (sweep < 0)
