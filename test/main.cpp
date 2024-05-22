@@ -152,16 +152,26 @@ void basics2(canvas& cnv)
 {
    auto state = cnv.new_state();
 
-   // cnv.add_round_rect(20, 20, 200, 100, 50);
+   {
+      draw_round_rect(cnv, {50, 50, 250, 150}, {-1, 40, 40, -1}); // Negative radius
 
-   draw_round_rect(cnv, {20, 20, 220, 120}, {15, 40, 40, 15});
+      cnv.fill_style(colors::light_sea_green.opacity(0.8));
+      cnv.fill_preserve();
 
-   cnv.fill_style(colors::navy_blue);
-   cnv.fill_preserve();
+      cnv.stroke_style(colors::goldenrod.opacity(0.8));
+      cnv.line_width(3);
+      cnv.stroke();
+   }
+   {
+      draw_round_rect(cnv, {20, 20, 220, 120}, {15, 40, 40, 15});
 
-   cnv.stroke_style(colors::antique_white.opacity(0.8));
-   cnv.line_width(3);
-   cnv.stroke();
+      cnv.fill_style(colors::navy_blue.opacity(0.5));
+      cnv.fill_preserve();
+
+      cnv.stroke_style(colors::antique_white.opacity(0.5));
+      cnv.line_width(3);
+      cnv.stroke();
+   }
 }
 
 void rainbow(canvas::gradient& gr)
