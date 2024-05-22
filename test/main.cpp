@@ -151,25 +151,36 @@ void draw_round_rect(canvas& cnv, rect bounds, detail::corner_radii radius)
 void basics2(canvas& cnv)
 {
    auto state = cnv.new_state();
+   rect bounds = {20, 20, 220, 120};
 
    {
-      draw_round_rect(cnv, {50, 50, 250, 150}, {-1, 40, 40, -1}); // Negative radius
+      draw_round_rect(cnv, bounds, {-1, 40, 40, -1}); // Negative radius
 
       cnv.fill_style(colors::light_sea_green.opacity(0.8));
       cnv.fill_preserve();
 
-      cnv.stroke_style(colors::goldenrod.opacity(0.8));
-      cnv.line_width(3);
+      cnv.stroke_style(colors::antique_white.opacity(0.8));
+      cnv.line_width(2);
       cnv.stroke();
    }
    {
-      draw_round_rect(cnv, {20, 20, 220, 120}, {15, 40, 40, 15});
+      draw_round_rect(cnv, bounds.move(20, 20), {15, 40, 40, 15});
 
       cnv.fill_style(colors::navy_blue.opacity(0.5));
       cnv.fill_preserve();
 
       cnv.stroke_style(colors::antique_white.opacity(0.5));
-      cnv.line_width(3);
+      cnv.line_width(2);
+      cnv.stroke();
+   }
+   {
+      draw_round_rect(cnv, bounds.move(40, 40), {0, 0, 0, 0});
+
+      cnv.fill_style(colors::indian_red.opacity(0.5));
+      cnv.fill_preserve();
+
+      cnv.stroke_style(colors::antique_white.opacity(0.5));
+      cnv.line_width(2);
       cnv.stroke();
    }
 }
