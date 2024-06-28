@@ -15,7 +15,7 @@ namespace cycfi::artist
 
    inline constexpr axis other(axis a)
    {
-    return axis(not bool(a));
+    return axis(! bool(a));
    }
 
    ////////////////////////////////////////////////////////////////////////////
