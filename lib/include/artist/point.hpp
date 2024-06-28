@@ -9,6 +9,16 @@
 namespace cycfi::artist
 {
    ////////////////////////////////////////////////////////////////////////////
+   // Axis
+   ////////////////////////////////////////////////////////////////////////////
+   enum class axis : bool { x = false, y = true};
+
+   inline constexpr axis other(axis a)
+   {
+    return axis(not bool(a));
+   }
+
+   ////////////////////////////////////////////////////////////////////////////
    // Points
    ////////////////////////////////////////////////////////////////////////////
    struct point
@@ -24,6 +34,9 @@ namespace cycfi::artist
       constexpr point   move(float dx, float dy) const;
       constexpr point   move_to(float x, float y) const;
       constexpr point   reflect(point p) const;
+
+      constexpr float&  operator[](axis a);
+      constexpr float   operator[](axis a) const;
 
       float             x;
       float             y;
@@ -85,6 +98,16 @@ namespace cycfi::artist
    inline constexpr point point::reflect(point p) const
    {
       return {x + (x - p.x), y + (y - p.y)};
+   }
+
+   constexpr float&  point::operator[](axis a)
+   {
+      return a==axis::x ? x : y;
+   }
+
+   constexpr float  point::operator[](axis a) const
+   {
+     return a==axis::x ? x : y;
    }
 }
 
