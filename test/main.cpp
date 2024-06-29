@@ -1069,4 +1069,21 @@ TEST_CASE("Misc")
 }
 
 
+TEST_CASE("Color Maths")
+{
+  color a(0.2, 0.25, 0.5, 1.0);
+  color b(0.5, 0.6, 0.1, 1.0);
 
+  auto check = [&](color result, color check)
+  {
+    REQUIRE_THAT(result.red, Catch::WithinRel(check.red, 0.001f));
+    REQUIRE_THAT(result.green, Catch::WithinRel(check.green, 0.001f));
+    REQUIRE_THAT(result.blue, Catch::WithinRel(check.blue, 0.001f));
+    REQUIRE_THAT(result.alpha, Catch::WithinRel(check.alpha, 0.001f));
+  };
+
+  check(a + b, color(0.7, 0.85, 0.6, 1.0));
+  check(a - b, color(-0.3, -0.35, 0.4, 1.0));
+  check(a * 2, color(0.4, 0.5, 1.0, 1.0));
+  check(2 * a, color(0.4, 0.5, 1.0, 1.0));
+}
