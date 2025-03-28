@@ -78,17 +78,40 @@ function(add_example name)
       )
 
    elseif (UNIX)
+      set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+      find_package(WaylandScanner REQUIRED)
 
+      set(WORK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/host/linux/wayland")
+
+      wayland_add_protocol_client(SRC_GEN ${WORK_DIR}
+        "${WaylandScanner_DATADIR}/stable/xdg-shell/xdg-shell.xml")
+      wayland_add_protocol_client(SRC_GEN ${WORK_DIR}
+        "${WaylandScanner_DATADIR}/staging/cursor-shape/cursor-shape-v1.xml")
+      wayland_add_protocol_client(SRC_GEN ${WORK_DIR}
+        "${WaylandScanner_DATADIR}/unstable/tablet/tablet-unstable-v2.xml")
+      wayland_add_protocol_client(SRC_GEN ${WORK_DIR}
+        "${WaylandScanner_DATADIR}/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml")
+      wayland_add_protocol_client(SRC_GEN ${WORK_DIR}
+        "${WaylandScanner_DATADIR}/staging/fractional-scale/fractional-scale-v1.xml")
+      wayland_add_protocol_client(SRC_GEN ${WORK_DIR}
+        "${WaylandScanner_DATADIR}/stable/viewporter/viewporter.xml")
+        
       add_executable(
          ${name}
          ${name}.cpp
+         host/linux/wayland/core.cpp
+         host/linux/wayland/display.cpp
+         host/linux/wayland/xdgshell.cpp
+         host/linux/wayland/contextegl.cpp
+         ${SRC_GEN}
          host/linux/skia_app.cpp
          print_elapsed.cpp
       )
 
       target_link_libraries(
          ${name}
-         PkgConfig::gtk3
+         #PkgConfig::gtk3
+         PkgConfig::depend
          OpenGL::GL
       )
 
