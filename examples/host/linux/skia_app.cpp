@@ -53,46 +53,41 @@ namespace cycfi::artist
    }
 }
 
-namespace WL {
-
-class PaintContextSkia;
-
-class SurfaceSkia: public ContextEGL::BufferEGL
+class PaintContextSkia : public WL::ContextEGL
 {
 public:
-    SurfaceSkia(PaintContextSkia &ctx, NativeSurface &wl, uint32_t width, uint32_t height):
-       ContextEGL::BufferEGL(ctx, wl, width, height)
-   {
-       if (ContextEGL::BufferEGL::valid()){
-   
-           GrGLFramebufferInfo framebufferInfo;
-           framebufferInfo.fFBOID = 0; // assume default framebuffer
-           framebufferInfo.fFormat = GL_RGBA8;
-   
-           SkColorType colorType = kRGBA_8888_SkColorType;
-           GrBackendRenderTarget target(width,
-                                        height,
-                                        1, // sample count
-                                        8, // stencil bits
-                                        framebufferInfo);
-   
-           skia = SkSurface::MakeFromBackendRenderTarget(ctx._ctx.get(),
-                                                                target,
-                                                                kBottomLeft_GrSurfaceOrigin,
-                                                                colorType,
-                                                                nullptr,
-                                                                nullptr);
-           if (!skia) ctx.destroy(*this);
-       }
-   }
 
-    sk_sp<SkSurface> skia;
-};
+    class Buffer: public BufferEGL
+    {
+    public:
+        Buffer(PaintContextSkia &ctx, WL::NativeSurface &wl, uint32_t width, uint32_t height):
+            BufferEGL(ctx, wl, width, height)
+        {
+            if (BufferEGL::valid()){
 
-class PaintContextSkia : public ContextEGL
-{
-public:
-    using Buffer = SurfaceSkia;
+                GrGLFramebufferInfo framebufferInfo;
+                framebufferInfo.fFBOID = 0; // assume default framebuffer
+                framebufferInfo.fFormat = GL_RGBA8;
+
+                SkColorType colorType = kRGBA_8888_SkColorType;
+                GrBackendRenderTarget target(width,
+                                             height,
+                                             1, // sample count
+                                             8, // stencil bits
+                                             framebufferInfo);
+
+                skia = SkSurface::MakeFromBackendRenderTarget(ctx._ctx.get(),
+                                                              target,
+                                                              kBottomLeft_GrSurfaceOrigin,
+                                                              colorType,
+                                                              nullptr,
+                                                              nullptr);
+                if (!skia) ctx.destroy(*this);
+            }
+        }
+
+        sk_sp<SkSurface> skia;
+    };
 
     void flush(Buffer &buf) const
     {
@@ -124,11 +119,10 @@ public:
 
 private:
     sk_sp<GrDirectContext> _ctx;
-    friend class SurfaceSkia;
 };
 
-class Window: public Toplevel<PaintContextSkia>,
-              public SeatListener
+class Window: public WL::Toplevel<PaintContextSkia>,
+              public WL::SeatListener
 {
 public:
     Window(int width, int height):
@@ -159,8 +153,6 @@ private:
     }
 };
 
-}
-
 int run_app(
    int argc
  , char const* argv[]
@@ -173,7 +165,7 @@ int run_app(
 
         auto& dpy = WL::Display::init<WL::XDGWmBase, WL::XDGDecorateManager>();
 
-        WL::Window window(window_size.x, window_size.y);
+        Window window(window_size.x, window_size.y);
 
         window.onClosed = [&dpy](){dpy.stop();};
         window.setTitle("Example application");
