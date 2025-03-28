@@ -8,7 +8,10 @@ project(examples)
 if (UNIX AND NOT APPLE)
    find_package(OpenGL REQUIRED COMPONENTS OpenGL)
    find_package(PkgConfig REQUIRED)
-   pkg_check_modules(gtk3 REQUIRED IMPORTED_TARGET gtk+-3.0)
+   #pkg_check_modules(gtk3 REQUIRED IMPORTED_TARGET gtk+-3.0)
+   pkg_check_modules(depend REQUIRED IMPORTED_TARGET
+                           wayland-client wayland-cursor wayland-egl xkbcommon egl
+                        )
 endif()
 
 file(
