@@ -79,7 +79,7 @@ message(STATUS "Compiler: ${CMAKE_C_COMPILER_ID}")
 
 add_subdirectory(lib)
 
-option(ARTIST_BUILD_EXAMPLES "build Artist library examples" ON)
+option(ARTIST_BUILD_EXAMPLES "build Artist library examples" OFF)
 option(ARTIST_BUILD_TESTS "build Artist library tests" ON)
 
 if (ARTIST_BUILD_EXAMPLES)
