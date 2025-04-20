@@ -17,16 +17,15 @@ void XDGWmBase::bind(wl_registry *reg, uint32_t name, uint32_t version) noexcept
     xdg_wm_base_add_listener (c_ptr(), &listener, nullptr);
 }
 
-NativeToplevel::NativeToplevel(const NativeSurface &surface, uint32_t width, uint32_t height)
-    : m_xdg_surfase(xdg_wm_base_get_xdg_surface(
-                        Display::instance().ensureProtocol<XDGWmBase>().c_ptr(),
-                        surface.c_ptr()),
+Toplevel::Toplevel(const Display &dpy, uint32_t width, uint32_t height)
+    : Surface(dpy.compositor(), dpy.protocol<FractionalScaleManager>())
+    , m_xdg_surfase(xdg_wm_base_get_xdg_surface(dpy.ensureProtocol<XDGWmBase>().c_ptr(), c_ptr()),
                     "Can't create xdg surface")
     , m_top(xdg_surface_get_toplevel(m_xdg_surfase.c_ptr()),
             "Can't create toplevel role")
-    , m_decor(Display::instance().protocol<XDGDecorateManager>() ?
+    , m_decor(dpy.protocol<XDGDecorateManager>() ?
                   zxdg_decoration_manager_v1_get_toplevel_decoration(
-                    Display::instance().protocol<XDGDecorateManager>()->c_ptr(), m_top.c_ptr())
+                    dpy.protocol<XDGDecorateManager>()->c_ptr(), m_top.c_ptr())
                                                                  :nullptr)
     , m_width(width)
     , m_height(height)
@@ -36,29 +35,30 @@ NativeToplevel::NativeToplevel(const NativeSurface &surface, uint32_t width, uin
         .configure = [](void* data, xdg_toplevel *tt,
                         int32_t width, int32_t height, wl_array *states){
 
-            auto win = static_cast<NativeToplevel*>(data);
+            auto inst = static_cast<Toplevel*>(data);
 
             xdg_toplevel_state *pos;
-            win->m_state = 0;
-            std::cout<<"states "<<states->size<<" W "<<width<<" H "<<height<<std::endl;
+            inst->m_state = 0;
 
             for (pos = (xdg_toplevel_state*)states->data;
                 (const char *) pos < ((const char *) states->data + states->size);
                 (pos)++){
 
-                    std::cout<<"--- "<<*pos<<std::endl;
+                    //std::cout<<"--- "<<*pos<<std::endl;
 
-                    win->m_state |= (1 << *pos);
+                    inst->m_state |= (1 << *pos);
             }
 
             if (width && height){
-                win->m_width  = width;
-                win->m_height = height;
+                inst->m_width  = width;
+                inst->m_height = height;
             }
+
+            //std::cout<<"states "<<win->m_state<<" W "<<width<<" H "<<height<<std::endl;
         },
         .close = [](void *data, xdg_toplevel*){
-            auto win = static_cast<NativeToplevel*>(data);
-            win->closed();
+            auto inst = static_cast<Toplevel*>(data);
+            inst->closed();
         },
         .configure_bounds = [](void* data, xdg_toplevel*, int32_t width, int32_t height){
 
@@ -67,10 +67,29 @@ NativeToplevel::NativeToplevel(const NativeSurface &surface, uint32_t width, uin
         },
         .wm_capabilities = [](void *data,
                                   xdg_toplevel *xdg_toplevel,
-                                  wl_array *capabilities){}
+                                  wl_array *capabilities){
+            std::cout<<"wm_capabilities: "<<std::endl;
+            // auto inst = static_cast<Toplevel*>(data);
+
+            // inst->mapped();
+        }
     };
 
     xdg_toplevel_add_listener(m_top.c_ptr(), &toplevel_lsr, this);
+
+    static const xdg_surface_listener surface_lsr{
+        .configure = [](void* data, xdg_surface *xdg_surf, uint32_t serial){
+
+          auto inst = static_cast<Toplevel*>(data);
+          xdg_surface_ack_configure(xdg_surf, serial);
+std::cout<<"xdg_surface_listener states "<<inst->m_state<<" W "<<inst->m_width<<" H "<<inst->m_height<<std::endl;
+            if (inst->m_state != 0)
+                inst->configure(inst->m_width, inst->m_height, inst->m_state);
+        }
+    };
+
+    xdg_surface_add_listener (this->m_xdg_surfase.c_ptr(), &surface_lsr, this);
+    commit();
 
     if (m_decor)
         zxdg_toplevel_decoration_v1_set_mode(m_decor.c_ptr(),

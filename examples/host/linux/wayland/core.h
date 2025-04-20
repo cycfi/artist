@@ -240,24 +240,23 @@ using FractionalScaleManager = Protocol<wp_fractional_scale_manager_v1,
                                       &wp_fractional_scale_manager_v1_interface,
                                       WP_FRACTIONAL_SCALE_MANAGER_V1_DESTROY>;
 
-class NativeSurface: public Proxy<wl_surface, WL_SUBSURFACE_DESTROY>
+class Surface: public Proxy<wl_surface, WL_SUBSURFACE_DESTROY>,
+               public SeatListener
 {
 public:
-    explicit NativeSurface(wl_compositor *compositor,
+    explicit Surface(wl_compositor *compositor,
                      const FractionalScaleManager *manager);
-
-    inline void listenerInput(SeatListener &input)
-    { wl_surface_set_user_data(c_ptr(), &input); }
 
     inline void commit()
     { wl_surface_commit(c_ptr()); }
-
-    std::function<void(float)> onScale;
 
 protected:
     void setAreaOpaque(wl_compositor *compositor, int32_t w, int32_t h) const;
 
     float m_scale{1};
+
+    virtual void draw(float /*scale*/) = 0;
+    virtual void buffer_scale(float /*scale*/) = 0;
 
 private:
     Proxy<wp_fractional_scale_v1,
@@ -271,7 +270,7 @@ using Viewporter = Protocol<wp_viewporter,
 class Viewport final: public Proxy<wp_viewport, WP_VIEWPORT_DESTROY>
 {
 public:
-    Viewport(const WL::Viewporter *vpr, NativeSurface const &surface);
+    Viewport(const WL::Viewporter *vpr, Surface const &surface);
     Viewport() = default;
 
     void setDestination(int32_t width, int32_t height)
