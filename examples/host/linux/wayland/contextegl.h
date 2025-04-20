@@ -1,56 +1,82 @@
 #ifndef CONTEXTEGL_H
 #define CONTEXTEGL_H
 
-//#include <iostream>
+#include "../skia_context.h"
+
 #include <wayland-egl-core.h>
 #include <EGL/egl.h>
 
-//#include <memory>
-
 namespace WL {
 
-class NativeSurface;
-class Display;
+class Surface;
 
-class ContextEGL
+class ContextEGL: public GlSkiaContext
 {
 public:
-    class BufferEGL
+    class Buffer
     {
     public:
-        BufferEGL(ContextEGL &ctx, NativeSurface &wl, uint32_t width, uint32_t height);
-
         void resize(uint32_t width, uint32_t height)
         {wl_egl_window_resize(m_egl_window, width, height, 0, 0);}
 
-        bool valid() const {return m_egl_surface != nullptr;}
+        bool empty() const {return m_egl_surface == nullptr;}
 
-    protected:
+        void destroy(EGLDisplay dpy)
+        {
+            if (m_egl_surface){
+                eglDestroySurface(dpy, m_egl_surface);
+                wl_egl_window_destroy(m_egl_window);
+                m_egl_surface = nullptr;
+            }
+        }
+
+    private:
         wl_egl_window *m_egl_window{nullptr};
         EGLSurface m_egl_surface{nullptr};
 
         friend class ContextEGL;
     };
 
-    using Buffer = BufferEGL;
+    class Config final
+    {
+    public:
+        explicit Config(wl_display *dpy,
+                        const Surface &wl,
+                        uint32_t width, uint32_t height);
 
-    void makeCurrent(Buffer &buf);
+        ~Config()
+        {m_buffer.destroy(m_dpy);}
+
+        Buffer move_buffer()
+        {
+            auto result = m_buffer;
+            m_buffer = Buffer();
+            return result;
+        }
+
+    private:
+        EGLDisplay m_dpy;
+        EGLConfig m_egl_config;
+        Buffer m_buffer;
+
+        friend class ContextEGL;
+    };
+
+    void init(const Config &cfg);
+
+    void makeCurrent(const Buffer &buf);
     void flush(Buffer &buf) const;
-    void destroy(Buffer &buf);
 
-    ContextEGL(bool transparent = true);
     ~ContextEGL();
 
     operator bool() const { return m_egl_display != nullptr; }
 
-    bool opaque() const;
-
+    //bool opaque() const;
+    EGLDisplay m_egl_display{nullptr};
 private:
-    EGLDisplay m_egl_display;
-    EGLContext m_egl_context;
-    EGLConfig m_egl_config  ;
 
-    // static inline ContextEGL *s_instance = nullptr;
+    EGLContext m_egl_context{nullptr};
+
 };
 
 }

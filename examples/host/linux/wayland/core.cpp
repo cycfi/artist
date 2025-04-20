@@ -19,6 +19,37 @@ NativeSurface::NativeSurface(wl_compositor *compositor,
     m_fscale(manager ? wp_fractional_scale_manager_v1_get_fractional_scale(manager->c_ptr(), c_ptr())
                      : nullptr)
 {
+    static const wl_surface_listener lsr {
+        .enter = [](void *data,
+                    struct wl_surface *wl_surface,
+                    struct wl_output *output){
+
+        },
+
+        .leave = [](void *data,
+                    struct wl_surface *wl_surface,
+                    struct wl_output *output){
+
+        },
+
+        .preferred_buffer_scale = [](void *data,
+                                     struct wl_surface *wl_surface,
+                                     int32_t factor){
+            auto surface = static_cast<Surface*>(data);
+
+            if (!surface->m_fscale)
+                surface->buffer_scale(factor);
+        },
+
+        .preferred_buffer_transform = [](void *data,
+                                         struct wl_surface *wl_surface,
+                                         uint32_t transform){
+
+        }
+    };
+
+    wl_surface_add_listener(c_ptr(), &lsr, this);
+
     if (m_fscale) {
         static const wp_fractional_scale_v1_listener lsr{
             .preferred_scale = [](void *data, wp_fractional_scale_v1 *, uint32_t scale) {
@@ -207,13 +238,14 @@ const wl_keyboard_listener Seat::keyboard_listener = {
             
         auto seat = static_cast<Seat*>(data);
 
-        if (seat->m_focused_surf->onFocused)
+        if (seat->m_focused_surf && seat->m_focused_surf->onFocused){
             seat->m_focused_surf->onFocused(false);
 
-        seat->m_focused_surf = nullptr;
+            seat->m_focused_surf = nullptr;
 
-        struct itimerspec timer = {0};
-        timerfd_settime(seat->key_repeat_fd, 0, &timer, NULL);
+            struct itimerspec timer = {0};
+            timerfd_settime(seat->key_repeat_fd, 0, &timer, NULL);
+        }
     },
     .key = [](void *data, wl_keyboard *wl_kd, uint32_t /*serial*/,
               uint32_t time,
