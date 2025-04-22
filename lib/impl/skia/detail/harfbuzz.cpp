@@ -11,10 +11,10 @@
 #if defined(_MSC_VER)
 extern "C"
 {
-   float roundf(float x)
-   {
-      return x >= 0.0f ? floorf(x + 0.5f) : ceilf(x - 0.5f);
-   }
+   // float roundf(float x)
+   // {
+   //    return x >= 0.0f ? floorf(x + 0.5f) : ceilf(x - 0.5f);
+   // }
 }
 #endif
 
