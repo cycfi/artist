@@ -8,13 +8,13 @@
 #include <SkTypeface.h>
 #include <cmath>
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && _MSC_VER < 1800
 extern "C"
 {
-   // float roundf(float x)
-   // {
-   //    return x >= 0.0f ? floorf(x + 0.5f) : ceilf(x - 0.5f);
-   // }
+   float roundf(float x)
+   {
+      return x >= 0.0f ? floorf(x + 0.5f) : ceilf(x - 0.5f);
+   }
 }
 #endif
 
