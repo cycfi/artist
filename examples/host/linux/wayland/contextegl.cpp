@@ -2,18 +2,21 @@
 #include "core.h"
 
 #include <GL/gl.h>
-#include <iostream>
+
+#include "../log.h"
 
 using namespace WL;
 
-ContextEGL::Config::Config(wl_display *dpy, const Surface &wl, uint32_t width, uint32_t height):
-    m_dpy(eglGetDisplay(dpy))
+ContextEGL::ContextEGL(EGLNativeDisplayType dpy):
+    m_display(eglGetDisplay(dpy)),
+    m_context(EGL_NO_CONTEXT),
+    m_surface(EGL_NO_SURFACE)
 {
     EGLint majorVersion;
     EGLint minorVersion;
 
-    if (m_dpy == EGL_NO_DISPLAY ||
-        eglInitialize(m_dpy, &majorVersion, &minorVersion) != EGL_TRUE) {
+    if (m_display == EGL_NO_DISPLAY ||
+        eglInitialize(m_display, &majorVersion, &minorVersion) != EGL_TRUE) {
 
         throw std::runtime_error("Can't connect to egl display");
     }
@@ -21,7 +24,7 @@ ContextEGL::Config::Config(wl_display *dpy, const Surface &wl, uint32_t width, u
     if (eglBindAPI(EGL_OPENGL_ES_API) != EGL_TRUE)
         throw std::runtime_error("Can't bind  EGL_OPENGL_ES_API");
 
-    std::cout<<"EGL: "<<majorVersion<<"."<<minorVersion<<std::endl;
+    Logger::debug("EGL: %i.%i", majorVersion, minorVersion);
 
     EGLint config_attribs[] = {
         EGL_RED_SIZE, 8,
@@ -37,62 +40,22 @@ ContextEGL::Config::Config(wl_display *dpy, const Surface &wl, uint32_t width, u
     };
 
     EGLint num_config;
-    if (!eglChooseConfig (m_dpy, config_attribs, &m_egl_config, 1, &num_config)
+    if (!eglChooseConfig (m_display, config_attribs, &m_config, 1, &num_config)
         || num_config != 1)
         throw std::runtime_error("Can't choose config");
-
-    m_buffer.m_egl_window = wl_egl_window_create(wl.c_ptr(), width, height);
-    if(m_buffer.m_egl_window){
-        m_buffer.m_egl_surface = eglCreateWindowSurface(m_dpy, m_egl_config,
-                                             m_buffer.m_egl_window, nullptr);
-        if (!m_buffer.m_egl_surface){
-            wl_egl_window_destroy(m_buffer.m_egl_window);
-            std::runtime_error("Can't create egl surface");
-        }
-    }
-    else
-        std::runtime_error("Can't create egl window");
-}
-
-void ContextEGL::init(const Config &cfg)
-{
-    m_egl_display = cfg.m_dpy;
-
-    const EGLint context_attribs[] = {
-        EGL_CONTEXT_MAJOR_VERSION, 3,
-        EGL_CONTEXT_MINOR_VERSION, 0,
-        //EGL_CONTEXT_OPENGL_DEBUG, EGL_TRUE,
-        EGL_NONE
-    };
-
-    m_egl_context = eglCreateContext(m_egl_display, cfg.m_egl_config,
-                                     EGL_NO_CONTEXT, context_attribs);
-    if (!m_egl_context)
-        throw std::runtime_error("Can't create egl context");
-
-    if (!eglMakeCurrent(m_egl_display,
-                        cfg.m_buffer.m_egl_surface,
-                        cfg.m_buffer.m_egl_surface,
-                        m_egl_context))
-        throw std::runtime_error("failed to make EGL context current");
-
-    GlSkiaContext::init((GrGLGetProc)* [](void *, const char *p) -> void * {
-        return (void *) eglGetProcAddress(p);
-    });
-
-    std::cout<<"context GL_VENDOR: "<<glGetString(GL_VENDOR)
-              <<" GL_RENDERER: "<<glGetString(GL_RENDERER)
-              <<" GL_VERSION: " <<glGetString(GL_VERSION)<<std::endl;
 }
 
 ContextEGL::~ContextEGL()
 {
-    if (m_egl_display){
-        if (m_egl_context){
-            //eglMakeCurrent (m_egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, m_egl_context);
-            eglDestroyContext(m_egl_display, m_egl_context);
+    if (m_display != EGL_NO_DISPLAY){
+        if (m_context != EGL_NO_CONTEXT){
+            if (m_surface != EGL_NO_SURFACE){
+                eglMakeCurrent (m_display, EGL_NO_SURFACE, EGL_NO_SURFACE, m_context);
+                eglDestroySurface(m_display, m_surface);
+            }   
+            eglDestroyContext(m_display, m_context);
         }
-        eglTerminate(m_egl_display);
+        eglTerminate(m_display);
     }
 }
 
@@ -105,23 +68,104 @@ ContextEGL::~ContextEGL()
 //     return !alpha_size;
 // }
 
-void ContextEGL::makeCurrent(const Buffer &buf)
+void ContextEGL::makeCurrent(Buffer &buf)
 {
-    if (buf.empty())
-        eglMakeCurrent(m_egl_display,
-                       EGL_NO_SURFACE,
-                       EGL_NO_SURFACE,
-                       EGL_NO_CONTEXT);
-    else
-        eglMakeCurrent(m_egl_display,
-                       buf.m_egl_surface,
-                       buf.m_egl_surface,
-                       m_egl_context);
+    if (buf.empty()) return;
+
+    if (buf.m_egl_surface == EGL_NO_SURFACE) {
+ 
+        m_surface = eglCreateWindowSurface(m_display, m_config,
+                                        buf.m_egl_window, nullptr);
+        if (m_surface == EGL_NO_SURFACE)
+            std::runtime_error("Can't create egl surface");
+
+        if (m_context == EGL_NO_CONTEXT) {
+
+            const EGLint context_attribs[] = {
+                EGL_CONTEXT_MAJOR_VERSION, 3,
+                EGL_CONTEXT_MINOR_VERSION, 0,
+                //EGL_CONTEXT_OPENGL_DEBUG, EGL_TRUE,
+                EGL_NONE
+            };
+
+            m_context = eglCreateContext(m_display, m_config,
+                                            EGL_NO_CONTEXT, context_attribs);
+            if (!m_context)
+                throw std::runtime_error("Can't create egl context");
+
+            if (!eglMakeCurrent(m_display,
+                                m_surface,
+                                m_surface,
+                                m_context))
+                throw std::runtime_error("failed to make EGL context current");
+
+            GlSkiaContext::init((GrGLGetProc)* [](void *, const char *p) -> void * {
+            return (void *) eglGetProcAddress(p);});
+
+            Logger::debug("context GL_VENDOR: %s, GL_RENDERER: %s, GL_VERSION: %s",
+                          glGetString(GL_VENDOR),
+                          glGetString(GL_RENDERER),
+                          glGetString(GL_VERSION));
+        }
+        else
+            if (!eglMakeCurrent(m_display,
+                                m_surface,
+                                m_surface,
+                                m_context))
+                throw std::runtime_error("failed to make EGL context current");
+
+        buf.m_egl_surface = m_surface;
+    }
+    else if (m_surface != buf.m_egl_surface){
+     
+        if (!eglMakeCurrent(m_display,
+                            buf.m_egl_surface,
+                            buf.m_egl_surface,
+                            m_context))
+            throw std::runtime_error("failed to make EGL context current");
+
+        m_surface = buf.m_egl_surface;
+    }
+    
+}
+
+void ContextEGL::destroy(Buffer &buf)
+{
+    if (buf.m_egl_surface != EGL_NO_SURFACE){
+        if (buf.m_egl_surface == m_surface){
+            eglMakeCurrent(m_display,
+                        EGL_NO_SURFACE,
+                        EGL_NO_SURFACE,
+                        m_context);
+
+            m_surface = EGL_NO_SURFACE;
+        }
+            
+        eglDestroySurface(m_display, buf.m_egl_surface);
+        
+        buf.m_egl_surface = EGL_NO_SURFACE;
+    }
 }
 
 void ContextEGL::flush(Buffer &buf) const
 {
-    eglSwapBuffers(m_egl_display, buf.m_egl_surface);
+    eglSwapBuffers(m_display, buf.m_egl_surface);
+}
+
+void WL::ContextEGL::Buffer::init(const Surface &wl, uint32_t width, uint32_t height)
+{
+    assert(m_egl_window == nullptr);//duble initialized
+
+    m_egl_window = wl_egl_window_create(wl.c_ptr(), width, height);
+    if(!m_egl_window)
+        std::runtime_error("Can't create egl window");
+}
+
+void WL::ContextEGL::Buffer::resize(uint32_t width, uint32_t height)
+{
+    assert(m_egl_window);// window not initialized
+
+    wl_egl_window_resize(m_egl_window, width, height, 0, 0);
 }
 
 const char* getEGLErrorString()

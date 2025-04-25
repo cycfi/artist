@@ -1,7 +1,5 @@
 #include "xdgshell.h"
 
-#include <iostream>
-
 using namespace WL;
 
 void XDGWmBase::bind(wl_registry *reg, uint32_t name, uint32_t version) noexcept
@@ -44,8 +42,6 @@ Toplevel::Toplevel(const Display &dpy, uint32_t width, uint32_t height)
                 (const char *) pos < ((const char *) states->data + states->size);
                 (pos)++){
 
-                    //std::cout<<"--- "<<*pos<<std::endl;
-
                     inst->m_state |= (1 << *pos);
             }
 
@@ -53,8 +49,6 @@ Toplevel::Toplevel(const Display &dpy, uint32_t width, uint32_t height)
                 inst->m_width  = width;
                 inst->m_height = height;
             }
-
-            //std::cout<<"states "<<win->m_state<<" W "<<width<<" H "<<height<<std::endl;
         },
         .close = [](void *data, xdg_toplevel*){
             auto inst = static_cast<Toplevel*>(data);
@@ -62,16 +56,10 @@ Toplevel::Toplevel(const Display &dpy, uint32_t width, uint32_t height)
         },
         .configure_bounds = [](void* data, xdg_toplevel*, int32_t width, int32_t height){
 
-            std::cout<<"configure_bound: "<< width<<" "<< height<<std::endl;
-
         },
         .wm_capabilities = [](void *data,
-                                  xdg_toplevel *xdg_toplevel,
-                                  wl_array *capabilities){
-            std::cout<<"wm_capabilities: "<<std::endl;
-            // auto inst = static_cast<Toplevel*>(data);
-
-            // inst->mapped();
+                                    xdg_toplevel *xdg_toplevel,
+                                    wl_array *capabilities){
         }
     };
 
@@ -80,11 +68,10 @@ Toplevel::Toplevel(const Display &dpy, uint32_t width, uint32_t height)
     static const xdg_surface_listener surface_lsr{
         .configure = [](void* data, xdg_surface *xdg_surf, uint32_t serial){
 
-          auto inst = static_cast<Toplevel*>(data);
-          xdg_surface_ack_configure(xdg_surf, serial);
-std::cout<<"xdg_surface_listener states "<<inst->m_state<<" W "<<inst->m_width<<" H "<<inst->m_height<<std::endl;
-            if (inst->m_state != 0)
-                inst->configure(inst->m_width, inst->m_height, inst->m_state);
+            auto inst = static_cast<Toplevel*>(data);
+            xdg_surface_ack_configure(xdg_surf, serial);
+
+            inst->configure(inst->m_width, inst->m_height, inst->m_state);
         }
     };
 
@@ -93,5 +80,5 @@ std::cout<<"xdg_surface_listener states "<<inst->m_state<<" W "<<inst->m_width<<
 
     if (m_decor)
         zxdg_toplevel_decoration_v1_set_mode(m_decor.c_ptr(),
-                                             ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
+                                                ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
 }

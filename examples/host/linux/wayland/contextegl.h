@@ -13,70 +13,41 @@ class Surface;
 class ContextEGL: public GlSkiaContext
 {
 public:
+    explicit ContextEGL(EGLNativeDisplayType dpy);
+
     class Buffer
     {
     public:
-        void resize(uint32_t width, uint32_t height)
-        {wl_egl_window_resize(m_egl_window, width, height, 0, 0);}
+        ~Buffer()
+        {if (!empty()) wl_egl_window_destroy(m_egl_window);}
 
-        bool empty() const {return m_egl_surface == nullptr;}
+        void init(const Surface &wl, uint32_t width, uint32_t height);   
+        void resize(uint32_t width, uint32_t height);
 
-        void destroy(EGLDisplay dpy)
-        {
-            if (m_egl_surface){
-                eglDestroySurface(dpy, m_egl_surface);
-                wl_egl_window_destroy(m_egl_window);
-                m_egl_surface = nullptr;
-            }
-        }
+        bool empty() const {return m_egl_window == nullptr;}
 
     private:
         wl_egl_window *m_egl_window{nullptr};
-        EGLSurface m_egl_surface{nullptr};
+        EGLSurface m_egl_surface{EGL_NO_SURFACE};
 
         friend class ContextEGL;
     };
 
-    class Config final
-    {
-    public:
-        explicit Config(wl_display *dpy,
-                        const Surface &wl,
-                        uint32_t width, uint32_t height);
-
-        ~Config()
-        {m_buffer.destroy(m_dpy);}
-
-        Buffer move_buffer()
-        {
-            auto result = m_buffer;
-            m_buffer = Buffer();
-            return result;
-        }
-
-    private:
-        EGLDisplay m_dpy;
-        EGLConfig m_egl_config;
-        Buffer m_buffer;
-
-        friend class ContextEGL;
-    };
-
-    void init(const Config &cfg);
-
-    void makeCurrent(const Buffer &buf);
+    void makeCurrent(Buffer &buf);
     void flush(Buffer &buf) const;
+    void destroy(Buffer &buf);
 
     ~ContextEGL();
 
-    operator bool() const { return m_egl_display != nullptr; }
+    operator bool() const { return m_display != nullptr; }
 
     //bool opaque() const;
-    EGLDisplay m_egl_display{nullptr};
+    
 private:
-
-    EGLContext m_egl_context{nullptr};
-
+    EGLDisplay m_display;
+    EGLContext m_context;
+    EGLSurface m_surface;
+    EGLConfig  m_config;
 };
 
 }
