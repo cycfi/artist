@@ -3,47 +3,46 @@
 #include <unistd.h>
 #include <xkbcommon/xkbcommon.h>
 #include <sys/mman.h>
-//#include <sys/timerfd.h>
 #include <errno.h>
 #include <cassert>
 
-#include <iostream>
+#include "../log.h"
 
 namespace WL {
 
 ////////---- Surface Impl ----///////////////////////////////////////
 
-NativeSurface::NativeSurface(wl_compositor *compositor,
-                 const FractionalScaleManager *manager):
-    Base(wl_compositor_create_surface(compositor), "Can't create surface"),
-    m_fscale(manager ? wp_fractional_scale_manager_v1_get_fractional_scale(manager->c_ptr(), c_ptr())
-                     : nullptr)
+Surface::Surface(wl_compositor *compositor,
+    const FractionalScaleManager *manager):
+Base(wl_compositor_create_surface(compositor), "Can't create surface"),
+m_scale(1),
+m_fscale(manager ? wp_fractional_scale_manager_v1_get_fractional_scale(manager->c_ptr(), c_ptr())
+        : nullptr),
+m_input_hundler(nullptr)
 {
     static const wl_surface_listener lsr {
         .enter = [](void *data,
-                    struct wl_surface *wl_surface,
-                    struct wl_output *output){
+            struct wl_surface *wl_surface,
+            struct wl_output *output){
 
         },
 
         .leave = [](void *data,
-                    struct wl_surface *wl_surface,
-                    struct wl_output *output){
-
+            struct wl_surface *wl_surface,
+            struct wl_output *output){
         },
 
         .preferred_buffer_scale = [](void *data,
-                                     struct wl_surface *wl_surface,
-                                     int32_t factor){
+                                struct wl_surface *wl_surface,
+                                int32_t factor){
             auto surface = static_cast<Surface*>(data);
-
             if (!surface->m_fscale)
-                surface->buffer_scale(factor);
+            surface->buffer_scale(factor);
         },
 
         .preferred_buffer_transform = [](void *data,
-                                         struct wl_surface *wl_surface,
-                                         uint32_t transform){
+                                    struct wl_surface *wl_surface,
+                                    uint32_t transform){
 
         }
     };
@@ -53,11 +52,11 @@ NativeSurface::NativeSurface(wl_compositor *compositor,
     if (m_fscale) {
         static const wp_fractional_scale_v1_listener lsr{
             .preferred_scale = [](void *data, wp_fractional_scale_v1 *, uint32_t scale) {
-                auto self = static_cast<NativeSurface *>(data);
+                auto surface = static_cast<Surface *>(data);
                 auto val = (float)scale / 120;
 
-                self->m_scale = val;
-                if (self->onScale) self->onScale(val);
+                surface->m_scale = val;
+                surface->buffer_scale(val);
             }
         };
 
@@ -65,7 +64,7 @@ NativeSurface::NativeSurface(wl_compositor *compositor,
     }
 }
 
-void NativeSurface::setAreaOpaque(wl_compositor *compositor, int32_t w, int32_t h) const
+void Surface::setAreaOpaque(wl_compositor *compositor, int32_t w, int32_t h) const
 {
     auto region = wl_compositor_create_region(compositor);
     if (!region)
@@ -104,13 +103,13 @@ struct Keyboard::KeyMapper
 bool Keyboard::KeyMapper::map(int32_t fd, uint32_t size) noexcept
 {
     if(!kcontext){
-        std::cerr<<"Error: create xkb context"<<std::endl;
+        Logger::error("xkb context failed");
         return false;
     }
 
     void *addr = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
     if (addr == MAP_FAILED) {
-        std::cerr<<"Error: XKBKeyboard mmap code "<<errno<<std::endl;
+        Logger::error("Error: XKBKeyboard mmap code %i", errno);
         return false;
     }
 
@@ -120,19 +119,19 @@ bool Keyboard::KeyMapper::map(int32_t fd, uint32_t size) noexcept
                                         (const char*)addr,
                                         XKB_KEYMAP_FORMAT_TEXT_V1,
                                         XKB_KEYMAP_COMPILE_NO_FLAGS))){
-        std::cerr<<"Error: create xkb keymap"<<std::endl;
+        Logger::error("Error: create xkb keymap");
         return false;
     }
 
     if (kstate)
         xkb_state_unref(kstate);
     if (!(kstate = xkb_state_new(keymap))){
-        std::cerr<<"Error: create xkb kstate"<<std::endl;
+        Logger::error("Error: create xkb kstate");
         return false;
     }
 
     if (munmap(addr, size) < 0){
-        std::cerr<<"Error: XKBKeyboard munmap code "<<errno<<std::endl;
+        Logger::error("Error: XKBKeyboard munmap code %i", errno);
         return false;
     }
     
@@ -193,9 +192,8 @@ uint32_t Keyboard::symbol() const
 void Seat::emitKeypress() const
 {
     assert(m_focused_surf);
-    assert(m_focused_surf->onKey);
 
-    m_focused_surf->onKey(m_keyboard);
+    m_focused_surf->key(m_keyboard);
 }
 
 const wl_keyboard_listener Seat::keyboard_listener = {
@@ -211,14 +209,15 @@ const wl_keyboard_listener Seat::keyboard_listener = {
             //To Do WL_KEYBOARD_KEYMAP_FORMAT_NO_KEYMAP
 
         if(kb.m_mapper){
-            if (!kb.m_mapper->map(fd, size)) {
+            if(!kb.m_mapper->map(fd, size)){
                 delete kb.m_mapper;
                 kb.m_mapper = nullptr;
-                //To Do log file
+
+                Logger::error("KEYMAP_FORMAT failed");
             }
         }
         else
-            std::cerr<<"KEYMAP_FORMAT not supported, format code: "<<format<<std::endl;
+            Logger::error("KEYMAP_FORMAT not supported, format code: %d", format);
 
         close(fd);
     },
@@ -226,21 +225,24 @@ const wl_keyboard_listener Seat::keyboard_listener = {
                 wl_surface *surface, wl_array *keys){
             
         auto seat = static_cast<Seat*>(data);
+        auto surf = static_cast<Surface*>(
+            wl_surface_get_user_data(surface));
 
-        seat->m_focused_surf = static_cast<SeatListener*>(
-                                            wl_surface_get_user_data(surface));
+        if (surf){
+            seat->m_focused_surf = surf->m_input_hundler;
 
-        if (seat->m_focused_surf && seat->m_focused_surf->onFocused)
-            seat->m_focused_surf->onFocused(true);
+            if (seat->m_focused_surf)
+                seat->m_focused_surf->keyFocused(true);
+        }
     },
     .leave = [](void *data, wl_keyboard *wl_kd, uint32_t,
                 wl_surface*){
             
         auto seat = static_cast<Seat*>(data);
 
-        if (seat->m_focused_surf && seat->m_focused_surf->onFocused){
-            seat->m_focused_surf->onFocused(false);
+        if (seat->m_focused_surf){
 
+            seat->m_focused_surf->keyFocused(false);
             seat->m_focused_surf = nullptr;
 
             struct itimerspec timer = {0};
@@ -255,9 +257,7 @@ const wl_keyboard_listener Seat::keyboard_listener = {
         auto seat = static_cast<Seat*>(data);
         auto mapper = seat->m_keyboard.m_mapper;
             
-        if (seat->m_focused_surf &&
-            mapper &&
-            seat->m_focused_surf->onKey){
+        if (seat->m_focused_surf && mapper){
 
             bool pressed = (state == WL_KEYBOARD_KEY_STATE_PRESSED);
 
@@ -282,7 +282,7 @@ const wl_keyboard_listener Seat::keyboard_listener = {
                 }
             }
 
-            //std::cout<<"repeat_info "<<timer.it_interval.tv_nsec<<std::endl;
+            Logger::debug("repeat_info %d", timer.it_interval.tv_nsec);
 
             timerfd_settime(seat->key_repeat_fd, 0, &timer, NULL);
 
@@ -303,21 +303,28 @@ const wl_keyboard_listener Seat::keyboard_listener = {
                                   mods_depressed, mods_latched, mods_locked,
                                   0, 0, group);
             
-        //std::cout<<"modifiers "<<mods_depressed<<" "<<mods_latched<<" "<<mods_locked<<" "<<group<<std::endl;
     },
     .repeat_info = [](void *data, wl_keyboard *wl_kd,
                           int32_t rate, int32_t delay){
             
         auto seat = static_cast<Seat*>(data);
-            //std::cout<<"repeat_info "<<rate<<" "<<delay<<" "<<std::endl;
+    
         if (seat){
 
-            /**
-             * rate скорость генерации кол-во символов в s
-             * delay кол-во ms в течении которых нужно удерживать клавишу для начала повтора
-            */
-            seat->delay = delay * 1000000;
-            seat->rate = 1000000000 / rate;
+            //The protocol guarantees non-zero values, but it doesn't hurt to check.
+            //Just in case, in Russian
+            if (rate != 0 && delay != 0){
+
+                /**
+                * rate - generation speed (number of characters in sec)
+                * delay - number of ms during which you need to hold the key before the repeat starts
+                */
+                seat->delay = delay * 1000000;
+                seat->rate = 1000000000 / rate;
+            }
+            else
+                Logger::error("Incorrect keyboard parameters rate = %i, delay = %i",
+                              rate, delay);
         }
     }
 };
@@ -331,16 +338,16 @@ const wl_pointer_listener Seat::pointer_listener = {
         if (!surface) return;
 
         auto seat = static_cast<Seat*>(data);
-        auto surf = static_cast<SeatListener*>(
+        auto surf = static_cast<Surface*>(
             wl_surface_get_user_data(surface));
 
         assert(seat && seat->m_pointer.c_ptr() == pointer);
 
         if (surf){
-            seat->m_hovered_surf = surf;
+            seat->m_hovered_surf = surf->m_input_hundler;
 
-            if (surf->onPoint)
-                surf->onPoint(SeatListener::enter, 0, seat->m_pointer.set(sx, sy));
+            if (seat->m_hovered_surf)
+                seat->m_hovered_surf->point(SeatListener::enter, 0, seat->m_pointer.set(sx, sy));
         }
     },
     .leave = [](void *data, wl_pointer *pointer,
@@ -352,9 +359,7 @@ const wl_pointer_listener Seat::pointer_listener = {
 
         if (seat->m_hovered_surf) {
 
-            if (seat->m_hovered_surf->onPoint)
-                seat->m_hovered_surf->onPoint(SeatListener::leave, 0, seat->m_pointer);
-
+            seat->m_hovered_surf->point(SeatListener::leave, 0, seat->m_pointer);
             seat->m_hovered_surf = nullptr;
         }
     },
@@ -365,8 +370,8 @@ const wl_pointer_listener Seat::pointer_listener = {
 
         assert(seat && seat->m_pointer.c_ptr() == pointer);
 
-        if (seat->m_hovered_surf && seat->m_hovered_surf->onPoint)
-            seat->m_hovered_surf->onPoint(SeatListener::motion, time, seat->m_pointer.set(sx, sy));
+        if (seat->m_hovered_surf)
+            seat->m_hovered_surf->point(SeatListener::motion, time, seat->m_pointer.set(sx, sy));
     },
     .button = [](void *data, wl_pointer *pointer,
                  uint32_t serial, uint32_t time, uint32_t button,
@@ -376,7 +381,7 @@ const wl_pointer_listener Seat::pointer_listener = {
 
         assert(seat && seat->m_pointer.c_ptr() == pointer);
 
-        if (seat->m_hovered_surf && seat->m_hovered_surf->onClick) {
+        if (seat->m_hovered_surf) {
 
             /* count click */
             timespec now;
@@ -393,7 +398,7 @@ const wl_pointer_listener Seat::pointer_listener = {
 
                 auto& key = seat->m_keyboard;
 
-                seat->m_hovered_surf->onClick((Pointer::BTN)button, true,
+                seat->m_hovered_surf->click((Pointer::BTN)button, true,
                                             seat->m_count_click, 
                                             key ? key.modifiers(Keyboard::ModSet::effective) : 0,
                                             seat->m_pointer );
@@ -402,7 +407,7 @@ const wl_pointer_listener Seat::pointer_listener = {
                 seat->m_last_released_button = button;
                 seat->m_last_time = time;
                 seat->m_stamp = now.tv_sec;
-                seat->m_hovered_surf->onClick((Pointer::BTN)button, false, 0, 0, seat->m_pointer);
+                seat->m_hovered_surf->click((Pointer::BTN)button, false, 0, 0, seat->m_pointer);
             }
         }
     },
@@ -413,8 +418,8 @@ const wl_pointer_listener Seat::pointer_listener = {
 
         assert(seat && seat->m_pointer.c_ptr() == pointer);
 
-        if (seat->m_hovered_surf && seat->m_hovered_surf->onScroll)
-            seat->m_hovered_surf->onScroll(time, axis, wl_fixed_to_double(value));
+        if (seat->m_hovered_surf)
+            seat->m_hovered_surf->scroll(time, axis, wl_fixed_to_double(value));
     }
 };
 
@@ -432,13 +437,12 @@ void Seat::bind(wl_registry *reg, uint32_t name, uint32_t version) noexcept
         .capabilities = [](void *data, wl_seat *wl_seat, uint32_t flags){
 
             auto seat = static_cast<Seat*>(data);
-            //std::cout<<"capabilities "<<flags<<std::endl;
 
             if (flags & WL_SEAT_CAPABILITY_POINTER) {
                 auto pointer = wl_seat_get_pointer(wl_seat);
                 seat->m_pointer.reset(pointer);
                 if (wl_pointer_add_listener(pointer, &pointer_listener, seat) < 0)
-                    std::cerr<<"Error: не удалось добавить pointer listener"<<std::endl;
+                    Logger::error("failed to add pointer listener");
             }   
             else 
                 seat->m_pointer.reset(nullptr);
@@ -447,20 +451,18 @@ void Seat::bind(wl_registry *reg, uint32_t name, uint32_t version) noexcept
                 auto kb = wl_seat_get_keyboard(wl_seat);
                 seat->m_keyboard.reset(kb);
                 if (wl_keyboard_add_listener(kb, &keyboard_listener, seat) < 0)
-                    std::cerr<<"Error: не удалось добавить keyboard listener"<<std::endl;
+                    Logger::error("failed to add keyboard listener");
             }
             else
                 seat->m_keyboard.reset(nullptr);
-
-                //self->touch.init(app, wl_seat, capabilities);
         },
         .name = [](void*, wl_seat*, const char *name){
-            std::cout<<"Seat name: "<<name<<std::endl;
-        }//пока не реализовано
+            Logger::debug("Seat connected, name: %s", name);
+        }
     };
 
     if (wl_seat_add_listener(c_ptr(), &seat_listener, this) < 0)
-        std::cerr<<"Error: не удалось добавить seat listener"<<std::endl;
+        Logger::error("failed to add seat listener");
 }
 
 Viewport::Viewport(Viewporter const *vpr, NativeSurface const &surface)

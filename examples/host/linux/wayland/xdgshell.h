@@ -54,39 +54,11 @@ protected:
     virtual void closed() = 0;
 
     /**
-     * @brief configure вызывается композитором при изменении состояния (s)
-     * или размеров окна (w, h)
-     * @param w
-     * @param h
-     * @param s
-     * @return должна возвращать true если требуется перерисовка
+     * configure called by the composer when the state (s) 
+     * and/or window dimensions (w, h) change 
      */
     virtual void configure(unsigned w, unsigned h, unsigned s) = 0;
 };
-
-// struct Positioner: Proxy<xdg_positioner, &xdg_positioner_destroy>
-// {
-//     //const WlApplication &global;
-
-//     // explicit Positioner(const XDGWmBase &shell):
-//     //     Proxy<xdg_positioner, &xdg_positioner_destroy>(
-//     //           xdg_wm_base_create_positioner(shell.c_ptr()),
-//     //           "Can't create positioner")//,
-//     // //global(app)
-//     // {}
-// };
-
-// class Popup: public Proxy<xdg_popup, &xdg_popup_destroy>
-// {
-// public:
-//     Popup(const Positioner &pos,
-//           const XDGSurface &parent);
-
-//     //std::function<void()> onClosed;
-
-//     int32_t x, y;
-//     int32_t width, height;
-// };
 
 }
 

@@ -2,7 +2,6 @@
 #include "SkColorSpace.h"
 
 #include <GL/gl.h>
-#include <cassert>
 
 void GlSkiaContext::init(GrGLGetProc gl_get_proc)
 {
@@ -32,12 +31,17 @@ sk_sp<SkSurface> GlSkiaContext::makeSurface(int width, int height) noexcept
                                 8, // stencil bits
                                 framebufferInfo);
 
-    return target->isValid() ? SkSurface::MakeFromBackendRenderTarget(_ctx.get(),
-                                                    *target.get(),
-                                                    kBottomLeft_GrSurfaceOrigin,
-                                                    colorType,
-                                                    nullptr,
-                                                    nullptr)
-        : nullptr;
+    auto result = target->isValid() ? SkSurface::MakeFromBackendRenderTarget(_ctx.get(),
+                                                        *target.get(),
+                                                        kBottomLeft_GrSurfaceOrigin,
+                                                        colorType,
+                                                        nullptr,
+                                                        nullptr)
+                                    : nullptr;  
+
+    if (!result)
+        throw std::runtime_error("failed to make Skia surface");
+
+    return std::move(result);
 }
 

@@ -1,15 +1,12 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
-#include <iostream>
-
 #include <poll.h>
 #include <tuple>
-// #include <type_traits>
-
-#include <cassert>
+#include <stdexcept>
 #include <cstring>
 #include <memory>
+
 #include <wayland-client-core.h>
 
 #include "core.h"

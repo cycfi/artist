@@ -1,5 +1,6 @@
 #include "../application.h"
 #include "../skia_context.h"
+#include "../log.h"
 
 #include <X11/Xlib.h>
 #include <cassert>
@@ -73,7 +74,8 @@ namespace X11 {
 
         GLint majorGLX, minorGLX = 0;
         glXQueryVersion(dpy, &majorGLX, &minorGLX);
-        std::cout<<"GLX: "<<majorGLX<<"."<<minorGLX<<std::endl;
+
+        Logger::debug("GLX: %i.%i", majorGLX, minorGLX);
 
         GLint glxAttribs[] = {
             GLX_X_RENDERABLE    , True,
@@ -182,11 +184,11 @@ namespace X11 {
             throw std::runtime_error("Failed to create Gl Context.");
 
         // Verifying that context is a direct context
-        if (!glXIsDirect (x11_display, m_context)) {
-            std::cout << "Indirect GLX rendering context obtained"<<std::endl;
+         if (!glXIsDirect (x11_display, m_context)) {
+            Logger::debug("Indirect GLX rendering context obtained");
         }
         else {
-            std::cout << "Direct GLX rendering context obtained"<<std::endl;
+            Logger::debug("Direct GLX rendering context obtained");
         }
 
         glXMakeContextCurrent(x11_display, 
@@ -198,9 +200,10 @@ namespace X11 {
             return (void *) glXGetProcAddress((const GLubyte *)p);
         });
 
-        std::cout << "GL Renderer: " << glGetString(GL_RENDERER) <<std::endl;
-        std::cout << "GL Version: " << glGetString(GL_VERSION) <<std::endl;
-        std::cout << "GLSL Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+        Logger::debug("GL Renderer: %s, GL Version: %s, GLSL Version: %s", 
+                    glGetString(GL_RENDERER), 
+                    glGetString(GL_VERSION), 
+                    glGetString(GL_SHADING_LANGUAGE_VERSION));
     }
 
     ContextGLX::~ContextGLX()
@@ -249,8 +252,6 @@ struct Surface::Impl
     {
         m_context.makeCurrent({});
         m_buffer.destroy(m_context.x11_display);
-        
-        std::cout << "XDestroyWindow " <<m_context.x11_display<< std::endl;
     }
 
     void event_process()
@@ -266,8 +267,8 @@ struct Surface::Impl
 
             /* input */
             if (xevent.type==KeyPress) {
-                std::cout << "KeyPress " << xevent.xkey.window << std::endl;
-                /* resize */
+                
+            /* resize */
             } else if (xevent.type == ConfigureNotify
                     && !xevent.xconfigure.send_event) {
 
@@ -275,7 +276,7 @@ struct Surface::Impl
                                         xevent.xconfigure.height,
                                         SurfaceState::resizing);
 
-                /* draw graphics */
+            /* draw graphics */
             } else if (xevent.type          == Expose
                     && xevent.xexpose.count == 0 ) {
                
@@ -286,11 +287,11 @@ struct Surface::Impl
                 
                 draw();
 
-                /* close window */
-            } else if ( xevent.type                   == ClientMessage
+            /* close window */
+            } else if ( xevent.type                == ClientMessage
                     && xevent.xclient.data.l[0]    == wm_delete_window_atom ) {
                 
-                    m_holder->closed();//std::cout << "XPending " << xevent.type << std::endl;
+                    m_holder->closed();
                    
             }else if ( xevent.type == MapNotify ) {
                 std::cout << "MapNotify " <<std::endl;
@@ -330,12 +331,11 @@ public:
 
 private:
     DisplayImpl():
+        syslogger("artist_lib_X11"),
         m_display(XOpenDisplay(NULL))
     {
         if (!m_display)
             throw std::runtime_error("Could not open display");
-
-        std::cout << "DisplayImpl "<<m_display.get()<<std::endl;
     }
 
     struct DpyDeleter
@@ -346,6 +346,7 @@ private:
         }
     };
 
+    Logger syslogger;
     std::unique_ptr<Display, DpyDeleter> m_display;
     Surface::Impl* m_win{nullptr};
     friend class Surface;
