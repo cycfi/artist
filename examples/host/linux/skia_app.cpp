@@ -102,7 +102,7 @@ int run_app(
 
         app.run();
 
-    } catch (const char* err) {
+    } catch (const std::runtime_error& e) {
         Logger::error("Error application : %s", e.what());
         exit(1);
     }
