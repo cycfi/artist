@@ -3,7 +3,7 @@
 
 #include <GL/gl.h>
 
-#include "../log.h"
+#include "../logger.h"
 
 using namespace WL;
 
