@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <cassert>
 
-#include "../log.h"
+#include "../logger.h"
 
 namespace WL {
 

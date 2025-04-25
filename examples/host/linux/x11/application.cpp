@@ -1,6 +1,6 @@
 #include "../application.h"
 #include "../skia_context.h"
-#include "../log.h"
+#include "../logger.h"
 
 #include <X11/Xlib.h>
 #include <cassert>

@@ -9,8 +9,8 @@
 
 #include "SkCanvas.h"
 #include <chrono>
-#include <iostream>
 
+#include "logger.h"
 #include "application.h"
 
 using namespace cycfi::artist;
@@ -103,7 +103,7 @@ int run_app(
         app.run();
 
     } catch (const char* err) {
-        std::cerr<<"Error: "<<err<<std::endl;
+        Logger::error("Error application : %s", e.what());
         exit(1);
     }
 

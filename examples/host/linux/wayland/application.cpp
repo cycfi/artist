@@ -1,5 +1,5 @@
 #include "../application.h"
-#include "../log.h"
+#include "../logger.h"
 
 #include "contextegl.h"
 #include "xdgshell.h"
