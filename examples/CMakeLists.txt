@@ -8,7 +8,50 @@ project(examples)
 if (UNIX AND NOT APPLE)
    find_package(OpenGL REQUIRED COMPONENTS OpenGL)
    find_package(PkgConfig REQUIRED)
-   pkg_check_modules(gtk3 REQUIRED IMPORTED_TARGET gtk+-3.0)
+   
+   option(X_Win "Use x11 window" ON)
+
+  set(SRC host/linux/skia_app.cpp
+          host/linux/skia_context.cpp)
+
+  if (X_Win)
+    pkg_check_modules(depend REQUIRED IMPORTED_TARGET
+                      x11 glx
+                     )
+    set(SRC ${SRC}
+      host/linux/x11/application.cpp
+    )
+
+  else()
+    pkg_check_modules(depend REQUIRED IMPORTED_TARGET
+                        wayland-client wayland-cursor wayland-egl xkbcommon egl
+                      )
+
+    set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+    find_package(WaylandScanner REQUIRED)
+
+    set(WORK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/host/linux/wayland")
+
+    wayland_add_protocol_client(SRC_GEN ${WORK_DIR}
+      "${WaylandScanner_DATADIR}/stable/xdg-shell/xdg-shell.xml")
+    wayland_add_protocol_client(SRC_GEN ${WORK_DIR}
+      "${WaylandScanner_DATADIR}/unstable/tablet/tablet-unstable-v2.xml")
+    wayland_add_protocol_client(SRC_GEN ${WORK_DIR}
+      "${WaylandScanner_DATADIR}/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml")
+    wayland_add_protocol_client(SRC_GEN ${WORK_DIR}
+      "${WaylandScanner_DATADIR}/staging/fractional-scale/fractional-scale-v1.xml")
+    wayland_add_protocol_client(SRC_GEN ${WORK_DIR}
+      "${WaylandScanner_DATADIR}/stable/viewporter/viewporter.xml")
+
+    set(SRC ${SRC} ${SRC_GEN}
+      host/linux/wayland/core.cpp
+      host/linux/wayland/display.cpp
+      host/linux/wayland/xdgshell.cpp
+      host/linux/wayland/contextegl.cpp
+      host/linux/wayland/application.cpp
+    )
+  endif()
+
 endif()
 
 file(
@@ -78,17 +121,17 @@ function(add_example name)
       )
 
    elseif (UNIX)
-
+        
       add_executable(
          ${name}
          ${name}.cpp
-         host/linux/skia_app.cpp
+         ${SRC}
          print_elapsed.cpp
       )
 
       target_link_libraries(
          ${name}
-         PkgConfig::gtk3
+         PkgConfig::depend
          OpenGL::GL
       )
 
