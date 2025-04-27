@@ -31,3 +31,4 @@ xcuserdata/
 /.vs/
 /CMakeSettings.json
 /Testing/
+CMakeLists.txt.user
