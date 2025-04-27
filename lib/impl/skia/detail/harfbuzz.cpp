@@ -8,7 +8,7 @@
 #include <SkTypeface.h>
 #include <cmath>
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && _MSC_VER < 1800
 extern "C"
 {
    float roundf(float x)
