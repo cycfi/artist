@@ -10,16 +10,18 @@
 
 #include "include/core/SkAlphaType.h"
 #include "include/core/SkColorType.h"
-#include "include/core/SkMath.h"
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkSize.h"
+#include "include/private/base/SkAPI.h"
+#include "include/private/base/SkDebug.h"
+#include "include/private/base/SkMath.h"
+#include "include/private/base/SkTFitsIn.h"
 
-#include "include/private/SkTFitsIn.h"
-#include "include/private/SkTo.h"
+#include <cstddef>
+#include <cstdint>
+#include <utility>
 
-class SkReadBuffer;
-class SkWriteBuffer;
 class SkColorSpace;
 
 /** Returns the number of bytes required to store a pixel, including unused padding.
@@ -74,6 +76,24 @@ enum SkYUVColorSpace : int {
     kBT2020_10bit_Limited_SkYUVColorSpace,
     kBT2020_12bit_Full_SkYUVColorSpace,
     kBT2020_12bit_Limited_SkYUVColorSpace,
+    kBT2020_16bit_Full_SkYUVColorSpace,
+    kBT2020_16bit_Limited_SkYUVColorSpace,
+    kFCC_Full_SkYUVColorSpace,                  //!< describes FCC range
+    kFCC_Limited_SkYUVColorSpace,
+    kSMPTE240_Full_SkYUVColorSpace,             //!< describes SMPTE240M range
+    kSMPTE240_Limited_SkYUVColorSpace,
+    kYDZDX_Full_SkYUVColorSpace,                //!< describes YDZDX range
+    kYDZDX_Limited_SkYUVColorSpace,
+    kGBR_Full_SkYUVColorSpace,                  //!< describes GBR range
+    kGBR_Limited_SkYUVColorSpace,
+    kYCgCo_8bit_Full_SkYUVColorSpace,           //!< describes YCgCo matrix
+    kYCgCo_8bit_Limited_SkYUVColorSpace,
+    kYCgCo_10bit_Full_SkYUVColorSpace,
+    kYCgCo_10bit_Limited_SkYUVColorSpace,
+    kYCgCo_12bit_Full_SkYUVColorSpace,
+    kYCgCo_12bit_Limited_SkYUVColorSpace,
+    kYCgCo_16bit_Full_SkYUVColorSpace,
+    kYCgCo_16bit_Limited_SkYUVColorSpace,
     kIdentity_SkYUVColorSpace,                  //!< maps Y->R, U->G, V->B
 
     kLastEnum_SkYUVColorSpace = kIdentity_SkYUVColorSpace, //!< last valid value
@@ -84,6 +104,8 @@ enum SkYUVColorSpace : int {
     kRec709_SkYUVColorSpace = kRec709_Limited_SkYUVColorSpace,
     kBT2020_SkYUVColorSpace = kBT2020_8bit_Limited_SkYUVColorSpace,
 };
+
+SK_API bool SkYUVColorSpaceIsLimitedRange(SkYUVColorSpace cs);
 
 /** \struct SkColorInfo
     Describes pixel and encoding. SkImageInfo can be created from SkColorInfo by
@@ -548,8 +570,6 @@ public:
 
         @param rowBytes  size of pixel row or larger
         @return          memory required by pixel buffer
-
-        example: https://fiddle.skia.org/c/@ImageInfo_computeByteSize
     */
     size_t computeByteSize(size_t rowBytes) const;
 

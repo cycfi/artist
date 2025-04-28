@@ -9,13 +9,18 @@
 #define SkPathEffect_DEFINED
 
 #include "include/core/SkFlattenable.h"
-#include "include/core/SkScalar.h"
-// not needed, but some of our clients need it (they don't IWYU)
-#include "include/core/SkPath.h"
+#include "include/core/SkRefCnt.h"
+#include "include/private/base/SkAPI.h"
 
-class SkPath;
-struct SkRect;
+// TODO(kjlubick) update clients and remove this unnecessary #include
+#include "include/core/SkPath.h"  // IWYU pragma: keep
+
+#include <cstddef>
+
+class SkMatrix;
 class SkStrokeRec;
+struct SkDeserialProcs;
+struct SkRect;
 
 /** \class SkPathEffect
 
@@ -47,27 +52,6 @@ public:
     static SkFlattenable::Type GetFlattenableType() {
         return kSkPathEffect_Type;
     }
-
-    // move to base?
-
-    enum DashType {
-        kNone_DashType, //!< ignores the info parameter
-        kDash_DashType, //!< fills in all of the info parameter
-    };
-
-    struct DashInfo {
-        DashInfo() : fIntervals(nullptr), fCount(0), fPhase(0) {}
-        DashInfo(SkScalar* intervals, int32_t count, SkScalar phase)
-            : fIntervals(intervals), fCount(count), fPhase(phase) {}
-
-        SkScalar*   fIntervals;         //!< Length of on/off intervals for dashed lines
-                                        //   Even values represent ons, and odds offs
-        int32_t     fCount;             //!< Number of intervals in the dash. Should be even number
-        SkScalar    fPhase;             //!< Offset into the dashed interval pattern
-                                        //   mod the sum of all intervals
-    };
-
-    DashType asADash(DashInfo* info) const;
 
     /**
      *  Given a src path (input) and a stroke-rec (input and output), apply

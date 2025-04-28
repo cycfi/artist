@@ -8,13 +8,15 @@
 #ifndef SkMaskFilter_DEFINED
 #define SkMaskFilter_DEFINED
 
-#include "include/core/SkBlurTypes.h"
-#include "include/core/SkCoverageMode.h"
 #include "include/core/SkFlattenable.h"
+#include "include/core/SkRefCnt.h"
 #include "include/core/SkScalar.h"
+#include "include/core/SkTypes.h"
 
-class SkMatrix;
-struct SkRect;
+#include <cstddef>
+
+enum SkBlurStyle : int;
+struct SkDeserialProcs;
 
 /** \class SkMaskFilter
 
@@ -31,13 +33,6 @@ public:
      */
     static sk_sp<SkMaskFilter> MakeBlur(SkBlurStyle style, SkScalar sigma,
                                         bool respectCTM = true);
-
-    /**
-     *  Returns the approximate bounds that would result from filtering the src rect.
-     *  The actual result may be different, but it should be contained within the
-     *  returned bounds.
-     */
-    SkRect approximateFilteredBounds(const SkRect& src) const;
 
     static sk_sp<SkMaskFilter> Deserialize(const void* data, size_t size,
                                            const SkDeserialProcs* procs = nullptr);

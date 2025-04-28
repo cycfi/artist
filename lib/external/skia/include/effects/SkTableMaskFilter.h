@@ -8,14 +8,20 @@
 #ifndef SkTableMaskFilter_DEFINED
 #define SkTableMaskFilter_DEFINED
 
-#include "include/core/SkMaskFilter.h"
 #include "include/core/SkScalar.h"
+#include "include/core/SkTypes.h"
+
+#include <cstdint>
+
+class SkMaskFilter;
 
 /** \class SkTableMaskFilter
 
     Applies a table lookup on each of the alpha values in the mask.
     Helper methods create some common tables (e.g. gamma, clipping)
  */
+// (DEPRECATED) These factory functions are deprecated. The TableMaskFilter will be
+// removed entirely in an upcoming release of Skia.
 class SK_API SkTableMaskFilter {
 public:
     /** Utility that sets the gamma table
@@ -32,6 +38,10 @@ public:
     static SkMaskFilter* CreateClip(uint8_t min, uint8_t max);
 
     SkTableMaskFilter() = delete;
+
+private:
+    static void RegisterFlattenables();
+    friend class SkFlattenable;
 };
 
 #endif

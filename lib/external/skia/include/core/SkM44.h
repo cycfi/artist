@@ -9,8 +9,12 @@
 #define SkM44_DEFINED
 
 #include "include/core/SkMatrix.h"
-#include "include/core/SkRect.h"
 #include "include/core/SkScalar.h"
+#include "include/core/SkTypes.h"
+
+#include <cstring>
+
+struct SkRect;
 
 struct SK_API SkV2 {
     float x, y;
@@ -99,6 +103,11 @@ struct SK_API SkV4 {
     }
     bool operator!=(const SkV4& v) const { return !(*this == v); }
 
+    static SkScalar Dot(const SkV4& a, const SkV4& b) {
+        return a.x*b.x + a.y*b.y + a.z*b.z + a.w*b.w;
+    }
+    static SkV4 Normalize(const SkV4& v) { return v * (1.0f / v.length()); }
+
     SkV4 operator-() const { return {-x, -y, -z, -w}; }
     SkV4 operator+(const SkV4& v) const { return { x + v.x, y + v.y, z + v.z, w + v.w }; }
     SkV4 operator-(const SkV4& v) const { return { x - v.x, y - v.y, z - v.z, w - v.w }; }
@@ -110,6 +119,12 @@ struct SK_API SkV4 {
         return { v.x*s, v.y*s, v.z*s, v.w*s };
     }
     friend SkV4 operator*(SkScalar s, const SkV4& v) { return v*s; }
+
+    SkScalar lengthSquared() const { return Dot(*this, *this); }
+    SkScalar length() const { return SkScalarSqrt(Dot(*this, *this)); }
+
+    SkScalar dot(const SkV4& v) const { return Dot(*this, v); }
+    SkV4 normalize()            const { return Normalize(*this); }
 
     const float* ptr() const { return &x; }
     float* ptr() { return &x; }
@@ -360,14 +375,14 @@ public:
 
         @return  true if matrix has only finite elements
     */
-    bool isFinite() const { return SkScalarsAreFinite(fMat, 16); }
+    bool isFinite() const { return SkIsFinite(fMat, 16); }
 
     /** If this is invertible, return that in inverse and return true. If it is
      *  not invertible, return false and leave the inverse parameter unchanged.
      */
-    bool SK_WARN_UNUSED_RESULT invert(SkM44* inverse) const;
+    [[nodiscard]] bool invert(SkM44* inverse) const;
 
-    SkM44 SK_WARN_UNUSED_RESULT transpose() const;
+    [[nodiscard]] SkM44 transpose() const;
 
     void dump() const;
 

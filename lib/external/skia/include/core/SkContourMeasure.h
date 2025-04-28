@@ -8,11 +8,20 @@
 #ifndef SkContourMeasure_DEFINED
 #define SkContourMeasure_DEFINED
 
-#include "include/core/SkPath.h"
+#include "include/core/SkPoint.h"
 #include "include/core/SkRefCnt.h"
-#include "include/private/SkTDArray.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkSpan.h"
+#include "include/private/base/SkAPI.h"
+#include "include/private/base/SkAssert.h"
+#include "include/private/base/SkTDArray.h"
 
-struct SkConic;
+#include <cstddef>
+#include <memory>
+
+class SkMatrix;
+class SkPath;
+enum class SkPathVerb;
 
 class SK_API SkContourMeasure : public SkRefCnt {
 public:
@@ -23,8 +32,7 @@ public:
     /** Pins distance to 0 <= distance <= length(), and then computes the corresponding
      *  position and tangent.
      */
-    bool SK_WARN_UNUSED_RESULT getPosTan(SkScalar distance, SkPoint* position,
-                                         SkVector* tangent) const;
+    [[nodiscard]] bool getPosTan(SkScalar distance, SkPoint* position, SkVector* tangent) const;
 
     enum MatrixFlags {
         kGetPosition_MatrixFlag     = 0x01,
@@ -37,8 +45,8 @@ public:
      Returns false if there is no path, or a zero-length path was specified, in which case
      matrix is unchanged.
      */
-    bool SK_WARN_UNUSED_RESULT getMatrix(SkScalar distance, SkMatrix* matrix,
-                                         MatrixFlags flags = kGetPosAndTan_MatrixFlag) const;
+    [[nodiscard]] bool getMatrix(SkScalar distance, SkMatrix* matrix,
+                                 MatrixFlags flags = kGetPosAndTan_MatrixFlag) const;
 
     /** Given a start and stop distance, return in dst the intervening segment(s).
      If the segment is zero-length, return false, else return true.
@@ -46,12 +54,84 @@ public:
      then return false (and leave dst untouched).
      Begin the segment with a moveTo if startWithMoveTo is true
      */
-    bool SK_WARN_UNUSED_RESULT getSegment(SkScalar startD, SkScalar stopD, SkPath* dst,
-                                          bool startWithMoveTo) const;
+    [[nodiscard]] bool getSegment(SkScalar startD, SkScalar stopD, SkPath* dst,
+                                  bool startWithMoveTo) const;
 
     /** Return true if the contour is closed()
      */
     bool isClosed() const { return fIsClosed; }
+
+    /** Measurement data for individual verbs.
+     */
+    struct VerbMeasure {
+        SkScalar              fDistance; // Cumulative distance along the current contour.
+        SkPathVerb            fVerb;     // Verb type.
+        SkSpan<const SkPoint> fPts;      // Verb points.
+    };
+
+private:
+    struct Segment;
+
+public:
+    /** Utility for iterating over the current contour verbs:
+     *
+     *   for (const auto verb_measure : contour_measure) {
+     *     ...
+     *   }
+     */
+    class ForwardVerbIterator final {
+    public:
+        VerbMeasure operator*() const;
+
+        ForwardVerbIterator& operator++() {
+            SkASSERT(!fSegments.empty());
+
+            fSegments = LastSegForCurrentVerb(fSegments.subspan(1));
+
+            return *this;
+        }
+
+        bool operator==(const ForwardVerbIterator& other) const {
+            SkASSERT(fSegments.data() != other.fSegments.data() ||
+                     fSegments.size() == other.fSegments.size());
+            return fSegments.data() == other.fSegments.data();
+        }
+
+        bool operator!=(const ForwardVerbIterator& other) const {
+            return !((*this) == other);
+        }
+
+    private:
+        friend class SkContourMeasure;
+
+        ForwardVerbIterator(SkSpan<const Segment> segs, SkSpan<const SkPoint> pts)
+            : fSegments(LastSegForCurrentVerb(segs))
+            , fPts(pts) {}
+
+        static SkSpan<const Segment> LastSegForCurrentVerb(const SkSpan<const Segment>& segs) {
+            size_t i = 1;
+            while (i < segs.size() && segs[0].fPtIndex == segs[i].fPtIndex) {
+                ++i;
+            }
+
+            return segs.subspan(i - 1);
+        }
+
+        // Remaining segments for forward iteration. The first segment in the span is
+        // adjusted to always point to the last segment of the current verb, such that its distance
+        // corresponds to the verb distance.
+        SkSpan<const Segment> fSegments;
+
+        // All path points (indexed in segments).
+        SkSpan<const SkPoint> fPts;
+    };
+
+    ForwardVerbIterator begin() const {
+        return ForwardVerbIterator(fSegments, fPts);
+    }
+    ForwardVerbIterator end() const {
+        return ForwardVerbIterator(SkSpan(fSegments.end(), 0), fPts);
+    }
 
 private:
     struct Segment {
@@ -86,6 +166,7 @@ private:
     const Segment* distanceToSegment(SkScalar distance, SkScalar* t) const;
 
     friend class SkContourMeasureIter;
+    friend class SkPathMeasurePriv;
 };
 
 class SK_API SkContourMeasureIter {
@@ -101,6 +182,9 @@ public:
      */
     SkContourMeasureIter(const SkPath& path, bool forceClosed, SkScalar resScale = 1);
     ~SkContourMeasureIter();
+
+    SkContourMeasureIter(SkContourMeasureIter&&);
+    SkContourMeasureIter& operator=(SkContourMeasureIter&&);
 
     /**
      *  Reset the Iter with a path.

@@ -8,24 +8,32 @@
 #ifndef SkBitmap_DEFINED
 #define SkBitmap_DEFINED
 
+#include "include/core/SkAlphaType.h"
 #include "include/core/SkColor.h"
 #include "include/core/SkImageInfo.h"
-#include "include/core/SkMatrix.h"
 #include "include/core/SkPixmap.h"
 #include "include/core/SkPoint.h"
+#include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
-#include "include/core/SkShader.h"
-#include "include/core/SkTileMode.h"
+#include "include/core/SkSamplingOptions.h"
+#include "include/core/SkSize.h"
+#include "include/core/SkTypes.h"
+#include "include/private/base/SkCPUTypes.h"
+#include "include/private/base/SkDebug.h"
 
-class SkBitmap;
+#include <cstddef>
+#include <cstdint>
+
 class SkColorSpace;
-struct SkMask;
+class SkImage;
+class SkMatrix;
 class SkMipmap;
-struct SkIRect;
-struct SkRect;
 class SkPaint;
 class SkPixelRef;
 class SkShader;
+enum SkColorType : int;
+enum class SkTileMode;
+struct SkMaskBuilder;
 
 /** \class SkBitmap
     SkBitmap describes a two-dimensional raster pixel array. SkBitmap is built on
@@ -258,6 +266,16 @@ public:
     */
     bool setAlphaType(SkAlphaType alphaType);
 
+    /** Sets the SkColorSpace associated with this SkBitmap.
+
+        The raw pixel data is not altered by this call; no conversion is
+        performed.
+
+        This changes SkColorSpace in SkPixelRef; all bitmaps sharing SkPixelRef
+        are affected.
+    */
+    void setColorSpace(sk_sp<SkColorSpace> colorSpace);
+
     /** Returns pixel address, the base address corresponding to the pixel origin.
 
         @return  pixel address
@@ -432,7 +450,7 @@ public:
         @param flags  kZeroPixels_AllocFlag, or zero
         @return       true if pixels allocation is successful
     */
-    bool SK_WARN_UNUSED_RESULT tryAllocPixelsFlags(const SkImageInfo& info, uint32_t flags);
+    [[nodiscard]] bool tryAllocPixelsFlags(const SkImageInfo& info, uint32_t flags);
 
     /** Sets SkImageInfo to info following the rules in setInfo() and allocates pixel
         memory. Memory is zeroed.
@@ -470,7 +488,7 @@ public:
         @param rowBytes  size of pixel row or larger; may be zero
         @return          true if pixel storage is allocated
     */
-    bool SK_WARN_UNUSED_RESULT tryAllocPixels(const SkImageInfo& info, size_t rowBytes);
+    [[nodiscard]] bool tryAllocPixels(const SkImageInfo& info, size_t rowBytes);
 
     /** Sets SkImageInfo to info following the rules in setInfo() and allocates pixel
         memory. rowBytes must equal or exceed info.width() times info.bytesPerPixel(),
@@ -506,7 +524,7 @@ public:
         @param info  contains width, height, SkAlphaType, SkColorType, SkColorSpace
         @return      true if pixel storage is allocated
     */
-    bool SK_WARN_UNUSED_RESULT tryAllocPixels(const SkImageInfo& info) {
+    [[nodiscard]] bool tryAllocPixels(const SkImageInfo& info) {
         return this->tryAllocPixels(info, info.minRowBytes());
     }
 
@@ -545,7 +563,7 @@ public:
         @param isOpaque  true if pixels do not have transparency
         @return          true if pixel storage is allocated
     */
-    bool SK_WARN_UNUSED_RESULT tryAllocN32Pixels(int width, int height, bool isOpaque = false);
+    [[nodiscard]] bool tryAllocN32Pixels(int width, int height, bool isOpaque = false);
 
     /** Sets SkImageInfo to width, height, and the native color type; and allocates
         pixel memory. If isOpaque is true, sets SkImageInfo to kOpaque_SkAlphaType;
@@ -629,7 +647,7 @@ public:
 
     /** Deprecated.
     */
-    bool installMaskPixels(const SkMask& mask);
+    bool installMaskPixels(SkMaskBuilder& mask);
 
     /** Replaces SkPixelRef with pixels, preserving SkImageInfo and rowBytes().
         Sets SkPixelRef origin to (0, 0).
@@ -653,7 +671,7 @@ public:
 
         @return  true if the allocation succeeds
     */
-    bool SK_WARN_UNUSED_RESULT tryAllocPixels() {
+    [[nodiscard]] bool tryAllocPixels() {
         return this->tryAllocPixels((Allocator*)nullptr);
     }
 
@@ -677,7 +695,7 @@ public:
         @param allocator  instance of SkBitmap::Allocator instantiation
         @return           true if custom allocator reports success
     */
-    bool SK_WARN_UNUSED_RESULT tryAllocPixels(Allocator* allocator);
+    [[nodiscard]] bool tryAllocPixels(Allocator* allocator);
 
     /** Allocates pixel memory with allocator, and replaces existing SkPixelRef.
         The allocation size is determined by SkImageInfo width, height, and SkColorType.
@@ -766,11 +784,10 @@ public:
         treated as opaque. If colorType() is kAlpha_8_SkColorType, then RGB is ignored.
 
         @param c            unpremultiplied color
-        @param colorSpace   SkColorSpace of c
 
         example: https://fiddle.skia.org/c/@Bitmap_eraseColor
     */
-    void eraseColor(SkColor4f c, SkColorSpace* colorSpace = nullptr) const;
+    void eraseColor(SkColor4f) const;
 
     /** Replaces pixel values with c, interpreted as being in the sRGB SkColorSpace.
         All pixels contained by bounds() are affected. If the colorType() is
@@ -810,11 +827,9 @@ public:
 
         @param c            unpremultiplied color
         @param area         rectangle to fill
-        @param colorSpace   SkColorSpace of c
 
         example: https://fiddle.skia.org/c/@Bitmap_erase
     */
-    void erase(SkColor4f c, SkColorSpace* colorSpace, const SkIRect& area) const;
     void erase(SkColor4f c, const SkIRect& area) const;
 
     /** Replaces pixel values inside area with c. interpreted as being in the sRGB
@@ -1168,23 +1183,18 @@ public:
         example: https://fiddle.skia.org/c/@Bitmap_peekPixels
     */
     bool peekPixels(SkPixmap* pixmap) const;
+
+    /**
+     *  Make a shader with the specified tiling, matrix and sampling.
+     */
     sk_sp<SkShader> makeShader(SkTileMode tmx, SkTileMode tmy, const SkSamplingOptions&,
-                               const SkMatrix* = nullptr) const;
-
+                               const SkMatrix* localMatrix = nullptr) const;
     sk_sp<SkShader> makeShader(SkTileMode tmx, SkTileMode tmy, const SkSamplingOptions& sampling,
-                               const SkMatrix& localMatrix) const {
-        return this->makeShader(tmx, tmy, sampling, &localMatrix);
-    }
-
+                               const SkMatrix& lm) const;
+    /** Defaults to clamp in both X and Y. */
+    sk_sp<SkShader> makeShader(const SkSamplingOptions& sampling, const SkMatrix& lm) const;
     sk_sp<SkShader> makeShader(const SkSamplingOptions& sampling,
-                               const SkMatrix* localMatrix = nullptr) const {
-        return this->makeShader(SkTileMode::kClamp, SkTileMode::kClamp, sampling, localMatrix);
-    }
-
-    sk_sp<SkShader> makeShader(const SkSamplingOptions& sampling,
-                               const SkMatrix& localMatrix) const {
-        return this->makeShader(sampling, &localMatrix);
-    }
+                               const SkMatrix* lm = nullptr) const;
 
     /**
      *  Returns a new image from the bitmap. If the bitmap is marked immutable, this will

@@ -8,37 +8,49 @@
 #ifndef SkCodec_DEFINED
 #define SkCodec_DEFINED
 
-#include "include/codec/SkCodecAnimation.h"
 #include "include/codec/SkEncodedOrigin.h"
-#include "include/core/SkAlphaType.h"
-#include "include/core/SkEncodedImageFormat.h"
 #include "include/core/SkImageInfo.h"
 #include "include/core/SkPixmap.h"
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkSize.h"
+#include "include/core/SkSpan.h"
 #include "include/core/SkTypes.h"
 #include "include/core/SkYUVAPixmaps.h"
 #include "include/private/SkEncodedInfo.h"
-#include "include/private/SkNoncopyable.h"
+#include "include/private/base/SkNoncopyable.h"
 #include "modules/skcms/skcms.h"
 
 #include <cstddef>
+#include <functional>
 #include <memory>
+#include <optional>
+#include <string_view>
 #include <tuple>
 #include <vector>
 
-class SkAndroidCodec;
 class SkData;
 class SkFrameHolder;
 class SkImage;
 class SkPngChunkReader;
 class SkSampler;
 class SkStream;
+struct SkGainmapInfo;
+enum SkAlphaType : int;
+enum class SkEncodedImageFormat;
+
+namespace SkCodecAnimation {
+enum class Blend;
+enum class DisposalMethod;
+}
 
 namespace DM {
 class CodecSrc;
 } // namespace DM
+
+namespace SkCodecs {
+struct Decoder;
+}
 
 /**
  *  Abstraction layer directly on top of an image codec.
@@ -125,6 +137,8 @@ public:
         /**
          *  If the container format contains both still images and image sequences,
          *  SkCodec should choose one of the still images. This is the default.
+         *  Note that kPreferStillImage may prevent use of the animation features
+         *  if the input is not rewindable.
          */
         kPreferStillImage,
         /**
@@ -169,7 +183,15 @@ public:
      *  SkCodec takes ownership of it, and will delete it when done with it.
      */
     static std::unique_ptr<SkCodec> MakeFromStream(
-            std::unique_ptr<SkStream>, Result* = nullptr,
+            std::unique_ptr<SkStream>,
+            SkSpan<const SkCodecs::Decoder> decoders,
+            Result* = nullptr,
+            SkPngChunkReader* = nullptr,
+            SelectionPolicy selectionPolicy = SelectionPolicy::kPreferStillImage);
+    // deprecated
+    static std::unique_ptr<SkCodec> MakeFromStream(
+            std::unique_ptr<SkStream>,
+            Result* = nullptr,
             SkPngChunkReader* = nullptr,
             SelectionPolicy selectionPolicy = SelectionPolicy::kPreferStillImage);
 
@@ -189,6 +211,10 @@ public:
      *      If the PNG does not contain unknown chunks, the SkPngChunkReader
      *      will not be used or modified.
      */
+    static std::unique_ptr<SkCodec> MakeFromData(sk_sp<SkData>,
+                                                 SkSpan<const SkCodecs::Decoder> decoders,
+                                                 SkPngChunkReader* = nullptr);
+    // deprecated
     static std::unique_ptr<SkCodec> MakeFromData(sk_sp<SkData>, SkPngChunkReader* = nullptr);
 
     virtual ~SkCodec();
@@ -211,6 +237,16 @@ public:
      */
     const skcms_ICCProfile* getICCProfile() const {
         return this->getEncodedInfo().profile();
+    }
+
+    /**
+     * Whether the encoded input uses 16 or more bits per component.
+     */
+    bool hasHighBitDepthEncodedData() const {
+        // API design note: We don't return `bitsPerComponent` because it may be
+        // misleading in some cases - see https://crbug.com/359350061#comment4
+        // for more details.
+        return this->getEncodedInfo().bitsPerComponent() >= 16;
     }
 
     /**
@@ -264,6 +300,12 @@ public:
      *  Format of the encoded data.
      */
     SkEncodedImageFormat getEncodedFormat() const { return this->onGetEncodedFormat(); }
+
+    /**
+     *  Return the underlying encoded data stream. This may be nullptr if the original
+     *  stream could not be duplicated.
+     */
+    virtual std::unique_ptr<SkStream> getEncodedData() const;
 
     /**
      *  Whether or not the memory passed to getPixels is zero initialized.
@@ -370,6 +412,9 @@ public:
      *  If a scanline decode is in progress, scanline mode will end, requiring the client to call
      *  startScanlineDecode() in order to return to decoding scanlines.
      *
+     *  For certain codecs, reading into a smaller bitmap than the original dimensions may not
+     *  produce correct results (e.g. animated webp).
+     *
      *  @return Result kSuccess, or another value explaining the type of failure.
      */
     Result getPixels(const SkImageInfo& info, void* pixels, size_t rowBytes, const Options*);
@@ -386,7 +431,8 @@ public:
     }
 
     /**
-     *  Return an image containing the pixels.
+     *  Return an image containing the pixels. If the codec's origin is not "upper left",
+     *  This will rotate the output image accordingly.
      */
     std::tuple<sk_sp<SkImage>, SkCodec::Result> getImage(const SkImageInfo& info,
                                                          const Options* opts = nullptr);
@@ -604,6 +650,12 @@ public:
      *  Return the number of frames in the image.
      *
      *  May require reading through the stream.
+     *
+     *  Note that some codecs may be unable to gather `FrameInfo` for all frames
+     *  in case of `kIncompleteInput`.  For such codecs `getFrameCount` may
+     *  initially report a low frame count.  After the underlying `SkStream`
+     *  provides additional data, then calling `getFrameCount` again may return
+     *  an updated, increased frame count.
      */
     int getFrameCount() {
         return this->onGetFrameCount();
@@ -615,11 +667,6 @@ public:
     // - Options::fPriorFrame set to this value means no (relevant) prior frame
     //   is residing in dst's memory.
     static constexpr int kNoFrame = -1;
-
-    // This transitional definition was added in August 2018, and will eventually be removed.
-#ifdef SK_LEGACY_SKCODEC_NONE_ENUM
-    static constexpr int kNone = kNoFrame;
-#endif
 
     /**
      *  Information about individual frames in a multi-framed image.
@@ -737,11 +784,45 @@ public:
      *
      *  As such, future decoding calls may require a rewind.
      *
-     *  For still (non-animated) image codecs, this will return 0.
+     *  `getRepetitionCount` will return `0` in two cases:
+     *  1. Still (non-animated) images.
+     *  2. Animated images that only play the animation once (i.e. that don't
+     *     repeat the animation)
+     *  `isAnimated` can be used to disambiguate between these two cases.
      */
     int getRepetitionCount() {
         return this->onGetRepetitionCount();
     }
+
+    /**
+     * `isAnimated` returns whether the full input is expected to contain an
+     * animated image (i.e. more than 1 image frame).  This can be used to
+     * disambiguate the meaning of `getRepetitionCount` returning `0` (see
+     * `getRepetitionCount`'s doc comment for more details).
+     *
+     * Note that in some codecs `getFrameCount()` only returns the number of
+     * frames for which all the metadata has been already successfully decoded.
+     * Therefore for a partial input `isAnimated()` may return "yes", even
+     * though `getFrameCount()` may temporarily return `1` until more of the
+     * input is available.
+     *
+     * When handling partial input, some codecs may not know until later (e.g.
+     * until encountering additional image frames) whether the given image has
+     * more than one frame.  Such codecs may initially return
+     * `IsAnimated::kUnknown` and only later give a definitive "yes" or "no"
+     * answer.  GIF format is one example where this may happen.
+     *
+     * Other codecs may be able to decode the information from the metadata
+     * present before the first image frame.  Such codecs should be able to give
+     * a definitive "yes" or "no" answer as soon as they are constructed.  PNG
+     * format is one example where this happens.
+     */
+    enum class IsAnimated {
+        kYes,
+        kNo,
+        kUnknown,
+    };
+    IsAnimated isAnimated() { return this->onIsAnimated(); }
 
     // Register a decoder at runtime by passing two function pointers:
     //    - peek() to return true if the span of bytes appears to be your encoded format;
@@ -766,6 +847,13 @@ protected:
     XformFormat getSrcXformFormat() const {
         return fSrcXformFormat;
     }
+
+    virtual bool onGetGainmapCodec(SkGainmapInfo*, std::unique_ptr<SkCodec>*) { return false; }
+    virtual bool onGetGainmapInfo(SkGainmapInfo*) { return false; }
+
+    // TODO(issues.skia.org/363544350): This API only works for JPEG images. Remove this API once
+    // it is no longer used.
+    virtual bool onGetGainmapInfo(SkGainmapInfo*, std::unique_ptr<SkStream>*) { return false; }
 
     virtual SkISize onGetScaledDimensions(float /*desiredScale*/) const {
         // By default, scaling is not supported.
@@ -813,7 +901,7 @@ protected:
      *  This is called by getPixels(), getYUV8Planes(), startIncrementalDecode() and
      *  startScanlineDecode(). Subclasses may call if they need to rewind at another time.
      */
-    bool SK_WARN_UNUSED_RESULT rewindIfNeeded();
+    [[nodiscard]] bool rewindIfNeeded();
 
     /**
      *  Called by rewindIfNeeded, if the stream needed to be rewound.
@@ -883,12 +971,16 @@ protected:
         return 0;
     }
 
+    virtual IsAnimated onIsAnimated() {
+        return IsAnimated::kNo;
+    }
+
 private:
     const SkEncodedInfo                fEncodedInfo;
     XformFormat                        fSrcXformFormat;
     std::unique_ptr<SkStream>          fStream;
-    bool                               fNeedsRewind;
-    const SkEncodedOrigin              fOrigin;
+    bool fNeedsRewind = false;
+    const SkEncodedOrigin fOrigin;
 
     SkImageInfo                        fDstInfo;
     Options                            fOptions;
@@ -904,13 +996,13 @@ private:
     skcms_AlphaFormat                  fDstXformAlphaFormat;
 
     // Only meaningful during scanline decodes.
-    int                                fCurrScanline;
+    int fCurrScanline = -1;
 
-    bool                               fStartedIncrementalDecode;
+    bool fStartedIncrementalDecode = false;
 
     // Allows SkAndroidCodec to call handleFrameIndex (potentially decoding a prior frame and
-    // clearing to transparent) without SkCodec calling it, too.
-    bool                               fAndroidCodecHandlesFrameIndex;
+    // clearing to transparent) without SkCodec itself calling it, too.
+    bool fUsingCallbackForHandleFrameIndex = false;
 
     bool initializeColorXform(const SkImageInfo& dstInfo, SkEncodedInfo::Alpha, bool srcIsOpaque);
 
@@ -934,17 +1026,23 @@ private:
         return nullptr;
     }
 
+    // Callback for decoding a prior frame. The `Options::fFrameIndex` is ignored,
+    // being replaced by frameIndex. This allows opts to actually be a subclass of
+    // SkCodec::Options which SkCodec itself does not know how to copy or modify,
+    // but just passes through to the caller (where it can be reinterpret_cast'd).
+    using GetPixelsCallback = std::function<Result(const SkImageInfo&, void* pixels,
+                                                   size_t rowBytes, const Options& opts,
+                                                   int frameIndex)>;
+
     /**
      *  Check for a valid Options.fFrameIndex, and decode prior frames if necessary.
      *
-     *  If androidCodec is not null, that means this SkCodec is owned by an SkAndroidCodec. In that
-     *  case, the Options will be treated as an AndroidOptions, and SkAndroidCodec will be used to
-     *  decode a prior frame, if a prior frame is needed. When such an owned SkCodec calls
-     *  handleFrameIndex, it will immediately return kSuccess, since SkAndroidCodec already handled
-     *  it.
+     * If GetPixelsCallback is not null, it will be used to decode a prior frame instead
+     * of using this SkCodec directly. It may also be used recursively, if that in turn
+     * depends on a prior frame. This is used by SkAndroidCodec.
      */
     Result handleFrameIndex(const SkImageInfo&, void* pixels, size_t rowBytes, const Options&,
-            SkAndroidCodec* androidCodec = nullptr);
+                            GetPixelsCallback = nullptr);
 
     // Methods for scanline decoding.
     virtual Result onStartScanlineDecode(const SkImageInfo& /*dstInfo*/,
@@ -994,8 +1092,52 @@ private:
     virtual SkSampler* getSampler(bool /*createIfNecessary*/) { return nullptr; }
 
     friend class DM::CodecSrc;  // for fillIncompleteImage
+    friend class PNGCodecGM;    // for fillIncompleteImage
     friend class SkSampledCodec;
     friend class SkIcoCodec;
-    friend class SkAndroidCodec; // for fEncodedInfo
+    friend class SkPngCodec;     // for onGetGainmapCodec
+    friend class SkAndroidCodec;  // for handleFrameIndex
+    friend class SkCodecPriv;     // for fEncodedInfo
 };
+
+namespace SkCodecs {
+
+using DecodeContext = void*;
+using IsFormatCallback = bool (*)(const void* data, size_t len);
+using MakeFromStreamCallback = std::unique_ptr<SkCodec> (*)(std::unique_ptr<SkStream>,
+                                                            SkCodec::Result*,
+                                                            DecodeContext);
+
+struct SK_API Decoder {
+    // By convention, we use all lowercase letters and go with the primary filename extension.
+    // For example "png", "jpg", "ico", "webp", etc
+    std::string_view id;
+    IsFormatCallback isFormat;
+    MakeFromStreamCallback makeFromStream;
+};
+
+// Add the decoder to the end of a linked list of decoders, which will be used to identify calls to
+// SkCodec::MakeFromStream. If a decoder with the same id already exists, this new decoder
+// will replace the existing one (in the same position). This is not thread-safe, so make sure all
+// initialization is done before the first call.
+void SK_API Register(Decoder d);
+
+/**
+ *  Return a SkImage produced by the codec, but attempts to defer image allocation until the
+ *  image is actually used/drawn. This deferral allows the system to cache the result, either on the
+ *  CPU or on the GPU, depending on where the image is drawn. If memory is low, the cache may
+ *  be purged, causing the next draw of the image to have to re-decode.
+ *
+ *  If alphaType is nullopt, the image's alpha type will be chosen automatically based on the
+ *  image format. Transparent images will default to kPremul_SkAlphaType. If alphaType contains
+ *  kPremul_SkAlphaType or kUnpremul_SkAlphaType, that alpha type will be used. Forcing opaque
+ *  (passing kOpaque_SkAlphaType) is not allowed, and will return nullptr.
+ *
+ *  @param codec    A non-null codec (e.g. from SkPngDecoder::Decode)
+ *  @return         created SkImage, or nullptr
+ */
+SK_API sk_sp<SkImage> DeferredImage(std::unique_ptr<SkCodec> codec,
+                                    std::optional<SkAlphaType> alphaType = std::nullopt);
+}
+
 #endif // SkCodec_DEFINED
