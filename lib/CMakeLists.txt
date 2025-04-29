@@ -261,10 +261,10 @@ if (ARTIST_SKIA)
       impl/skia/text_layout.cpp
       impl/skia/path.cpp
       impl/skia/detail/harfbuzz.cpp
-      external/skia/tools/sk_app/GLWindowContext.cpp
-      external/skia/tools/sk_app/WindowContext.cpp
-      external/skia/tools/ToolUtils.cpp
-      external/skia/tools/SkMetaData.cpp
+      #external/skia/tools/sk_app/GLWindowContext.cpp
+      #external/skia/tools/sk_app/WindowContext.cpp
+      #external/skia/tools/ToolUtils.cpp
+      #external/skia/tools/SkMetaData.cpp
       ${ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT}
    )
 endif()

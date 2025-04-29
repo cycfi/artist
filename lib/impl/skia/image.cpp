@@ -20,7 +20,6 @@
 #include <map>
 #include <string>
 #include <utility> // std::pair
-#include <iostream>
 
 using std::map;
 using std::pair;
@@ -136,7 +135,7 @@ namespace cycfi::artist
       };
 
       auto size_ = size();
-      sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(size_.x, size_.y);
+      sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(size_.x, size_.y);//исправить
       SkCanvas* sk_canvas = surface->getCanvas();
 
       auto draw_picture =
@@ -163,7 +162,7 @@ namespace cycfi::artist
       if (!image)
          fail();
 
-      sk_sp<SkData> png(image->encodeToData());
+      sk_sp<SkData> png(image->encodeToData());//исправить
       if (!png)
          fail();
 

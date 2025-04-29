@@ -1,8 +1,8 @@
 #ifndef SKIA_CONTEXT_H
 #define SKIA_CONTEXT_H
 
-#include "GrDirectContext.h"
-#include "gl/GrGLAssembleInterface.h"
+#include "ganesh/GrDirectContext.h"
+#include "ganesh/gl/GrGLAssembleInterface.h"
 
 #include "SkSurface.h"
 

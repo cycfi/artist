@@ -3,12 +3,16 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
+#include "SkFontTypes.h"
+#include "SkTypeface.h"
+#include "SkFont.h"
+#include "SkFontMetrics.h"
+#include "SkFontMgr.h"
+
 #include <artist/font.hpp>
-#include <SkTypeface.h>
-#include <SkFont.h>
+
 #include <sstream>
-#include <SkFontMetrics.h>
-#include <SkFontMgr.h>
+
 #include <infra/filesystem.hpp>
 #include <infra/support.hpp>
 
@@ -243,7 +247,7 @@ namespace cycfi::artist
          }
          else
          {
-            auto face = SkTypeface::MakeFromFile(match_ptr->file.c_str(), match_ptr->index);
+            auto face = SkTypeface::MakeFromFile(match_ptr->file.c_str(), match_ptr->index);//исправить
             _ptr = std::make_shared<SkFont>(face, descr._size);
             if (_ptr)
                match_ptr->cached_typeface = sk_ref_sp(_ptr->getTypeface());
@@ -263,14 +267,14 @@ namespace cycfi::artist
          SkFontStyle::kUpright_Slant
       );
 
-      auto default_face = SkTypeface::MakeFromName(nullptr, style);
+      auto default_face = SkTypeface::MakeFromName(nullptr, style);//исправить
       std::istringstream str(std::string{descr._families});
       std::string family;
 
       while (getline(str, family, ','))
       {
          trim(family);
-         auto face = SkTypeface::MakeFromName(family.c_str(), style);
+         auto face = SkTypeface::MakeFromName(family.c_str(), style);//исправить
          if (face && face != default_face)
          {
             _ptr = std::make_shared<SkFont>(face, descr._size);

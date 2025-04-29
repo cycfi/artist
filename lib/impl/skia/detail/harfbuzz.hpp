@@ -6,7 +6,6 @@
 #include <infra/support.hpp>
 #include <memory>
 #include <string_view>
-#include <vector>
 #include <hb.h>
 #include <hb-ot.h>
 
