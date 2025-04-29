@@ -1,6 +1,8 @@
 #include "contextegl.h"
 #include "core.h"
 
+#include "ganesh/gl/egl/GrGLMakeEGLInterface.h"
+
 #include <GL/gl.h>
 
 #include "../logger.h"
@@ -99,8 +101,7 @@ void ContextEGL::makeCurrent(Buffer &buf)
                                 m_context))
                 throw std::runtime_error("failed to make EGL context current");
 
-            GlSkiaContext::init((GrGLGetProc)* [](void *, const char *p) -> void * {
-            return (void *) eglGetProcAddress(p);});
+            GlSkiaContext::init(GrGLInterfaces::MakeEGL());
 
             Logger::debug("context GL_VENDOR: %s, GL_RENDERER: %s, GL_VERSION: %s",
                           glGetString(GL_VENDOR),

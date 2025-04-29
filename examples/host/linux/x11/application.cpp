@@ -2,6 +2,8 @@
 #include "../skia_context.h"
 #include "../logger.h"
 
+#include "ganesh/gl/glx/GrGLMakeGLXInterface.h"
+
 #include <X11/Xlib.h>
 #include <cassert>
 #include <cstring>
@@ -12,7 +14,7 @@
 #include <GL/glx.h>
 
 #include <poll.h>
-#include <iostream>
+
 
 namespace X11 {
 
@@ -196,9 +198,7 @@ namespace X11 {
                             cfg.m_buffer.win_id,
                             m_context);
 
-        GlSkiaContext::init((GrGLGetProc)*[](void *, const char *p) -> void * {
-            return (void *) glXGetProcAddress((const GLubyte *)p);
-        });
+        GlSkiaContext::init(GrGLInterfaces::MakeGLX());
 
         Logger::debug("GL Renderer: %s, GL Version: %s, GLSL Version: %s", 
                     glGetString(GL_RENDERER), 

@@ -1,24 +1,16 @@
 #include "skia_context.h"
-#include "ganesh/gl/egl/GrGLMakeEGLInterface.h"
 #include "ganesh/gl/GrGLDirectContext.h"
 
 #include "SkColorSpace.h"
 
 #include <GL/gl.h>
 
-void GlSkiaContext::init(GrGLGetProc gl_get_proc)
+void GlSkiaContext::init(sk_sp<const GrGLInterface> iface)
 {
-    auto _xface = GrGLInterfaces::MakeEGL();
-    if (_xface == nullptr) {
-        //backup plan. see https://gist.github.com/ad8e/dd150b775ae6aa4d5cf1a092e4713add?permalink_comment_id=4680136#gistcomment-4680136
-        _xface = GrGLMakeAssembledInterface(
-            nullptr, gl_get_proc);
-    }
-
     GrContextOptions opts;
     opts.fSuppressPrints = true;
 
-    _ctx = GrDirectContexts::MakeGL(_xface, opts);
+    _ctx = GrDirectContexts::MakeGL(iface, opts);
     if (!_ctx)
         throw std::runtime_error("failed to make Skia context");
 }
