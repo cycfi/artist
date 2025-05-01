@@ -23,42 +23,26 @@ namespace X11 {
     public:
         struct Buffer final
         {
+            void init(ContextGLX &ctx, int width, int height);
+
+            SkCanvas* canvas() const {return m_skia_surface->getCanvas();}
+
             Window win_id{0};
             Colormap colormap{0};
+
+            sk_sp<SkSurface> m_skia_surface;
 
             void destroy(Display* dpy)
             {
                 if (win_id){
+                    m_skia_surface.reset();
                     XFreeColormap (dpy, colormap);
                     XDestroyWindow(dpy, win_id);
                 }
             }
         };
 
-        struct Config final
-        {
-            explicit Config(Display* dpy, int width, int height);
-            ~Config()
-            {m_buffer.destroy(x11_dpy);}
-
-            Buffer move_buffer() 
-            {
-                auto id = m_buffer.win_id;
-                m_buffer.win_id = 0;
-
-                return {id, m_buffer.colormap};
-            }
-        
-        private:
-            Display* x11_dpy;
-            GLXFBConfig fb_config;
-            Buffer m_buffer;
-
-            friend class ContextGLX;
-        };
-
-        void init(const Config &cfg);
-        void makeCurrent(const Buffer &buf);
+        void makeCurrent(Buffer &buf);
         void flush(Buffer &buf);
 
         ~ContextGLX();
@@ -67,77 +51,84 @@ namespace X11 {
 
     private:
         GLXContext m_context{nullptr};
+        Buffer *m_current{nullptr};
+        GLXFBConfig fb_config{nullptr};
     };
 
-    ContextGLX::Config::Config(Display* dpy, int width, int height):
-        x11_dpy(dpy)
+    void ContextGLX::Buffer::init(ContextGLX &ctx, int width, int height)
     {
+        auto dpy = ctx.x11_display;
         auto screen_id = DefaultScreen(dpy);
 
-        GLint majorGLX, minorGLX = 0;
-        glXQueryVersion(dpy, &majorGLX, &minorGLX);
-
-        Logger::debug("GLX: %i.%i", majorGLX, minorGLX);
-
-        GLint glxAttribs[] = {
-            GLX_X_RENDERABLE    , True,
-            GLX_DRAWABLE_TYPE   , GLX_WINDOW_BIT,
-            GLX_RENDER_TYPE     , GLX_RGBA_BIT,
-            GLX_X_VISUAL_TYPE   , GLX_TRUE_COLOR,
-            GLX_RED_SIZE        , 8,
-            GLX_GREEN_SIZE      , 8,
-            GLX_BLUE_SIZE       , 8,
-            GLX_ALPHA_SIZE      , 8,
-            GLX_DEPTH_SIZE      , 24,
-            GLX_STENCIL_SIZE    , 8,
-            GLX_DOUBLEBUFFER    , True,
-            None
-        };
-
         XVisualInfo *info{nullptr};
-        int fbcount;
-        GLXFBConfig* fbc = glXChooseFBConfig(dpy, screen_id, glxAttribs, &fbcount);
-        if (fbc == 0)
-            throw std::runtime_error("Failed to retrieve framebuffer.");
 
-        // Pick the FB config/visual with the most samples per pixel
-        int best_fbc = -1, best_num_samp = -1;
-        for (int i = 0; i < fbcount; ++i) {
-            XVisualInfo *vi = glXGetVisualFromFBConfig(dpy, fbc[i]);
-            if (vi) {
-                int samp_buf, samples;
-                glXGetFBConfigAttrib( dpy, fbc[i], GLX_SAMPLE_BUFFERS, &samp_buf );
-                glXGetFBConfigAttrib( dpy, fbc[i], GLX_SAMPLES       , &samples  );
+        if (!ctx.fb_config){
+            GLint majorGLX, minorGLX = 0;
+            glXQueryVersion(dpy, &majorGLX, &minorGLX);
 
-                if ( best_fbc < 0 || (samp_buf && samples > best_num_samp) ) {
-                    best_fbc = i;
-                    best_num_samp = samples;
-                    if (info)
-                        XFree(info);
-                    info = vi;
+            Logger::debug("GLX: %i.%i", majorGLX, minorGLX);
+
+            GLint glxAttribs[] = {
+                GLX_X_RENDERABLE    , True,
+                GLX_DRAWABLE_TYPE   , GLX_WINDOW_BIT,
+                GLX_RENDER_TYPE     , GLX_RGBA_BIT,
+                GLX_X_VISUAL_TYPE   , GLX_TRUE_COLOR,
+                GLX_RED_SIZE        , 8,
+                GLX_GREEN_SIZE      , 8,
+                GLX_BLUE_SIZE       , 8,
+                GLX_ALPHA_SIZE      , 8,
+                GLX_DEPTH_SIZE      , 24,
+                GLX_STENCIL_SIZE    , 8,
+                GLX_DOUBLEBUFFER    , True,
+                None
+            };
+
+            int fbcount;
+            GLXFBConfig* fbc = glXChooseFBConfig(dpy, screen_id, glxAttribs, &fbcount);
+            if (fbc == 0)
+                throw std::runtime_error("Failed to retrieve framebuffer.");
+
+            // Pick the FB config/visual with the most samples per pixel
+            int best_fbc = -1, best_num_samp = -1;
+            for (int i = 0; i < fbcount; ++i) {
+                XVisualInfo *vi = glXGetVisualFromFBConfig(dpy, fbc[i]);
+                if (vi) {
+                    int samp_buf, samples;
+                    glXGetFBConfigAttrib( dpy, fbc[i], GLX_SAMPLE_BUFFERS, &samp_buf );
+                    glXGetFBConfigAttrib( dpy, fbc[i], GLX_SAMPLES       , &samples  );
+
+                    if ( best_fbc < 0 || (samp_buf && samples > best_num_samp) ) {
+                        best_fbc = i;
+                        best_num_samp = samples;
+                        if (info)
+                            XFree(info);
+                        info = vi;
+                    }
+                    else
+                        XFree(vi);
                 }
-                else
-                    XFree(vi);
             }
+
+            if (best_fbc < 0)
+                throw std::runtime_error("Failed to get a valid GLX visual");
+
+            ctx.fb_config = fbc[best_fbc];
+            XFree(fbc);
         }
-
-        if (best_fbc < 0)
-            throw std::runtime_error("Failed to get a valid GLX visual");
-
-        fb_config = fbc[best_fbc];
-        XFree(fbc);
+        else
+            info = glXGetVisualFromFBConfig(dpy, ctx.fb_config);
 
         Window window_root_id = RootWindow(dpy, screen_id);
-        m_buffer.colormap = XCreateColormap(dpy, window_root_id, info->visual, AllocNone);
+        colormap = XCreateColormap(dpy, window_root_id, info->visual, AllocNone);
 
         XSetWindowAttributes windowAttribs;
         windowAttribs.event_mask = ExposureMask | KeyPressMask | StructureNotifyMask;
         //windowAttribs.border_pixel = WhitePixel(m_display, screen_id);
         //windowAttribs.background_pixel = WhitePixel(dpyx.display, screen_id);
         //windowAttribs.override_redirect = True;
-        windowAttribs.colormap = m_buffer.colormap;
+        windowAttribs.colormap = colormap;
 
-        m_buffer.win_id = XCreateWindow(dpy,
+        win_id = XCreateWindow(dpy,
                                 window_root_id,
                                 0,
                                 0,
@@ -150,83 +141,87 @@ namespace X11 {
                                 CWColormap | CWEventMask, // | CWBackPixel | CWBorderPixel,
                                 &windowAttribs);
         XFree(info);
-    }
 
-    void ContextGLX::init(const Config &cfg)
-    {
-        assert(!m_context); // double initialization
-
-        x11_display = cfg.x11_dpy;
-
-        // Create GLX OpenGL context
-        typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
-        glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
-        glXCreateContextAttribsARB =
-            (glXCreateContextAttribsARBProc) glXGetProcAddressARB( (const GLubyte*) "glXCreateContextAttribsARB" );
-
-        int context_attribs[] = {
-            GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
-            GLX_CONTEXT_MINOR_VERSION_ARB, 0,
-            //GLX_CONTEXT_FLAGS_ARB, 0,
-            0, 0
-        };
-
-        const char *glxExts = glXQueryExtensionsString(x11_display, DefaultScreen(x11_display));
-        if (strstr(glxExts, "GLX_ARB_create_context") == 0) {
-            std::cout << "GLX_ARB_create_context not supported"<<std::endl;
-            m_context = glXCreateNewContext(x11_display, cfg.fb_config, GLX_RGBA_TYPE, 0, True);
-        }
-        else {
-            m_context = glXCreateContextAttribsARB(x11_display, cfg.fb_config, 0, True, context_attribs);
-        }
-
-        XSync(x11_display, False);
-
-        if (!m_context)
-            throw std::runtime_error("Failed to create Gl Context.");
-
-        // Verifying that context is a direct context
-         if (!glXIsDirect (x11_display, m_context)) {
-            Logger::debug("Indirect GLX rendering context obtained");
-        }
-        else {
-            Logger::debug("Direct GLX rendering context obtained");
-        }
-
-        glXMakeContextCurrent(x11_display, 
-                            cfg.m_buffer.win_id,
-                            cfg.m_buffer.win_id,
-                            m_context);
-
-        GlSkiaContext::init(GrGLInterfaces::MakeGLX());
-
-        Logger::debug("GL Renderer: %s, GL Version: %s, GLSL Version: %s", 
-                    glGetString(GL_RENDERER), 
-                    glGetString(GL_VERSION), 
-                    glGetString(GL_SHADING_LANGUAGE_VERSION));
+        ctx.makeCurrent(*this);
+        m_skia_surface = ctx.makeSurface(width, height);
     }
 
     ContextGLX::~ContextGLX()
     {
+        if (m_current)
+            m_current->destroy(x11_display);
+
         glXDestroyContext(x11_display, m_context);
     }
 
-    void ContextGLX::makeCurrent(const Buffer &buf)
+    void ContextGLX::makeCurrent(Buffer &buf)
     {
         assert(x11_display);
+        assert(fb_config);
 
-        if (buf.win_id && m_context)
-            glXMakeContextCurrent(x11_display, buf.win_id, buf.win_id, m_context);
-        else
-            glXMakeCurrent(x11_display, 0, nullptr);
+        if (&buf != m_current){
+
+            m_current = &buf;
+
+            if (!m_context){
+                // Create GLX OpenGL context
+                typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
+                glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
+                glXCreateContextAttribsARB =
+                    (glXCreateContextAttribsARBProc) glXGetProcAddressARB( (const GLubyte*) "glXCreateContextAttribsARB" );
+
+                int context_attribs[] = {
+                    GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
+                    GLX_CONTEXT_MINOR_VERSION_ARB, 0,
+                    //GLX_CONTEXT_FLAGS_ARB, 0,
+                    0, 0
+                };
+
+                const char *glxExts = glXQueryExtensionsString(x11_display, DefaultScreen(x11_display));
+                if (strstr(glxExts, "GLX_ARB_create_context") == 0) {
+                    Logger::debug("GLX_ARB_create_context not supported");
+                    m_context = glXCreateNewContext(x11_display, fb_config, GLX_RGBA_TYPE, 0, True);
+                }
+                else {
+                    m_context = glXCreateContextAttribsARB(x11_display, fb_config, 0, True, context_attribs);
+                }
+
+                XSync(x11_display, False);
+
+                if (!m_context)
+                    throw std::runtime_error("Failed to create Gl Context.");
+
+                // Verifying that context is a direct context
+                if (!glXIsDirect (x11_display, m_context)) {
+                    Logger::debug("Indirect GLX rendering context obtained");
+                }
+                else {
+                    Logger::debug("Direct GLX rendering context obtained");
+                }
+
+                glXMakeContextCurrent(x11_display,
+                                      buf.win_id,
+                                      buf.win_id,
+                                      m_context);
+
+                GlSkiaContext::init(GrGLInterfaces::MakeGLX());
+
+                Logger::debug("GL Renderer: %s, GL Version: %s, GLSL Version: %s",
+                              glGetString(GL_RENDERER),
+                              glGetString(GL_VERSION),
+                              glGetString(GL_SHADING_LANGUAGE_VERSION));
+            }
+            else
+                glXMakeContextCurrent(x11_display, buf.win_id, buf.win_id, m_context);
+        }
     }
 
     void ContextGLX::flush(Buffer &buf)
     {
         assert(x11_display);
 
-        if (m_context)
-            glXSwapBuffers(x11_display, buf.win_id);
+        GlSkiaContext::flush(buf.m_skia_surface);
+        glXSwapBuffers(x11_display, buf.win_id);
     }
 }
 
@@ -237,11 +232,11 @@ struct Surface::Impl
         m_need_redraw(false),
         wm_delete_window_atom(XInternAtom(display, "WM_DELETE_WINDOW", False))
     {
-        X11::ContextGLX::Config cfg(display, width, height);
-        m_context.init(cfg);
+        m_scale = 1.5;//To do scale from DPI
+        width *= m_scale;
+        height *= m_scale;
 
-        holder->skia_surf = m_context.makeSurface(width, height);
-        m_buffer = cfg.move_buffer();
+        m_buffer.init(m_context, width, height);
 
         XSetWMProtocols(display, m_buffer.win_id, &wm_delete_window_atom, 1);
         XClearWindow(display, m_buffer.win_id);
@@ -250,8 +245,8 @@ struct Surface::Impl
 
     ~Impl()
     {
-        m_context.makeCurrent({});
-        m_buffer.destroy(m_context.x11_display);
+        // m_context.makeCurrent({});
+        // m_buffer.destroy(m_context.x11_display);
     }
 
     void event_process()
@@ -294,7 +289,7 @@ struct Surface::Impl
                     m_holder->closed();
                    
             }else if ( xevent.type == MapNotify ) {
-                std::cout << "MapNotify " <<std::endl;
+
             }
         }
     }
@@ -303,15 +298,15 @@ struct Surface::Impl
     {
         assert(m_holder);
 
-        m_need_redraw = m_holder->draw(1);
+        m_need_redraw = m_holder->draw(m_scale, m_buffer.canvas());
 
-        m_holder->skia_surf->flush();
         m_context.flush(m_buffer);
     }
 
     X11::ContextGLX m_context;
     X11::ContextGLX::Buffer m_buffer;
     Surface* m_holder;
+    float m_scale;
     bool m_need_redraw;
     Atom wm_delete_window_atom;
 };

@@ -241,16 +241,16 @@ if (ARTIST_SKIA)
 
    if (APPLE)
       set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
-         external/skia/tools/sk_app/mac/GLWindowContext_mac.mm
-         external/skia/tools/sk_app/mac/RasterWindowContext_mac.mm
+         external/skia/tools/window/mac/GLWindowContext_mac.mm
+         external/skia/tools/window/mac/RasterWindowContext_mac.mm
       )
       set_source_files_properties(${ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT}
          PROPERTIES COMPILE_FLAGS -fno-objc-arc
       )
    elseif (MSVC)
       set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
-         external/skia/tools/sk_app/win/GLWindowContext_win.cpp
-         external/skia/tools/sk_app/win/RasterWindowContext_win.cpp
+         external/skia/tools/window/win/GLWindowContext_win.cpp
+         external/skia/tools/window/win/RasterWindowContext_win.cpp
       )
    endif()
 
@@ -261,8 +261,8 @@ if (ARTIST_SKIA)
       impl/skia/text_layout.cpp
       impl/skia/path.cpp
       impl/skia/detail/harfbuzz.cpp
-      #external/skia/tools/sk_app/GLWindowContext.cpp
-      #external/skia/tools/sk_app/WindowContext.cpp
+      external/skia/tools/window/GLWindowContext.cpp
+      external/skia/tools/window/WindowContext.cpp
       #external/skia/tools/ToolUtils.cpp
       #external/skia/tools/SkMetaData.cpp
       ${ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT}
@@ -331,7 +331,7 @@ if (ARTIST_SKIA)
          external/skia/include/ports
          external/skia/src/gpu
          external/skia/modules/skshaper/include
-         external/filesystem/include/
+         #external/filesystem/include/
          external/harfbuzz/include/
          external/fontconfig/include/
    )
@@ -340,6 +340,7 @@ if (ARTIST_SKIA)
       PUBLIC
          ARTIST_SKIA
          SK_RELEASE
+         SK_GL
    )
 endif()
 
@@ -348,14 +349,6 @@ if (ARTIST_QUARTZ_2D)
       artist
       PUBLIC
          ARTIST_QUARTZ_2D
-   )
-endif()
-
-if (ARTIST_SKIA)
-   target_compile_definitions(
-      artist
-      PUBLIC
-        SK_GL
    )
 endif()
 

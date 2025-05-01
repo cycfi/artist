@@ -9,6 +9,12 @@
 #include "SkFontMetrics.h"
 #include "SkFontMgr.h"
 
+#if defined(SK_FONTMGR_FONTCONFIG_AVAILABLE) && defined(SK_TYPEFACE_FACTORY_FREETYPE)
+#include "include/ports/SkFontMgr_fontconfig.h"
+#include "include/ports/SkFontScanner_FreeType.h"
+#endif
+
+
 #include <artist/font.hpp>
 
 #include <sstream>
@@ -238,6 +244,8 @@ namespace cycfi::artist
       auto [font_map, font_map_mutex] = get_font_map();
       std::lock_guard<std::mutex> lock(font_map_mutex);
 
+      auto fontMgr = SkFontMgr::RefEmpty();
+
       auto match_ptr = match(font_map, descr);
       if (match_ptr)
       {
@@ -247,7 +255,7 @@ namespace cycfi::artist
          }
          else
          {
-            auto face = SkTypeface::MakeFromFile(match_ptr->file.c_str(), match_ptr->index);//исправить
+            auto face = fontMgr->makeFromFile(match_ptr->file.c_str(), match_ptr->index);
             _ptr = std::make_shared<SkFont>(face, descr._size);
             if (_ptr)
                match_ptr->cached_typeface = sk_ref_sp(_ptr->getTypeface());
@@ -267,14 +275,14 @@ namespace cycfi::artist
          SkFontStyle::kUpright_Slant
       );
 
-      auto default_face = SkTypeface::MakeFromName(nullptr, style);//исправить
+      auto default_face = fontMgr->legacyMakeTypeface(nullptr, style);//SkTypeface::MakeFromName(nullptr, style);
       std::istringstream str(std::string{descr._families});
       std::string family;
 
       while (getline(str, family, ','))
       {
          trim(family);
-         auto face = SkTypeface::MakeFromName(family.c_str(), style);//исправить
+         auto face = fontMgr->legacyMakeTypeface(family.c_str(), style);//исправить
          if (face && face != default_face)
          {
             _ptr = std::make_shared<SkFont>(face, descr._size);

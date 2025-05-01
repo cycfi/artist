@@ -135,7 +135,7 @@ namespace cycfi::artist
       };
 
       auto size_ = size();
-      sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(size_.x, size_.y);//исправить
+      sk_sp<SkSurface> surface = SkSurfaces::Raster(SkImageInfo::MakeN32Premul(size_.x, size_.y));
       SkCanvas* sk_canvas = surface->getCanvas();
 
       auto draw_picture =
@@ -162,7 +162,7 @@ namespace cycfi::artist
       if (!image)
          fail();
 
-      sk_sp<SkData> png(image->encodeToData());//исправить
+      sk_sp<SkData> png = image->refEncodedData();
       if (!png)
          fail();
 
