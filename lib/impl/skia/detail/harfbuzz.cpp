@@ -55,7 +55,7 @@ namespace cycfi::artist::detail
    hb_font::hb_font(SkTypeface* tf)
    {
       int index;
-      hb_blob blob{std::unique_ptr<SkStreamAsset>(tf->openStream(&index))};
+      hb_blob blob{tf->openStream(&index)};
       hb_face_t* face = hb_face_create(blob.get(), unsigned(index));
       SkASSERT(face);
       if (face)

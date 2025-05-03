@@ -21,6 +21,9 @@ namespace X11 {
     class ContextGLX final: public GlSkiaContext
     {
     public:
+        ContextGLX(Display* dpy): x11_display(dpy){}
+        ~ContextGLX();
+
         struct Buffer final
         {
             void init(ContextGLX &ctx, int width, int height);
@@ -31,23 +34,13 @@ namespace X11 {
             Colormap colormap{0};
 
             sk_sp<SkSurface> m_skia_surface;
-
-            void destroy(Display* dpy)
-            {
-                if (win_id){
-                    m_skia_surface.reset();
-                    XFreeColormap (dpy, colormap);
-                    XDestroyWindow(dpy, win_id);
-                }
-            }
         };
 
         void makeCurrent(Buffer &buf);
-        void flush(Buffer &buf);
+        void flush(Buffer &buf) const;
+        void destroy(Buffer &buf);
 
-        ~ContextGLX();
-
-        Display* x11_display{nullptr};
+        Display* x11_display;
 
     private:
         GLXContext m_context{nullptr};
@@ -149,9 +142,23 @@ namespace X11 {
     ContextGLX::~ContextGLX()
     {
         if (m_current)
-            m_current->destroy(x11_display);
+            glXMakeContextCurrent(x11_display, None, None, NULL);
 
         glXDestroyContext(x11_display, m_context);
+    }
+
+    void ContextGLX::destroy(Buffer &buf)
+    {
+        if (&buf == m_current){
+            glXMakeContextCurrent(x11_display, None, None, NULL);
+            m_current = nullptr;
+        }
+
+        if (buf.win_id){
+            buf.m_skia_surface.reset();
+            XFreeColormap (x11_display, buf.colormap);
+            XDestroyWindow(x11_display, buf.win_id);
+        }
     }
 
     void ContextGLX::makeCurrent(Buffer &buf)
@@ -216,7 +223,7 @@ namespace X11 {
         }
     }
 
-    void ContextGLX::flush(Buffer &buf)
+    void ContextGLX::flush(Buffer &buf) const
     {
         assert(x11_display);
 
@@ -228,6 +235,7 @@ namespace X11 {
 struct Surface::Impl
 {
     Impl(Display* display, Surface* holder, int width, int height):
+        m_context(display),
         m_holder(holder),
         m_need_redraw(false),
         wm_delete_window_atom(XInternAtom(display, "WM_DELETE_WINDOW", False))
@@ -245,8 +253,7 @@ struct Surface::Impl
 
     ~Impl()
     {
-        // m_context.makeCurrent({});
-        // m_buffer.destroy(m_context.x11_display);
+        m_context.destroy(m_buffer);
     }
 
     void event_process()
