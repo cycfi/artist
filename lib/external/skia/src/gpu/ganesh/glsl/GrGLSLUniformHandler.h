@@ -8,18 +8,26 @@
 #ifndef GrGLSLUniformHandler_DEFINED
 #define GrGLSLUniformHandler_DEFINED
 
+#include "include/core/SkString.h"
+#include "include/private/base/SkAssert.h"
+#include "include/private/gpu/ganesh/GrTypesPriv.h"
+#include "src/core/SkSLTypeShared.h"
 #include "src/gpu/Swizzle.h"
+#include "src/gpu/ganesh/GrResourceHandle.h"
 #include "src/gpu/ganesh/GrShaderVar.h"
 #include "src/gpu/ganesh/glsl/GrGLSLProgramDataManager.h"
 
-// variable names beginning with this prefix will not be mangled
-#define GR_NO_MANGLE_PREFIX "sk_"
+#include <string.h>
+#include <cstdint>
 
+class GrBackendFormat;
 class GrGLSLProgramBuilder;
-class GrGLSLShaderBuilder;
 class GrProcessor;
 class GrSamplerState;
-class GrSurfaceProxy;
+struct GrShaderCaps;
+
+// variable names beginning with this prefix will not be mangled
+#define GR_NO_MANGLE_PREFIX "sk_"
 
 // Handles for program uniforms (other than per-effect uniforms)
 struct GrGLSLBuiltinUniformHandles {
@@ -43,7 +51,7 @@ public:
 
     using UniformHandle = GrGLSLProgramDataManager::UniformHandle;
 
-    GR_DEFINE_RESOURCE_HANDLE_CLASS(SamplerHandle);
+    GR_DEFINE_RESOURCE_HANDLE_CLASS(SamplerHandle)
 
     /** Add a uniform variable to the current program, that has visibility in one or more shaders.
         visibility is a bitfield of GrShaderFlag values indicating from which shaders the uniform

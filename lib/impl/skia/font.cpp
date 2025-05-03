@@ -3,12 +3,25 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
+#include "SkData.h"
+#include "ports/SkFontMgr_empty.h"
+
+#include "SkFontTypes.h"
+#include "SkStream.h"
+#include "SkTypeface.h"
+#include "SkFont.h"
+#include "SkFontMetrics.h"
+#include "SkFontMgr.h"
+
+#if defined(SK_FONTMGR_FONTCONFIG_AVAILABLE) && defined(SK_TYPEFACE_FACTORY_FREETYPE)
+#include "include/ports/SkFontMgr_fontconfig.h"
+#include "include/ports/SkFontScanner_FreeType.h"
+#endif
+
 #include <artist/font.hpp>
-#include <SkTypeface.h>
-#include <SkFont.h>
+
 #include <sstream>
-#include <SkFontMetrics.h>
-#include <SkFontMgr.h>
+
 #include <infra/filesystem.hpp>
 #include <infra/support.hpp>
 
@@ -243,15 +256,23 @@ namespace cycfi::artist
          }
          else
          {
-            auto face = SkTypeface::MakeFromFile(match_ptr->file.c_str(), match_ptr->index);
-            _ptr = std::make_shared<SkFont>(face, descr._size);
-            if (_ptr)
-               match_ptr->cached_typeface = sk_ref_sp(_ptr->getTypeface());
+             SkFILEStream input(match_ptr->file.c_str());
+
+             if (input.isValid()){
+                 sk_sp<SkData> font_data = SkData::MakeFromStream(&input, input.getLength());
+                 sk_sp<SkFontMgr> mgr = SkFontMgr_New_Custom_Empty();
+                 sk_sp<SkTypeface> face = mgr->makeFromData(font_data);
+                 _ptr = std::make_shared<SkFont>(face, descr._size);
+                 if (_ptr)
+                     match_ptr->cached_typeface = sk_ref_sp(_ptr->getTypeface());
+             }
          }
       }
 
       if (_ptr)
          return;
+
+      auto fontMgr = SkFontMgr::RefEmpty();
 
       using namespace font_constants;
       int stretch = int(descr._stretch) / 10;
@@ -263,14 +284,14 @@ namespace cycfi::artist
          SkFontStyle::kUpright_Slant
       );
 
-      auto default_face = SkTypeface::MakeFromName(nullptr, style);
+      auto default_face = fontMgr->legacyMakeTypeface(nullptr, style);//SkTypeface::MakeFromName(nullptr, style);
       std::istringstream str(std::string{descr._families});
       std::string family;
 
       while (getline(str, family, ','))
       {
          trim(family);
-         auto face = SkTypeface::MakeFromName(family.c_str(), style);
+         auto face = fontMgr->legacyMakeTypeface(family.c_str(), style);//исправить
          if (face && face != default_face)
          {
             _ptr = std::make_shared<SkFont>(face, descr._size);

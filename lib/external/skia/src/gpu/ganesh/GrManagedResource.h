@@ -8,13 +8,18 @@
 #ifndef GrManagedResource_DEFINED
 #define GrManagedResource_DEFINED
 
-#include "include/private/SkMutex.h"
-#include "include/private/SkTHash.h"
-#include "include/utils/SkRandom.h"
-#include "src/gpu/RefCntedCallback.h"
-#include <atomic>
+#include "include/core/SkRefCnt.h"
+#include "include/private/base/SkAssert.h"
+#include "include/private/base/SkDebug.h"
+#include "include/private/base/SkMutex.h"
+#include "include/private/base/SkNoncopyable.h"
+#include "include/private/base/SkThreadAnnotations.h"
+#include "src/core/SkTHash.h"
+#include "src/gpu/ganesh/GrSurface.h"
 
-class GrTexture;
+#include <atomic>
+#include <cstdint>
+#include <utility>
 
 // uncomment to enable tracing of resource refs
 #ifdef SK_DEBUG
@@ -68,7 +73,8 @@ public:
 
     private:
         SkMutex fLock;
-        SkTHashSet<const GrManagedResource*, GrManagedResource::Hash> fHashSet SK_GUARDED_BY(fLock);
+        skia_private::THashSet<const GrManagedResource*, GrManagedResource::Hash> fHashSet
+                SK_GUARDED_BY(fLock);
     };
 
     static std::atomic<uint32_t> fKeyCounter;
@@ -221,12 +227,12 @@ public:
         SkASSERT(!fReleaseHelper);
     }
 
-    void setRelease(sk_sp<skgpu::RefCntedCallback> releaseHelper) {
+    void setRelease(sk_sp<GrSurface::RefCntedReleaseProc> releaseHelper) {
         fReleaseHelper = std::move(releaseHelper);
     }
 
 protected:
-    mutable sk_sp<skgpu::RefCntedCallback> fReleaseHelper;
+    mutable sk_sp<GrSurface::RefCntedReleaseProc> fReleaseHelper;
 
     void invokeReleaseProc() const {
         if (fReleaseHelper) {

@@ -17,9 +17,10 @@
 #include <SkImage.h>
 #include <SkSurface.h>
 #include <SkCanvas.h>
-#include <tools/sk_app/DisplayParams.h>
-#include <tools/sk_app/WindowContext.h>
-#include <tools/sk_app/win/WindowContextFactory_win.h>
+#include <ganesh/GrDirectContext.h>
+#include <tools/window/DisplayParams.h>
+#include <tools/window/WindowContext.h>
+#include <tools/window/win/WindowContextFactory_win.h>
 
 #include <ShellScalingAPI.h>
 
@@ -44,7 +45,7 @@ private:
    ATOM           registerClass(HINSTANCE hInstance);
    void           destroy();
 
-   using skia_context = std::unique_ptr<sk_app::WindowContext>;
+   using skia_context = std::unique_ptr<skwindow::WindowContext>;
 
    extent         _size;
    bool           _animate;
@@ -97,7 +98,7 @@ window::window(extent size, color bkd, bool animate)
 
    SetWindowLongPtrW(WND, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
-   _skia_context = sk_app::window_context_factory::MakeGLForWin(WND, sk_app::DisplayParams());
+   _skia_context = skwindow::MakeGLForWin(WND, skwindow::DisplayParams());
    if (animate)
       SetTimer(WND, IDT_TIMER1, 16, (TIMERPROC) nullptr);
 
@@ -191,7 +192,8 @@ void window::render()
       draw(cnv);
 
       gpu_canvas->restore();
-      surface->flush();
+
+      _skia_context->directContext()->flushAndSubmit(surface.get());
       _skia_context->swapBuffers();
    }
 }

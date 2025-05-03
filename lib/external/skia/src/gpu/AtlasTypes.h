@@ -8,21 +8,27 @@
 #ifndef skgpu_AtlasTypes_DEFINED
 #define skgpu_AtlasTypes_DEFINED
 
-#include <array>
-
 #include "include/core/SkColorType.h"
+#include "include/core/SkPoint.h"
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkTypes.h"
-#include "include/private/SkTArray.h"
-#include "include/private/SkTo.h"
+#include "include/private/base/SkDebug.h"
+#include "include/private/base/SkTArray.h"
+#include "include/private/base/SkTo.h"
+#include "src/base/SkTInternalLList.h"
 #include "src/core/SkIPoint16.h"
-#include "src/core/SkTInternalLList.h"
 #include "src/gpu/RectanizerSkyline.h"
 
+#include <array>
+#include <cstdint>
+#include <cstring>
+#include <utility>
+
 class GrOpFlushState;
+class SkAutoPixmapStorage;
 class TestingUploadTarget;
-namespace skgpu::graphite { class AtlasManager; }
+namespace skgpu::graphite { class RecorderPriv; }
 
 /**
  * This file includes internal types that are used by all of our gpu backends for atlases.
@@ -33,25 +39,25 @@ namespace skgpu {
 struct IRect16 {
     int16_t fLeft, fTop, fRight, fBottom;
 
-    static IRect16 SK_WARN_UNUSED_RESULT MakeEmpty() {
+    [[nodiscard]] static IRect16 MakeEmpty() {
         IRect16 r;
         r.setEmpty();
         return r;
     }
 
-    static IRect16 SK_WARN_UNUSED_RESULT MakeWH(int16_t w, int16_t h) {
+    [[nodiscard]] static IRect16 MakeWH(int16_t w, int16_t h) {
         IRect16 r;
         r.set(0, 0, w, h);
         return r;
     }
 
-    static IRect16 SK_WARN_UNUSED_RESULT MakeXYWH(int16_t x, int16_t y, int16_t w, int16_t h) {
+    [[nodiscard]] static IRect16 MakeXYWH(int16_t x, int16_t y, int16_t w, int16_t h) {
         IRect16 r;
         r.set(x, y, x + w, y + h);
         return r;
     }
 
-    static IRect16 SK_WARN_UNUSED_RESULT Make(const SkIRect& ir) {
+    [[nodiscard]] static IRect16 Make(const SkIRect& ir) {
         IRect16 r;
         r.set(ir);
         return r;
@@ -140,82 +146,87 @@ private:
 };
 
 /**
- * DrawToken is used to sequence uploads relative to each other and to batches of draws.
+ * AtlasToken is used to sequence uploads relative to each other and to batches of draws.
  */
-class DrawToken {
+class AtlasToken {
 public:
-    static DrawToken AlreadyFlushedToken() { return DrawToken(0); }
+    static AtlasToken InvalidToken() { return AtlasToken(0); }
 
-    DrawToken(const DrawToken&) = default;
-    DrawToken& operator=(const DrawToken&) = default;
+    AtlasToken(const AtlasToken&) = default;
+    AtlasToken& operator=(const AtlasToken&) = default;
 
-    bool operator==(const DrawToken& that) const {
+    bool operator==(const AtlasToken& that) const {
         return fSequenceNumber == that.fSequenceNumber;
     }
-    bool operator!=(const DrawToken& that) const { return !(*this == that); }
-    bool operator<(const DrawToken that) const {
+    bool operator!=(const AtlasToken& that) const { return !(*this == that); }
+    bool operator<(const AtlasToken that) const {
         return fSequenceNumber < that.fSequenceNumber;
     }
-    bool operator<=(const DrawToken that) const {
+    bool operator<=(const AtlasToken that) const {
         return fSequenceNumber <= that.fSequenceNumber;
     }
-    bool operator>(const DrawToken that) const {
+    bool operator>(const AtlasToken that) const {
         return fSequenceNumber > that.fSequenceNumber;
     }
-    bool operator>=(const DrawToken that) const {
+    bool operator>=(const AtlasToken that) const {
         return fSequenceNumber >= that.fSequenceNumber;
     }
 
-    DrawToken& operator++() {
+    AtlasToken& operator++() {
         ++fSequenceNumber;
         return *this;
     }
-    DrawToken operator++(int) {
+    AtlasToken operator++(int) {
         auto old = fSequenceNumber;
         ++fSequenceNumber;
-        return DrawToken(old);
+        return AtlasToken(old);
     }
 
-    DrawToken next() const { return DrawToken(fSequenceNumber + 1); }
+    AtlasToken next() const { return AtlasToken(fSequenceNumber + 1); }
 
     /** Is this token in the [start, end] inclusive interval? */
-    bool inInterval(const DrawToken& start, const DrawToken& end) {
+    bool inInterval(const AtlasToken& start, const AtlasToken& end) {
         return *this >= start && *this <= end;
     }
 
 private:
-    DrawToken() = delete;
-    explicit DrawToken(uint64_t sequenceNumber) : fSequenceNumber(sequenceNumber) {}
+    AtlasToken() = delete;
+    explicit AtlasToken(uint64_t sequenceNumber) : fSequenceNumber(sequenceNumber) {}
     uint64_t fSequenceNumber;
 };
 
-/*
- * The TokenTracker encapsulates the incrementing and distribution of tokens.
+/**
+ * The TokenTracker encapsulates the incrementing and distribution of AtlasTokens.
  */
 class TokenTracker {
 public:
-    /** Gets the token one beyond the last token that has been flushed,
-        either in GrDrawingManager::flush() or Device::flushPendingWorkToRecorder() */
-    DrawToken nextTokenToFlush() const { return fLastFlushedToken.next(); }
+    /**
+     * Gets the token one beyond the last token that has been flushed,
+     * either in GrDrawingManager::flush() or Device::flushPendingWorkToRecorder()
+     */
+    AtlasToken nextFlushToken() const { return fCurrentFlushToken.next(); }
 
-    /** Gets the next draw token. This can be used to record that the next draw
-        issued will use a resource (e.g. texture) while preparing that draw. */
-    DrawToken nextDrawToken() const { return fLastIssuedToken.next(); }
+    /**
+     * Gets the next draw token. This can be used to record that the next draw
+     * issued will use a resource (e.g. texture) while preparing that draw.
+     * Not used by Graphite.
+     */
+    AtlasToken nextDrawToken() const { return fCurrentDrawToken.next(); }
 
 private:
     // Only these classes get to increment the token counters
     friend class ::GrOpFlushState;
     friend class ::TestingUploadTarget;
-    friend class skgpu::graphite::AtlasManager;
+    friend class skgpu::graphite::RecorderPriv;
 
-    /** Issues the next token for a draw. */
-    DrawToken issueDrawToken() { return ++fLastIssuedToken; }
+    // Issues the next token for a draw.
+    AtlasToken issueDrawToken() { return ++fCurrentDrawToken; }
 
-    /** Advances the last flushed token by one. */
-    DrawToken issueFlushToken() { return ++fLastFlushedToken; }
+    // Advances the next token for a flush.
+    AtlasToken issueFlushToken() { return ++fCurrentFlushToken; }
 
-    DrawToken fLastIssuedToken = DrawToken::AlreadyFlushedToken();
-    DrawToken fLastFlushedToken = DrawToken::AlreadyFlushedToken();
+    AtlasToken fCurrentDrawToken = AtlasToken::InvalidToken();
+    AtlasToken fCurrentFlushToken = AtlasToken::InvalidToken();
 };
 
 /**
@@ -224,8 +235,6 @@ private:
  *
  * In fact PlotLocator is a portion of a glyph image location in the atlas fully specified by:
  *    format/atlasGeneration/page/plot/plotGeneration/rect
- *
- * TODO: Remove the small path renderer's use of the PlotLocator for eviction.
  */
 class PlotLocator {
 public:
@@ -251,11 +260,12 @@ public:
             , fPageIndex(0) {}
 
     bool isValid() const {
-        return fGenID != 0 || fPlotIndex != 0 || fPageIndex != 0;
+        return fGenID != AtlasGenerationCounter::kInvalidGeneration ||
+               fPlotIndex != 0 || fPageIndex != 0;
     }
 
     void makeInvalid() {
-        fGenID = 0;
+        fGenID = AtlasGenerationCounter::kInvalidGeneration;
         fPlotIndex = 0;
         fPageIndex = 0;
     }
@@ -300,6 +310,12 @@ public:
         return {fUVs[0] & 0x1FFF, fUVs[1]};
     }
 
+    SkPoint widthHeight() const {
+        auto width =  fUVs[2] - fUVs[0],
+             height = fUVs[3] - fUVs[1];
+        return SkPoint::Make(width, height);
+    }
+
     uint16_t width() const {
         return fUVs[2] - fUVs[0];
     }
@@ -336,7 +352,7 @@ public:
     }
 
 private:
-    PlotLocator fPlotLocator{0, 0, 0};
+    PlotLocator fPlotLocator{AtlasGenerationCounter::kInvalidGeneration, 0, 0};
 
     // The inset padded bounds in the atlas in the lower 13 bits, and page index in bits 13 &
     // 14 of the Us.
@@ -379,7 +395,7 @@ public:
     }
 
     void reset() {
-        fPlotsToUpdate.reset();
+        fPlotsToUpdate.clear();
         memset(fPlotAlreadyUpdated, 0, sizeof(fPlotAlreadyUpdated));
     }
 
@@ -389,7 +405,7 @@ public:
         uint32_t fPlotIndex;
     };
 
-    int count() const { return fPlotsToUpdate.count(); }
+    int count() const { return fPlotsToUpdate.size(); }
 
     const PlotData& plotData(int index) const { return fPlotsToUpdate[index]; }
 
@@ -406,7 +422,7 @@ private:
     }
 
     inline static constexpr int kMinItems = 4;
-    SkSTArray<kMinItems, PlotData, true> fPlotsToUpdate;
+    skia_private::STArray<kMinItems, PlotData, true> fPlotsToUpdate;
     // TODO: increase this to uint64_t to allow more plots per page
     uint32_t fPlotAlreadyUpdated[skgpu::PlotLocator::kMaxMultitexturePages];
 };
@@ -428,8 +444,8 @@ public:
     /** plotIndex() is a unique id for the plot relative to the owning GrAtlas and page. */
     uint32_t plotIndex() const { return fPlotIndex; }
     /**
-     * genID() is incremented when the plot is evicted due to a atlas spill. It is used to know
-     * if a particular subimage is still present in the atlas.
+     * genID() is incremented when the plot is evicted due to a atlas spill. It is used to
+     * know if a particular subimage is still present in the atlas.
      */
     uint64_t genID() const { return fGenID; }
     PlotLocator plotLocator() const {
@@ -438,6 +454,18 @@ public:
     }
     SkDEBUGCODE(size_t bpp() const { return fBytesPerPixel; })
 
+    /**
+     * To add data to the Plot, first call addRect to see if it's possible. If successful,
+     * use the atlasLocator to get a pointer to the location in the atlas via dataAt() and render to
+     * that location, or if you already have data use copySubImage().
+     */
+    bool addRect(int width, int height, AtlasLocator* atlasLocator);
+    void* dataAt(const AtlasLocator& atlasLocator);
+    void copySubImage(const AtlasLocator& atlasLocator, const void* image);
+    // Reset Pixmap to point to backing data for this Plot,
+    // and return render location specified by AtlasLocator but relative to this Plot.
+    SkIPoint prepForRender(const AtlasLocator&, SkAutoPixmapStorage*);
+    // TODO: Utility method for Ganesh, consider removing
     bool addSubImage(int width, int height, const void* image, AtlasLocator* atlasLocator);
 
     /**
@@ -447,10 +475,10 @@ public:
      * use lastUse to determine when we can evict a plot from the cache, i.e. if the last use
      * has already flushed through the gpu then we can reuse the plot.
      */
-    skgpu::DrawToken lastUploadToken() const { return fLastUpload; }
-    skgpu::DrawToken lastUseToken() const { return fLastUse; }
-    void setLastUploadToken(skgpu::DrawToken token) { fLastUpload = token; }
-    void setLastUseToken(skgpu::DrawToken token) { fLastUse = token; }
+    skgpu::AtlasToken lastUploadToken() const { return fLastUpload; }
+    skgpu::AtlasToken lastUseToken() const { return fLastUse; }
+    void setLastUploadToken(skgpu::AtlasToken token) { fLastUpload = token; }
+    void setLastUseToken(skgpu::AtlasToken token) { fLastUse = token; }
 
     int flushesSinceLastUsed() { return fFlushesSinceLastUse; }
     void resetFlushesSinceLastUsed() { fFlushesSinceLastUse = 0; }
@@ -458,7 +486,14 @@ public:
 
     bool needsUpload() { return !fDirtyRect.isEmpty(); }
     std::pair<const void*, SkIRect> prepareForUpload();
-    void resetRects();
+    // Re-initialize Plot. The client should ensure that they process any eviction callbacks
+    // before calling this, otherwise any cached references will point to invalid data.
+    // If freeData is true, this will free the backing data as well. This should only be used
+    // when we know we won't be adding to the Plot immediately afterwards.
+    void resetRects(bool freeData);
+
+    void markFullIfUsed() { fIsFull = !fDirtyRect.isEmpty(); }
+    bool isEmpty() const { return fRectanizer.percentFull() == 0; }
 
     /**
      * Create a clone of this plot. The cloned plot will take the place of the current plot in
@@ -480,9 +515,9 @@ public:
 private:
     ~Plot() override;
 
-    skgpu::DrawToken fLastUpload;
-    skgpu::DrawToken fLastUse;
-    int              fFlushesSinceLastUse;
+    skgpu::AtlasToken fLastUpload;
+    skgpu::AtlasToken fLastUse;
+    int               fFlushesSinceLastUse;
 
     struct {
         const uint32_t fPageIndex : 16;
@@ -500,8 +535,9 @@ private:
     const SkIPoint16 fOffset;  // the offset of the plot in the backing texture
     const SkColorType fColorType;
     const size_t fBytesPerPixel;
-    SkIRect fDirtyRect;
-    SkDEBUGCODE(bool fDirty);
+    SkIRect fDirtyRect;  // area in the Plot that needs to be uploaded
+    bool fIsFull;
+    SkDEBUGCODE(bool fDirty;)
 };
 
 typedef SkTInternalLList<Plot> PlotList;

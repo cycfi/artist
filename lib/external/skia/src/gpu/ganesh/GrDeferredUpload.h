@@ -8,12 +8,14 @@
 #ifndef GrDeferredUpload_DEFINED
 #define GrDeferredUpload_DEFINED
 
-#include <functional>
-#include "include/gpu/GrTypes.h"
-#include "include/private/gpu/ganesh/GrTypesPriv.h"
 #include "src/gpu/AtlasTypes.h"
 
+#include <cstddef>
+#include <functional>
+
 class GrTextureProxy;
+enum class GrColorType;
+struct SkIRect;
 
 /**
  * A word about deferred uploads and tokens: Ops should usually schedule their uploads to occur at
@@ -60,12 +62,12 @@ public:
     virtual const skgpu::TokenTracker* tokenTracker() = 0;
 
     /** Returns the token of the draw that this upload will occur before. */
-    virtual skgpu::DrawToken addInlineUpload(GrDeferredTextureUploadFn&&) = 0;
+    virtual skgpu::AtlasToken addInlineUpload(GrDeferredTextureUploadFn&&) = 0;
 
     /** Returns the token of the draw that this upload will occur before. Since ASAP uploads
         are done first during a flush, this will be the first token since the most recent
         flush. */
-    virtual skgpu::DrawToken addASAPUpload(GrDeferredTextureUploadFn&& upload) = 0;
+    virtual skgpu::AtlasToken addASAPUpload(GrDeferredTextureUploadFn&& upload) = 0;
 };
 
 #endif

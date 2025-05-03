@@ -8,23 +8,39 @@
 #ifndef SkWriteBuffer_DEFINED
 #define SkWriteBuffer_DEFINED
 
+#include "include/core/SkColor.h"
 #include "include/core/SkData.h"
-#include "include/core/SkFlattenable.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkSamplingOptions.h"
+#include "include/core/SkScalar.h"
 #include "include/core/SkSerialProcs.h"
-#include "include/private/SkTHash.h"
+#include "src/core/SkTHash.h"
 #include "src/core/SkWriter32.h"
 
+#include <cstddef>
+#include <cstdint>
 #include <string_view>
 
 class SkFactorySet;
+class SkFlattenable;
 class SkImage;
 class SkM44;
+class SkMatrix;
+class SkPaint;
 class SkPath;
 class SkRefCntSet;
+class SkRegion;
+class SkStream;
+class SkTypeface;
+class SkWStream;
+struct SkIRect;
+struct SkPoint3;
+struct SkPoint;
+struct SkRect;
 
 class SkWriteBuffer {
 public:
-    SkWriteBuffer() {}
+    SkWriteBuffer(const SkSerialProcs& p): fProcs(p) {}
     virtual ~SkWriteBuffer() {}
 
     virtual void writePad32(const void* buffer, size_t bytes) = 0;
@@ -69,12 +85,10 @@ public:
     virtual void writeTypeface(SkTypeface* typeface) = 0;
     virtual void writePaint(const SkPaint& paint) = 0;
 
-    void setSerialProcs(const SkSerialProcs& procs) { fProcs = procs; }
+    const SkSerialProcs& serialProcs() const { return fProcs; }
 
 protected:
     SkSerialProcs   fProcs;
-
-    friend class SkPicturePriv; // fProcs
 };
 
 /**
@@ -82,8 +96,8 @@ protected:
  */
 class SkBinaryWriteBuffer : public SkWriteBuffer {
 public:
-    SkBinaryWriteBuffer();
-    SkBinaryWriteBuffer(void* initialStorage, size_t storageSize);
+    SkBinaryWriteBuffer(const SkSerialProcs&);
+    SkBinaryWriteBuffer(void* initialStorage, size_t storageSize, const SkSerialProcs&);
     ~SkBinaryWriteBuffer() override;
 
     void write(const void* buffer, size_t bytes) {
@@ -146,7 +160,7 @@ private:
     SkWriter32 fWriter;
 
     // Only used if we do not have an fFactorySet
-    SkTHashMap<const char*, uint32_t> fFlattenableDict;
+    skia_private::THashMap<const char*, uint32_t> fFlattenableDict;
 };
 
 enum SkWriteBufferImageFlags {

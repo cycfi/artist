@@ -8,25 +8,29 @@
 #ifndef SkAnalyticEdge_DEFINED
 #define SkAnalyticEdge_DEFINED
 
-#include "include/private/SkTo.h"
-#include "src/core/SkEdge.h"
+#include "include/private/base/SkAssert.h"
+#include "include/private/base/SkDebug.h"
+#include "include/private/base/SkFixed.h"
+#include "include/private/base/SkSafe32.h"
 
-#include <utility>
+#include <cstdint>
+
+struct SkPoint;
 
 struct SkAnalyticEdge {
     // Similar to SkEdge, the conic edges will be converted to quadratic edges
-    enum Type {
-        kLine_Type,
-        kQuad_Type,
-        kCubic_Type
+    enum class Type : int8_t {
+        kLine,
+        kQuad,
+        kCubic,
+    };
+    enum class Winding : int8_t {
+        kCW = 1,    // clockwise
+        kCCW = -1,  // counter clockwise
     };
 
     SkAnalyticEdge* fNext;
     SkAnalyticEdge* fPrev;
-
-    // During aaa_walk_edges, if this edge is a left edge,
-    // then fRiteE is its corresponding right edge. Otherwise it's nullptr.
-    SkAnalyticEdge* fRiteE;
 
     SkFixed fX;
     SkFixed fDX;
@@ -37,21 +41,16 @@ struct SkAnalyticEdge {
     SkFixed fDY;            // abs(1/fDX); may be SK_MaxS32 when fDX is close to 0.
                             // fDY is only used for blitting trapezoids.
 
-    SkFixed fSavedX;        // For deferred blitting
-    SkFixed fSavedY;        // For deferred blitting
-    SkFixed fSavedDY;       // For deferred blitting
-
-    Type    fEdgeType;      // Remembers the *initial* edge type
+    Type fEdgeType;          // Remembers the *initial* edge type
 
     int8_t  fCurveCount;    // only used by kQuad(+) and kCubic(-)
     uint8_t fCurveShift;    // appled to all Dx/DDx/DDDx except for fCubicDShift exception
-    uint8_t fCubicDShift;   // applied to fCDx and fCDy only in cubic
-    int8_t  fWinding;       // 1 or -1
+    Winding fWinding;
 
-    static const int kDefaultAccuracy = 2; // default accuracy for snapping
+    static constexpr int kDefaultAccuracy = 2;  // default accuracy for snapping
 
     static inline SkFixed SnapY(SkFixed y) {
-        const int accuracy = kDefaultAccuracy;
+        constexpr int accuracy = kDefaultAccuracy;
         // This approach is safer than left shift, round, then right shift
         return ((unsigned)y + (SK_Fixed1 >> (accuracy + 1))) >> (16 - accuracy) << (16 - accuracy);
     }
@@ -76,23 +75,21 @@ struct SkAnalyticEdge {
         fX += fDX >> yShift;
     }
 
-    inline void saveXY(SkFixed x, SkFixed y, SkFixed dY) {
-        fSavedX = x;
-        fSavedY = y;
-        fSavedDY = dY;
-    }
-
     bool setLine(const SkPoint& p0, const SkPoint& p1);
     bool updateLine(SkFixed ax, SkFixed ay, SkFixed bx, SkFixed by, SkFixed slope);
 
     // return true if we're NOT done with this edge
-    bool update(SkFixed last_y, bool sortY = true);
+    bool update(SkFixed last_y);
 
 #ifdef SK_DEBUG
     void dump() const {
         SkDebugf("edge: upperY:%d lowerY:%d y:%g x:%g dx:%g w:%d\n",
-                 fUpperY, fLowerY, SkFixedToFloat(fY), SkFixedToFloat(fX),
-                 SkFixedToFloat(fDX), fWinding);
+                 fUpperY,
+                 fLowerY,
+                 SkFixedToFloat(fY),
+                 SkFixedToFloat(fX),
+                 SkFixedToFloat(fDX),
+                 static_cast<int8_t>(fWinding));
     }
 
     void validate() const {
@@ -101,17 +98,21 @@ struct SkAnalyticEdge {
          SkASSERT(fNext->fPrev == this);
 
          SkASSERT(fUpperY < fLowerY);
-         SkASSERT(SkAbs32(fWinding) == 1);
+         SkASSERT(fWinding == Winding::kCW || fWinding == Winding::kCCW);
     }
 #endif
 };
 
 struct SkAnalyticQuadraticEdge : public SkAnalyticEdge {
-    SkQuadraticEdge fQEdge;
+    SkFixed fQx, fQy;
+    SkFixed fQDx, fQDy;
+    SkFixed fQDDx, fQDDy;
+    SkFixed fQLastX, fQLastY;
 
     // snap y to integer points in the middle of the curve to accelerate AAA path filling
     SkFixed fSnappedX, fSnappedY;
 
+    bool setQuadraticWithoutUpdate(const SkPoint pts[3], int shiftUp);
     bool setQuadratic(const SkPoint pts[3]);
     bool updateQuadratic();
     inline void keepContinuous() {
@@ -125,81 +126,23 @@ struct SkAnalyticQuadraticEdge : public SkAnalyticEdge {
 };
 
 struct SkAnalyticCubicEdge : public SkAnalyticEdge {
-    SkCubicEdge fCEdge;
+    SkFixed fCx, fCy;
+    SkFixed fCDx, fCDy;
+    SkFixed fCDDx, fCDDy;
+    SkFixed fCDDDx, fCDDDy;
+    SkFixed fCLastX, fCLastY;
 
     SkFixed fSnappedY; // to make sure that y is increasing with smooth jump and snapping
 
-    bool setCubic(const SkPoint pts[4], bool sortY = true);
-    bool updateCubic(bool sortY = true);
+    uint8_t fCubicDShift;   // applied to fCDx and fCDy
+
+    bool setCubicWithoutUpdate(const SkPoint pts[4], int shiftUp);
+    bool setCubic(const SkPoint pts[4]);
+    bool updateCubic();
     inline void keepContinuous() {
-        SkASSERT(SkAbs32(fX - SkFixedMul(fDX, fY - SnapY(fCEdge.fCy)) - fCEdge.fCx) < SK_Fixed1);
-        fCEdge.fCx = fX;
+        SkASSERT(SkAbs32(fX - SkFixedMul(fDX, fY - SnapY(fCy)) - fCx) < SK_Fixed1);
+        fCx = fX;
         fSnappedY = fY;
-    }
-};
-
-struct SkBezier {
-    int fCount; // 2 line, 3 quad, 4 cubic
-    SkPoint fP0;
-    SkPoint fP1;
-
-    // See if left shift, covert to SkFDot6, and round has the same top and bottom y.
-    // If so, the edge will be empty.
-    static inline bool IsEmpty(SkScalar y0, SkScalar y1, int shift = 2) {
-#ifdef SK_RASTERIZE_EVEN_ROUNDING
-        return SkScalarRoundToFDot6(y0, shift) == SkScalarRoundToFDot6(y1, shift);
-#else
-        SkScalar scale = (1 << (shift + 6));
-        return SkFDot6Round(int(y0 * scale)) == SkFDot6Round(int(y1 * scale));
-#endif
-    }
-};
-
-struct SkLine : public SkBezier {
-    bool set(const SkPoint pts[2]){
-        if (IsEmpty(pts[0].fY, pts[1].fY)) {
-            return false;
-        }
-        fCount = 2;
-        fP0 = pts[0];
-        fP1 = pts[1];
-        return true;
-    }
-};
-
-struct SkQuad : public SkBezier {
-    SkPoint fP2;
-
-    bool set(const SkPoint pts[3]){
-        if (IsEmpty(pts[0].fY, pts[2].fY)) {
-            return false;
-        }
-        fCount = 3;
-        fP0 = pts[0];
-        fP1 = pts[1];
-        fP2 = pts[2];
-        return true;
-    }
-};
-
-struct SkCubic : public SkBezier {
-    SkPoint fP2;
-    SkPoint fP3;
-
-    bool set(const SkPoint pts[4]){
-        // We do not chop at y extrema for cubics so pts[0], pts[1], pts[2], pts[3] may not be
-        // monotonic. Therefore, we have to check the emptiness for all three pairs, instead of just
-        // checking IsEmpty(pts[0].fY, pts[3].fY).
-        if (IsEmpty(pts[0].fY, pts[1].fY) && IsEmpty(pts[1].fY, pts[2].fY) &&
-                IsEmpty(pts[2].fY, pts[3].fY)) {
-            return false;
-        }
-        fCount = 4;
-        fP0 = pts[0];
-        fP1 = pts[1];
-        fP2 = pts[2];
-        fP3 = pts[3];
-        return true;
     }
 };
 

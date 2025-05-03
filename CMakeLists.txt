@@ -62,6 +62,16 @@ elseif (ARTIST_QUARTZ_2D AND APPLE)
    message(STATUS "Building Artist lib for MacOS with Quartz2D.")
 endif()
 
+if (UNIX AND NOT APPLE)
+   option(ARTIST_X11 "Use x11 window" ON)
+   if (ARTIST_X11)
+      message(STATUS "Building Artist lib for Linux with Skia GLX.")
+   else()
+      message(STATUS "Building Artist lib for Linux with Skia EGL.")
+   endif()
+
+endif()
+
 if (APPLE)
    if (NOT CMAKE_OSX_ARCHITECTURES)
       set(CMAKE_OSX_ARCHITECTURES ${CMAKE_SYSTEM_PROCESSOR})

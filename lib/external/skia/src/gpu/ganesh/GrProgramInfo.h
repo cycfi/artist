@@ -8,11 +8,20 @@
 #ifndef GrProgramInfo_DEFINED
 #define GrProgramInfo_DEFINED
 
-#include "include/gpu/GrTypes.h"
-#include "src/gpu/ganesh/GrGeometryProcessor.h"
+#include "include/gpu/ganesh/GrBackendSurface.h"
+#include "include/private/base/SkDebug.h"
+#include "include/private/gpu/ganesh/GrTypesPriv.h"
+#include "src/gpu/ganesh/GrCaps.h"
 #include "src/gpu/ganesh/GrPipeline.h"
+#include "src/gpu/ganesh/GrUserStencilSettings.h"
 
+#include <cstdint>
+
+class GrGeometryProcessor;
 class GrStencilSettings;
+class GrSurfaceProxyView;
+enum GrSurfaceOrigin : int;
+enum class GrXferBarrierFlags;
 
 class GrProgramInfo {
 public:
@@ -24,29 +33,7 @@ public:
                   const GrGeometryProcessor* geomProc,
                   GrPrimitiveType primitiveType,
                   GrXferBarrierFlags renderPassXferBarriers,
-                  GrLoadOp colorLoadOp)
-            : fNeedsStencil(targetView.asRenderTargetProxy()->needsStencil())
-            , fBackendFormat(targetView.proxy()->backendFormat())
-            , fOrigin(targetView.origin())
-            , fTargetHasVkResolveAttachmentWithInput(
-                    targetView.asRenderTargetProxy()->supportsVkInputAttachment() &&
-                    ((targetView.asRenderTargetProxy()->numSamples() > 1 &&
-                     targetView.asTextureProxy()) ||
-                    targetView.asRenderTargetProxy()->numSamples() == 1))
-            , fTargetsNumSamples(targetView.asRenderTargetProxy()->numSamples())
-            , fPipeline(pipeline)
-            , fUserStencilSettings(userStencilSettings)
-            , fGeomProc(geomProc)
-            , fPrimitiveType(primitiveType)
-            , fRenderPassXferBarriers(renderPassXferBarriers)
-            , fColorLoadOp(colorLoadOp) {
-        SkASSERT(fTargetsNumSamples > 0);
-        fNumSamples = fTargetsNumSamples;
-        if (fNumSamples == 1 && usesMSAASurface) {
-            fNumSamples = caps.internalMultisampleCount(this->backendFormat());
-        }
-        SkDEBUGCODE(this->validate(false);)
-    }
+                  GrLoadOp colorLoadOp);
 
     int numSamples() const { return fNumSamples; }
     int needsStencil() const { return fNeedsStencil; }

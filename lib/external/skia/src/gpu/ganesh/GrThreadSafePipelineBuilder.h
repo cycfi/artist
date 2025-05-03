@@ -9,13 +9,11 @@
 #define GrThreadSafePipelineBuilder_Base_DEFINED
 
 #include "include/core/SkRefCnt.h"
-#include "include/gpu/GrConfig.h"
-#include <atomic>
+#include "include/core/SkString.h"  // IWYU pragma: keep
+#include "include/core/SkTypes.h"
+#include "include/private/base/SkTArray.h"
 
-#if GR_TEST_UTILS
-#include "include/private/SkTArray.h"
-class SkString;
-#endif
+#include <atomic>
 
 class GrThreadSafePipelineBuilder : public SkRefCnt {
 public:
@@ -68,9 +66,9 @@ public:
         int numCompilationSuccesses() const { return fNumCompilationSuccesses; }
         void incNumCompilationSuccesses() { ++fNumCompilationSuccesses; }
 
-#if GR_TEST_UTILS
+#if defined(GPU_TEST_UTILS)
         void dump(SkString*);
-        void dumpKeyValuePairs(SkTArray<SkString>* keys, SkTArray<double>* values);
+        void dumpKeyValuePairs(skia_private::TArray<SkString>* keys, skia_private::TArray<double>* values);
 #endif
 
     private:
@@ -96,9 +94,9 @@ public:
         void incNumPartialCompilationSuccesses() {}
         void incNumCompilationSuccesses() {}
 
-#if GR_TEST_UTILS
+#if defined(GPU_TEST_UTILS)
         void dump(SkString*) {}
-        void dumpKeyValuePairs(SkTArray<SkString>*, SkTArray<double>*) {}
+        void dumpKeyValuePairs(skia_private::TArray<SkString>*, skia_private::TArray<double>*) {}
 #endif
 
 #endif // GR_GPU_STATS

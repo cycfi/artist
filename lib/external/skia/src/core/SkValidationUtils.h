@@ -10,7 +10,6 @@
 
 #include "include/core/SkBitmap.h"
 #include "include/core/SkBlendMode.h"
-#include "src/core/SkXfermodePriv.h"
 
 /** Returns true if mode's value is in the SkBlendMode enum.
   */
@@ -29,8 +28,7 @@ static inline bool SkIsValidIRect(const SkIRect& rect) {
 static inline bool SkIsValidRect(const SkRect& rect) {
     return (rect.fLeft <= rect.fRight) &&
            (rect.fTop <= rect.fBottom) &&
-           SkScalarIsFinite(rect.width()) &&
-           SkScalarIsFinite(rect.height());
+           SkIsFinite(rect.width(), rect.height());
 }
 
 #endif

@@ -4,17 +4,23 @@
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
-
-
 #ifndef GrGLTexture_DEFINED
 #define GrGLTexture_DEFINED
 
-#include "include/private/gpu/ganesh/GrGLTypesPriv.h"
-#include "src/gpu/ganesh/GrGpu.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkSize.h"
+#include "include/gpu/GpuTypes.h"
+#include "include/gpu/ganesh/GrBackendSurface.h"
+#include "include/gpu/ganesh/SkImageGanesh.h"
+#include "include/gpu/ganesh/gl/GrGLTypes.h"
+#include "include/private/gpu/ganesh/GrTypesPriv.h"
 #include "src/gpu/ganesh/GrTexture.h"
-#include "src/gpu/ganesh/gl/GrGLUtil.h"
+#include "src/gpu/ganesh/gl/GrGLTypesPriv.h"
+
+#include <string_view>
 
 class GrGLGpu;
+class SkTraceMemoryDump;
 
 class GrGLTexture : public GrTexture {
 public:
@@ -24,11 +30,12 @@ public:
         GrGLuint fID                        = 0;
         GrGLFormat fFormat                  = GrGLFormat::kUnknown;
         GrBackendObjectOwnership fOwnership = GrBackendObjectOwnership::kOwned;
+        skgpu::Protected fIsProtected       = skgpu::Protected::kNo;
     };
 
     static GrTextureType TextureTypeFromTarget(GrGLenum textureTarget);
 
-    GrGLTexture(GrGLGpu*, SkBudgeted, const Desc&, GrMipmapStatus, std::string_view label);
+    GrGLTexture(GrGLGpu*, skgpu::Budgeted, const Desc&, GrMipmapStatus, std::string_view label);
 
     ~GrGLTexture() override {}
 
@@ -81,7 +88,7 @@ protected:
     void onAbandon() override;
     void onRelease() override;
 
-    bool onStealBackendTexture(GrBackendTexture*, SkImage::BackendTextureReleaseProc*) override;
+    bool onStealBackendTexture(GrBackendTexture*, SkImages::BackendTextureReleaseProc*) override;
 
     void onSetLabel() override;
 

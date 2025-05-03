@@ -9,15 +9,16 @@
 #define GrProgramDesc_DEFINED
 
 #include "include/core/SkString.h"
-#include "include/private/SkTArray.h"
-#include "include/private/SkTo.h"
-#include "include/private/gpu/ganesh/GrTypesPriv.h"
+#include "include/private/base/SkAlign.h"
+#include "include/private/base/SkTArray.h"
+#include "include/private/base/SkTFitsIn.h"
+#include "include/private/base/SkTo.h"
 
-#include <limits.h>
+#include <cstdint>
+#include <cstring>
 
 class GrCaps;
 class GrProgramInfo;
-class GrRenderTarget;
 
 /** This class is used to generate a generic program cache key. The Dawn, Metal and Vulkan
  *  backends derive backend-specific versions which add additional information.
@@ -37,7 +38,7 @@ public:
 
     // Gets the number of bytes in asKey(). It will be a 4-byte aligned value.
     uint32_t keyLength() const {
-        return fKey.size() * sizeof(uint32_t);
+        return SkToU32(fKey.size() * sizeof(uint32_t));
     }
 
     bool operator== (const GrProgramDesc& that) const {
@@ -82,25 +83,24 @@ protected:
         if (!SkTFitsIn<int>(keyLength) || !SkIsAlign4(keyLength)) {
             return false;
         }
-        desc->fKey.reset(keyLength / 4);
+        desc->fKey.reset(SkToInt(keyLength / 4));
         memcpy(desc->fKey.begin(), keyData, keyLength);
         return true;
     }
 
-    enum {
-        kHeaderSize            = 1,    // "header" in ::Build
-        kMaxPreallocProcessors = 8,
-        kIntsPerProcessor      = 4,    // This is an overestimate of the average effect key size.
-        kPreAllocSize = kHeaderSize +
-                        kMaxPreallocProcessors * kIntsPerProcessor,
-    };
+    static constexpr size_t kHeaderSize            = 1;    // "header" in ::Build
+    static constexpr size_t kMaxPreallocProcessors = 8;
+    // This is an overestimate of the average effect key size.
+    static constexpr size_t kIntsPerProcessor      = 4;
+    static constexpr size_t kPreAllocSize          =
+            kHeaderSize + kMaxPreallocProcessors * kIntsPerProcessor;
 
-    using KeyType = SkSTArray<kPreAllocSize, uint32_t, true>;
+    using KeyType = skia_private::STArray<kPreAllocSize, uint32_t, true>;
 
     KeyType* key() { return &fKey; }
 
 private:
-    SkSTArray<kPreAllocSize, uint32_t, true> fKey;
+    skia_private::STArray<kPreAllocSize, uint32_t, true> fKey;
     uint32_t fInitialKeyLength = 0;
 };
 

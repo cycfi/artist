@@ -7,8 +7,14 @@
 #ifndef GrQuadBuffer_DEFINED
 #define GrQuadBuffer_DEFINED
 
-#include "include/private/SkTDArray.h"
+#include "include/core/SkRect.h"
+#include "include/private/base/SkAssert.h"
+#include "include/private/base/SkDebug.h"
+#include "include/private/base/SkTDArray.h"
 #include "src/gpu/ganesh/geometry/GrQuad.h"
+
+#include <cstdint>
+#include <cstring>
 
 template<typename T>
 class GrQuadBuffer {
@@ -300,7 +306,7 @@ void GrQuadBuffer<T>::append(const GrQuad& deviceQuad, T&& metadata, const GrQua
 
 template<typename T>
 void GrQuadBuffer<T>::concat(const GrQuadBuffer<T>& that) {
-    fData.append(that.fData.count(), that.fData.begin());
+    fData.append(that.fData.size(), that.fData.begin());
     fCount += that.fCount;
     if (that.fDeviceType > fDeviceType) {
         fDeviceType = that.fDeviceType;

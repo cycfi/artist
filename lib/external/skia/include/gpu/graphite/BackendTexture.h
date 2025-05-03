@@ -8,25 +8,19 @@
 #ifndef skgpu_graphite_BackendTexture_DEFINED
 #define skgpu_graphite_BackendTexture_DEFINED
 
+#include "include/core/SkRefCnt.h"
 #include "include/core/SkSize.h"
 #include "include/gpu/graphite/GraphiteTypes.h"
 #include "include/gpu/graphite/TextureInfo.h"
-
-#ifdef SK_METAL
-#include "include/gpu/graphite/mtl/MtlTypes.h"
-#endif
+#include "include/private/base/SkAnySubclass.h"
 
 namespace skgpu::graphite {
 
-class BackendTexture {
-public:
-    BackendTexture() {}
-#ifdef SK_METAL
-    // The BackendTexture will not call retain or release on the passed in MtlHandle. Thus the
-    // client must keep the MtlHandle valid until they are no longer using the BackendTexture.
-    BackendTexture(SkISize dimensions, MtlHandle mtlTexture);
-#endif
+class BackendTextureData;
 
+class SK_API BackendTexture {
+public:
+    BackendTexture();
     BackendTexture(const BackendTexture&);
 
     ~BackendTexture();
@@ -43,22 +37,26 @@ public:
 
     const TextureInfo& info() const { return fInfo; }
 
-#ifdef SK_METAL
-    MtlHandle getMtlTexture() const;
-#endif
-
 private:
+    friend class BackendTextureData;
+    friend class BackendTexturePriv;
+
+    // Size determined by looking at the BackendTextureData subclasses, then guessing-and-checking.
+    // Compiler will complain if this is too small - in that case, just increase the number.
+    inline constexpr static size_t kMaxSubclassSize = 72;
+    using AnyBackendTextureData = SkAnySubclass<BackendTextureData, kMaxSubclassSize>;
+
+    template <typename SomeBackendTextureData>
+    BackendTexture(SkISize dimensions, TextureInfo info, const SomeBackendTextureData& textureData)
+            : fDimensions(dimensions), fInfo(info) {
+        fTextureData.emplace<SomeBackendTextureData>(textureData);
+    }
+
     SkISize fDimensions;
     TextureInfo fInfo;
-
-    union {
-#ifdef SK_METAL
-        MtlHandle fMtlTexture;
-#endif
-    };
+    AnyBackendTextureData fTextureData;
 };
 
 } // namespace skgpu::graphite
 
 #endif // skgpu_graphite_BackendTexture_DEFINED
-

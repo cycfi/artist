@@ -8,9 +8,15 @@
 #ifndef GrDstProxyView_DEFINED
 #define GrDstProxyView_DEFINED
 
-#include "include/gpu/GrTypes.h"
+#include "include/core/SkPoint.h"
+#include "include/private/base/SkTypeTraits.h"
 #include "include/private/gpu/ganesh/GrTypesPriv.h"
 #include "src/gpu/ganesh/GrSurfaceProxyView.h"
+
+#include <type_traits>
+#include <utility>
+
+class GrSurfaceProxy;
 
 /**
  * GrDstProxyView holds a texture containing the destination pixel values, and an integer-coordinate
@@ -58,10 +64,16 @@ public:
 
     void setDstSampleFlags(GrDstSampleFlags dstSampleFlags) { fDstSampleFlags = dstSampleFlags; }
 
+    using sk_is_trivially_relocatable = std::true_type;
+
 private:
     GrSurfaceProxyView       fProxyView;
     SkIPoint                 fOffset = {0, 0};
     GrDstSampleFlags         fDstSampleFlags = GrDstSampleFlags::kNone;
+
+    static_assert(::sk_is_trivially_relocatable<decltype(fProxyView)>::value);
+    static_assert(::sk_is_trivially_relocatable<decltype(fOffset)>::value);
+    static_assert(::sk_is_trivially_relocatable<decltype(fDstSampleFlags)>::value);
 };
 
 #endif

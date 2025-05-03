@@ -8,9 +8,9 @@
 #ifndef SkTDynamicHash_DEFINED
 #define SkTDynamicHash_DEFINED
 
-// This is now a simple API wrapper around SkTHashTable<T*>;
+// This is now a simple API wrapper around THashTable<T*>;
 // please just use SkTHash{Map,Set,Table} directly for new code.
-#include "include/private/SkTHash.h"
+#include "src/core/SkTHash.h"
 
 // Traits requires:
 //   static const Key& GetKey(const T&) { ... }
@@ -52,7 +52,7 @@ private:
         static const Key& GetKey(T* entry) { return Traits::GetKey(*entry); }
         static uint32_t Hash(const Key& key) { return Traits::Hash(key); }
     };
-    SkTHashTable<T*, Key, AdaptedTraits> fTable;
+    skia_private::THashTable<T*, Key, AdaptedTraits> fTable;
 };
 
 #endif

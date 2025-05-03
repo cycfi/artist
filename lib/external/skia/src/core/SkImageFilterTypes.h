@@ -8,16 +8,42 @@
 #ifndef SkImageFilterTypes_DEFINED
 #define SkImageFilterTypes_DEFINED
 
+#include "include/core/SkColorFilter.h"
 #include "include/core/SkColorSpace.h"
+#include "include/core/SkM44.h"
 #include "include/core/SkMatrix.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkRect.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkSamplingOptions.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkSize.h"
+#include "include/core/SkSpan.h"
+#include "include/core/SkSurfaceProps.h"
+#include "include/core/SkTileMode.h"
+#include "include/core/SkTypes.h"
+#include "include/private/base/SkFloatingPoint.h"
+#include "include/private/base/SkTArray.h"
+#include "include/private/base/SkTPin.h"
+#include "include/private/base/SkTo.h"
+#include "src/base/SkEnumBitMask.h"
 #include "src/core/SkSpecialImage.h"
-#include "src/core/SkSpecialSurface.h"
 
-class GrRecordingContext;
+#include <cstdint>
+#include <optional>
+#include <utility>
+
+class FilterResultTestAccess;  // for testing
+class SkBitmap;
+class SkBlender;
+class SkBlurEngine;
+class SkDevice;
+class SkImage;
 class SkImageFilter;
 class SkImageFilterCache;
-class SkSpecialSurface;
-class SkSurfaceProps;
+class SkPicture;
+class SkShader;
+enum SkColorType : int;
 
 // The skif (SKI[mage]F[ilter]) namespace contains types that are used for filter implementations.
 // The defined types come in two groups: users of internal Skia types, and templates to help with
@@ -50,6 +76,8 @@ struct Vector {
     Vector() = default;
     Vector(SkScalar x, SkScalar y) : fX(x), fY(y) {}
     explicit Vector(const SkVector& v) : fX(v.fX), fY(v.fY) {}
+
+    bool isFinite() const { return SkIsFinite(fX, fY); }
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -85,9 +113,6 @@ public:
 
     explicit operator const T&() const { return fData; }
 
-    static const ParameterSpace<T>* Optional(const T* ptr) {
-        return static_cast<const ParameterSpace<T>*>(reinterpret_cast<const void*>(ptr));
-    }
 private:
     T fData;
 };
@@ -334,9 +359,9 @@ public:
     bool isEmpty() const { return fData.isEmpty(); }
     bool isZero() const { return fData.isZero(); }
 
-    LayerSpace<SkISize> round() const { return LayerSpace<SkISize>(fData.toRound()); }
-    LayerSpace<SkISize> ceil() const { return LayerSpace<SkISize>(fData.toCeil()); }
-    LayerSpace<SkISize> floor() const { return LayerSpace<SkISize>(fData.toFloor()); }
+    LayerSpace<SkISize> round() const;
+    LayerSpace<SkISize> ceil() const;
+    LayerSpace<SkISize> floor() const;
 
 private:
     SkSize fData;
@@ -349,12 +374,35 @@ public:
     LayerSpace() = default;
     explicit LayerSpace(const SkIRect& geometry) : fData(geometry) {}
     explicit LayerSpace(SkIRect&& geometry) : fData(std::move(geometry)) {}
+    explicit LayerSpace(const SkISize& size) : fData(SkIRect::MakeSize(size)) {}
     explicit operator const SkIRect&() const { return fData; }
 
     static LayerSpace<SkIRect> Empty() { return LayerSpace<SkIRect>(SkIRect::MakeEmpty()); }
 
+    static constexpr std::optional<LayerSpace<SkIRect>> Unbounded() { return {}; }
+
+    // Utility function to iterate a collection of items that can map to LayerSpace<SkIRect> bounds
+    // and returns the union of those bounding boxes. 'boundsFn' will be invoked with i = 0 to
+    // boundsCount-1.
+    template<typename BoundsFn>
+    static LayerSpace<SkIRect> Union(int boundsCount, BoundsFn boundsFn) {
+        if (boundsCount <= 0) {
+            return LayerSpace<SkIRect>::Empty();
+        }
+        LayerSpace<SkIRect> output = boundsFn(0);
+        for (int i = 1; i < boundsCount; ++i) {
+            output.join(boundsFn(i));
+        }
+        return output;
+    }
+
+    // Utility function to calculate the smallest relevant subset of this rect to fill `dstRect`
+    // given the provided tile mode.
+    LayerSpace<SkIRect> relevantSubset(const LayerSpace<SkIRect> dstRect, SkTileMode) const;
+
     // Parrot the SkIRect API while preserving coord space
-    bool isEmpty() const { return fData.isEmpty(); }
+    bool isEmpty() const { return fData.isEmpty64(); }
+    bool contains(const LayerSpace<SkIRect>& r) const { return fData.contains(r.fData); }
 
     int32_t left() const { return fData.fLeft; }
     int32_t top() const { return fData.fTop; }
@@ -367,10 +415,15 @@ public:
     LayerSpace<SkIPoint> topLeft() const { return LayerSpace<SkIPoint>(fData.topLeft()); }
     LayerSpace<SkISize> size() const { return LayerSpace<SkISize>(fData.size()); }
 
+    static bool Intersects(const LayerSpace<SkIRect>& a, const LayerSpace<SkIRect>& b) {
+        return SkIRect::Intersects(a.fData, b.fData);
+    }
+
     bool intersect(const LayerSpace<SkIRect>& r) { return fData.intersect(r.fData); }
     void join(const LayerSpace<SkIRect>& r) { fData.join(r.fData); }
     void offset(const LayerSpace<IVector>& v) { fData.offset(SkIVector(v)); }
     void outset(const LayerSpace<SkISize>& delta) { fData.outset(delta.width(), delta.height()); }
+    void inset(const LayerSpace<SkISize>& delta) { fData.inset(delta.width(), delta.height()); }
 
 private:
     SkIRect fData;
@@ -383,12 +436,14 @@ public:
     LayerSpace() = default;
     explicit LayerSpace(const SkRect& geometry) : fData(geometry) {}
     explicit LayerSpace(SkRect&& geometry) : fData(std::move(geometry)) {}
+    explicit LayerSpace(const LayerSpace<SkIRect>& rect) : fData(SkRect::Make(SkIRect(rect))) {}
     explicit operator const SkRect&() const { return fData; }
 
     static LayerSpace<SkRect> Empty() { return LayerSpace<SkRect>(SkRect::MakeEmpty()); }
 
     // Parrot the SkRect API while preserving coord space and usage
     bool isEmpty() const { return fData.isEmpty(); }
+    bool contains(const LayerSpace<SkRect>& r) const { return fData.contains(r.fData); }
 
     SkScalar left() const { return fData.fLeft; }
     SkScalar top() const { return fData.fTop; }
@@ -400,6 +455,9 @@ public:
 
     LayerSpace<SkPoint> topLeft() const {
         return LayerSpace<SkPoint>(SkPoint::Make(fData.fLeft, fData.fTop));
+    }
+    LayerSpace<SkPoint> center() const {
+        return LayerSpace<SkPoint>(fData.center());
     }
     LayerSpace<SkSize> size() const {
         return LayerSpace<SkSize>(SkSize::Make(fData.width(), fData.height()));
@@ -413,9 +471,82 @@ public:
     void join(const LayerSpace<SkRect>& r) { fData.join(r.fData); }
     void offset(const LayerSpace<Vector>& v) { fData.offset(SkVector(v)); }
     void outset(const LayerSpace<SkSize>& delta) { fData.outset(delta.width(), delta.height()); }
+    void inset(const LayerSpace<SkSize>& delta) { fData.inset(delta.width(), delta.height()); }
+
+    LayerSpace<SkPoint> clamp(LayerSpace<SkPoint> pt) const {
+        return LayerSpace<SkPoint>(SkPoint::Make(SkTPin(pt.x(), fData.fLeft, fData.fRight),
+                                                 SkTPin(pt.y(), fData.fTop, fData.fBottom)));
+    }
 
 private:
     SkRect fData;
+};
+
+// A transformation that manipulates geometry in the layer-space coordinate system. Mathematically
+// there's little difference from these matrices compared to what's stored in a skif::Mapping, but
+// the intent differs. skif::Mapping's matrices map geometry from one coordinate space to another
+// while these transforms move geometry w/o changing the coordinate space semantics.
+// TODO(michaelludwig): Will be replaced with an SkM44 version when skif::Mapping works with SkM44.
+template<>
+class LayerSpace<SkMatrix> {
+public:
+    LayerSpace() = default;
+    explicit LayerSpace(const SkMatrix& m) : fData(m) {}
+    explicit LayerSpace(SkMatrix&& m) : fData(std::move(m)) {}
+    explicit operator const SkMatrix&() const { return fData; }
+
+    static LayerSpace<SkMatrix> RectToRect(const LayerSpace<SkRect>& from,
+                                           const LayerSpace<SkRect>& to) {
+        return LayerSpace<SkMatrix>(SkMatrix::RectToRect(SkRect(from), SkRect(to)));
+    }
+
+    // Parrot a limited selection of the SkMatrix API while preserving coordinate space.
+    LayerSpace<SkRect> mapRect(const LayerSpace<SkRect>& r) const;
+
+    // Effectively mapRect(SkRect).roundOut() but more accurate when the underlying matrix or
+    // SkIRect has large floating point values.
+    LayerSpace<SkIRect> mapRect(const LayerSpace<SkIRect>& r) const;
+
+    LayerSpace<SkPoint> mapPoint(const LayerSpace<SkPoint>& p) const;
+
+    LayerSpace<Vector> mapVector(const LayerSpace<Vector>& v) const;
+
+    LayerSpace<SkSize> mapSize(const LayerSpace<SkSize>& s) const;
+
+    LayerSpace<SkMatrix>& preConcat(const LayerSpace<SkMatrix>& m) {
+        fData = SkMatrix::Concat(fData, m.fData);
+        return *this;
+    }
+
+    LayerSpace<SkMatrix>& postConcat(const LayerSpace<SkMatrix>& m) {
+        fData = SkMatrix::Concat(m.fData, fData);
+        return *this;
+    }
+
+    bool invert(LayerSpace<SkMatrix>* inverse) const {
+        return fData.invert(inverse ? &inverse->fData : nullptr);
+    }
+
+    // Transforms 'r' by the inverse of this matrix if it is invertible and stores it in 'out'.
+    // Returns false if not invertible, in which case 'out' is undefined.
+    bool inverseMapRect(const LayerSpace<SkRect>& r, LayerSpace<SkRect>* out) const;
+    bool inverseMapRect(const LayerSpace<SkIRect>& r, LayerSpace<SkIRect>* out) const;
+
+    float rc(int row, int col) const { return fData.rc(row, col); }
+    float get(int i) const { return fData.get(i); }
+
+private:
+    SkMatrix fData;
+};
+
+/**
+ * Most ImageFilters can natively handle scaling and translate components in the CTM. Only some of
+ * them can handle affine (or more complex) matrices. Some may only handle translation.
+ */
+enum class MatrixCapability {
+    kTranslate,
+    kScaleTranslate,
+    kComplex,
 };
 
 // Mapping is the primary definition of the shared layer space used when evaluating an image filter
@@ -429,14 +560,14 @@ public:
     Mapping() = default;
 
     // Helper constructor that equates device and layer space to the same coordinate space.
-    explicit Mapping(const SkMatrix& paramToLayer)
-            : fLayerToDevMatrix(SkMatrix::I())
+    explicit Mapping(const SkM44& paramToLayer)
+            : fLayerToDevMatrix(SkM44())
             , fParamToLayerMatrix(paramToLayer)
-            , fDevToLayerMatrix(SkMatrix::I()) {}
+            , fDevToLayerMatrix(SkM44()) {}
 
     // This constructor allows the decomposition to be explicitly provided, assumes that
     // 'layerToDev's inverse has already been calculated in 'devToLayer'
-    Mapping(const SkMatrix& layerToDev, const SkMatrix& devToLayer, const SkMatrix& paramToLayer)
+    Mapping(const SkM44& layerToDev, const SkM44& devToLayer, const SkM44& paramToLayer)
             : fLayerToDevMatrix(layerToDev)
             , fParamToLayerMatrix(paramToLayer)
             , fDevToLayerMatrix(devToLayer) {}
@@ -444,9 +575,12 @@ public:
     // Sets this Mapping to the default decomposition of the canvas's total transform, given the
     // requirements of the 'filter'. Returns false if the decomposition failed or would produce an
     // invalid device matrix. Assumes 'ctm' is invertible.
-    bool SK_WARN_UNUSED_RESULT decomposeCTM(const SkMatrix& ctm,
-                                            const SkImageFilter* filter,
-                                            const skif::ParameterSpace<SkPoint>& representativePt);
+    [[nodiscard]] bool decomposeCTM(const SkM44& ctm,
+                                    const SkImageFilter* filter,
+                                    const skif::ParameterSpace<SkPoint>& representativePt);
+    [[nodiscard]] bool decomposeCTM(const SkM44& ctm,
+                                    MatrixCapability,
+                                    const skif::ParameterSpace<SkPoint>& representativePt);
 
     // Update the mapping's parameter-to-layer matrix to be pre-concatenated with the specified
     // local space transformation. This changes the definition of parameter space, any
@@ -460,122 +594,553 @@ public:
     // coordinate systems are changed, but skif::LayerSpace is adjusted.
     //
     // Returns false if the layer matrix cannot be inverted, and this mapping is left unmodified.
-    bool adjustLayerSpace(const SkMatrix& layer);
+    bool adjustLayerSpace(const SkM44& layer);
 
     // Update the mapping's layer space so that the point 'origin' in the current layer coordinate
     // space maps to (0, 0) in the adjusted coordinate space.
     void applyOrigin(const LayerSpace<SkIPoint>& origin) {
-        SkAssertResult(this->adjustLayerSpace(SkMatrix::Translate(-origin.x(), -origin.y())));
+        SkAssertResult(this->adjustLayerSpace(SkM44::Translate(-origin.x(), -origin.y())));
     }
 
-    const SkMatrix& layerToDevice() const { return fLayerToDevMatrix; }
-    const SkMatrix& deviceToLayer() const { return fDevToLayerMatrix; }
-    const SkMatrix& layerMatrix() const { return fParamToLayerMatrix; }
-    SkMatrix totalMatrix() const {
-        return SkMatrix::Concat(fLayerToDevMatrix, fParamToLayerMatrix);
+    const SkM44& layerToDevice() const { return fLayerToDevMatrix; }
+    const SkM44& deviceToLayer() const { return fDevToLayerMatrix; }
+    const SkM44& layerMatrix() const { return fParamToLayerMatrix; }
+    SkM44 totalMatrix() const {
+        return fLayerToDevMatrix * fParamToLayerMatrix;
     }
 
     template<typename T>
     LayerSpace<T> paramToLayer(const ParameterSpace<T>& paramGeometry) const {
-        return LayerSpace<T>(map(static_cast<const T&>(paramGeometry), fParamToLayerMatrix));
+        return LayerSpace<T>(map(static_cast<const T&>(paramGeometry),
+                                 fParamToLayerMatrix.asM33()));
     }
 
     template<typename T>
     LayerSpace<T> deviceToLayer(const DeviceSpace<T>& devGeometry) const {
-        return LayerSpace<T>(map(static_cast<const T&>(devGeometry), fDevToLayerMatrix));
+        // For inverse mapping back to layer space, we may be undoing perspective projection.
+        // Using fDevToLayerMatrix for this would require knowing the device-space Z values,
+        // which are discarded. fDevToLayerMatrix.asM33() would operate as if all those
+        // Z values were 0 (this is true for local 2D geometry, not device space). Instead,
+        // derive the 3x3 inverse of the flattened layer-to-device matrix, returning empty
+        // if numerical stability meant its 4x4 was invertible but somehow the 3x3 wasn't.
+        SkMatrix devToLayer33;
+        if (!fLayerToDevMatrix.asM33().invert(&devToLayer33)) {
+            return LayerSpace<T>::Empty();
+        }
+        return LayerSpace<T>(map(static_cast<const T&>(devGeometry), devToLayer33));
     }
 
     template<typename T>
     DeviceSpace<T> layerToDevice(const LayerSpace<T>& layerGeometry) const {
-        return DeviceSpace<T>(map(static_cast<const T&>(layerGeometry), fLayerToDevMatrix));
+        return DeviceSpace<T>(map(static_cast<const T&>(layerGeometry), fLayerToDevMatrix.asM33()));
     }
 
 private:
+    friend class LayerSpace<SkMatrix>; // for map()
+    friend class FilterResult;         // ""
+
     // The image filter process decomposes the total CTM into layerToDev * paramToLayer and uses the
     // param-to-layer matrix to define the layer-space coordinate system. Depending on how it's
     // decomposed, either the layer matrix or the device matrix could be the identity matrix (but
     // sometimes neither).
-    SkMatrix fLayerToDevMatrix;
-    SkMatrix fParamToLayerMatrix;
+    SkM44 fLayerToDevMatrix;
+    SkM44 fParamToLayerMatrix;
 
-    // Cached inverse of fLayerToDevMatrix
-    SkMatrix fDevToLayerMatrix;
+    // Cached inverse of fLayerToDevMatrix. We keep this as 4x4 so that conversion between different
+    // SkDevice coordinate spaces and coord space reconstruction is lossless.
+    SkM44 fDevToLayerMatrix;
 
     // Actual geometric mapping operations that work on coordinates and matrices w/o the type
     // safety of the coordinate space wrappers (hence these are private).
+    // TODO(b/40042800): Finish moving skif::Mapping operations to use the SkM44 directly.
     template<typename T>
     static T map(const T& geom, const SkMatrix& matrix);
 };
 
-// Wraps an SkSpecialImage and its location in the shared layer coordinate space. This origin is
-// used to draw the image in the correct location. The 'layerBounds' rectangle of the filtered image
-// is the layer-space bounding box of the image. It has its top left corner at 'origin' and has the
-// same dimensions as the underlying special image subset. Transforming 'layerBounds' by the
-// Context's layer-to-device matrix and painting it with the subset rectangle will display the
-// filtered results in the appropriate device-space region.
+class Context; // Forward declare for FilterResult
+
+// A FilterResult represents a lazy image anchored in the "layer" coordinate space of the current
+// image filtering context. It's named Filter*Result* since most instances represent the output of
+// a specific image filter (even if that is then used as an input to the next filter). FilterResults
+// are lazy to allow certain operations to combine analytically instead of producing an offscreen
+// image for every node in a filter graph. Helper functions are provided to modify FilterResults
+// that manage this internally.
 //
-// When filter implementations are processing intermediate FilterResult results, it can be assumed
-// that all FilterResult' layerBounds are in the same layer coordinate space defined by the shared
-// skif::Context.
+// Even though FilterResult represents a lazy image, it is always backed by a non-lazy source image
+// that is then transformed, sampled, cropped, tiled, and/or color-filtered to produce the resolved
+// image of the FilterResult. It is these actions applied to the source image that can be combined
+// without producing a new intermediate "source" if it's determined that the combined actions
+// rendered once would create an image close enough to the canonical output of rendering each action
+// separately. Eliding offscreen renders in this way can introduce visually imperceptible pixel
+// differences due to avoiding casting down to a lower precision pixel format or performing fewer
+// image sampling sequences.
 //
-// NOTE: This is named FilterResult since most instances will represent the output of an image
-// filter (even if that is then used as an input to the next filter). The main exception is the
-// source input used when an input filter is null, but from a data-standpoint it is the same since
-// it is equivalent to the result of an identity filter.
+// The resolved image of a FilterResult is the output of rendering:
+//
+//   SkMatrix netTransform = RectToRect(fSrcRect, fDstRect);
+//   netTransform.postConcat(fTransform);
+//
+//   SkPaint paint;
+//   paint.setShader(fImage->makeShader(fTileMode, fSamplingOptions, &netTransform));
+//   paint.setColorFilter(fColorFilter);
+//   paint.setBlendMode(kSrc);
+//
+//   canvas->drawRect(fLayerBounds, paint);
+//
+// A FilterResult may represent the output of multiple operations affecting the different meta
+// properties defined above. The operations are applied in order:
+//   1. Tile the image using configured SkTileMode on the source rect.
+//   2. Transform and sample (with configured SkSamplingOptions) from source rect up to the dest
+//      rect and then any additional transform.
+//   3. Apply any SkColorFilter to all pixels from #2 (including transparent black pixels resulting
+//      from decal sampling).
+//   4. Restrict the result to the layer bounds.
+//
+// If a new operation applied to a FilterResult does not respect this order, or cannot be modified
+// to be re-ordered in place (e.g. modify fSrcRect/fDstRect instead of fLayerBounds for a crop),
+// then the FilterResult must be resolved and the new operation applied to a clean slate. If it can
+// be applied while respecting the order of operations than the action is free and no new
+// intermediate image is produced.
+//
+// NOTE: The above comment reflects the end goal of the in-progress FilterResult. Currently
+// SkSpecialImage is used, which internally has a subset property (its fSrcRect) and always has an
+// fDstRect equal to (0,0,subset WH). Tile modes haven't been implemented yet and kDecal
+// is always assumed; Color filters have also not been implemented yet.
 class FilterResult {
 public:
-    FilterResult() : fImage(nullptr), fOrigin(SkIPoint::Make(0, 0)) {}
+    FilterResult() : FilterResult(nullptr) {}
+
+    explicit FilterResult(sk_sp<SkSpecialImage> image)
+            : FilterResult(std::move(image), LayerSpace<SkIPoint>({0, 0})) {}
 
     FilterResult(sk_sp<SkSpecialImage> image, const LayerSpace<SkIPoint>& origin)
-            : fImage(std::move(image))
-            , fOrigin(origin) {}
-    explicit FilterResult(sk_sp<SkSpecialImage> image)
-            : fImage(std::move(image))
-            , fOrigin{{0, 0}} {}
+            : FilterResult(std::move(image), origin, PixelBoundary::kUnknown) {}
 
+    // Renders the 'pic', clipped by 'cullRect', into an optimally sized surface (depending on
+    // picture bounds and 'ctx's desired output). The picture is transformed by the context's
+    // layer matrix. 'pic' must not be null.
+    static FilterResult MakeFromPicture(const Context& ctx,
+                                        sk_sp<SkPicture> pic,
+                                        ParameterSpace<SkRect> cullRect);
+
+    // Renders 'shader' into a surface that fills the context's desired output bounds, 'shader' must
+    // not be null.
+    // TODO: Update 'dither' to SkImageFilters::Dither, but that cannot be forward declared at the
+    // moment because SkImageFilters is a class and not a namespace.
+    static FilterResult MakeFromShader(const Context& ctx,
+                                       sk_sp<SkShader> shader,
+                                       bool dither);
+
+    // Converts image to a FilterResult. If 'srcRect' is pixel-aligned it does so without rendering.
+    // Otherwise it draws the src->dst sampling of 'image' into an optimally sized surface based
+    // on the context's desired output. 'image' must not be null.
+    static FilterResult MakeFromImage(const Context& ctx,
+                                      sk_sp<SkImage> image,
+                                      SkRect srcRect,
+                                      ParameterSpace<SkRect> dstRect,
+                                      const SkSamplingOptions& sampling);
+
+    // Bilinear is used as the default because it can be downgraded to nearest-neighbor when the
+    // final transform is pixel-aligned, and chaining multiple bilinear samples and transforms is
+    // assumed to be visually close enough to sampling once at highest quality and final transform.
+    static constexpr SkSamplingOptions kDefaultSampling{SkFilterMode::kLinear};
+
+    explicit operator bool() const { return SkToBool(fImage); }
+
+    // TODO(michaelludwig): Given the planned expansion of FilterResult state, it might be nice to
+    // pull this back and not expose anything other than its bounding box. This will be possible if
+    // all rendering can be handled by functions defined on FilterResult.
     const SkSpecialImage* image() const { return fImage.get(); }
     sk_sp<SkSpecialImage> refImage() const { return fImage; }
 
-    // Get the layer-space bounds of the result. This will have the same dimensions as the
-    // image and its top left corner will be 'origin()'.
-    LayerSpace<SkIRect> layerBounds() const {
-        return LayerSpace<SkIRect>(SkIRect::MakeXYWH(fOrigin.x(), fOrigin.y(),
-                                                     fImage->width(), fImage->height()));
-    }
+    // Get the layer-space bounds of the result. This will incorporate any layer-space transform.
+    LayerSpace<SkIRect> layerBounds() const { return fLayerBounds; }
+    SkTileMode tileMode() const { return fTileMode; }
+    SkSamplingOptions sampling() const { return fSamplingOptions; }
 
-    // Get the layer-space coordinate of this image's top left pixel.
-    const LayerSpace<SkIPoint>& layerOrigin() const { return fOrigin; }
+    const SkColorFilter* colorFilter() const { return fColorFilter.get(); }
 
-    // Produce a new FilterResult that can correctly cover 'newBounds' when it's drawn with its
-    // tile mode at its origin. When possible, the returned FilterResult can reuse the same image
-    // data and adjust its access subset, origin, and tile mode. If 'forcePad' is true or if the
-    // 'newTileMode' that applies at the 'newBounds' geometry is incompatible with the current
-    // bounds and tile mode, then a new image is created that resolves this image's data and tiling.
-    // TODO (michaelludwig): All FilterResults are decal mode and there are no current usages that
-    // require force-padding a decal FilterResult so these arguments aren't implemented yet.
-    FilterResult resolveToBounds(const LayerSpace<SkIRect>& newBounds) const;
-                                //  SkTileMode newTileMode=SkTileMode::kDecal,
-                                //  bool forcePad=false) const;
+    // Produce a new FilterResult that has been cropped to 'crop', taking into account the context's
+    // desired output. When possible, the returned FilterResult will reuse the underlying image and
+    // adjust its metadata. This will depend on the current transform and tile mode as well as how
+    // the crop rect intersects this result's layer bounds.
+    FilterResult applyCrop(const Context& ctx,
+                           const LayerSpace<SkIRect>& crop,
+                           SkTileMode tileMode=SkTileMode::kDecal) const;
 
-    // Extract image and origin, safely when the image is null.
+    // Produce a new FilterResult that is the transformation of this FilterResult. When this
+    // result's sampling and transform are compatible with the new transformation, the returned
+    // FilterResult can reuse the same image data and adjust just the metadata.
+    FilterResult applyTransform(const Context& ctx,
+                                const LayerSpace<SkMatrix>& transform,
+                                const SkSamplingOptions& sampling) const;
+
+    // Produce a new FilterResult that is visually equivalent to the output of the SkColorFilter
+    // evaluating this FilterResult. If the color filter affects transparent black, the returned
+    // FilterResult can become non-empty even if the input were empty.
+    FilterResult applyColorFilter(const Context& ctx,
+                                  sk_sp<SkColorFilter> colorFilter) const;
+
+    // Extract image and origin, safely when the image is null. If there are deferred operations
+    // on FilterResult (such as tiling or transforms) not representable as an image+origin pair,
+    // the returned image will be the resolution resulting from that metadata and not necessarily
+    // equal to the original 'image()'.
     // TODO (michaelludwig) - This is intended for convenience until all call sites of
     // SkImageFilter_Base::filterImage() have been updated to work in the new type system
     // (which comes later as SkDevice, SkCanvas, etc. need to be modified, and coordinate space
     // tagging needs to be added).
-    sk_sp<SkSpecialImage> imageAndOffset(SkIPoint* offset) const {
-        if (fImage) {
-            *offset = SkIPoint(fOrigin);
-            return fImage;
-        } else {
-            *offset = {0, 0};
-            return nullptr;
+    sk_sp<SkSpecialImage> imageAndOffset(const Context& ctx, SkIPoint* offset) const;
+    // TODO (michaelludwig) - This is a more type-safe version of the above imageAndOffset() and
+    // may need to remain to support SkBlurImageFilter calling out to the SkBlurEngine. An alternate
+    // option would be for FilterResult::Builder to have a blur() function that internally can
+    // resolve the input and pass to the skif::Context's blur engine. Then imageAndOffset() can go
+    // away entirely.
+    std::pair<sk_sp<SkSpecialImage>, LayerSpace<SkIPoint>> imageAndOffset(const Context& ctx) const;
+
+     // Draw this FilterResult into 'target' by applying the remaining layer-to-device transform of
+     // 'mapping', using the provided 'blender' to composite the effective image on top of 'target'.
+     // If 'blender' is null, it's equivalent to kSrcOver blending.
+    void draw(const Context& ctx, SkDevice* target, const SkBlender* blender) const;
+
+    // SkCanvas can prepare layer source images with transparent padding, similarly to AutoSurface.
+    // This adjusts the FilterResult metadata to be aware of that padding. This should only be
+    // called when it's externally known that the FilterResult has a 1px buffer of transparent
+    // black pixels and has had no further modifications.
+    FilterResult insetForSaveLayer() const;
+
+    class Builder;
+
+    enum class ShaderFlags : int {
+        kNone = 0,
+        // A hint that the input FilterResult will be sampled repeatedly per pixel. If there's
+        // colorspace conversions or deferred color filtering, it's worth resolving to a temporary
+        // image so that those calculations are performed once per pixel instead of N times.
+        kSampledRepeatedly = 1 << 0,
+        // Specifies that the shader performs non-trivial operations on its coordinates to determine
+        // how to sample any input FilterResults, so their sampling options should not be converted
+        // to nearest-neighbor even if they appeared pixel-aligned with the output surface.
+        kNonTrivialSampling = 1 << 1,
+        // TODO: Add option to convey that the output can carry input tiling forward to make a
+        // smaller backing surface somehow. May not be a flag and just args passed to eval().
+    };
+    SK_DECL_BITMASK_OPS_FRIENDS(ShaderFlags)
+
+private:
+    friend class ::FilterResultTestAccess; // For testing draw() and asShader()
+
+    class AutoSurface;
+
+    enum class PixelBoundary : int {
+        kUnknown,     // Pixels outside the image subset are of unknown value, possibly unitialized
+        kTransparent, // Pixels bordering the image subset are transparent black
+        kInitialized, // Pixels bordering the image are known to be initialized
+    };
+
+    FilterResult(sk_sp<SkSpecialImage> image,
+                 const LayerSpace<SkIPoint>& origin,
+                 PixelBoundary boundary)
+            : fImage(std::move(image))
+            , fBoundary(boundary)
+            , fSamplingOptions(kDefaultSampling)
+            , fTileMode(SkTileMode::kDecal)
+            , fTransform(SkMatrix::Translate(origin.x(), origin.y()))
+            , fColorFilter(nullptr)
+            , fLayerBounds(
+                    fTransform.mapRect(LayerSpace<SkIRect>(fImage ? fImage->dimensions()
+                                                                  : SkISize{0, 0}))) {}
+
+    // Renders this FilterResult into a new, but visually equivalent, image that fills 'dstBounds',
+    // has default sampling, no color filter, and a transform that translates by only 'dstBounds's
+    // top-left corner. 'dstBounds' is intersected with 'fLayerBounds' unless 'preserveDstBounds'
+    // is true.
+    FilterResult resolve(const Context& ctx, LayerSpace<SkIRect> dstBounds,
+                         bool preserveDstBounds=false) const;
+    // Returns a decal-tiled subset view of this FilterResult, requiring that this has an integer
+    // translation equivalent to 'knownOrigin'. If 'clampSrcIfDisjoint' is true and the image bounds
+    // do not overlap with dstBounds, the closest edge/corner pixels of the image will be extracted,
+    // assuming it will be tiled with kClamp.
+    FilterResult subset(const LayerSpace<SkIPoint>& knownOrigin,
+                        const LayerSpace<SkIRect>& subsetBounds,
+                        bool clampSrcIfDisjoint=false) const;
+    // Convenient version of subset() that insets a single pixel.
+    FilterResult insetByPixel() const;
+
+    enum class BoundsAnalysis : int {
+        // The image can be drawn directly, without needing to apply tiling, or handling how any
+        // color filter might affect transparent black.
+        kSimple = 0,
+        // The image does not directly cover the intersection of 'dstBounds' and the layer bounds.
+        // (ignoring tiling or color filters).
+        kDstBoundsNotCovered = 1 << 0,
+        // Added when kDstBoundsNotCovered is true, *and* there are non-decal tiling or transparency
+        // affecting color filters that would fill to the layer bounds, not covered by the image
+        // itself.
+        kHasLayerFillingEffect = 1 << 1,
+        // The crop boundary induced by `fLayerBounds` is visible when rendering to the 'dstBounds',
+        // although this could be either because it intersects the image's content or because
+        // kHasLayerFillingEffect is true.
+        kRequiresLayerCrop = 1 << 2,
+        // The image's sampling would access pixel data outside of its valid subset so shader-based
+        // tiling is necessary. This can be true even if kHasLayerFillingEffect is false due to the
+        // filter sampling radius; it can also be false when kHasLayerFillingEffect is true if the
+        // image can use HW tiling.
+        kRequiresShaderTiling = 1 << 3,
+        // The image's decal tiling/sampling would operate at the wrong resolution (e.g. drawImage
+        // vs. image-shader look different), so it has to be applied with a wrapping shader effect
+        kRequiresDecalInLayerSpace = 1 << 4,
+    };
+    SK_DECL_BITMASK_OPS_FRIENDS(BoundsAnalysis)
+
+    enum class BoundsScope : int {
+        kDeferred,        // The bounds analysis won't be used for any rendering yet
+        kCanDrawDirectly, // The rendering may draw the image directly if analysis allows it
+        kShaderOnly,      // The rendering will always use a filling shader, e.g. drawPaint()
+        kRescale          // The rendering is controlled by rescaling logic, so ignores decal size
+    };
+
+    // Determine what effects are visible based on the target 'dstBounds' and extra transform that
+    // will be applied when this FilterResult is drawn. These are not LayerSpace because the
+    // 'xtraTransform' may be either a within-layer transform, or a layer-to-device space transform.
+    // The 'dstBounds' should be in the same coordinate space that 'xtraTransform' maps to. When
+    // that is the identity matrix, 'dstBounds' is in layer space.
+    SkEnumBitMask<BoundsAnalysis> analyzeBounds(const SkMatrix& xtraTransform,
+                                                const SkIRect& dstBounds,
+                                                BoundsScope scope = BoundsScope::kDeferred) const;
+    SkEnumBitMask<BoundsAnalysis> analyzeBounds(const LayerSpace<SkIRect>& dstBounds,
+                                                BoundsScope scope = BoundsScope::kDeferred) const {
+        return this->analyzeBounds(SkMatrix::I(), SkIRect(dstBounds), scope);
+    }
+
+    // If true, the tile mode can be changed to kClamp to sample the transparent black pixels in
+    // the boundary. This will be visually equivalent to the decal tiling or anti-aliasing of a
+    // drawn image.
+    bool canClampToTransparentBoundary(SkEnumBitMask<BoundsAnalysis> analysis) const {
+        return fTileMode == SkTileMode::kDecal &&
+               fBoundary == PixelBoundary::kTransparent &&
+               !(analysis & BoundsAnalysis::kRequiresDecalInLayerSpace);
+    }
+
+    // Return an equivalent FilterResult such that its backing image dimensions have been reduced
+    // by the X and Y scale factors in 'scale' (assumed to be in [0, 1]). The returned FilterResult
+    // will have a transform that aligns it with the original FilterResult (i.e. a deferred upscale)
+    // and may also have a deferred tilemode. If 'enforceDecal' is true, the returned
+    // FilterResult will be kDecal sampled and any tiling will already be applied.
+    //
+    // All deferred effects, other than potentially tile mode, will be applied. The FilterResult
+    // will also be converted to the color type and color space of 'ctx' so the result is suitable
+    // to pass to the blur engine.
+    FilterResult rescale(const Context& ctx,
+                         const LayerSpace<SkSize>& scale,
+                         bool enforceDecal) const;
+    // Draw directly to the device, which draws the same image as produced by resolve() but can be
+    // useful if multiple operations need to be performed on the canvas.
+    //
+    // This assumes that the device's transform is set to match the current layer space coordinate
+    // system. This will concat any internal extra transform and apply clipping as necessary. If
+    // 'preserveDeviceState' is true it will undo any modifications. This can be set to false if the
+    // device is a one-off that will be snapped to an image after this returns.
+    //
+    // If 'blender' is null, the filter result is drawn with src-over blending. If it's not, it will
+    // be drawn using the given 'blender', filling the device's current clip when the blend
+    // modifies transparent black.
+    void draw(const Context& ctx,
+              SkDevice* device,
+              bool preserveDeviceState,
+              const SkBlender* blender=nullptr) const;
+
+    // Returns the FilterResult as a shader, ideally without resolving to an axis-aligned image.
+    // 'xtraSampling' is the sampling that any parent shader applies to the FilterResult.
+    // 'sampleBounds' is the bounding box of coords the shader will be evaluated at by any parent.
+    //
+    // This variant may resolve to an intermediate image if needed. The returned shader encapsulates
+    // all deferred effects of the FilterResult.
+    sk_sp<SkShader> asShader(const Context& ctx,
+                             const SkSamplingOptions& xtraSampling,
+                             SkEnumBitMask<ShaderFlags> flags,
+                             const LayerSpace<SkIRect>& sampleBounds) const;
+
+    // This variant should only be called after analysis and final sampling has been determined, and
+    // there's no need to resolve the FilterResult to an intermediate image. This version will
+    // never introduce a new image pass but is unable to handle the layer crop. If (analysis &
+    // kRequiresLayerCrop) is true, it must be accounted for outside of this shader.
+    sk_sp<SkShader> getAnalyzedShaderView(const Context& ctx,
+                                          const SkSamplingOptions& finalSampling,
+                                          SkEnumBitMask<BoundsAnalysis> analysis) const;
+
+    // Safely updates fTileMode, doing nothing if the FilterResult is empty. Updates the layer
+    // bounds to the context's desired output if the tilemode is not decal.
+    void updateTileMode(const Context& ctx, SkTileMode tileMode);
+
+    // The effective image of a FilterResult is 'fImage' sampled by 'fSamplingOptions' and
+    // respecting 'fTileMode' (on the SkSpecialImage's subset), transformed by 'fTransform',
+    // filtered by 'fColorFilter', and then clipped to 'fLayerBounds'.
+    sk_sp<SkSpecialImage> fImage;
+    PixelBoundary         fBoundary;
+
+    SkSamplingOptions     fSamplingOptions;
+    SkTileMode            fTileMode;
+    // Typically this will be an integer translation that encodes the origin of the top left corner,
+    // but can become more complex when combined with applyTransform().
+    LayerSpace<SkMatrix>  fTransform;
+
+    // A null color filter is the identity function. Since the output is clipped to fLayerBounds
+    // after color filtering, SkColorFilters that affect transparent black are not unbounded.
+    sk_sp<SkColorFilter>  fColorFilter;
+
+    // The layer bounds are initially fImage's dimensions mapped by fTransform. As the filter result
+    // is processed by the image filter DAG, it can be further restricted by crop rects or the
+    // implicit desired output at each node.
+    LayerSpace<SkIRect>   fLayerBounds;
+};
+SK_MAKE_BITMASK_OPS(FilterResult::ShaderFlags)
+SK_MAKE_BITMASK_OPS(FilterResult::BoundsAnalysis)
+
+// A FilterResult::Builder is used to render one or more FilterResults or other sources into
+// a new FilterResult. It automatically aggregates the incoming bounds to minimize the output's
+// layer bounds.
+class FilterResult::Builder {
+public:
+    Builder(const Context& context);
+    ~Builder();
+
+    // If 'sampleBounds' is not provided, it defaults to the output bounds calculated for eval()
+    // (generally the Context's desired output but could be restricted based on the ShaderFlags).
+    //
+    // If it is provided, it represents the bounding box of possible coords 'input' will be sampled
+    // at by the shader created from eval(). This can be useful to provide when the shader does non
+    // trivial sampling since it may avoid having to resolve a FilterResult to an image.
+    //
+    // The 'inputFlags' are per-input flags that are OR'ed with the ShaderFlag mask passed to
+    // eval() to control how 'input' is converted to an SkShader. 'inputSampling' specifies the
+    // sampling options to use on the input's image when sampled by the final shader created in eval
+    //
+    // 'sampleBounds', 'inputFlags' and 'inputSampling' must not be used with merge() or blur().
+    Builder& add(const FilterResult& input,
+                 std::optional<LayerSpace<SkIRect>> sampleBounds = {},
+                 SkEnumBitMask<ShaderFlags> inputFlags = ShaderFlags::kNone,
+                 const SkSamplingOptions& inputSampling = kDefaultSampling) {
+        fInputs.push_back({input, sampleBounds, inputFlags, inputSampling});
+        return *this;
+    }
+
+    // Combine all added inputs by merging them with src-over blending into a single output.
+    FilterResult merge();
+
+    // Blur the single input with a Gaussian blur. The exact blur implementation is chosen based on
+    // the skif::Context's backend. The sample bounds of the input and the final output bounds are
+    // automatically derived from the sigma, input layer bounds, and desired output bounds of the
+    // Builder's Context.
+    FilterResult blur(const LayerSpace<SkSize>& sigma);
+
+    // Combine all added inputs by transforming them into equivalent SkShaders and invoking the
+    // shader factory that binds them together into a single shader that fills the output surface.
+    //
+    // 'ShaderFn' should be an invokable type with the signature
+    //     (SkSpan<sk_sp<SkShader>>)->sk_sp<SkShader>
+    // The length of the span will equal the number of FilterResults added to the builder. If an
+    // input FilterResult was fully transparent, its corresponding shader will be null. 'ShaderFn'
+    // should return a null shader its output would be fully transparent.
+    //
+    // By default, the returned FilterResult will fill the Context's desired image. If
+    // 'explicitOutput' has a value, it is intersected with the Context's desired output bounds to
+    // produce a possibly restricted output surface that the evaluated shader is rendered into.
+    //
+    // The shader created by `ShaderFn` will by default be invoked with coordinates in the layer
+    // space of the Context. If `evaluateInParameterSpace` is true, the drawing matrix will be
+    // adjusted so that the shader processes coordinates mapped back into parameter space (the
+    // underlying output is still in layer space). In this case, it's assumed that the shaders for
+    // the added FilterResult inputs will be evaluated with coordinates also in parameter space,
+    // so they will be adjusted to map back to layer space before sampling their underlying images.
+    template <typename ShaderFn>
+    FilterResult eval(ShaderFn shaderFn,
+                      std::optional<LayerSpace<SkIRect>> explicitOutput = {},
+                      bool evaluateInParameterSpace=false) {
+        auto outputBounds = this->outputBounds(explicitOutput);
+        if (outputBounds.isEmpty()) {
+            return {};
         }
+
+        auto inputShaders = this->createInputShaders(outputBounds, evaluateInParameterSpace);
+        return this->drawShader(shaderFn(inputShaders), outputBounds, evaluateInParameterSpace);
     }
 
 private:
-    sk_sp<SkSpecialImage> fImage;
-    LayerSpace<SkIPoint>  fOrigin;
-    // SkTileMode         fTileMode = SkTileMode::kDecal;
+    struct SampledFilterResult {
+        FilterResult fImage;
+        std::optional<LayerSpace<SkIRect>> fSampleBounds;
+        SkEnumBitMask<ShaderFlags> fFlags;
+        SkSamplingOptions fSampling;
+    };
+
+    SkSpan<sk_sp<SkShader>> createInputShaders(const LayerSpace<SkIRect>& outputBounds,
+                                               bool evaluateInParameterSpace);
+
+    LayerSpace<SkIRect> outputBounds(std::optional<LayerSpace<SkIRect>> explicitOutput) const;
+
+    FilterResult drawShader(sk_sp<SkShader> shader,
+                            const LayerSpace<SkIRect>& outputBounds,
+                            bool evaluateInParameterSpace) const;
+
+    const Context& fContext; // Must outlive the builder
+    skia_private::STArray<1, SampledFilterResult> fInputs;
+    // Lazily created once all inputs are collected, but parallels fInputs.
+    skia_private::STArray<1, sk_sp<SkShader>> fInputShaders;
+};
+
+// The backend provides key functionality to the image filtering pipeline that must be implemented
+// by the Skia backend (e.g. raster or GPU). While a Context's state may change as the image filter
+// DAG is evaluated, a given filter invocation will always use one Backend.
+class Backend : public SkRefCnt {
+public:
+    ~Backend() override;
+
+    // For creating offscreen intermediate renderable images
+    virtual sk_sp<SkDevice> makeDevice(SkISize size,
+                                       sk_sp<SkColorSpace>,
+                                       const SkSurfaceProps* props=nullptr) const = 0;
+
+    // For input images to be processed by image filters
+    virtual sk_sp<SkSpecialImage> makeImage(const SkIRect& subset, sk_sp<SkImage> image) const = 0;
+
+    // For internal data to be accessed by filter implementations
+    virtual sk_sp<SkImage> getCachedBitmap(const SkBitmap& data) const = 0;
+
+    // TODO: Once all Backends provide a blur engine, maybe just have Backend extend it.
+    virtual const SkBlurEngine* getBlurEngine() const = 0;
+
+    // TODO: Can be removed once all blur engines rely on FilterResult::rescale and not their own
+    // rescale implementations.
+    virtual bool useLegacyFilterResultBlur() const { return true; }
+
+    // Properties controlling the pixel data for offscreen surfaces rendered to during filtering.
+    const SkSurfaceProps& surfaceProps() const { return fSurfaceProps; }
+    SkColorType colorType() const { return fColorType; }
+
+    SkImageFilterCache* cache() const { return fCache.get(); }
+
+protected:
+    Backend(sk_sp<SkImageFilterCache> cache,
+            const SkSurfaceProps& surfaceProps,
+            const SkColorType colorType);
+
+private:
+    sk_sp<SkImageFilterCache> fCache;
+    SkSurfaceProps fSurfaceProps;
+    SkColorType fColorType;
+};
+
+sk_sp<Backend> MakeRasterBackend(const SkSurfaceProps& surfaceProps, SkColorType colorType);
+
+// Stats for a single image filter evaluation
+struct Stats {
+    int fNumVisitedImageFilters = 0; // size of the filter dag
+    int fNumCacheHits = 0; // amount of reuse within the dag
+    int fNumOffscreenSurfaces = 0; // difference to the # of visited filters shows deferred steps
+    int fNumShaderClampedDraws = 0; // shader-emulated clamp is fairly cheap but HW tiling is best
+    int fNumShaderBasedTilingDraws = 0; // shader-emulated decal, mirror, repeat are expensive
+
+    void dumpStats() const;   // log to std out
+    void reportStats() const; // trace event counters
 };
 
 // The context contains all necessary information to describe how the image filter should be
@@ -585,26 +1150,20 @@ private:
 // that's similar/compatible to the final consumer of the DAG's output.
 class Context {
 public:
-    // Creates a context with the given layer matrix and destination clip, reading from 'source'
-    // with an origin of (0,0).
-    Context(const SkMatrix& layerMatrix, const SkIRect& clipBounds, SkImageFilterCache* cache,
-            SkColorType colorType, SkColorSpace* colorSpace, const SkSpecialImage* source)
-        : fMapping(layerMatrix)
-        , fDesiredOutput(clipBounds)
-        , fCache(cache)
-        , fColorType(colorType)
-        , fColorSpace(colorSpace)
-        , fSource(sk_ref_sp(source), LayerSpace<SkIPoint>({0, 0})) {}
-
-    Context(const Mapping& mapping, const LayerSpace<SkIRect>& desiredOutput,
-            SkImageFilterCache* cache, SkColorType colorType, SkColorSpace* colorSpace,
-            const FilterResult& source)
-        : fMapping(mapping)
+    Context(sk_sp<Backend> backend,
+            const Mapping& mapping,
+            const LayerSpace<SkIRect>& desiredOutput,
+            const FilterResult& source,
+            const SkColorSpace* colorSpace,
+            Stats* stats)
+        : fBackend(std::move(backend))
+        , fMapping(mapping)
         , fDesiredOutput(desiredOutput)
-        , fCache(cache)
-        , fColorType(colorType)
-        , fColorSpace(colorSpace)
-        , fSource(source) {}
+        , fSource(source)
+        , fColorSpace(sk_ref_sp(colorSpace))
+        , fStats(stats) {}
+
+    const Backend* backend() const { return fBackend.get(); }
 
     // The mapping that defines the transformation from local parameter space of the filters to the
     // layer space where the image filters are evaluated, as well as the remaining transformation
@@ -616,29 +1175,16 @@ public:
     // set to transform the layer space to the final device space (applied by the SkCanvas when
     // filtering is finished).
     const Mapping& mapping() const { return fMapping; }
-    // DEPRECATED: Use mapping() and its coordinate-space types instead
-    const SkMatrix& ctm() const { return fMapping.layerMatrix(); }
+
     // The bounds, in the layer space, that the filtered image will be clipped to. The output
     // from filterImage() must cover these clip bounds, except in areas where it will just be
     // transparent black, in which case a smaller output image can be returned.
     const LayerSpace<SkIRect>& desiredOutput() const { return fDesiredOutput; }
-    // DEPRECATED: Use desiredOutput() instead
-    const SkIRect& clipBounds() const { return static_cast<const SkIRect&>(fDesiredOutput); }
-    // The cache to use when recursing through the filter DAG, in order to avoid repeated
-    // calculations of the same image.
-    SkImageFilterCache* cache() const { return fCache; }
-    // The output device's color type, which can be used for intermediate images to be
-    // compatible with the eventual target of the filtered result.
-    SkColorType colorType() const { return fColorType; }
-#if SK_SUPPORT_GPU
-    GrColorType grColorType() const { return SkColorTypeToGrColorType(fColorType); }
-#endif
+
     // The output device's color space, so intermediate images can match, and so filtering can
     // be performed in the destination color space.
-    SkColorSpace* colorSpace() const { return fColorSpace; }
-    sk_sp<SkColorSpace> refColorSpace() const { return sk_ref_sp(fColorSpace); }
-    // The default surface properties to use when making transient surfaces during filtering.
-    const SkSurfaceProps& surfaceProps() const { return fSource.image()->props(); }
+    SkColorSpace* colorSpace() const { return fColorSpace.get(); }
+    sk_sp<SkColorSpace> refColorSpace() const { return fColorSpace; }
 
     // This is the image to use whenever an expected input filter has been set to null. In the
     // majority of cases, this is the original source image for the image filter DAG so it comes
@@ -646,54 +1192,75 @@ public:
     // exception is composing two image filters (via SkImageFilters::Compose), which must use
     // the output of the inner DAG as the "source" for the outer DAG.
     const FilterResult& source() const { return fSource; }
-    // DEPRECATED: Use source() instead to get both the image and its origin.
-    const SkSpecialImage* sourceImage() const { return fSource.image(); }
 
-    // True if image filtering should occur on the GPU if possible.
-    bool gpuBacked() const { return fSource.image()->isTextureBacked(); }
-    // The recording context to use when computing the filter with the GPU.
-    GrRecordingContext* getContext() const { return fSource.image()->getContext(); }
-
-    /**
-     *  Since a context can be built directly, its constructor has no chance to "return null" if
-     *  it's given invalid or unsupported inputs. Call this to know of the the context can be
-     *  used.
-     *
-     *  The SkImageFilterCache Key, for example, requires a finite ctm (no infinities or NaN),
-     *  so that test is part of isValid.
-     */
-    bool isValid() const { return fSource.image() != nullptr && fMapping.layerMatrix().isFinite(); }
-
-    // Create a surface of the given size, that matches the context's color type and color space
-    // as closely as possible, and uses the same backend of the device that produced the source
-    // image.
-    sk_sp<SkSpecialSurface> makeSurface(const SkISize& size,
-                                        const SkSurfaceProps* props = nullptr) const {
-        if (!props) {
-             props = &this->surfaceProps();
-        }
-        return fSource.image()->makeSurface(fColorType, fColorSpace, size,
-                                            kPremul_SkAlphaType, *props);
-    }
 
     // Create a new context that matches this context, but with an overridden layer space.
     Context withNewMapping(const Mapping& mapping) const {
-        return Context(mapping, fDesiredOutput, fCache, fColorType, fColorSpace, fSource);
+        Context c = *this;
+        c.fMapping = mapping;
+        return c;
     }
     // Create a new context that matches this context, but with an overridden desired output rect.
     Context withNewDesiredOutput(const LayerSpace<SkIRect>& desiredOutput) const {
-        return Context(fMapping, desiredOutput, fCache, fColorType, fColorSpace, fSource);
+        Context c = *this;
+        c.fDesiredOutput = desiredOutput;
+        return c;
+    }
+    // Create a new context that matches this context, but with an overridden color space.
+    Context withNewColorSpace(SkColorSpace* cs) const {
+        Context c = *this;
+        c.fColorSpace = sk_ref_sp(cs);
+        return c;
+    }
+
+    // Create a new context that matches this context, but with an overridden source.
+    Context withNewSource(const FilterResult& source) const {
+        Context c = *this;
+        c.fSource = source;
+        return c;
+    }
+
+
+    // Stats tracking
+    void markVisitedImageFilter() const {
+        if (fStats) {
+            fStats->fNumVisitedImageFilters++;
+        }
+    }
+    void markCacheHit() const {
+        if (fStats) {
+            fStats->fNumCacheHits++;
+        }
+    }
+    void markNewSurface() const {
+        if (fStats) {
+            fStats->fNumOffscreenSurfaces++;
+        }
+    }
+    void markShaderBasedTilingRequired(SkTileMode tileMode) const {
+        if (fStats) {
+            if (tileMode == SkTileMode::kClamp) {
+                fStats->fNumShaderClampedDraws++;
+            } else {
+                fStats->fNumShaderBasedTilingDraws++;
+            }
+        }
     }
 
 private:
+    friend class ::FilterResultTestAccess; // For controlling Stats
+
+    sk_sp<Backend> fBackend;
+
+    // Properties controlling the size and coordinate space of image filtering
     Mapping             fMapping;
     LayerSpace<SkIRect> fDesiredOutput;
-    SkImageFilterCache* fCache;
-    SkColorType         fColorType;
-    // The pointed-to object is owned by the device controlling the filter process, and our lifetime
-    // is bounded by the device, so this can be a bare pointer.
-    SkColorSpace*       fColorSpace;
+    // Can contain a null image if the image filter DAG has no late-bound null inputs.
     FilterResult        fSource;
+    // The color space the filters are evaluated in
+    sk_sp<SkColorSpace> fColorSpace;
+
+    Stats* fStats;
 };
 
 } // end namespace skif

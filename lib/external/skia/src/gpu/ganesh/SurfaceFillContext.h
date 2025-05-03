@@ -4,15 +4,40 @@
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
-
 #ifndef SurfaceFillContext_DEFINED
 #define SurfaceFillContext_DEFINED
 
+#include "include/core/SkAlphaType.h"
+#include "include/core/SkColor.h"
+#include "include/core/SkMatrix.h"
+#include "include/core/SkRect.h"
+#include "include/core/SkRefCnt.h"
+#include "include/private/base/SkDebug.h"
+#include "src/core/SkColorData.h"
+#include "src/gpu/ganesh/GrColorInfo.h"
+#include "src/gpu/ganesh/GrFragmentProcessor.h"
+#include "src/gpu/ganesh/GrRenderTargetProxy.h"
+#include "src/gpu/ganesh/GrSurfaceProxy.h"
+#include "src/gpu/ganesh/GrSurfaceProxyView.h"
 #include "src/gpu/ganesh/SurfaceContext.h"
-
+#include "src/gpu/ganesh/ops/GrOp.h"
 #include "src/gpu/ganesh/ops/OpsTask.h"
 
-namespace skgpu::v1 {
+#include <array>
+#include <memory>
+#include <utility>
+
+class GrPaint;
+class GrRecordingContext;
+class GrRenderTask;
+class SkArenaAlloc;
+struct SkIPoint;
+
+namespace sktext::gpu {
+class SubRunAllocator;
+}
+
+namespace skgpu::ganesh {
 
 class SurfaceFillContext : public SurfaceContext {
 public:
@@ -25,7 +50,7 @@ public:
 
     OpsTask* getOpsTask();
 
-#if GR_TEST_UTILS
+#if defined(GPU_TEST_UTILS)
     OpsTask* testingOnly_PeekLastOpsTask() { return fOpsTask.get(); }
 #endif
 
@@ -92,16 +117,6 @@ public:
     /** Fills the entire render target with the passed FP. */
     void fillWithFP(std::unique_ptr<GrFragmentProcessor> fp) {
         this->fillRectWithFP(SkIRect::MakeSize(fWriteView.proxy()->dimensions()), std::move(fp));
-    }
-
-    /**
-     * A convenience version of fillWithFP that applies a coordinate transformation via
-     * GrMatrixEffect and fills the entire render target.
-     */
-    void fillWithFP(const SkMatrix& localMatrix, std::unique_ptr<GrFragmentProcessor> fp) {
-        this->fillRectWithFP(SkIRect::MakeSize(fWriteView.proxy()->dimensions()),
-                             localMatrix,
-                             std::move(fp));
     }
 
     /**
@@ -191,6 +206,6 @@ std::array<float, 4> SurfaceFillContext::adjustColorAlphaType(SkRGBA4f<AlphaType
     return (AlphaType == this->colorInfo().alphaType()) ? color.array() : ConvertColor(color);
 }
 
-} // namespace skgpu::v1
+}  // namespace skgpu::ganesh
 
 #endif // SurfaceFillContext_DEFINED

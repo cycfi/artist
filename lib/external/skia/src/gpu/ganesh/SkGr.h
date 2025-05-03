@@ -8,42 +8,42 @@
 #ifndef SkGr_DEFINED
 #define SkGr_DEFINED
 
-#include "include/core/SkBlender.h"
-#include "include/core/SkCanvas.h"
+#include "include/core/SkBlendMode.h"
 #include "include/core/SkColor.h"
-#include "include/core/SkImageInfo.h"
+#include "include/core/SkRefCnt.h"
 #include "include/core/SkSamplingOptions.h"
-#include "include/gpu/GrTypes.h"
-#include "include/private/SkColorData.h"
-#include "src/core/SkBlendModePriv.h"
+#include "include/core/SkTileMode.h"
+#include "include/core/SkTypes.h"
+#include "include/gpu/GpuTypes.h"
+#include "src/core/SkColorData.h"
+#include "src/core/SkColorPriv.h"
 #include "src/gpu/Blend.h"
-#include "src/gpu/ganesh/GrCaps.h"
+#include "src/gpu/SkBackingFit.h"
 #include "src/gpu/ganesh/GrColor.h"
 #include "src/gpu/ganesh/GrSamplerState.h"
 
-class GrCaps;
+#include <cstdint>
+#include <memory>
+#include <string_view>
+#include <tuple>
+
 class GrColorInfo;
-class GrColorSpaceXform;
-class GrDirectContext;
 class GrFragmentProcessor;
 class GrPaint;
 class GrRecordingContext;
-class GrResourceProvider;
-class GrTextureProxy;
+class GrSurfaceProxy;
+class GrSurfaceProxyView;
 class SkBitmap;
-class SkData;
+class SkBlender;
 class SkIDChangeListener;
 class SkMatrix;
-class SkMatrixProvider;
 class SkPaint;
-class SkPixelRef;
-class SkPixmap;
-class SkSurfaceProps;
+enum class GrColorType;
+enum GrSurfaceOrigin : int;
 struct SkIRect;
 
-namespace skgpu {
-class UniqueKey;
-}
+namespace skgpu { class UniqueKey; }
+namespace skgpu::ganesh { class SurfaceDrawContext; }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Color type conversions
@@ -89,32 +89,26 @@ static constexpr GrSamplerState::WrapMode SkTileModeToWrapMode(SkTileMode tileMo
 
 /** Converts an SkPaint to a GrPaint for a given GrRecordingContext. The matrix is required in order
     to convert the SkShader (if any) on the SkPaint. The primitive itself has no color. */
-bool SkPaintToGrPaint(GrRecordingContext*,
-                      const GrColorInfo& dstColorInfo,
+bool SkPaintToGrPaint(skgpu::ganesh::SurfaceDrawContext*,
                       const SkPaint& skPaint,
-                      const SkMatrixProvider& matrixProvider,
-                      const SkSurfaceProps& surfaceProps,
+                      const SkMatrix& ctm,
                       GrPaint* grPaint);
 
 /** Replaces the SkShader (if any) on skPaint with the passed in GrFragmentProcessor, if not null.
     If null then it is assumed that the geometry processor is implementing a shader replacement.
     The processor should expect an unpremul input color and produce a premultiplied output color. */
-bool SkPaintToGrPaintReplaceShader(GrRecordingContext*,
-                                   const GrColorInfo& dstColorInfo,
+bool SkPaintToGrPaintReplaceShader(skgpu::ganesh::SurfaceDrawContext*,
                                    const SkPaint& skPaint,
-                                   const SkMatrixProvider& matrixProvider,
+                                   const SkMatrix& ctm,
                                    std::unique_ptr<GrFragmentProcessor> shaderFP,
-                                   const SkSurfaceProps& surfaceProps,
                                    GrPaint* grPaint);
 
 /** Blends the SkPaint's shader (or color if no shader) with the color which specified via a
     GrOp's GrPrimitiveProcesssor. */
-bool SkPaintToGrPaintWithBlend(GrRecordingContext* context,
-                               const GrColorInfo& dstColorInfo,
+bool SkPaintToGrPaintWithBlend(skgpu::ganesh::SurfaceDrawContext* context,
                                const SkPaint& skPaint,
-                               const SkMatrixProvider& matrixProvider,
+                               const SkMatrix& ctm,
                                SkBlender* primColorBlender,
-                               const SkSurfaceProps& surfaceProps,
                                GrPaint* grPaint);
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -130,7 +124,7 @@ static_assert((int)skgpu::BlendCoeff::kSA == (int)SkBlendModeCoeff::kSA);
 static_assert((int)skgpu::BlendCoeff::kISA == (int)SkBlendModeCoeff::kISA);
 static_assert((int)skgpu::BlendCoeff::kDA == (int)SkBlendModeCoeff::kDA);
 static_assert((int)skgpu::BlendCoeff::kIDA == (int)SkBlendModeCoeff::kIDA);
-// static_assert(SkXfermode::kCoeffCount == 10);
+static_assert((int)SkBlendModeCoeff::kCoeffCount == 10);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Texture management
@@ -154,39 +148,39 @@ sk_sp<GrSurfaceProxy> GrCopyBaseMipMapToTextureProxy(GrRecordingContext*,
                                                      sk_sp<GrSurfaceProxy> baseProxy,
                                                      GrSurfaceOrigin origin,
                                                      std::string_view label,
-                                                     SkBudgeted = SkBudgeted::kYes);
+                                                     skgpu::Budgeted = skgpu::Budgeted::kYes);
 /**
  * Same as GrCopyBaseMipMapToTextureProxy but takes the src as a view and returns a view with same
  * origin and swizzle as the src view.
  */
 GrSurfaceProxyView GrCopyBaseMipMapToView(GrRecordingContext*,
                                           GrSurfaceProxyView,
-                                          SkBudgeted = SkBudgeted::kYes);
+                                          skgpu::Budgeted = skgpu::Budgeted::kYes);
 
 /*
  * Create a texture proxy from the provided bitmap and add it to the texture cache using the key
- * also extracted from the bitmap. If GrMipmapped is kYes a non-mipmapped result may be returned
- * if mipmapping isn't supported or for a 1x1 bitmap. If GrMipmapped is kNo it indicates mipmaps
- * aren't required but a previously created mipmapped texture may still be returned. A color type is
- * returned as color type conversion may be performed if there isn't a texture format equivalent of
- * the bitmap's color type.
+ * also extracted from the bitmap. If skgpu::Mipmapped is kYes a non-mipmapped result may be
+ * returned if mipmapping isn't supported or for a 1x1 bitmap. If skgpu::Mipmapped is kNo it
+ * indicates mipmaps aren't required but a previously created mipmapped texture may still be
+ * returned. A color type is returned as color type conversion may be performed if there isn't a
+ * texture format equivalent of the bitmap's color type.
  */
-std::tuple<GrSurfaceProxyView, GrColorType>
-GrMakeCachedBitmapProxyView(GrRecordingContext*,
-                            const SkBitmap&,
-                            std::string_view label,
-                            GrMipmapped = GrMipmapped::kNo);
+std::tuple<GrSurfaceProxyView, GrColorType> GrMakeCachedBitmapProxyView(
+        GrRecordingContext*,
+        const SkBitmap&,
+        std::string_view label,
+        skgpu::Mipmapped = skgpu::Mipmapped::kNo);
 
 /**
  * Like above but always uploads the bitmap and never inserts into the cache. Unlike above, the
  * texture may be approx or scratch and budgeted or not.
  */
-std::tuple<GrSurfaceProxyView, GrColorType>
-GrMakeUncachedBitmapProxyView(GrRecordingContext*,
-                              const SkBitmap&,
-                              GrMipmapped = GrMipmapped::kNo,
-                              SkBackingFit = SkBackingFit::kExact,
-                              SkBudgeted = SkBudgeted::kYes);
+std::tuple<GrSurfaceProxyView, GrColorType> GrMakeUncachedBitmapProxyView(
+        GrRecordingContext*,
+        const SkBitmap&,
+        skgpu::Mipmapped = skgpu::Mipmapped::kNo,
+        SkBackingFit = SkBackingFit::kExact,
+        skgpu::Budgeted = skgpu::Budgeted::kYes);
 
 /**
  *  Our key includes the offset, width, and height so that bitmaps created by extractSubset()

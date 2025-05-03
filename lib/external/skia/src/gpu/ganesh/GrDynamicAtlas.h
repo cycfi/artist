@@ -8,13 +8,20 @@
 #ifndef GrDynamicAtlas_DEFINED
 #define GrDynamicAtlas_DEFINED
 
-#include "src/core/SkArenaAlloc.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkSize.h"
+#include "include/core/SkTypes.h"
+#include "include/gpu/ganesh/GrTypes.h"
+#include "src/base/SkArenaAlloc.h"
+#include "src/gpu/ganesh/GrCaps.h"
+#include "src/gpu/ganesh/GrSurfaceProxy.h"
+#include "src/gpu/ganesh/GrSurfaceProxyView.h"
+#include "src/gpu/ganesh/GrTexture.h"
 #include "src/gpu/ganesh/GrTextureProxy.h"
 
 class GrOnFlushResourceProvider;
-class GrResourceProvider;
+enum class GrColorType;
 struct SkIPoint16;
-struct SkIRect;
 
 /**
  * This class implements a dynamic size skgpu::Rectanizer that grows until it reaches the
@@ -72,8 +79,8 @@ public:
     // 'backingTexture', if provided, is a renderable texture with which to instantiate our proxy.
     // If null then we will create a texture using the resource provider. The purpose of this param
     // is to provide a guaranteed way to recycle textures from previous atlases.
-    bool SK_WARN_UNUSED_RESULT instantiate(GrOnFlushResourceProvider*,
-                                           sk_sp<GrTexture> backingTexture = nullptr);
+    [[nodiscard]] bool instantiate(GrOnFlushResourceProvider*,
+                                   sk_sp<GrTexture> backingTexture = nullptr);
 
 private:
     class Node;

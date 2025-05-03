@@ -9,12 +9,18 @@
 #define skgpu_ResourceKey_DEFINED
 
 #include "include/core/SkData.h"
-#include "include/core/SkString.h"
-#include "include/private/SkOnce.h"
-#include "include/private/SkTemplates.h"
-#include "include/private/SkTo.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkTypes.h"
+#include "include/private/base/SkAlign.h"
+#include "include/private/base/SkAlignedStorage.h"
+#include "include/private/base/SkDebug.h"
+#include "include/private/base/SkTemplates.h"
+#include "include/private/base/SkTo.h"
 
+#include <cstdint>
+#include <cstring>
 #include <new>
+#include <utility>
 
 class TestResource;
 
@@ -78,7 +84,7 @@ public:
             size_t size = (count + kMetaDataCnt) * sizeof(uint32_t);
             SkASSERT(SkToU16(size) == size);
             SkASSERT(SkToU16(domain) == domain);
-            key->fKey[kDomainAndSize_MetaDataIdx] = domain | (size << 16);
+            key->fKey[kDomainAndSize_MetaDataIdx] = SkToU32(domain | (size << 16));
         }
 
     private:
@@ -128,12 +134,12 @@ protected:
         if (!this->isValid()) {
             SkDebugf("Invalid Key\n");
         } else {
-            SkDebugf("hash: %d ", this->hash());
-            SkDebugf("domain: %d ", this->domain());
+            SkDebugf("hash: %u ", this->hash());
+            SkDebugf("domain: %u ", this->domain());
             SkDebugf("size: %zuB ", this->internalSize());
             size_t dataCount = this->internalSize() / sizeof(uint32_t) - kMetaDataCnt;
             for (size_t i = 0; i < dataCount; ++i) {
-                SkDebugf("%d ", fKey[SkTo<int>(kMetaDataCnt+i)]);
+                SkDebugf("%u ", fKey[SkTo<int>(kMetaDataCnt+i)]);
             }
             SkDebugf("\n");
         }
@@ -162,8 +168,9 @@ private:
 
     friend class ::TestResource;  // For unit test to access kMetaDataCnt.
 
-    // bmp textures require 5 uint32_t values.
-    SkAutoSTMalloc<kMetaDataCnt + 5, uint32_t> fKey;
+    // For Ganesh, bmp textures require 5 uint32_t values. Graphite requires 6 (due to
+    // storing mipmap status as part of the key).
+    skia_private::AutoSTMalloc<kMetaDataCnt + 6, uint32_t> fKey;
 };
 
 /**
@@ -258,7 +265,12 @@ public:
 
     const char* tag() const { return fTag; }
 
+    const uint32_t* data() const { return this->ResourceKey::data(); }
+
 #ifdef SK_DEBUG
+    uint32_t domain() const { return this->ResourceKey::domain(); }
+    size_t dataSize() const { return this->ResourceKey::dataSize(); }
+
     void dump(const char* label) const {
         SkDebugf("%s tag: %s\n", label, fTag ? fTag : "None");
         this->ResourceKey::dump();
@@ -349,6 +361,76 @@ static inline bool SkShouldPostMessageToBus(const UniqueKeyInvalidatedMessage& m
                                             uint32_t msgBusUniqueID) {
     return msg.contextID() == msgBusUniqueID;
 }
+
+class UniqueKeyInvalidatedMsg_Graphite {
+public:
+    UniqueKeyInvalidatedMsg_Graphite() = default;
+    UniqueKeyInvalidatedMsg_Graphite(const UniqueKey& key, uint32_t recorderID)
+            : fKey(key), fRecorderID(recorderID) {
+        SkASSERT(SK_InvalidUniqueID != fRecorderID);
+    }
+
+    UniqueKeyInvalidatedMsg_Graphite(const UniqueKeyInvalidatedMsg_Graphite&) = default;
+
+    UniqueKeyInvalidatedMsg_Graphite& operator=(const UniqueKeyInvalidatedMsg_Graphite&) = default;
+
+    const UniqueKey& key() const { return fKey; }
+    uint32_t recorderID() const { return fRecorderID; }
+
+private:
+    UniqueKey fKey;
+    uint32_t fRecorderID = SK_InvalidUniqueID;
+};
+
+static inline bool SkShouldPostMessageToBus(const UniqueKeyInvalidatedMsg_Graphite& msg,
+                                            uint32_t msgBusUniqueID) {
+    return msg.recorderID() == msgBusUniqueID;
+}
+
+/**
+ * This is a special key that doesn't have domain and can only be used in a dedicated cache.
+ * Unlike UniqueKey & ScratchKey, this key has compile time size (in number of uint32_t)
+ * and doesn't need dynamic allocations. In comparison, UniqueKey & ScratchKey will need
+ * dynamic allocation if a key is larger than 6 uint32_ts.
+ */
+template <size_t SizeInUInt32>
+class FixedSizeKey {
+public:
+    uint32_t hash() const { return fHash; }
+
+    bool operator==(const FixedSizeKey& that) const {
+        return fHash == that.fHash &&
+               0 == memcmp(fPackedData, that.fPackedData, sizeof(fPackedData));
+    }
+
+    class Builder {
+    public:
+        Builder(FixedSizeKey* key) : fKey(key) {}
+
+        void finish() {
+            SkASSERT(fKey);
+            fKey->fHash = ResourceKeyHash(fKey->fPackedData, sizeof(fKey->fPackedData));
+            fKey = nullptr;
+        }
+
+        uint32_t& operator[](int dataIdx) {
+            SkASSERT(fKey);
+            SkASSERT(SkToU32(dataIdx) < SizeInUInt32);
+            return fKey->fPackedData[dataIdx];
+        }
+
+    private:
+        FixedSizeKey* fKey = nullptr;
+    };
+
+    struct Hash {
+        uint32_t operator()(const FixedSizeKey& key) const { return key.hash(); }
+    };
+
+private:
+    uint32_t fHash = 0;
+    uint32_t fPackedData[SizeInUInt32] = {};
+};
 
 } // namespace skgpu
 

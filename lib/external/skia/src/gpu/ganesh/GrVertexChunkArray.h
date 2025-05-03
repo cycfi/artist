@@ -9,10 +9,17 @@
 #define GrVertexChunkArray_DEFINED
 
 #include "include/core/SkRefCnt.h"
-#include "include/private/SkNoncopyable.h"
-#include "include/private/SkTArray.h"
+#include "include/core/SkTypes.h"
+#include "include/private/base/SkDebug.h"
+#include "include/private/base/SkNoncopyable.h"
+#include "include/private/base/SkTArray.h"
+#include "include/private/base/SkTypeTraits.h"
 #include "src/gpu/BufferWriter.h"
 #include "src/gpu/ganesh/GrBuffer.h"
+
+#include <cstddef>
+#include <type_traits>
+#include <utility>
 
 class GrMeshDrawTarget;
 
@@ -23,13 +30,17 @@ struct GrVertexChunk {
     sk_sp<const GrBuffer> fBuffer;
     int fCount = 0;
     int fBase;  // baseVertex or baseInstance, depending on the use case.
+
+    static_assert(::sk_is_trivially_relocatable<decltype(fBuffer)>::value);
+
+    using sk_is_trivially_relocatable = std::true_type;
 };
 
 // Represents an array of GrVertexChunks.
 //
 // We only preallocate 1 chunk because if the array needs to grow, then we're also allocating a
 // brand new GPU buffer anyway.
-using GrVertexChunkArray = SkSTArray<1, GrVertexChunk>;
+using GrVertexChunkArray = skia_private::STArray<1, GrVertexChunk>;
 
 // Builds a GrVertexChunkArray. The provided Target must not be used externally throughout the
 // entire lifetime of this object.

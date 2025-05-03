@@ -33,10 +33,6 @@ private:
     const SkIRect*      fClipRect;
 };
 
-void sk_fill_path(const SkPath& path, const SkIRect& clipRect,
-                  SkBlitter* blitter, int start_y, int stop_y, int shiftEdgesUp,
-                  bool pathContainedInClip);
-
 // blit the rects above and below avoid, clipped to clip
 void sk_blit_above(SkBlitter*, const SkIRect& avoid, const SkRegion& clip);
 void sk_blit_below(SkBlitter*, const SkIRect& avoid, const SkRegion& clip);
@@ -78,23 +74,6 @@ EdgeType* backward_insert_start(EdgeType* prev, SkFixed x) {
         prev = prev->fPrev;
     }
     return prev;
-}
-
-// Check if the path is a rect and fat enough after clipping; if so, blit it.
-static inline bool TryBlitFatAntiRect(SkBlitter* blitter, const SkPath& path, const SkIRect& clip) {
-    SkRect rect;
-    if (!path.isRect(&rect)) {
-        return false; // not rect
-    }
-    if (!rect.intersect(SkRect::Make(clip))) {
-        return true; // The intersection is empty. Hence consider it done.
-    }
-    SkIRect bounds = rect.roundOut();
-    if (bounds.width() < 3) {
-        return false; // not fat
-    }
-    blitter->blitFatAntiRect(rect);
-    return true;
 }
 
 #endif

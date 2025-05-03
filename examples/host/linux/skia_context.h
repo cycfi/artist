@@ -1,10 +1,11 @@
 #ifndef SKIA_CONTEXT_H
 #define SKIA_CONTEXT_H
 
-#include "GrDirectContext.h"
-#include "gl/GrGLAssembleInterface.h"
+//#include "ganesh/GrBackendSurface.h"
+#include "ganesh/GrDirectContext.h"
 
 #include "SkSurface.h"
+#include "ganesh/gl/GrGLInterface.h"
 
 class GlSkiaContext
 {
@@ -16,13 +17,15 @@ public:
 
     GlSkiaContext() = default;
 
-    void init(GrGLGetProc gl_get_proc);
+    void init(sk_sp<const GrGLInterface> iface);
 
-    sk_sp<SkSurface> makeSurface(int width, int height) noexcept;
+    sk_sp<SkSurface> makeSurface(int width, int height);
+
+    void flush(const sk_sp<SkSurface> &surf) const;
 
 private:
     sk_sp<GrDirectContext> _ctx;
-    std::unique_ptr<GrBackendRenderTarget> target;
+    //GrBackendRenderTarget target;
 };
 
 #endif //  SKIA_CONTEXT_H

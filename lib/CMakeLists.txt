@@ -156,25 +156,43 @@ if (ARTIST_SKIA)
 
    elseif (UNIX)
 
+      if (ARTIST_X11)
+         set(BINARIES_NAME libskia.a.zip)
+      else()
+         set(BINARIES_NAME libskia-egl.a.zip)
+      endif()
+
       if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
          set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/linux/gcc/x86_64/src/prebuilt_binaries)
-         set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/linux/skia/gcc/x86_64/libskia.a.zip)
-         set(ARTIST_BINARIES_MD5 18def70ddce24ea79a7a308163dfbda3)
+         #set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/linux/skia/gcc/x86_64/${BINARIES_NAME})
+         set(ARTIST_BINARIES_URL 
+            https://github.com/silovaa/artist/raw/prebuilt_binaries_0.136/linux/skia/gcc/x86_64/${BINARIES_NAME})
+         if (ARTIST_X11)
+            set(ARTIST_BINARIES_MD5 86f4a55a53427e1c523412e6e5e0af93)
+         else()
+            set(ARTIST_BINARIES_MD5 14ce843a51b7e9ac573be86097a0845c)
+         endif()
          set(ARTIST_BINARIES_PREFIX linux/gcc/x86_64)
       elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
-      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/linux/clang/x86_64/src/prebuilt_binaries)
-      set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/linux/skia/clang/x86_64/libskia.a.zip)
-      set(ARTIST_BINARIES_MD5 db92deccb22589f2551955003ef37ce6)
-      set(ARTIST_BINARIES_PREFIX linux/clang/x86_64)
-   endif()
+         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/linux/clang/x86_64/src/prebuilt_binaries)
+         set(ARTIST_BINARIES_URL 
+            https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/linux/skia/clang/x86_64/${BINARIES_NAME})
+         if (ARTIST_X11)
+            set(ARTIST_BINARIES_MD5 922c69f6fd38772c3c23da1f3d90b449)
+         else()
+            set(ARTIST_BINARIES_MD5 274d37c643ba190ef35e7c3ce508c824)
+         endif()
+         set(ARTIST_BINARIES_PREFIX linux/clang/x86_64)
+      endif()
 
       find_package(Threads)
       find_package(PkgConfig REQUIRED)
       find_package(OpenGL REQUIRED)
+      find_package(harfbuzz REQUIRED)
 
-      pkg_check_modules(harfbuzz REQUIRED IMPORTED_TARGET harfbuzz)
-      pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
-      pkg_check_modules(freetype2 REQUIRED IMPORTED_TARGET freetype2)
+      pkg_check_modules(skia_depends REQUIRED IMPORTED_TARGET
+         fontconfig freetype2 zlib libpng libjpeg libwebp libwebpdemux
+      )
 
       set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
 
@@ -188,16 +206,26 @@ if (ARTIST_SKIA)
          BUILD_BYPRODUCTS ${SKIA_LIBRARY}
       )
 
-      set(ARTIST_DEPEPENDENCIES
+      set(ARTIST_DEPEPENDENCIES_BASE
          "${SKIA_LIBRARY}"
          ${CMAKE_DL_LIBS}
-         PkgConfig::harfbuzz
-         PkgConfig::fontconfig
-         PkgConfig::freetype2
+         PkgConfig::skia_depends
          Threads::Threads
+         harfbuzz::harfbuzz
          OpenGL::OpenGL
-         OpenGL::GLX
       )
+
+      if (ARTIST_X11)
+         set(ARTIST_DEPEPENDENCIES
+            ${ARTIST_DEPEPENDENCIES_BASE}
+            OpenGL::GLX
+         )
+      else()
+         set(ARTIST_DEPEPENDENCIES
+            ${ARTIST_DEPEPENDENCIES_BASE}
+            OpenGL::EGL
+         )
+      endif()
 
    endif()
 
@@ -241,16 +269,16 @@ if (ARTIST_SKIA)
 
    if (APPLE)
       set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
-         external/skia/tools/sk_app/mac/GLWindowContext_mac.mm
-         external/skia/tools/sk_app/mac/RasterWindowContext_mac.mm
+         external/skia/tools/window/mac/GLWindowContext_mac.mm
+         external/skia/tools/window/mac/RasterWindowContext_mac.mm
       )
       set_source_files_properties(${ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT}
          PROPERTIES COMPILE_FLAGS -fno-objc-arc
       )
    elseif (MSVC)
       set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
-         external/skia/tools/sk_app/win/GLWindowContext_win.cpp
-         external/skia/tools/sk_app/win/RasterWindowContext_win.cpp
+         external/skia/tools/window/win/GLWindowContext_win.cpp
+         external/skia/tools/window/win/RasterWindowContext_win.cpp
       )
    endif()
 
@@ -261,10 +289,10 @@ if (ARTIST_SKIA)
       impl/skia/text_layout.cpp
       impl/skia/path.cpp
       impl/skia/detail/harfbuzz.cpp
-      external/skia/tools/sk_app/GLWindowContext.cpp
-      external/skia/tools/sk_app/WindowContext.cpp
-      external/skia/tools/ToolUtils.cpp
-      external/skia/tools/SkMetaData.cpp
+      external/skia/tools/window/GLWindowContext.cpp
+      external/skia/tools/window/WindowContext.cpp
+      #external/skia/tools/ToolUtils.cpp
+      #external/skia/tools/SkMetaData.cpp
       ${ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT}
    )
 endif()
@@ -331,7 +359,7 @@ if (ARTIST_SKIA)
          external/skia/include/ports
          external/skia/src/gpu
          external/skia/modules/skshaper/include
-         external/filesystem/include/
+         #external/filesystem/include/
          external/harfbuzz/include/
          external/fontconfig/include/
    )
@@ -340,6 +368,7 @@ if (ARTIST_SKIA)
       PUBLIC
          ARTIST_SKIA
          SK_RELEASE
+         SK_GL
    )
 endif()
 
@@ -348,14 +377,6 @@ if (ARTIST_QUARTZ_2D)
       artist
       PUBLIC
          ARTIST_QUARTZ_2D
-   )
-endif()
-
-if (ARTIST_SKIA)
-   target_compile_definitions(
-      artist
-      PUBLIC
-        SK_GL
    )
 endif()
 
@@ -404,8 +425,6 @@ elseif (WIN32)
          MSVC_RUNTIME_LIBRARY "MultiThreadedDebug"
       )
    endif()
-
-
 endif()
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")

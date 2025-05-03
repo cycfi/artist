@@ -8,10 +8,25 @@
 #ifndef GrAttachment_DEFINED
 #define GrAttachment_DEFINED
 
-#include "src/core/SkClipStack.h"
+#include "include/core/SkSize.h"
+#include "include/gpu/ganesh/GrBackendSurface.h"
+#include "include/gpu/ganesh/GrTypes.h"
+#include "include/private/base/SkMacros.h"
+#include "include/private/gpu/ganesh/GrTypesPriv.h"
 #include "src/gpu/ganesh/GrSurface.h"
 
-class GrRenderTarget;
+#include <cstddef>
+#include <cstdint>
+#include <string_view>
+
+class GrCaps;
+class GrGpu;
+
+namespace skgpu {
+class ScratchKey;
+class UniqueKey;
+enum class Mipmapped : bool;
+}  // namespace skgpu
 
 /**
  * This is a generic attachment class for out GrSurfaces. It always represents a single gpu
@@ -28,7 +43,7 @@ public:
         kColorAttachment   = 0x2,
         kTexture           = 0x4,
     };
-    GR_DECL_BITFIELD_CLASS_OPS_FRIENDS(UsageFlags);
+    SK_DECL_BITFIELD_CLASS_OPS_FRIENDS(UsageFlags);
 
     ~GrAttachment() override {}
 
@@ -36,7 +51,7 @@ public:
 
     int numSamples() const { return fSampleCnt; }
 
-    GrMipmapped mipmapped() const { return fMipmapped; }
+    skgpu::Mipmapped mipmapped() const { return fMipmapped; }
 
     bool hasPerformedInitialClear() const { return fHasPerformedInitialClear; }
     void markHasPerformedInitialClear() { fHasPerformedInitialClear = true; }
@@ -51,7 +66,7 @@ public:
                                                  SkISize dimensions,
                                                  UsageFlags requiredUsage,
                                                  int sampleCnt,
-                                                 GrMipmapped mipmapped,
+                                                 skgpu::Mipmapped mipmapped,
                                                  GrProtected isProtected,
                                                  GrMemoryless memoryless,
                                                  skgpu::UniqueKey* key);
@@ -63,14 +78,19 @@ public:
                                   SkISize dimensions,
                                   UsageFlags requiredUsage,
                                   int sampleCnt,
-                                  GrMipmapped mipmapped,
+                                  skgpu::Mipmapped mipmapped,
                                   GrProtected,
                                   GrMemoryless,
                                   skgpu::ScratchKey* key);
 
 protected:
-    GrAttachment(GrGpu* gpu, SkISize dimensions, UsageFlags supportedUsages, int sampleCnt,
-                 GrMipmapped mipmapped, GrProtected isProtected, std::string_view label,
+    GrAttachment(GrGpu* gpu,
+                 SkISize dimensions,
+                 UsageFlags supportedUsages,
+                 int sampleCnt,
+                 skgpu::Mipmapped mipmapped,
+                 GrProtected isProtected,
+                 std::string_view label,
                  GrMemoryless memoryless = GrMemoryless::kNo)
             : INHERITED(gpu, dimensions, isProtected, label)
             , fSupportedUsages(supportedUsages)
@@ -96,13 +116,13 @@ private:
 
     UsageFlags fSupportedUsages;
     int fSampleCnt;
-    GrMipmapped fMipmapped;
+    skgpu::Mipmapped fMipmapped;
     bool fHasPerformedInitialClear = false;
     GrMemoryless fMemoryless;
 
     using INHERITED = GrSurface;
 };
 
-GR_MAKE_BITFIELD_CLASS_OPS(GrAttachment::UsageFlags)
+SK_MAKE_BITFIELD_CLASS_OPS(GrAttachment::UsageFlags)
 
 #endif

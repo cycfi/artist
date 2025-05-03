@@ -8,7 +8,12 @@
 #ifndef SkMipmapBuilder_DEFINED
 #define SkMipmapBuilder_DEFINED
 
-#include "include/core/SkImage.h"
+#include "include/core/SkRefCnt.h"
+
+class SkImage;
+class SkMipmap;
+class SkPixmap;
+struct SkImageInfo;
 
 class SkMipmapBuilder {
 public:
@@ -22,16 +27,10 @@ public:
      *  If these levels are compatible with src, return a new Image that combines src's base level
      *  with these levels as mip levels. If not compatible, this returns nullptr.
      */
-    sk_sp<SkImage> attachTo(const SkImage* src);
-
-    sk_sp<SkImage> attachTo(sk_sp<SkImage> src) {
-        return this->attachTo(src.get());
-    }
+    sk_sp<SkImage> attachTo(const sk_sp<const SkImage>& src);
 
 private:
     sk_sp<SkMipmap> fMM;
-
-    friend class SkImage;
 };
 
 #endif

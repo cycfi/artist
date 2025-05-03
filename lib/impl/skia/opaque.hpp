@@ -3,11 +3,15 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
+
 #if !defined(ARTIST_SKIA_OPAQUE_MARCH_22_2020)
 #define ARTIST_SKIA_OPAQUE_MARCH_22_2020
 
 #include "SkImage.h"
 #include "SkBitmap.h"
+
+#include "artist/point.hpp"
+
 #include <variant>
 
 namespace cycfi::artist

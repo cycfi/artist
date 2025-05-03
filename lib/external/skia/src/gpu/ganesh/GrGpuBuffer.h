@@ -8,10 +8,18 @@
 #ifndef GrGpuBuffer_DEFINED
 #define GrGpuBuffer_DEFINED
 
+#include "include/private/gpu/ganesh/GrTypesPriv.h"
 #include "src/gpu/ganesh/GrBuffer.h"
 #include "src/gpu/ganesh/GrGpuResource.h"
 
+#include <cstddef>
+#include <string_view>
+
 class GrGpu;
+
+namespace skgpu {
+class ScratchKey;
+}
 
 class GrGpuBuffer : public GrGpuResource, public GrBuffer {
 public:
@@ -61,6 +69,12 @@ public:
     bool isMapped() const;
 
     bool isCpuBuffer() const final { return false; }
+
+    /**
+     * Overwrites the buffer with zero bytes. Always fails for GrGpuBufferType::kXferGpuToCpu
+     * buffers. The buffer must not currently be mapped.
+     */
+    bool clearToZero();
 
     /**
      * Updates the buffer data.
@@ -113,6 +127,7 @@ private:
 
     virtual void onMap(MapType) = 0;
     virtual void onUnmap(MapType) = 0;
+    virtual bool onClearToZero() = 0;
     virtual bool onUpdateData(const void* src, size_t offset, size_t size, bool preserve) = 0;
 
     size_t onGpuMemorySize() const override { return fSizeInBytes; }

@@ -8,18 +8,24 @@
 #ifndef SkGlyphRunPainter_DEFINED
 #define SkGlyphRunPainter_DEFINED
 
-#include "include/core/SkColorType.h"
+#include "include/core/SkSamplingOptions.h"
 #include "include/core/SkSurfaceProps.h"
-#include "src/core/SkGlyphBuffer.h"
-#include "src/core/SkScalerContext.h"
+#include "src/base/SkZip.h"
 
+#include <cstdint>
+
+class SkBitmap;
+class SkCanvas;
 class SkColorSpace;
-class SkDrawableGlyphBuffer;
-namespace sktext {
-class GlyphRunList;
-}
+class SkGlyph;
+class SkMatrix;
+class SkPaint;
+enum SkColorType : int;
+enum class SkScalerContextFlags : uint32_t;
+namespace sktext { class GlyphRunList; }
+struct SkPoint;
+struct SkRect;
 
-// -- SkGlyphRunListPainterCPU ---------------------------------------------------------------------
 class SkGlyphRunListPainterCPU {
 public:
     class BitmapDevicePainter {
@@ -28,7 +34,8 @@ public:
         BitmapDevicePainter(const BitmapDevicePainter&) = default;
         virtual ~BitmapDevicePainter() = default;
 
-        virtual void paintMasks(SkDrawableGlyphBuffer* accepted, const SkPaint& paint) const = 0;
+        virtual void paintMasks(SkZip<const SkGlyph*, SkPoint> accepted,
+                                const SkPaint& paint) const = 0;
         virtual void drawBitmap(const SkBitmap&, const SkMatrix&, const SkRect* dstOrNull,
                                 const SkSamplingOptions&, const SkPaint&) const = 0;
     };

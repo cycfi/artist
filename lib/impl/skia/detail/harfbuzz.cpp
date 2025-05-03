@@ -6,6 +6,9 @@
 #include "harfbuzz.hpp"
 #include <SkStream.h>
 #include <SkTypeface.h>
+
+#include "private/base/SkTemplates.h"
+
 #include <cmath>
 
 #if defined(_MSC_VER) && _MSC_VER < 1800
@@ -52,7 +55,7 @@ namespace cycfi::artist::detail
    hb_font::hb_font(SkTypeface* tf)
    {
       int index;
-      hb_blob blob{std::unique_ptr<SkStreamAsset>(tf->openStream(&index))};
+      hb_blob blob{tf->openStream(&index)};
       hb_face_t* face = hb_face_create(blob.get(), unsigned(index));
       SkASSERT(face);
       if (face)
@@ -68,7 +71,8 @@ namespace cycfi::artist::detail
             int axis_count = tf->getVariationDesignPosition(nullptr, 0);
             if (axis_count > 0)
             {
-               SkAutoSTMalloc<4, SkFontArguments::VariationPosition::Coordinate> axis_values(axis_count);
+               skia_private::AutoSTMalloc<4, SkFontArguments::VariationPosition::Coordinate> axis_values(axis_count);
+
                if (tf->getVariationDesignPosition(axis_values, axis_count) == axis_count)
                {
                   hb_font_set_variations(

@@ -7,24 +7,34 @@
 
 #ifndef sktext_gpu_GlyphVector_DEFINED
 #define sktext_gpu_GlyphVector_DEFINED
+
+#include "include/core/SkRefCnt.h"
 #include "include/core/SkSpan.h"
 #include "src/core/SkGlyph.h"
-#include "src/core/SkGlyphBuffer.h"
+#include "src/core/SkStrike.h"   // IWYU pragma: keep
 #include "src/gpu/AtlasTypes.h"
 #include "src/text/StrikeForGPU.h"
-#include "src/text/gpu/Glyph.h"
 #include "src/text/gpu/StrikeCache.h"
-#include "src/text/gpu/SubRunAllocator.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <optional>
+#include <tuple>
+
+class SkReadBuffer;
 class SkStrikeClient;
-#if SK_SUPPORT_GPU
+class SkWriteBuffer;
+
 class GrMeshDrawTarget;
-#endif
-#if defined(SK_GRAPHITE_ENABLED)
-namespace skgpu::graphite { class Recorder; }
-#endif
+namespace skgpu::ganesh { class AtlasTextOp; }
+namespace skgpu::graphite {
+class Device;
+class Recorder;
+}
 
 namespace sktext::gpu {
+class Glyph;
+class SubRunAllocator;
 
 // -- GlyphVector ----------------------------------------------------------------------------------
 // GlyphVector provides a way to delay the lookup of Glyphs until the code is running on the GPU
@@ -43,8 +53,9 @@ public:
 
     GlyphVector(SkStrikePromise&& strikePromise, SkSpan<Variant> glyphs);
 
-    static GlyphVector Make(
-            SkStrikePromise&& promise, SkSpan<SkGlyphVariant> glyphs, SubRunAllocator* alloc);
+    static GlyphVector Make(SkStrikePromise&& promise,
+                            SkSpan<const SkPackedGlyphID> glyphs,
+                            SubRunAllocator* alloc);
 
     SkSpan<const Glyph*> glyphs() const;
 
@@ -59,29 +70,30 @@ public:
 
     void packedGlyphIDToGlyph(StrikeCache* cache);
 
-#if SK_SUPPORT_GPU
-    std::tuple<bool, int> regenerateAtlas(
-            int begin, int end,
-            skgpu::MaskFormat maskFormat,
-            int srcPadding,
-            GrMeshDrawTarget*);
-#endif
-
-#if defined(SK_GRAPHITE_ENABLED)
-    std::tuple<bool, int> regenerateAtlas(
-            int begin, int end,
-            skgpu::MaskFormat maskFormat,
-            int srcPadding,
-            skgpu::graphite::Recorder*);
-#endif
-
     static size_t GlyphVectorSize(size_t count) {
         return sizeof(Variant) * count;
     }
 
 private:
     friend class GlyphVectorTestingPeer;
-    static Variant* MakeGlyphs(SkSpan<SkGlyphVariant> glyphs, SubRunAllocator* alloc);
+    friend class ::skgpu::graphite::Device;
+    friend class ::skgpu::ganesh::AtlasTextOp;
+
+    // This function is implemented in ganesh/text/GrAtlasManager.cpp, and should only be called
+    // from AtlasTextOp or linking issues may occur.
+    std::tuple<bool, int> regenerateAtlasForGanesh(
+            int begin, int end,
+            skgpu::MaskFormat maskFormat,
+            int srcPadding,
+            GrMeshDrawTarget*);
+
+    // This function is implemented in graphite/text/AtlasManager.cpp, and should only be called
+    // from graphite::Device or linking issues may occur.
+    std::tuple<bool, int> regenerateAtlasForGraphite(
+            int begin, int end,
+            skgpu::MaskFormat maskFormat,
+            int srcPadding,
+            skgpu::graphite::Recorder*);
 
     SkStrikePromise fStrikePromise;
     SkSpan<Variant> fGlyphs;

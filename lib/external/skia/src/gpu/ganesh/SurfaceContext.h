@@ -11,30 +11,44 @@
 #include "include/core/SkImage.h"
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
-#include "include/core/SkSamplingOptions.h"
-#include "include/core/SkSurface.h"
+#include "include/core/SkSize.h"
+#include "include/private/base/SkDebug.h"
+#include "src/gpu/Swizzle.h"
 #include "src/gpu/ganesh/GrColorInfo.h"
-#include "src/gpu/ganesh/GrDataUtils.h"
+#include "src/gpu/ganesh/GrGpuBuffer.h"
 #include "src/gpu/ganesh/GrImageInfo.h"
 #include "src/gpu/ganesh/GrPixmap.h"
-#include "src/gpu/ganesh/GrRenderTask.h"
+#include "src/gpu/ganesh/GrRenderTargetProxy.h"  // IWYU pragma: keep
+#include "src/gpu/ganesh/GrRenderTask.h"         // IWYU pragma: keep
+#include "src/gpu/ganesh/GrSamplerState.h"
 #include "src/gpu/ganesh/GrSurfaceProxy.h"
 #include "src/gpu/ganesh/GrSurfaceProxyView.h"
+#include "src/gpu/ganesh/GrTextureProxy.h"  // IWYU pragma: keep
 
+#include <cstddef>
+#include <functional>
+#include <memory>
+#include <utility>
+
+class GrCaps;
+class GrDirectContext;
 class GrDrawingManager;
 class GrRecordingContext;
-class GrRenderTargetProxy;
-class GrSurface;
-class GrSurfaceProxy;
-class GrTextureProxy;
+class GrRecordingContextPriv;
+class SkColorSpace;
+enum GrSurfaceOrigin : int;
+enum SkColorType : int;
+enum SkYUVColorSpace : int;
+enum class GrColorType;
 struct SkIPoint;
-struct SkIRect;
+struct SkImageInfo;
 
 namespace skgpu {
 class SingleOwner;
+enum class Mipmapped : bool;
 }
 
-namespace skgpu::v1 {
+namespace skgpu::ganesh {
 
 class SurfaceFillContext;
 
@@ -61,7 +75,7 @@ public:
     int width() const { return fReadView.proxy()->width(); }
     int height() const { return fReadView.proxy()->height(); }
 
-    GrMipmapped mipmapped() const { return fReadView.mipmapped(); }
+    skgpu::Mipmapped mipmapped() const { return fReadView.mipmapped(); }
 
     const GrCaps* caps() const;
 
@@ -91,6 +105,7 @@ public:
     // GPU implementation for SkImage:: and SkSurface::asyncRescaleAndReadPixelsYUV420.
     void asyncRescaleAndReadPixelsYUV420(GrDirectContext*,
                                          SkYUVColorSpace yuvColorSpace,
+                                         bool readAlpha,
                                          sk_sp<SkColorSpace> dstColorSpace,
                                          const SkIRect& srcRect,
                                          SkISize dstSize,
@@ -161,7 +176,7 @@ public:
                      SkImage::RescaleGamma,
                      SkImage::RescaleMode);
 
-#if GR_TEST_UTILS
+#if defined(GPU_TEST_UTILS)
     bool testCopy(sk_sp<GrSurfaceProxy> src, const SkIRect& srcRect, const SkIPoint& dstPoint) {
         return this->copy(std::move(src), srcRect, dstPoint) != nullptr;
     }
@@ -191,6 +206,8 @@ protected:
         // If null then the transfer could not be performed. Otherwise this buffer will contain
         // the pixel data when the transfer is complete.
         sk_sp<GrGpuBuffer> fTransferBuffer;
+        // RowBytes for transfer buffer data
+        size_t fRowBytes;
         // If this is null then the transfer buffer will contain the data in the requested
         // color type. Otherwise, when the transfer is done this must be called to convert
         // from the transfer buffer's color type to the requested color type.
@@ -228,18 +245,36 @@ private:
      */
     sk_sp<GrRenderTask> copy(sk_sp<GrSurfaceProxy> src, SkIRect srcRect, SkIPoint dstPoint);
 
+    /**
+     * Copy and scale 'src' into the proxy backing this context. This call will not do any draw
+     * fallback. Currently only rescaleInto() calls this directly, which handles drawing fallback
+     * automatically.
+     *
+     * @param src        src of pixels
+     * @param srcRect    the subset of src that is copied to this proxy
+     * @param dstRect    the subset of dst that receives the copied data, possibly with different
+     *                   dimensions than 'srcRect'.
+     * @param filterMode the filter mode to apply when scaling src
+     * @return           a task (that may be skippable by calling canSkip) if successful and
+     *                   null otherwise.
+     *
+     * Note: Unlike copy(rect,point), 'srcRect' and 'dstRect' are not adjusted to fit within the
+     * surfaces. If they are not contained, then nullptr is returned. The 'src' must have the same
+     * origin as the backing proxy of this context.
+     */
+    sk_sp<GrRenderTask> copyScaled(sk_sp<GrSurfaceProxy> src, SkIRect srcRect, SkIRect dstRect,
+                                   GrSamplerState::Filter filterMode);
+
     bool internalWritePixels(GrDirectContext* dContext,
                              const GrCPixmap src[],
                              int numLevels,
                              SkIPoint);
-
-    class AsyncReadResult;
 
     GrColorInfo fColorInfo;
 
     using INHERITED = SkRefCnt;
 };
 
-} // namespace skgpu::v1
+}  // namespace skgpu::ganesh
 
 #endif // SurfaceContext_DEFINED

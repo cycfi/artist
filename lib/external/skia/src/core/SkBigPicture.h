@@ -8,16 +8,18 @@
 #ifndef SkBigPicture_DEFINED
 #define SkBigPicture_DEFINED
 
-#include "include/core/SkM44.h"
+#include "include/core/SkBBHFactory.h"
 #include "include/core/SkPicture.h"
 #include "include/core/SkRect.h"
-#include "include/private/SkNoncopyable.h"
-#include "include/private/SkOnce.h"
-#include "include/private/SkTemplates.h"
+#include "include/core/SkRefCnt.h"
+#include "include/private/base/SkNoncopyable.h"
+#include "include/private/base/SkTemplates.h"
+#include "src/core/SkRecord.h"
 
-class SkBBoxHierarchy;
-class SkMatrix;
-class SkRecord;
+#include <cstddef>
+#include <memory>
+
+class SkCanvas;
 
 // An implementation of SkPicture supporting an arbitrary number of drawing commands.
 // This is called "big" because there used to be a "mini" that only supported a subset of the
@@ -33,7 +35,7 @@ public:
         const SkPicture* const* begin() const { return fPics; }
         int count() const { return fCount; }
     private:
-        SkAutoTMalloc<const SkPicture*> fPics;
+        skia_private::AutoTMalloc<const SkPicture*> fPics;
         int fCount;
     };
 
@@ -51,11 +53,6 @@ public:
     size_t approximateBytesUsed() const override;
     const SkBigPicture* asSkBigPicture() const override { return this; }
 
-// Used by GrLayerHoister
-    void partialPlayback(SkCanvas*,
-                         int start,
-                         int stop,
-                         const SkM44& initialCTM) const;
 // Used by GrRecordReplaceDraw
     const SkBBoxHierarchy* bbh() const { return fBBH.get(); }
     const SkRecord*     record() const { return fRecord.get(); }

@@ -9,8 +9,11 @@
 #ifndef SkCubicClipper_DEFINED
 #define SkCubicClipper_DEFINED
 
-#include "include/core/SkPoint.h"
 #include "include/core/SkRect.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkTypes.h"
+
+struct SkPoint;
 
 /** This class is initialized with a clip rectangle, and then can be fed cubics,
     which must already be monotonic in Y.
@@ -24,9 +27,9 @@ public:
 
     void setClip(const SkIRect& clip);
 
-    bool SK_WARN_UNUSED_RESULT clipCubic(const SkPoint src[4], SkPoint dst[4]);
+    [[nodiscard]] bool clipCubic(const SkPoint src[4], SkPoint dst[4]);
 
-    static bool SK_WARN_UNUSED_RESULT ChopMonoAtY(const SkPoint pts[4], SkScalar y, SkScalar* t);
+    [[nodiscard]] static bool ChopMonoAtY(const SkPoint pts[4], SkScalar y, SkScalar* t);
 private:
     SkRect      fClip;
 };

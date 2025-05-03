@@ -10,19 +10,25 @@
 
 #include "include/core/SkColor.h"
 #include "include/core/SkRect.h"
+#include "include/core/SkRefCnt.h"
 #include "include/core/SkRegion.h"
-#include "include/private/SkTo.h"
-#include "src/core/SkAutoMalloc.h"
-#include "src/core/SkImagePriv.h"
-#include "src/shaders/SkShaderBase.h"
+#include "include/private/base/SkAssert.h"
+#include "include/private/base/SkCPUTypes.h"
+#include "include/private/base/SkDebug.h"
+#include "include/private/base/SkTo.h"
+#include "src/base/SkAutoMalloc.h"
+
+#include <cstddef>
+#include <cstdint>
 
 class SkArenaAlloc;
 class SkMatrix;
-class SkMatrixProvider;
 class SkPaint;
 class SkPixmap;
+class SkShader;
 class SkSurfaceProps;
 struct SkMask;
+enum class SkDrawCoverage : bool;
 
 /** SkBlitter and its subclasses are responsible for actually writing pixels
     into memory. Besides efficiency, they handle clipping and antialiasing.
@@ -33,6 +39,11 @@ struct SkMask;
 class SkBlitter {
 public:
     virtual ~SkBlitter();
+    SkBlitter() = default;
+    SkBlitter(const SkBlitter&) = delete;
+    SkBlitter(SkBlitter&&) = delete;
+    SkBlitter& operator=(const SkBlitter&) = delete;
+    SkBlitter& operator=(SkBlitter&&) = delete;
 
     /// Blit a horizontal run of one or more pixels.
     virtual void blitH(int x, int y, int width) = 0;
@@ -72,12 +83,6 @@ public:
     /// typically used for text.
     virtual void blitMask(const SkMask&, const SkIRect& clip);
 
-    /** If the blitter just sets a single value for each pixel, return the
-        bitmap it draws into, and assign value. If not, return nullptr and ignore
-        the value parameter.
-    */
-    virtual const SkPixmap* justAnOpaqueColor(uint32_t* value);
-
     // (x, y), (x + 1, y)
     virtual void blitAntiH2(int x, int y, U8CPU a0, U8CPU a1) {
         int16_t runs[3];
@@ -106,13 +111,6 @@ public:
         aa[0] = SkToU8(a1);
         this->blitAntiH(x, y + 1, aa, runs);
     }
-
-    /**
-     *  Special method just to identify the null blitter, which is returned
-     *  from Choose() if the request cannot be fulfilled. Default impl
-     *  returns false.
-     */
-    virtual bool isNullBlitter() const;
 
     /**
      * Special methods for blitters that can blit more than one row at a time.
@@ -144,10 +142,10 @@ public:
         Return the correct blitter to use given the specified context.
      */
     static SkBlitter* Choose(const SkPixmap& dst,
-                             const SkMatrixProvider& matrixProvider,
+                             const SkMatrix& ctm,
                              const SkPaint& paint,
                              SkArenaAlloc*,
-                             bool drawCoverage,
+                             SkDrawCoverage,
                              sk_sp<SkShader> clipShader,
                              const SkSurfaceProps& props);
 
@@ -166,22 +164,20 @@ protected:
 
 /** This blitter silently never draws anything.
 */
-class SkNullBlitter : public SkBlitter {
+class SkNullBlitter final : public SkBlitter {
 public:
-    void blitH(int x, int y, int width) override;
-    void blitAntiH(int x, int y, const SkAlpha[], const int16_t runs[]) override;
-    void blitV(int x, int y, int height, SkAlpha alpha) override;
-    void blitRect(int x, int y, int width, int height) override;
-    void blitMask(const SkMask&, const SkIRect& clip) override;
-    const SkPixmap* justAnOpaqueColor(uint32_t* value) override;
-    bool isNullBlitter() const override;
+    void blitH(int x, int y, int width) override {}
+    void blitAntiH(int x, int y, const SkAlpha[], const int16_t runs[]) override {}
+    void blitV(int x, int y, int height, SkAlpha alpha) override {}
+    void blitRect(int x, int y, int width, int height) override {}
+    void blitMask(const SkMask&, const SkIRect& clip) override {}
 };
 
 /** Wraps another (real) blitter, and ensures that the real blitter is only
     called with coordinates that have been clipped by the specified clipRect.
     This means the caller need not perform the clipping ahead of time.
 */
-class SkRectClipBlitter : public SkBlitter {
+class SkRectClipBlitter final : public SkBlitter {
 public:
     void init(SkBlitter* blitter, const SkIRect& clipRect) {
         SkASSERT(!clipRect.isEmpty());
@@ -196,7 +192,6 @@ public:
     void blitAntiRect(int x, int y, int width, int height,
                       SkAlpha leftAlpha, SkAlpha rightAlpha) override;
     void blitMask(const SkMask&, const SkIRect& clip) override;
-    const SkPixmap* justAnOpaqueColor(uint32_t* value) override;
 
     int requestRowsPreserved() const override {
         return fBlitter->requestRowsPreserved();
@@ -215,7 +210,7 @@ private:
     called with coordinates that have been clipped by the specified clipRgn.
     This means the caller need not perform the clipping ahead of time.
 */
-class SkRgnClipBlitter : public SkBlitter {
+class SkRgnClipBlitter final : public SkBlitter {
 public:
     void init(SkBlitter* blitter, const SkRegion* clipRgn) {
         SkASSERT(clipRgn && !clipRgn->isEmpty());
@@ -230,7 +225,6 @@ public:
     void blitAntiRect(int x, int y, int width, int height,
                       SkAlpha leftAlpha, SkAlpha rightAlpha) override;
     void blitMask(const SkMask&, const SkIRect& clip) override;
-    const SkPixmap* justAnOpaqueColor(uint32_t* value) override;
 
     int requestRowsPreserved() const override {
         return fBlitter->requestRowsPreserved();
@@ -246,7 +240,7 @@ private:
 };
 
 #ifdef SK_DEBUG
-class SkRectClipCheckBlitter : public SkBlitter {
+class SkRectClipCheckBlitter final : public SkBlitter {
 public:
     void init(SkBlitter* blitter, const SkIRect& clipRect) {
         SkASSERT(blitter);
@@ -262,7 +256,6 @@ public:
     void blitAntiRect(int x, int y, int width, int height,
                               SkAlpha leftAlpha, SkAlpha rightAlpha) override;
     void blitMask(const SkMask&, const SkIRect& clip) override;
-    const SkPixmap* justAnOpaqueColor(uint32_t* value) override;
     void blitAntiH2(int x, int y, U8CPU a0, U8CPU a1) override;
     void blitAntiV2(int x, int y, U8CPU a0, U8CPU a1) override;
 

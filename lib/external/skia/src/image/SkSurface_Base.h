@@ -9,10 +9,31 @@
 #define SkSurface_Base_DEFINED
 
 #include "include/core/SkCanvas.h"
-#include "include/core/SkDeferredDisplayList.h"
+#include "include/core/SkImage.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkSamplingOptions.h"
+#include "include/core/SkScalar.h"
 #include "include/core/SkSurface.h"
-#include "src/core/SkImagePriv.h"
-#include "src/core/SkSurfacePriv.h"
+#include "include/core/SkTypes.h"
+
+#include <cstdint>
+#include <memory>
+
+class GrBackendSemaphore;
+class GrBackendTexture;
+class GrRecordingContext;
+class SkCapabilities;
+class SkColorSpace;
+class SkPaint;
+class SkPixmap;
+class GrSurfaceCharacterization;
+class SkSurfaceProps;
+enum GrSurfaceOrigin : int;
+enum SkYUVColorSpace : int;
+namespace skgpu { namespace graphite { class Recorder; } }
+struct SkIRect;
+struct SkISize;
+struct SkImageInfo;
 
 class SkSurface_Base : public SkSurface {
 public:
@@ -20,30 +41,36 @@ public:
     SkSurface_Base(const SkImageInfo&, const SkSurfaceProps*);
     ~SkSurface_Base() override;
 
-    virtual GrRecordingContext* onGetRecordingContext();
-    virtual skgpu::graphite::Recorder* onGetRecorder();
-
-#if SK_SUPPORT_GPU
-    virtual GrBackendTexture onGetBackendTexture(BackendHandleAccess);
-    virtual GrBackendRenderTarget onGetBackendRenderTarget(BackendHandleAccess);
-    virtual bool onReplaceBackendTexture(const GrBackendTexture&,
-                                         GrSurfaceOrigin,
-                                         ContentChangeMode,
-                                         TextureReleaseProc,
-                                         ReleaseContext);
-
-    virtual void onResolveMSAA() {}
-
-    /**
-     * Issue any pending surface IO to the current backend 3D API and resolve any surface MSAA.
-     * Inserts the requested number of semaphores for the gpu to signal when work is complete on the
-     * gpu and inits the array of GrBackendSemaphores with the signaled semaphores.
-     */
-    virtual GrSemaphoresSubmitted onFlush(BackendSurfaceAccess access, const GrFlushInfo&,
-                                          const GrBackendSurfaceMutableState*) {
-        return GrSemaphoresSubmitted::kNo;
+    // From SkSurface.h
+    bool replaceBackendTexture(const GrBackendTexture&,
+                               GrSurfaceOrigin,
+                               ContentChangeMode,
+                               TextureReleaseProc,
+                               ReleaseContext) override {
+        return false;
     }
-#endif
+
+    enum class Type {
+        kNull,     // intentionally associating 0 with a null canvas
+        kGanesh,
+        kGraphite,
+        kRaster,
+    };
+
+    // TODO(kjlubick) Android directly subclasses SkSurface_Base for tests, so we
+    // cannot make this a pure virtual. They seem to want a surface that is spy-able
+    // or mockable, so maybe we should provide something like that.
+    virtual Type type() const { return Type::kNull; }
+
+    // True for surfaces instantiated by pixels in CPU memory
+    bool isRasterBacked() const { return this->type() == Type::kRaster; }
+    // True for surfaces instantiated by Ganesh in GPU memory
+    bool isGaneshBacked() const { return this->type() == Type::kGanesh; }
+    // True for surfaces instantiated by Graphite in GPU memory
+    bool isGraphiteBacked() const { return this->type() == Type::kGraphite; }
+
+    virtual GrRecordingContext* onGetRecordingContext() const;
+    virtual skgpu::graphite::Recorder* onGetRecorder() const;
 
     /**
      *  Allocate a canvas that will draw into this surface. We will cache this
@@ -66,13 +93,15 @@ public:
      */
     virtual sk_sp<SkImage> onNewImageSnapshot(const SkIRect* subset = nullptr) { return nullptr; }
 
+    virtual sk_sp<SkImage> onMakeTemporaryImage() { return this->makeImageSnapshot(); }
+
     virtual void onWritePixels(const SkPixmap&, int x, int y) = 0;
 
     /**
      * Default implementation does a rescale/read and then calls the callback.
      */
     virtual void onAsyncRescaleAndReadPixels(const SkImageInfo&,
-                                             const SkIRect& srcRect,
+                                             const SkIRect srcRect,
                                              RescaleGamma,
                                              RescaleMode,
                                              ReadPixelsCallback,
@@ -81,9 +110,10 @@ public:
      * Default implementation does a rescale/read/yuv conversion and then calls the callback.
      */
     virtual void onAsyncRescaleAndReadPixelsYUV420(SkYUVColorSpace,
+                                                   bool readAlpha,
                                                    sk_sp<SkColorSpace> dstColorSpace,
-                                                   const SkIRect& srcRect,
-                                                   const SkISize& dstSize,
+                                                   SkIRect srcRect,
+                                                   SkISize dstSize,
                                                    RescaleGamma,
                                                    RescaleMode,
                                                    ReadPixelsCallback,
@@ -113,7 +143,7 @@ public:
      *
      *  Returns false if the backing cannot be un-shared.
      */
-    virtual bool SK_WARN_UNUSED_RESULT onCopyOnWrite(ContentChangeMode) = 0;
+    [[nodiscard]] virtual bool onCopyOnWrite(ContentChangeMode) = 0;
 
     /**
      *  Signal the surface to remind its backing store that it's mutable again.
@@ -131,11 +161,8 @@ public:
         return false;
     }
 
-    virtual bool onCharacterize(SkSurfaceCharacterization*) const { return false; }
-    virtual bool onIsCompatible(const SkSurfaceCharacterization&) const { return false; }
-    virtual bool onDraw(sk_sp<const SkDeferredDisplayList>, SkIPoint offset) {
-        return false;
-    }
+    virtual bool onCharacterize(GrSurfaceCharacterization*) const { return false; }
+    virtual bool onIsCompatible(const GrSurfaceCharacterization&) const { return false; }
 
     // TODO: Remove this (make it pure virtual) after updating Android (which has a class derived
     // from SkSurface_Base).
@@ -150,11 +177,11 @@ public:
     uint32_t newGenerationID();
 
 private:
-    std::unique_ptr<SkCanvas>   fCachedCanvas;
-    sk_sp<SkImage>              fCachedImage;
+    std::unique_ptr<SkCanvas> fCachedCanvas = nullptr;
+    sk_sp<SkImage>            fCachedImage  = nullptr;
 
     // Returns false if drawing should not take place (allocation failure).
-    bool SK_WARN_UNUSED_RESULT aboutToDraw(ContentChangeMode mode);
+    [[nodiscard]] bool aboutToDraw(ContentChangeMode mode);
 
     // Returns true if there is an outstanding image-snapshot, indicating that a call to aboutToDraw
     // would trigger a copy-on-write.
@@ -162,8 +189,6 @@ private:
 
     friend class SkCanvas;
     friend class SkSurface;
-
-    using INHERITED = SkSurface;
 };
 
 SkCanvas* SkSurface_Base::getCachedCanvas() {
@@ -185,6 +210,14 @@ sk_sp<SkImage> SkSurface_Base::refCachedImage() {
 
     SkASSERT(!fCachedCanvas || fCachedCanvas->getSurfaceBase() == this);
     return fCachedImage;
+}
+
+static inline SkSurface_Base* asSB(SkSurface* surface) {
+    return static_cast<SkSurface_Base*>(surface);
+}
+
+static inline const SkSurface_Base* asConstSB(const SkSurface* surface) {
+    return static_cast<const SkSurface_Base*>(surface);
 }
 
 #endif

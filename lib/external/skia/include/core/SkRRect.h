@@ -10,8 +10,14 @@
 
 #include "include/core/SkPoint.h"
 #include "include/core/SkRect.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkSpan.h"
+#include "include/core/SkTypes.h"
+#include "include/private/base/SkMacros.h"
 
-class SkPath;
+#include <cstdint>
+#include <cstring>
+
 class SkMatrix;
 class SkString;
 
@@ -28,6 +34,7 @@ class SkString;
     If either axis radii is zero or less: radii are stored as zero; corner is square.
     If corner curves overlap, radii are proportionally reduced to fit within bounds.
 */
+SK_BEGIN_REQUIRE_DENSE
 class SK_API SkRRect {
 public:
 
@@ -265,6 +272,10 @@ public:
         @return        x-axis and y-axis radii for one corner
     */
     SkVector radii(Corner corner) const { return fRadii[corner]; }
+    /**
+     * Returns the corner radii for all four corners, in the same order as `Corner`.
+     */
+    SkSpan<const SkVector> radii() const { return SkSpan(fRadii, 4); }
 
     /** Returns bounds. Bounds may have zero width or zero height. Bounds right is
         greater than or equal to left; bounds bottom is greater than or equal to top.
@@ -390,7 +401,7 @@ public:
         @param dy  offset added to rect().fTop and rect().fBottom
         @return    SkRRect bounds offset by (dx, dy), with unchanged corner radii
     */
-    SkRRect SK_WARN_UNUSED_RESULT makeOffset(SkScalar dx, SkScalar dy) const {
+    [[nodiscard]] SkRRect makeOffset(SkScalar dx, SkScalar dy) const {
         return SkRRect(fRect.makeOffset(dx, dy), fRadii, fType);
     }
 
@@ -502,11 +513,11 @@ private:
     SkVector fRadii[4] = {{0, 0}, {0, 0}, {0,0}, {0,0}};
     // use an explicitly sized type so we're sure the class is dense (no uninitialized bytes)
     int32_t fType = kEmpty_Type;
-    // TODO: add padding so we can use memcpy for flattening and not copy uninitialized data
 
     // to access fRadii directly
     friend class SkPath;
     friend class SkRRectPriv;
 };
+SK_END_REQUIRE_DENSE
 
 #endif

@@ -8,12 +8,18 @@
 #ifndef GrGpuResourceCacheAccess_DEFINED
 #define GrGpuResourceCacheAccess_DEFINED
 
+#include "include/private/base/SkAssert.h"
+#include "include/private/gpu/ganesh/GrTypesPriv.h"
+#include "src/gpu/GpuTypesPriv.h"
+#include "src/gpu/ResourceKey.h"
 #include "src/gpu/ganesh/GrGpuResource.h"
 #include "src/gpu/ganesh/GrGpuResourcePriv.h"
 
+#include <cstdint>
+
 namespace skiatest {
-    class Reporter;
-}  // namespace skiatest
+class Reporter;
+}
 
 /**
  * This class allows GrResourceCache increased privileged access to GrGpuResource objects.
@@ -73,13 +79,13 @@ private:
 
     void setTimeWhenResourceBecomePurgeable() {
         SkASSERT(fResource->isPurgeable());
-        fResource->fTimeWhenBecamePurgeable = GrStdSteadyClock::now();
+        fResource->fTimeWhenBecamePurgeable = skgpu::StdSteadyClock::now();
     }
     /**
      * Called by the cache to determine whether this resource should be purged based on the length
      * of time it has been available for purging.
      */
-    GrStdSteadyClock::time_point timeWhenResourceBecamePurgeable() {
+    skgpu::StdSteadyClock::time_point timeWhenResourceBecamePurgeable() {
         SkASSERT(fResource->isPurgeable());
         return fResource->fTimeWhenBecamePurgeable;
     }

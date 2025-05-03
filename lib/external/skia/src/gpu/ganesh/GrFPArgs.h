@@ -8,63 +8,36 @@
 #ifndef GrFPArgs_DEFINED
 #define GrFPArgs_DEFINED
 
-#include "include/core/SkMatrix.h"
+#include "include/private/base/SkAssert.h"
 
 class GrColorInfo;
-class GrRecordingContext;
-class SkMatrixProvider;
 class SkSurfaceProps;
+namespace skgpu::ganesh { class SurfaceDrawContext; }
 
 struct GrFPArgs {
-    GrFPArgs(GrRecordingContext* context,
-             const SkMatrixProvider& matrixProvider,
+    enum class Scope {
+        kDefault,
+        kRuntimeEffect,
+    };
+
+    GrFPArgs(skgpu::ganesh::SurfaceDrawContext* sdc,
              const GrColorInfo* dstColorInfo,
-             const SkSurfaceProps& surfaceProps)
-            : fContext(context)
-            , fMatrixProvider(matrixProvider)
+             const SkSurfaceProps& surfaceProps,
+             Scope scope)
+            : fSurfaceDrawContext(sdc)
             , fDstColorInfo(dstColorInfo)
-            , fSurfaceProps(surfaceProps) {
-        SkASSERT(fContext);
+            , fSurfaceProps(surfaceProps)
+            , fScope(scope) {
+        SkASSERT(fSurfaceDrawContext);
     }
 
-    class WithPreLocalMatrix;
-
-    GrFPArgs withNewMatrixProvider(const SkMatrixProvider& provider) const {
-        GrFPArgs newArgs(fContext, provider, fDstColorInfo, fSurfaceProps);
-        newArgs.fPreLocalMatrix = fPreLocalMatrix;
-        return newArgs;
-    }
-
-    GrRecordingContext* fContext;
-    const SkMatrixProvider& fMatrixProvider;
-
-    const SkMatrix* fPreLocalMatrix  = nullptr;
+    skgpu::ganesh::SurfaceDrawContext* fSurfaceDrawContext;
 
     const GrColorInfo* fDstColorInfo;
 
     const SkSurfaceProps& fSurfaceProps;
-};
 
-class GrFPArgs::WithPreLocalMatrix final : public GrFPArgs {
-public:
-    WithPreLocalMatrix(const GrFPArgs& args, const SkMatrix& lm) : INHERITED(args) {
-        if (!lm.isIdentity()) {
-            if (fPreLocalMatrix) {
-                fStorage.setConcat(lm, *fPreLocalMatrix);
-                fPreLocalMatrix = fStorage.isIdentity() ? nullptr : &fStorage;
-            } else {
-                fPreLocalMatrix = &lm;
-            }
-        }
-    }
-
-private:
-    WithPreLocalMatrix(const WithPreLocalMatrix&) = delete;
-    WithPreLocalMatrix& operator=(const WithPreLocalMatrix&) = delete;
-
-    SkMatrix fStorage;
-
-    using INHERITED = GrFPArgs;
+    Scope fScope;
 };
 
 #endif

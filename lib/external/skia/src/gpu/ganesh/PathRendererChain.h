@@ -8,14 +8,19 @@
 #ifndef PathRendererChain_DEFINED
 #define PathRendererChain_DEFINED
 
-#include "src/gpu/ganesh/PathRenderer.h"
-
+#include "include/core/SkRefCnt.h"
 #include "include/core/SkTypes.h"
-#include "include/private/SkNoncopyable.h"
-#include "include/private/SkTArray.h"
+#include "include/private/base/SkNoncopyable.h"
+#include "include/private/base/SkTArray.h"
 #include "include/private/gpu/ganesh/GrTypesPriv.h"
+#include "src/gpu/ganesh/PathRenderer.h"
+#include "src/gpu/ganesh/ops/AtlasRenderTask.h"  // IWYU pragma: keep
 
-namespace skgpu::v1 {
+#include <cstddef>
+
+class GrRecordingContext;
+
+namespace skgpu::ganesh {
 
 class AtlasPathRenderer;
 
@@ -51,9 +56,7 @@ public:
 
     /** Returns a direct pointer to the atlas path renderer, or null if it is not in the
         chain. */
-    skgpu::v1::AtlasPathRenderer* getAtlasPathRenderer() {
-        return fAtlasPathRenderer;
-    }
+    skgpu::ganesh::AtlasPathRenderer* getAtlasPathRenderer() { return fAtlasPathRenderer; }
 
     /** Returns a direct pointer to the tessellation path renderer, or null if it is not in the
         chain. */
@@ -62,14 +65,13 @@ public:
     }
 
 private:
-    enum {
-        kPreAllocCount = 8,
-    };
-    SkSTArray<kPreAllocCount, sk_sp<PathRenderer>> fChain;
-    AtlasPathRenderer*                             fAtlasPathRenderer = nullptr;
-    PathRenderer*                                  fTessellationPathRenderer = nullptr;
+    static constexpr size_t kPreAllocCount = 8;
+
+    skia_private::STArray<kPreAllocCount, sk_sp<PathRenderer>> fChain;
+    AtlasPathRenderer* fAtlasPathRenderer = nullptr;
+    PathRenderer* fTessellationPathRenderer = nullptr;
 };
 
-} // namespace skgpu::v1
+}  // namespace skgpu::ganesh
 
 #endif // PathRendererChain_DEFINED

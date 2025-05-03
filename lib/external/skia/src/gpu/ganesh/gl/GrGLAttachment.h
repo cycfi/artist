@@ -8,10 +8,21 @@
 #ifndef GrGLMtlAttachment_DEFINED
 #define GrGLMtlAttachment_DEFINED
 
-#include "include/gpu/gl/GrGLInterface.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkSize.h"
+#include "include/gpu/GpuTypes.h"
+#include "include/gpu/ganesh/GrBackendSurface.h"
+#include "include/gpu/ganesh/GrTypes.h"
+#include "include/gpu/ganesh/gl/GrGLTypes.h"
+#include "include/private/base/SkAssert.h"
 #include "src/gpu/ganesh/GrAttachment.h"
 
+#include <string_view>
+
 class GrGLGpu;
+class GrGpu;
+class SkString;
+class SkTraceMemoryDump;
 
 class GrGLAttachment : public GrAttachment {
 public:
@@ -61,14 +72,14 @@ private:
                            dimensions,
                            supportedUsages,
                            sampleCnt,
-                           GrMipmapped::kNo,
+                           skgpu::Mipmapped::kNo,
                            GrProtected::kNo,
                            label)
             , fFormat(format)
             , fRenderbufferID(renderbufferID) {
         SkASSERT(supportedUsages == UsageFlags::kStencilAttachment ||
                  supportedUsages == UsageFlags::kColorAttachment);
-        this->registerWithCache(SkBudgeted::kYes);
+        this->registerWithCache(skgpu::Budgeted::kYes);
     }
 
     void onSetLabel() override;

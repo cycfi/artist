@@ -9,25 +9,35 @@
 #define GrResourceCache_DEFINED
 
 #include "include/core/SkRefCnt.h"
-#include "include/gpu/GrDirectContext.h"
-#include "include/private/SkTArray.h"
-#include "include/private/SkTHash.h"
+#include "include/core/SkTypes.h"
+#include "include/gpu/ganesh/GrDirectContext.h"
+#include "include/private/base/SkDebug.h"
+#include "include/private/base/SkTArray.h"
+#include "include/private/base/SkTDArray.h"
+#include "include/private/base/SkTo.h"
+#include "include/private/gpu/ganesh/GrTypesPriv.h"
+#include "src/base/SkTDPQueue.h"
 #include "src/core/SkMessageBus.h"
-#include "src/core/SkTDPQueue.h"
-#include "src/core/SkTInternalLList.h"
+#include "src/core/SkTDynamicHash.h"
 #include "src/core/SkTMultiMap.h"
+#include "src/gpu/GpuTypesPriv.h"
 #include "src/gpu/ResourceKey.h"
 #include "src/gpu/ganesh/GrGpuResource.h"
 #include "src/gpu/ganesh/GrGpuResourceCacheAccess.h"
 #include "src/gpu/ganesh/GrGpuResourcePriv.h"
 
-class GrCaps;
+#include <cstddef>
+#include <cstdint>
+#include <functional>
+#include <type_traits>
+#include <utility>
+
 class GrProxyProvider;
+class GrSurface;
+class GrThreadSafeCache;
 class SkString;
 class SkTraceMemoryDump;
-class GrTexture;
-class GrThreadSafeCache;
-
+enum class GrPurgeResourceOptions;
 namespace skgpu {
 class SingleOwner;
 }
@@ -92,7 +102,7 @@ public:
      * Returns the number of resources.
      */
     int getResourceCount() const {
-        return fPurgeableQueue.count() + fNonpurgeableResources.count();
+        return fPurgeableQueue.count() + fNonpurgeableResources.size();
     }
 
     /**
@@ -166,19 +176,19 @@ public:
         keys. */
     void purgeAsNeeded();
 
-    // Purge unlocked resources. If 'scratchResourcesOnly' is true the purgeable resources
-    // containing persistent data are spared. If it is false then all purgeable resources will
-    // be deleted.
-    void purgeUnlockedResources(bool scratchResourcesOnly=false) {
-        this->purgeUnlockedResources(/*purgeTime=*/nullptr, scratchResourcesOnly);
+    // Purge unlocked resources. If 'opts' is kScratchResourcesOnly, the purgeable resources
+    // containing persistent data are spared. If it is kAllResources then all purgeable resources
+    // will be deleted.
+    void purgeUnlockedResources(GrPurgeResourceOptions opts) {
+        this->purgeUnlockedResources(/*purgeTime=*/nullptr, opts);
     }
 
-    // Purge unlocked resources not used since the passed point in time. If 'scratchResourcesOnly'
-    // is true the purgeable resources containing persistent data are spared. If it is false then
-    // all purgeable resources older than 'purgeTime' will be deleted.
-    void purgeResourcesNotUsedSince(GrStdSteadyClock::time_point purgeTime,
-                                    bool scratchResourcesOnly=false) {
-        this->purgeUnlockedResources(&purgeTime, scratchResourcesOnly);
+    // Purge unlocked resources not used since the passed point in time. If 'opts' is
+    // kScratchResourcesOnly, the purgeable resources containing persistent data are spared.
+    // If it is kAllResources then all purgeable resources older than 'purgeTime' will be deleted.
+    void purgeResourcesNotUsedSince(skgpu::StdSteadyClock::time_point purgeTime,
+                                    GrPurgeResourceOptions opts) {
+        this->purgeUnlockedResources(&purgeTime, opts);
     }
 
     /** If it's possible to purge enough resources to get the provided amount of budget
@@ -199,10 +209,6 @@ public:
      *                               resource types.
      */
     void purgeUnlockedResources(size_t bytesToPurge, bool preferScratchResources);
-
-    /** Returns true if the cache would like a flush to occur in order to make more resources
-        purgeable. */
-    bool requestsFlush() const;
 
 #if GR_CACHE_STATS
     struct Stats {
@@ -240,18 +246,21 @@ public:
 
     void getStats(Stats*) const;
 
-#if GR_TEST_UTILS
+#if defined(GPU_TEST_UTILS)
     void dumpStats(SkString*) const;
 
-    void dumpStatsKeyValuePairs(SkTArray<SkString>* keys, SkTArray<double>* value) const;
+    void dumpStatsKeyValuePairs(
+            skia_private::TArray<SkString>* keys, skia_private::TArray<double>* value) const;
 #endif
 
 #endif // GR_CACHE_STATS
 
-#if GR_TEST_UTILS
+#if defined(GPU_TEST_UTILS)
     int countUniqueKeysWithTag(const char* tag) const;
 
     void changeTimestamp(uint32_t newTimestamp);
+
+    void visitSurfaces(const std::function<void(const GrSurface*, bool purgeable)>&) const;
 #endif
 
     // Enumerates all cached resources and dumps their details to traceMemoryDump.
@@ -312,8 +321,8 @@ private:
 
     uint32_t getNextTimestamp();
 
-    void purgeUnlockedResources(const GrStdSteadyClock::time_point* purgeTime,
-                                bool scratchResourcesOnly);
+    void purgeUnlockedResources(const skgpu::StdSteadyClock::time_point* purgeTime,
+                                GrPurgeResourceOptions opts);
 
 #ifdef SK_DEBUG
     bool isInCache(const GrGpuResource* r) const;
@@ -386,7 +395,6 @@ private:
     int                                 fBudgetedCount = 0;
     size_t                              fBudgetedBytes = 0;
     size_t                              fPurgeableBytes = 0;
-    int                                 fNumBudgetedResourcesFlushWillMakePurgeable = 0;
 
     InvalidUniqueKeyInbox               fInvalidUniqueKeyInbox;
     UnrefResourceMessage::Bus::Inbox    fUnrefResourceInbox;

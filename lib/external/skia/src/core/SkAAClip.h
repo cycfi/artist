@@ -8,13 +8,19 @@
 #ifndef SkAAClip_DEFINED
 #define SkAAClip_DEFINED
 
-#include "include/core/SkClipOp.h"
+#include "include/core/SkColor.h"
 #include "include/core/SkRect.h"
-#include "src/core/SkAutoMalloc.h"
+#include "include/private/base/SkAssert.h"
+#include "src/base/SkAutoMalloc.h"
 #include "src/core/SkBlitter.h"
+#include <cstdint>
+#include "include/private/base/SkDebug.h"
 
 class SkPath;
 class SkRegion;
+enum class SkClipOp;
+struct SkMask;
+struct SkMaskBuilder;
 
 class SkAAClip {
 public:
@@ -46,7 +52,7 @@ public:
      *  Allocates a mask the size of the aaclip, and expands its data into
      *  the mask, using kA8_Format. Used for tests and visualization purposes.
      */
-    void copyToMask(SkMask*) const;
+    void copyToMask(SkMaskBuilder*) const;
 
     bool quickContains(const SkIRect& r) const {
         return this->quickContains(r.fLeft, r.fTop, r.fRight, r.fBottom);
@@ -100,7 +106,6 @@ public:
     void blitV(int x, int y, int height, SkAlpha alpha) override;
     void blitRect(int x, int y, int width, int height) override;
     void blitMask(const SkMask&, const SkIRect& clip) override;
-    const SkPixmap* justAnOpaqueColor(uint32_t* value) override;
 
 private:
     SkBlitter*      fBlitter;

@@ -8,9 +8,16 @@
 #ifndef GrFixedClip_DEFINED
 #define GrFixedClip_DEFINED
 
+#include "include/core/SkRect.h"
+#include "include/private/base/SkAssert.h"
 #include "src/gpu/ganesh/GrClip.h"
 #include "src/gpu/ganesh/GrScissorState.h"
 #include "src/gpu/ganesh/GrWindowRectsState.h"
+
+class GrAppliedHardClip;
+class GrWindowRectangles;
+enum class GrAA : bool;
+struct SkISize;
 
 /**
  * Implements GrHardClip with scissor and window rectangles.
@@ -30,10 +37,10 @@ public:
 
     void disableScissor() { fScissorState.setDisabled(); }
 
-    bool SK_WARN_UNUSED_RESULT setScissor(const SkIRect& irect) {
+    [[nodiscard]] bool setScissor(const SkIRect& irect) {
         return fScissorState.set(irect);
     }
-    bool SK_WARN_UNUSED_RESULT intersect(const SkIRect& irect) {
+    [[nodiscard]] bool intersect(const SkIRect& irect) {
         return fScissorState.intersect(irect);
     }
 

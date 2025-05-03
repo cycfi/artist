@@ -10,7 +10,21 @@
 
 #include "include/core/SkData.h"
 #include "include/core/SkPixmap.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkRect.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkSize.h"
+#include "include/private/base/SkTLogic.h"
+#include "include/private/base/SkTo.h"
 #include "src/gpu/ganesh/GrImageInfo.h"
+
+#include <cstddef>
+#include <utility>
+
+class GrColorInfo;
+class SkColorSpace;
+enum SkAlphaType : int;
+enum class GrColorType;
 
 template <typename T, typename DERIVED> class GrPixmapBase {
 public:
@@ -88,7 +102,8 @@ public:
     GrPixmap& operator=(const GrPixmap&) = default;
     GrPixmap& operator=(GrPixmap&&) = default;
 
-    GrPixmap(GrImageInfo info, void* addr, size_t rowBytes) : GrPixmapBase(info, addr, rowBytes) {}
+    GrPixmap(GrImageInfo info, void* addr, size_t rowBytes)
+            : GrPixmapBase(std::move(info), addr, rowBytes) {}
 
     /* implicit */ GrPixmap(const SkPixmap& pixmap)
             : GrPixmapBase(pixmap.info(), pixmap.writable_addr(), pixmap.rowBytes()) {}
@@ -135,11 +150,11 @@ public:
             : GrPixmapBase(pixmap.info(), pixmap.addr(), pixmap.rowBytes()) {}
 
     GrCPixmap(GrImageInfo info, const void* addr, size_t rowBytes)
-            : GrPixmapBase(info, addr, rowBytes) {}
+            : GrPixmapBase(std::move(info), addr, rowBytes) {}
 
 private:
     GrCPixmap(GrImageInfo info, sk_sp<SkData> storage, size_t rowBytes)
-            : GrPixmapBase(info, std::move(storage), rowBytes) {}
+            : GrPixmapBase(std::move(info), std::move(storage), rowBytes) {}
 };
 
 #endif

@@ -10,26 +10,31 @@
 
 #include "include/core/SkMaskFilter.h"
 #include "include/core/SkPathEffect.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkScalar.h"
 #include "include/core/SkSpan.h"
+#include "include/core/SkString.h"
+#include "include/core/SkTypeface.h"
+#include "include/core/SkTypes.h"
+#include "include/private/base/SkTemplates.h"
 #include "src/core/SkDescriptor.h"
-#include "src/text/StrikeForGPU.h"
+#include "src/core/SkScalerContext.h"
 
+#include <memory>
 #include <tuple>
 
-#if SK_SUPPORT_GPU || defined(SK_GRAPHITE_ENABLED)
-#include "src/text/gpu/SDFTControl.h"
-
-namespace sktext::gpu {
-class StrikeCache;
-class TextStrike;
-}
-#endif
-
 class SkFont;
+class SkGlyph;
+class SkMatrix;
 class SkPaint;
 class SkStrike;
 class SkStrikeCache;
 class SkSurfaceProps;
+struct SkPackedGlyphID;
+namespace sktext {
+class StrikeForGPU;
+class StrikeForGPUCacheInterface;
+}
 
 class SkStrikeSpec {
 public:
@@ -73,22 +78,7 @@ public:
     // Create a strike spec without a device, and does not switch over to path for large sizes.
     static SkStrikeSpec MakeWithNoDevice(const SkFont& font, const SkPaint* paint = nullptr);
 
-    // Make a strike spec for PDF Vector strikes
-    static SkStrikeSpec MakePDFVector(const SkTypeface& typeface, int* size);
-
-#if SK_SUPPORT_GPU || defined(SK_GRAPHITE_ENABLED)
-    // Create a strike spec for scaled distance field text.
-    static std::tuple<SkStrikeSpec, SkScalar, sktext::gpu::SDFTMatrixRange> MakeSDFT(
-            const SkFont& font,
-            const SkPaint& paint,
-            const SkSurfaceProps& surfaceProps,
-            const SkMatrix& deviceMatrix,
-            const sktext::gpu::SDFTControl& control);
-
-    sk_sp<sktext::gpu::TextStrike> findOrCreateTextStrike(sktext::gpu::StrikeCache* cache) const;
-#endif
-
-    sktext::ScopedStrikeForGPU findOrCreateScopedStrike(
+    sk_sp<sktext::StrikeForGPU> findOrCreateScopedStrike(
             sktext::StrikeForGPUCacheInterface* cache) const;
 
     sk_sp<SkStrike> findOrCreateStrike() const;
@@ -122,12 +112,13 @@ private:
 class SkBulkGlyphMetrics {
 public:
     explicit SkBulkGlyphMetrics(const SkStrikeSpec& spec);
+    ~SkBulkGlyphMetrics();
     SkSpan<const SkGlyph*> glyphs(SkSpan<const SkGlyphID> glyphIDs);
     const SkGlyph* glyph(SkGlyphID glyphID);
 
 private:
     inline static constexpr int kTypicalGlyphCount = 20;
-    SkAutoSTArray<kTypicalGlyphCount, const SkGlyph*> fGlyphs;
+    skia_private::AutoSTArray<kTypicalGlyphCount, const SkGlyph*> fGlyphs;
     sk_sp<SkStrike> fStrike;
 };
 
@@ -143,7 +134,7 @@ public:
 
 private:
     inline static constexpr int kTypicalGlyphCount = 20;
-    SkAutoSTArray<kTypicalGlyphCount, const SkGlyph*> fGlyphs;
+    skia_private::AutoSTArray<kTypicalGlyphCount, const SkGlyph*> fGlyphs;
     sk_sp<SkStrike> fStrike;
 };
 
@@ -157,7 +148,7 @@ public:
 
 private:
     inline static constexpr int kTypicalGlyphCount = 20;
-    SkAutoSTArray<kTypicalGlyphCount, const SkGlyph*> fGlyphs;
+    skia_private::AutoSTArray<kTypicalGlyphCount, const SkGlyph*> fGlyphs;
     sk_sp<SkStrike> fStrike;
 };
 
@@ -172,7 +163,7 @@ public:
 
 private:
     inline static constexpr int kTypicalGlyphCount = 64;
-    SkAutoSTArray<kTypicalGlyphCount, const SkGlyph*> fGlyphs;
+    skia_private::AutoSTArray<kTypicalGlyphCount, const SkGlyph*> fGlyphs;
     sk_sp<SkStrike> fStrike;
 };
 

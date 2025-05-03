@@ -3,6 +3,7 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
+
 #include "../../app.hpp"
 
 #include <GL/gl.h>
@@ -60,9 +61,9 @@ public:
 private:
     //bool m_opaque;
 
-    bool draw(float scale) override
+    bool draw(float scale, SkCanvas *canvas) override
     {
-        render(skia_surf->getCanvas(), scale);
+        render(canvas, scale);
         return animate;
     }
 

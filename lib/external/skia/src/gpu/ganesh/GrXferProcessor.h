@@ -8,16 +8,26 @@
 #ifndef GrXferProcessor_DEFINED
 #define GrXferProcessor_DEFINED
 
-#include "include/gpu/GrTypes.h"
+#include "include/core/SkRefCnt.h"
+#include "include/private/base/SkAssert.h"
+#include "include/private/base/SkMacros.h"
+#include "include/private/base/SkTo.h"
 #include "src/gpu/Blend.h"
+#include "src/gpu/Swizzle.h"
+#include "src/gpu/ganesh/GrCaps.h"
 #include "src/gpu/ganesh/GrNonAtomicRef.h"
 #include "src/gpu/ganesh/GrProcessor.h"
 #include "src/gpu/ganesh/GrProcessorAnalysis.h"
-#include "src/gpu/ganesh/GrSurfaceProxyView.h"
 #include "src/gpu/ganesh/glsl/GrGLSLUniformHandler.h"
 
-class GrGLSLXPFragmentBuilder;
+#include <memory>
+
 class GrGLSLProgramDataManager;
+class GrGLSLXPFragmentBuilder;
+enum GrSurfaceOrigin : int;
+enum class GrClampType;
+enum class SkBlendMode;
+namespace skgpu { class KeyBuilder; }
 struct GrShaderCaps;
 
 /**
@@ -39,13 +49,13 @@ enum class GrXferBarrierFlags {
     kBlend   = 1 << 1,
 };
 
-GR_MAKE_BITFIELD_CLASS_OPS(GrXferBarrierFlags)
+SK_MAKE_BITFIELD_CLASS_OPS(GrXferBarrierFlags)
 
 /**
  * GrXferProcessor is responsible for implementing the xfer mode that blends the src color and dst
  * color, and for applying any coverage. It does this by emitting fragment shader code and
  * controlling the fixed-function blend state. When dual-source blending is available, it may also
- * write a seconday fragment shader output color. GrXferProcessor has two modes of operation:
+ * write a secondary fragment shader output color. GrXferProcessor has two modes of operation:
  *
  * Dst read: When allowed by the backend API, or when supplied a texture of the destination, the
  * GrXferProcessor may read the destination color. While operating in this mode, the subclass only
@@ -225,7 +235,7 @@ public:
          */
         kUnaffectedByDstValue = 0x80,
     };
-    GR_DECL_BITFIELD_CLASS_OPS_FRIENDS(AnalysisProperties);
+    SK_DECL_BITFIELD_CLASS_OPS_FRIENDS(AnalysisProperties);
 
     static sk_sp<const GrXferProcessor> MakeXferProcessor(const GrXPFactory*,
                                                           const GrProcessorAnalysisColor&,
@@ -238,6 +248,8 @@ public:
                                                     const GrProcessorAnalysisCoverage&,
                                                     const GrCaps&,
                                                     GrClampType);
+
+    static const GrXPFactory* FromBlendMode(SkBlendMode);
 
 protected:
     constexpr GrXPFactory() {}
@@ -264,7 +276,7 @@ private:
 #pragma clang diagnostic pop
 #endif
 
-GR_MAKE_BITFIELD_CLASS_OPS(GrXPFactory::AnalysisProperties)
+SK_MAKE_BITFIELD_CLASS_OPS(GrXPFactory::AnalysisProperties)
 
 //////////////////////////////////////////////////////////////////////////////
 

@@ -8,13 +8,13 @@
 #ifndef SkColorSpaceXformSteps_DEFINED
 #define SkColorSpaceXformSteps_DEFINED
 
-#include "include/core/SkAlphaType.h"
 #include "modules/skcms/skcms.h"
-#include "src/core/SkVM.h"
-#include <stdint.h>
+
+#include <cstdint>
 
 class SkColorSpace;
 class SkRasterPipeline;
+enum SkAlphaType : int;
 
 struct SkColorSpaceXformSteps {
 
@@ -25,7 +25,7 @@ struct SkColorSpaceXformSteps {
         bool encode           = false;
         bool premul           = false;
 
-        uint32_t mask() const {
+        constexpr uint32_t mask() const {
             return (unpremul        ?  1 : 0)
                  | (linearize       ?  2 : 0)
                  | (gamut_transform ?  4 : 0)
@@ -34,6 +34,7 @@ struct SkColorSpaceXformSteps {
         }
     };
 
+    SkColorSpaceXformSteps() {}
     SkColorSpaceXformSteps(const SkColorSpace* src, SkAlphaType srcAT,
                            const SkColorSpace* dst, SkAlphaType dstAT);
 
@@ -44,13 +45,12 @@ struct SkColorSpaceXformSteps {
 
     void apply(float rgba[4]) const;
     void apply(SkRasterPipeline*) const;
-    skvm::Color program(skvm::Builder*, skvm::Uniforms*, skvm::Color) const;
 
-    Flags flags;
+    Flags fFlags;
 
-    skcms_TransferFunction srcTF,     // Apply for linearize.
-                           dstTFInv;  // Apply for encode.
-    float src_to_dst_matrix[9];       // Apply this 3x3 column-major matrix for gamut_transform.
+    skcms_TransferFunction fSrcTF,     // Apply for linearize.
+                           fDstTFInv;  // Apply for encode.
+    float fSrcToDstMatrix[9];          // Apply this 3x3 *column*-major matrix for gamut_transform.
 };
 
 #endif//SkColorSpaceXformSteps_DEFINED

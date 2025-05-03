@@ -8,9 +8,14 @@
 #ifndef GrDistanceFieldGenFromVector_DEFINED
 #define GrDistanceFieldGenFromVector_DEFINED
 
-#include "include/core/SkPath.h"
+#if !defined(SK_ENABLE_OPTIMIZE_SIZE)
+
+#include "include/core/SkPathTypes.h"
+
+#include <cstddef>
 
 class SkMatrix;
+class SkPath;
 
 /** Given a vector path, generate the associated distance field.
 
@@ -32,4 +37,6 @@ inline bool IsDistanceFieldSupportedFillType(SkPathFillType fFillType)
             SkPathFillType::kInverseEvenOdd == fFillType);
 }
 
-#endif
+#endif // SK_ENABLE_OPTIMIZE_SIZE
+
+#endif // GrDistanceFieldGenFromVector_DEFINED

@@ -6,17 +6,16 @@
 project(examples)
 
 if (UNIX AND NOT APPLE)
-   find_package(OpenGL REQUIRED COMPONENTS OpenGL)
-   find_package(PkgConfig REQUIRED)
-   
-   option(X_Win "Use x11 window" ON)
+
+  find_package(PkgConfig REQUIRED)
+  find_package(OpenGL REQUIRED)
 
   set(SRC host/linux/skia_app.cpp
           host/linux/skia_context.cpp)
 
-  if (X_Win)
+  if (ARTIST_X11)
     pkg_check_modules(depend REQUIRED IMPORTED_TARGET
-                      x11 glx
+                      x11
                      )
     set(SRC ${SRC}
       host/linux/x11/application.cpp
@@ -24,7 +23,7 @@ if (UNIX AND NOT APPLE)
 
   else()
     pkg_check_modules(depend REQUIRED IMPORTED_TARGET
-                        wayland-client wayland-cursor wayland-egl xkbcommon egl
+                        wayland-client wayland-cursor wayland-egl xkbcommon
                       )
 
     set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -59,8 +58,8 @@ file(
 )
 
 function(add_example name)
-   if (APPLE)
 
+   if (APPLE)
       if (ARTIST_SKIA)
          set(MAIN_APP
             host/macos/skia_app.mm
@@ -134,6 +133,8 @@ function(add_example name)
          PkgConfig::depend
          OpenGL::GL
       )
+
+      # target_link_options(${name} PRIVAT -lz)
 
    endif()
 

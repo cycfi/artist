@@ -8,18 +8,39 @@
 #ifndef GrMeshDrawTarget_DEFINED
 #define GrMeshDrawTarget_DEFINED
 
+#include "include/core/SkRefCnt.h"  // IWYU pragma: keep
+#include "include/private/base/SkTArray.h"
+#include "src/base/SkArenaAlloc.h"
+#include "src/gpu/ganesh/GrAppliedClip.h"
 #include "src/gpu/ganesh/GrDrawIndirectCommand.h"
 #include "src/gpu/ganesh/GrSimpleMesh.h"
 
+#include <cstddef>
+#include <cstdint>
+
 class GrAtlasManager;
+class GrBuffer;
+class GrCaps;
+class GrDeferredUploadTarget;
+class GrDstProxyView;
+class GrGeometryProcessor;
+class GrRenderTargetProxy;
+class GrResourceProvider;
+class GrSurfaceProxy;
+class GrSurfaceProxyView;
 class GrThreadSafeCache;
+enum class GrLoadOp;
+enum class GrPrimitiveType : uint8_t;
+enum class GrXferBarrierFlags;
+
+namespace skgpu::ganesh {
+class SmallPathAtlasMgr;
+}
 
 namespace skgpu {
-    namespace v1 { class SmallPathAtlasMgr; }
-
-    struct IndexWriter;
-    struct VertexWriter;
-} // namespace skgpu
+struct IndexWriter;
+struct VertexWriter;
+}  // namespace skgpu
 
 namespace sktext::gpu {
 class StrikeCache;
@@ -144,12 +165,14 @@ public:
 
     virtual sktext::gpu::StrikeCache* strikeCache() const = 0;
     virtual GrAtlasManager* atlasManager() const = 0;
-    virtual skgpu::v1::SmallPathAtlasMgr* smallPathAtlasManager() const = 0;
+#if !defined(SK_ENABLE_OPTIMIZE_SIZE)
+    virtual skgpu::ganesh::SmallPathAtlasMgr* smallPathAtlasManager() const = 0;
+#endif
 
     // This should be called during onPrepare of a GrOp. The caller should add any proxies to the
     // array it will use that it did not access during a call to visitProxies. This is usually the
     // case for atlases.
-    virtual SkTArray<GrSurfaceProxy*, true>* sampledProxyArray() = 0;
+    virtual skia_private::TArray<GrSurfaceProxy*, true>* sampledProxyArray() = 0;
 
     virtual const GrCaps& caps() const = 0;
 
