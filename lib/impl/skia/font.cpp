@@ -3,7 +3,11 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
+#include "SkData.h"
+#include "ports/SkFontMgr_empty.h"
+
 #include "SkFontTypes.h"
+#include "SkStream.h"
 #include "SkTypeface.h"
 #include "SkFont.h"
 #include "SkFontMetrics.h"
@@ -13,7 +17,6 @@
 #include "include/ports/SkFontMgr_fontconfig.h"
 #include "include/ports/SkFontScanner_FreeType.h"
 #endif
-
 
 #include <artist/font.hpp>
 
@@ -244,8 +247,6 @@ namespace cycfi::artist
       auto [font_map, font_map_mutex] = get_font_map();
       std::lock_guard<std::mutex> lock(font_map_mutex);
 
-      auto fontMgr = SkFontMgr::RefEmpty();
-
       auto match_ptr = match(font_map, descr);
       if (match_ptr)
       {
@@ -255,15 +256,23 @@ namespace cycfi::artist
          }
          else
          {
-            auto face = fontMgr->makeFromFile(match_ptr->file.c_str(), match_ptr->index);
-            _ptr = std::make_shared<SkFont>(face, descr._size);
-            if (_ptr)
-               match_ptr->cached_typeface = sk_ref_sp(_ptr->getTypeface());
+             SkFILEStream input(match_ptr->file.c_str());
+
+             if (input.isValid()){
+                 sk_sp<SkData> font_data = SkData::MakeFromStream(&input, input.getLength());
+                 sk_sp<SkFontMgr> mgr = SkFontMgr_New_Custom_Empty();
+                 sk_sp<SkTypeface> face = mgr->makeFromData(font_data);
+                 _ptr = std::make_shared<SkFont>(face, descr._size);
+                 if (_ptr)
+                     match_ptr->cached_typeface = sk_ref_sp(_ptr->getTypeface());
+             }
          }
       }
 
       if (_ptr)
          return;
+
+      auto fontMgr = SkFontMgr::RefEmpty();
 
       using namespace font_constants;
       int stretch = int(descr._stretch) / 10;

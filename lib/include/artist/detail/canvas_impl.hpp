@@ -3,6 +3,7 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
+
 #if !defined(ARTIST_DETAIL_CANVAS_IMPL_MAY_3_2016)
 #define ARTIST_DETAIL_CANVAS_IMPL_MAY_3_2016
 

@@ -7,6 +7,7 @@
 
 #include "SkBitmap.h"
 #include "SkCodec.h"
+//#include "codec/SkPngDecoder.h"
 #include "SkData.h"
 #include "SkImage.h"
 #include "SkPicture.h"
@@ -14,6 +15,8 @@
 #include "SkCanvas.h"
 #include "SkPictureRecorder.h"
 #include "SkStream.h"
+
+#include "encode/SkPngEncoder.h"
 
 #include "opaque.hpp"
 #include <stdexcept>
@@ -60,6 +63,7 @@ namespace cycfi::artist
       std::unique_ptr<SkCodec> codec = SkCodec::MakeFromData(data);
       if (!codec)
          fail();
+
       SkImageInfo info = codec->getInfo().makeColorType(kN32_SkColorType);
 
       auto& bitmap = std::get<SkBitmap>(*_impl);
@@ -157,18 +161,17 @@ namespace cycfi::artist
 
       std::visit(draw_picture, _impl->base());
 
-      // Make a PNG encoded image using the canvas
-      sk_sp<SkImage> image(surface->makeImageSnapshot());
-      if (!image)
-         fail();
-
-      sk_sp<SkData> png = image->refEncodedData();
-      if (!png)
-         fail();
-
       // write the data to the file specified by filePath
       SkFILEWStream out(path.c_str());
-      out.write(png->data(), png->size());
+
+      SkPixmap pixmap;
+      if (surface->peekPixels(&pixmap)) {
+          if (!SkPngEncoder::Encode(&out, pixmap, {})) {
+            fail();
+          }
+      } else {
+        throw std::runtime_error{"Cannot readback on surface"};
+      }
    }
 
    uint32_t* image::pixels()

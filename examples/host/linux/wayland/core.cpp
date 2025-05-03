@@ -465,7 +465,7 @@ void Seat::bind(wl_registry *reg, uint32_t name, uint32_t version) noexcept
         Logger::error("failed to add seat listener");
 }
 
-Viewport::Viewport(Viewporter const *vpr, NativeSurface const &surface)
+Viewport::Viewport(Viewporter const *vpr, Surface const &surface)
     :Base(vpr ? wp_viewporter_get_viewport(vpr->c_ptr(), surface.c_ptr()) : nullptr)
 {}
 

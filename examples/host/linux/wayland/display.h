@@ -62,11 +62,6 @@ public:
 
         return result;
     }
-
-    virtual ~ProtocolTuple()
-    {
-        std::cerr<<"~GlobalTuple"<<std::endl;
-    }
 };
 
 class Display

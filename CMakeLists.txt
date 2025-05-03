@@ -63,8 +63,7 @@ elseif (ARTIST_QUARTZ_2D AND APPLE)
 endif()
 
 if (UNIX AND NOT APPLE)
-   option(ARTIST_X11 "Use x11 window" ON)
-
+   option(ARTIST_X11 "Use x11 window" OFF)
    if (ARTIST_X11)
       message(STATUS "Building Artist lib for Linux with Skia GLX.")
    else()

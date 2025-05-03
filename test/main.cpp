@@ -636,7 +636,6 @@ void composite_draw(canvas& cnv, point p, canvas::composite_op_enum mode)
       cnv.global_composite_operation(cnv.source_over);
       cnv.fill_style(colors::blue);
       cnv.fill_rect(p.x+20, p.y+20, 60, 60);
-   }
 
    {
       auto save = cnv.new_state();
@@ -652,10 +651,12 @@ void composite_draw(canvas& cnv, point p, canvas::composite_op_enum mode)
       cnv.global_composite_operation(mode);
       cnv.draw(pm, p);
    }
+   }
 
    cnv.fill_style(colors::black);
    cnv.text_align(cnv.center);
    cnv.fill_text(mode_name(mode), p.x+60, p.y+110);
+
 }
 
 void composite_ops(canvas& cnv)
