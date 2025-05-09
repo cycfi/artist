@@ -8,10 +8,13 @@
 
 #include <cmath>
 #include <artist/point.hpp>
+#include <artist/c/affine_transform.h>
+
+typedef affine_transform c_affine_transform;
 
 namespace cycfi::artist
 {
-   struct affine_transform
+   struct affine_transform : c_affine_transform
    {
       constexpr bool                   is_identity() const;
       constexpr affine_transform       translate(double tx, double ty) const;
@@ -36,7 +39,7 @@ namespace cycfi::artist
       double ty   = 0.0;
    };
 
-   constexpr affine_transform affine_identity;
+   constexpr affine_transform affine_identity = { 1.0, 0.0, 0.0, 1.0, 0.0, 0.0 };
 
    constexpr affine_transform make_translation(double tx, double ty);
    constexpr affine_transform make_scale(double sx, double sy);
