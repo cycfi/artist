@@ -8,13 +8,10 @@
 #include <SkTypeface.h>
 #include <cmath>
 
-#if defined(_MSC_VER)
-extern "C"
+#if defined(_MSC_VER) && _MSC_VER < 1900  // VS < 2015 lacked roundf
+static inline float roundf(float x)
 {
-   float roundf(float x)
-   {
-      return x >= 0.0f ? floorf(x + 0.5f) : ceilf(x - 0.5f);
-   }
+   return x >= 0.0f ? floorf(x + 0.5f) : ceilf(x - 0.5f);
 }
 #endif
 
