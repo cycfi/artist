@@ -98,11 +98,12 @@ if (ARTIST_SKIA)
       if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
          set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows/msvc/x86_64/src/prebuilt_binaries)
          if (CMAKE_BUILD_TYPE STREQUAL "Release")
-            set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/windows/skia/msvc/x86_64/x86_64.zip)
-            set(ARTIST_BINARIES_MD5 93b0a532f87c1068bc2adabf19da086d)
-            set(ARTIST_BINARIES_PREFIX windows/msvc/x86_64)
+            message(WARNING "Warning: Not supported")
+            # set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/windows/skia/msvc/x86_64/x86_64.zip)
+            # set(ARTIST_BINARIES_MD5 93b0a532f87c1068bc2adabf19da086d)
+            # set(ARTIST_BINARIES_PREFIX windows/msvc/x86_64)
          else()
-            set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/windows/skia/msvc/x86_64-dbg/x86_64-dbg.zip)
+            set(ARTIST_BINARIES_URL https://github.com/silovaa/artist/raw/prebuilt_binaries_0.141/windows/skia/msvc/x86_64/skia.zip)
             set(ARTIST_BINARIES_MD5 b2e5f3927c3b6b3f41ca1c51c8b6a55f)
             set(ARTIST_BINARIES_PREFIX windows/msvc/x86_64)
          endif()
@@ -110,21 +111,22 @@ if (ARTIST_SKIA)
          if (CMAKE_BUILD_TYPE STREQUAL "Debug")
             message(WARNING "Warning: There are no precompiled binaries built using MTd for Clang. Use MT.")
          endif()
-         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows/clang/x86_64/src/prebuilt_binaries)
-         set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/windows/skia/clang/x86_64/x86_64.zip)
-         set(ARTIST_BINARIES_MD5 b2bc06c19cd61f93505b7e37eaf489db)
-         set(ARTIST_BINARIES_PREFIX windows/clang/x86_64)
+         message(WARNING "Warning: Not supported")
+         # set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows/clang/x86_64/src/prebuilt_binaries)
+         # set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/windows/skia/clang/x86_64/x86_64.zip)
+         # set(ARTIST_BINARIES_MD5 b2bc06c19cd61f93505b7e37eaf489db)
+         # set(ARTIST_BINARIES_PREFIX windows/clang/x86_64)
       endif()
 
       set(SKIA_LIBRARIES
          ${ARTIST_BINARIES}/skia.lib
          ${ARTIST_BINARIES}/harfbuzz.lib
-         ${ARTIST_BINARIES}/fontconfig.lib
-         ${ARTIST_BINARIES}/freetype.lib
-         ${ARTIST_BINARIES}/bz2.lib
-         ${ARTIST_BINARIES}/brotlicommon.lib
-         ${ARTIST_BINARIES}/brotlienc.lib
-         ${ARTIST_BINARIES}/brotlidec.lib
+         #${ARTIST_BINARIES}/fontconfig.lib
+         #${ARTIST_BINARIES}/freetype.lib
+         #${ARTIST_BINARIES}/bz2.lib
+         #${ARTIST_BINARIES}/brotlicommon.lib
+         #${ARTIST_BINARIES}/brotlienc.lib
+         #${ARTIST_BINARIES}/brotlidec.lib
          ${ARTIST_BINARIES}/libjpeg.lib
          ${ARTIST_BINARIES}/libpng.lib
          ${ARTIST_BINARIES}/libwebp_sse41.lib
@@ -159,14 +161,14 @@ if (ARTIST_SKIA)
       if (ARTIST_X11)
          set(BINARIES_NAME libskia.a.zip)
       else()
-         set(BINARIES_NAME libskia-egl.a.zip)
+         set(BINARIES_NAME libskia_egl.a.zip)
       endif()
 
       if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
          set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/linux/gcc/x86_64/src/prebuilt_binaries)
          #set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/linux/skia/gcc/x86_64/${BINARIES_NAME})
          set(ARTIST_BINARIES_URL 
-            https://github.com/silovaa/artist/raw/prebuilt_binaries_0.136/linux/skia/gcc/x86_64/${BINARIES_NAME})
+            https://github.com/silovaa/artist/raw/prebuilt_binaries_0.141/linux/skia/gcc/x86_64/${BINARIES_NAME})
          if (ARTIST_X11)
             set(ARTIST_BINARIES_MD5 86f4a55a53427e1c523412e6e5e0af93)
          else()
@@ -176,7 +178,7 @@ if (ARTIST_SKIA)
       elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
          set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/linux/clang/x86_64/src/prebuilt_binaries)
          set(ARTIST_BINARIES_URL 
-            https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/linux/skia/clang/x86_64/${BINARIES_NAME})
+            https://github.com/silovaa/artist/raw/prebuilt_binaries_0.141/linux/skia/clang/x86_64/${BINARIES_NAME})
          if (ARTIST_X11)
             set(ARTIST_BINARIES_MD5 922c69f6fd38772c3c23da1f3d90b449)
          else()
