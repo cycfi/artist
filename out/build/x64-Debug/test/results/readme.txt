@@ -1,1 +1,0 @@
-This directory will contain image files generated when the tests are run.

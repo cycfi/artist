@@ -7,6 +7,7 @@
 ## Build generated
 _build/
 DerivedData/
+out/
 
 ## Various settings
 *.pbxuser
