@@ -27,10 +27,15 @@ class SkBlitter;
 class SkImageFilter;
 class SkCachedData;
 class SkMatrix;
+class SkResourceCache;
 class SkPath;
 class SkRRect;
 class SkRasterClip;
 enum SkBlurStyle : int;
+
+namespace skcpu {
+class Draw;
+}
 
 class SkMaskFilterBase : public SkMaskFilter {
 public:
@@ -158,25 +163,30 @@ protected:
     virtual FilterReturn filterRectsToNine(SkSpan<const SkRect>,
                                            const SkMatrix&,
                                            const SkIRect& clipBounds,
-                                           std::optional<NinePatch>*) const;
+                                           std::optional<NinePatch>*,
+                                           SkResourceCache*) const;
     /**
      *  Similar to filterRectsToNine, except it performs the work on a round rect.
      */
     virtual std::optional<NinePatch> filterRRectToNine(const SkRRect&,
                                                        const SkMatrix&,
-                                                       const SkIRect& clipBounds) const;
+                                                       const SkIRect& clipBounds,
+                                                       SkResourceCache*) const;
 
 private:
-    friend class SkDraw;
-    friend class SkDrawBase;
+    friend class skcpu::Draw;
 
     /** Helper method that, given a path in device space, will rasterize it into a kA8_Format mask
      and then call filterMask(). If this returns true, the specified blitter will be called
      to render that mask. Returns false if filterMask() returned false.
      This method is not exported to java.
      */
-    bool filterPath(const SkPath& devPath, const SkMatrix& ctm, const SkRasterClip&, SkBlitter*,
-                    SkStrokeRec::InitStyle) const;
+    bool filterPath(const SkPath& devPath,
+                    const SkMatrix& ctm,
+                    const SkRasterClip&,
+                    SkBlitter*,
+                    SkStrokeRec::InitStyle,
+                    SkResourceCache*) const;
 
     /** Helper method that, given a roundRect in device space, will rasterize it into a kA8_Format
      mask and then call filterMask(). If this returns true, the specified blitter will be called
@@ -185,7 +195,14 @@ private:
     bool filterRRect(const SkRRect& devRRect,
                      const SkMatrix& ctm,
                      const SkRasterClip&,
-                     SkBlitter*) const;
+                     SkBlitter*,
+                     SkResourceCache*) const;
+
+    FilterReturn filterRects(SkSpan<const SkRect> devRects,
+                     const SkMatrix& ctm,
+                     const SkRasterClip& clip,
+                     SkBlitter* blitter,
+                     SkResourceCache* cache) const;
 };
 
 inline SkMaskFilterBase* as_MFB(SkMaskFilter* mf) {

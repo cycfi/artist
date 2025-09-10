@@ -10,6 +10,7 @@
 
 #include "include/core/SkImage.h"
 #include "include/core/SkRefCnt.h"
+#include "include/core/SkSize.h"
 #include "include/core/SkSpan.h"
 #include "include/core/SkTypes.h"
 #include "include/gpu/graphite/GraphiteTypes.h"
@@ -35,7 +36,11 @@ class SkColorSpace;
 class SkTraceMemoryDump;
 struct SkIRect;
 struct SkImageInfo;
-struct SkISize;
+
+namespace skcpu {
+class ContextImpl;
+class Recorder;
+}  // namespace skcpu
 
 namespace skgpu {
 enum class BackendApi : unsigned int;
@@ -67,13 +72,14 @@ public:
     BackendApi backend() const;
 
     std::unique_ptr<Recorder> makeRecorder(const RecorderOptions& = {});
+    std::unique_ptr<skcpu::Recorder> makeCPURecorder();
 
     /** Creates a helper object that can be moved to a different thread and used
      *  for precompilation.
      */
     std::unique_ptr<PrecompileContext> makePrecompileContext();
 
-    bool insertRecording(const InsertRecordingInfo&);
+    InsertStatus insertRecording(const InsertRecordingInfo&);
     bool submit(SyncToCpu = SyncToCpu::kNo);
 
     /** Returns true if there is work that was submitted to the GPU that has not finished. */
@@ -271,6 +277,19 @@ public:
      */
     GpuStatsFlags supportedGpuStats() const;
 
+    /*
+     * TODO (b/412351769): Do not use startCapture() or endCapture() as the feature is still under
+     * development.
+     *
+     * Starts the SkCapture. Must have set ContextOptions::fEnableCapture to start.
+     */
+    void startCapture();
+
+    /*
+     * Ends the SkCapture and returns the collected draws and surface creation.
+     */
+    void endCapture();
+
     // Provides access to functions that aren't part of the public API.
     ContextPriv priv();
     const ContextPriv priv() const;  // NOLINT(readability-const-return-type)
@@ -374,6 +393,7 @@ private:
     std::unique_ptr<ResourceProvider> fResourceProvider;
     std::unique_ptr<QueueManager> fQueueManager;
     std::unique_ptr<ClientMappedBufferManager> fMappedBufferManager;
+    std::unique_ptr<const skcpu::ContextImpl> fCPUContext;
 
     // In debug builds we guard against improper thread handling. This guard is passed to the
     // ResourceCache for the Context.

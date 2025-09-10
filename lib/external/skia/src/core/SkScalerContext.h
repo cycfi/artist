@@ -12,6 +12,7 @@
 #include "include/core/SkFourByteTag.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPaint.h"
+#include "include/core/SkPath.h"
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkScalar.h"
@@ -30,6 +31,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 
 class SkArenaAlloc;
 class SkAutoDescriptor;
@@ -37,7 +39,6 @@ class SkDescriptor;
 class SkDrawable;
 class SkFont;
 class SkMaskFilter;
-class SkPath;
 class SkPathEffect;
 enum class SkFontHinting;
 struct SkFontMetrics;
@@ -167,9 +168,9 @@ public:
         return msg;
     }
 
-    void    getMatrixFrom2x2(SkMatrix*) const;
-    void    getLocalMatrix(SkMatrix*) const;
-    void    getSingleMatrix(SkMatrix*) const;
+    SkMatrix getMatrixFrom2x2() const;
+    SkMatrix getLocalMatrix() const;
+    SkMatrix getSingleMatrix() const;
 
     /** The kind of scale which will be applied by the underlying port (pre-matrix). */
     enum class PreMatrixScale {
@@ -383,6 +384,10 @@ public:
 protected:
     const SkScalerContextRec fRec;
 
+    struct GeneratedPath {
+        SkPath path;
+        bool modified;
+    };
     struct GlyphMetrics {
         SkVector       advance;
         SkRect         bounds;
@@ -390,7 +395,7 @@ protected:
         uint16_t       extraBits;
         bool           neverRequestPath;
         bool           computeFromPath;
-
+        std::optional<GeneratedPath> generatedPath;
         GlyphMetrics(SkMask::Format format)
             : advance{0, 0}
             , bounds{0, 0, 0, 0}
@@ -398,6 +403,7 @@ protected:
             , extraBits(0)
             , neverRequestPath(false)
             , computeFromPath(false)
+            , generatedPath{std::nullopt}
         {}
     };
 
@@ -424,12 +430,10 @@ protected:
         bool doBGR, bool verticalLCD, bool a8FromLCD, bool hairline);
     void generateImageFromPath(const SkGlyph& glyph, void* imageBuffer);
 
-    /** Sets the passed path to the glyph outline.
-     *  If this cannot be done the path is set to empty;
+    /** Return the glyph's outline, or if the glyph cannot be converted to one, return {}.
      *  Does not apply subpixel positioning to the path.
-     *  @return false if this glyph does not have any path.
      */
-    [[nodiscard]] virtual bool generatePath(const SkGlyph&, SkPath*, bool* modified) = 0;
+    [[nodiscard]] virtual std::optional<GeneratedPath> generatePath(const SkGlyph&) = 0;
 
     /** Returns the drawable for the glyph (if any).
      *
@@ -467,7 +471,7 @@ private:
     // calling generateImage.
     const bool fGenerateImageFromPath;
 
-    void internalGetPath(SkGlyph&, SkArenaAlloc*);
+    void internalGetPath(SkGlyph&, SkArenaAlloc*, std::optional<GeneratedPath>&&);
     SkGlyph internalMakeGlyph(SkPackedGlyphID, SkMask::Format, SkArenaAlloc*);
 
 protected:

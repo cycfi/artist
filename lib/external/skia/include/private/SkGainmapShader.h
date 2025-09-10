@@ -34,11 +34,17 @@ public:
      *  map to the rectangle dstRect. Sampling will be done according to gainmapSamplingOptions.
      *
      *  The gainmap will be applied according to the HDR to SDR ratio specified in dstHdrRatio.
-     *
-     *  This shader must know the color space of the canvas that it will be rendered to. This color
-     *  space must be specified in dstColorSpace.
-     *  TODO(ccameron): Remove the need for dstColorSpace.
      */
+    static sk_sp<SkShader> Make(const sk_sp<const SkImage>& baseImage,
+                                const SkRect& baseRect,
+                                const SkSamplingOptions& baseSamplingOptions,
+                                const sk_sp<const SkImage>& gainmapImage,
+                                const SkRect& gainmapRect,
+                                const SkSamplingOptions& gainmapSamplingOptions,
+                                const SkGainmapInfo& gainmapInfo,
+                                const SkRect& dstRect,
+                                float dstHdrRatio);
+
     static sk_sp<SkShader> Make(const sk_sp<const SkImage>& baseImage,
                                 const SkRect& baseRect,
                                 const SkSamplingOptions& baseSamplingOptions,

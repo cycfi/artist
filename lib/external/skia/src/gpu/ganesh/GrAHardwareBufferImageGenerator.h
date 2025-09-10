@@ -12,6 +12,7 @@
 
 class GrGpuResource;
 class GrSurfaceProxyView;
+class SkRecorder;
 
 extern "C" {
     typedef struct AHardwareBuffer AHardwareBuffer;
@@ -42,7 +43,7 @@ private:
                                     bool isProtectedContent, uint32_t bufferFormat,
                                     GrSurfaceOrigin surfaceOrigin);
 
-    bool onIsValid(GrRecordingContext*) const override;
+    bool onIsValid(SkRecorder*) const override;
 
     GrSurfaceProxyView onGenerateTexture(GrRecordingContext*,
                                          const SkImageInfo&,

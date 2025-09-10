@@ -9,6 +9,7 @@
 #define skgpu_graphite_ContextOptions_DEFINED
 
 #include "include/core/SkRefCnt.h"
+#include "include/core/SkSize.h"
 #include "include/core/SkSpan.h"
 #include "include/private/base/SkAPI.h"
 #include "include/private/base/SkMath.h"
@@ -16,6 +17,7 @@
 #include <optional>
 
 class SkData;
+class SkExecutor;
 class SkRuntimeEffect;
 namespace skgpu { class ShaderErrorHandler; }
 
@@ -46,6 +48,23 @@ struct SK_API ContextOptions {
      * If <= 1, Graphite will disable internal code paths that use multisampling.
      */
     uint8_t fInternalMultisampleCount = 4;
+
+    /**
+     * If set, this specifies the max width/height of MSAA textures that Graphite should use for
+     * internal draws. Graphite might have to break the drawing region into multiple tiles to
+     * satisfy the size constraint.
+     * Note: this option will be ignored if the backend doesn't support it, or if a more optimal HW
+     * feature is available.
+     */
+    std::optional<SkISize> fInternalMSAATileSize = std::nullopt;
+
+    /**
+     * If set, paths that are smaller than this size (in device space) will avoid MSAA techniques,
+     * even if MSAA is otherwise enabled via `fInternalMultisampleCount`. This should be smaller
+     * than `fGlyphsAsPathsFontSize` or large glyphs will not correctly avoid higher memory
+     * overhead.
+     */
+    float fMinimumPathSizeForMSAA = 0;
 
     /**
      * Will the client make sure to only ever be executing one thread that uses the Context and all
@@ -160,6 +179,23 @@ struct SK_API ContextOptions {
      * This includes adding, removing or reordering the effects provided here.
      */
     SkSpan<sk_sp<SkRuntimeEffect>> fUserDefinedKnownRuntimeEffects;
+
+    /**
+     * Executor to handle threaded work within Graphite. If this is nullptr, then all work will be
+     * done serially on the main thread. To have worker threads assist with various tasks, set this
+     * to a valid SkExecutor instance. Currently, used for Pipeline compilation, but may be used
+     * for other tasks. It is up to the client to ensure the SkExecutor remains valid throughout
+     * the lifetime of the Context.
+     */
+    SkExecutor* fExecutor = nullptr;
+
+    /**
+     * An experimental flag in development. Behavior and performance is subject to change.
+     *
+     * Enables the use of startCapture and endCapture functions. Calling these APIs will capture all
+     * draw calls and surface creation from Recorders spawned from the Context.
+     */
+     bool fEnableCapture = false;
 
     /**
      * Private options that are only meant for testing within Skia's tools.

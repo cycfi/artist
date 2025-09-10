@@ -11,6 +11,7 @@
 #include "include/core/SkBitmap.h"
 #include "include/core/SkImage.h"
 #include "include/core/SkPixelRef.h"
+#include "include/core/SkRecorder.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkTypes.h"
 #include "include/private/base/SkTo.h"
@@ -23,7 +24,6 @@
 #include <utility>
 
 class GrDirectContext;
-class GrRecordingContext;
 class SkColorSpace;
 class SkData;
 class SkPixmap;
@@ -31,8 +31,6 @@ class SkSurface;
 enum SkColorType : int;
 struct SkIRect;
 struct SkImageInfo;
-
-namespace skgpu { namespace graphite { class Recorder; } }
 
 class SkImage_Raster : public SkImage_Base {
 public:
@@ -42,7 +40,19 @@ public:
     ~SkImage_Raster() override;
 
     // From SkImage.h
-    bool isValid(GrRecordingContext* context) const override { return true; }
+    bool isValid(SkRecorder* recorder) const override {
+        if (!recorder) {
+            return false;
+        }
+        if (!recorder->cpuRecorder()) {
+            return false;
+        }
+        return true;
+    }
+    sk_sp<SkImage> makeColorTypeAndColorSpace(SkRecorder*,
+                                              SkColorType targetColorType,
+                                              sk_sp<SkColorSpace> targetColorSpace,
+                                              RequiredProperties) const override;
 
     // From SkImage_Base.h
     bool onReadPixels(GrDirectContext*, const SkImageInfo&, void*, size_t, int srcX, int srcY,
@@ -51,19 +61,14 @@ public:
     const SkBitmap* onPeekBitmap() const override { return &fBitmap; }
 
     bool getROPixels(GrDirectContext*, SkBitmap*, CachingHint) const override;
-    sk_sp<SkImage> onMakeSubset(GrDirectContext*, const SkIRect&) const override;
-    sk_sp<SkImage> onMakeSubset(skgpu::graphite::Recorder*,
-                                const SkIRect&,
-                                RequiredProperties) const override;
 
-    sk_sp<SkSurface> onMakeSurface(skgpu::graphite::Recorder*, const SkImageInfo&) const override;
+    sk_sp<SkImage> onMakeSubset(SkRecorder*, const SkIRect&, RequiredProperties) const override;
+
+    sk_sp<SkSurface> onMakeSurface(SkRecorder*, const SkImageInfo&) const final;
 
     SkPixelRef* getPixelRef() const { return fBitmap.pixelRef(); }
 
     bool onAsLegacyBitmap(GrDirectContext*, SkBitmap*) const override;
-
-    sk_sp<SkImage> onMakeColorTypeAndColorSpace(SkColorType, sk_sp<SkColorSpace>,
-                                                GrDirectContext*) const override;
 
     sk_sp<SkImage> onReinterpretColorSpace(sk_sp<SkColorSpace>) const override;
 
@@ -100,7 +105,6 @@ public:
     SkImage_Base::Type type() const override { return SkImage_Base::Type::kRaster; }
 
     SkBitmap bitmap() const { return fBitmap; }
-
 private:
     SkBitmap fBitmap;
 };

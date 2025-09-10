@@ -8,6 +8,8 @@
 #ifndef skgpu_graphite_Recorder_DEFINED
 #define skgpu_graphite_Recorder_DEFINED
 
+#include "include/core/SkCPURecorder.h"
+#include "include/core/SkRecorder.h"
 #include "include/core/SkRefCnt.h"
 #include "include/gpu/graphite/GraphiteTypes.h"
 #include "include/gpu/graphite/Recording.h"
@@ -49,6 +51,7 @@ class BackendTexture;
 class Context;
 class Device;
 class DrawBufferManager;
+class FloatStorageManager;
 class ImageProvider;
 class ProxyReadCountMap;
 class RecorderPriv;
@@ -56,13 +59,11 @@ class ResourceProvider;
 class RuntimeEffectDictionary;
 class SharedContext;
 class TaskList;
-class TextureDataBlock;
 class TextureInfo;
 class UploadBufferManager;
 class UploadList;
 
-template<typename T> class PipelineDataCache;
-using TextureDataCache = PipelineDataCache<TextureDataBlock>;
+struct RecorderOptionsPriv;
 
 struct SK_API RecorderOptions final {
     RecorderOptions();
@@ -75,21 +76,27 @@ struct SK_API RecorderOptions final {
     // What is the budget for GPU resources allocated and held by this Recorder.
     size_t fGpuBudgetInBytes = kDefaultRecorderBudget;
     // If Recordings are known to be played back in the order they are recorded, then Graphite
-    // may be able to make certain assuptions that improve performance. This is often the case
+    // may be able to make certain assumptions that improve performance. This is often the case
     // if the content being drawn triggers the use of internal atlasing in Graphite (e.g. text).
     std::optional<bool> fRequireOrderedRecordings;
+
+    // Private options that are only meant for testing within Skia's tools.
+    RecorderOptionsPriv* fRecorderOptionsPriv = nullptr;
 };
 
-class SK_API Recorder final {
+class SK_API Recorder final : public SkRecorder {
 public:
     Recorder(const Recorder&) = delete;
     Recorder(Recorder&&) = delete;
     Recorder& operator=(const Recorder&) = delete;
     Recorder& operator=(Recorder&&) = delete;
 
-    ~Recorder();
+    ~Recorder() override;
 
     BackendApi backend() const;
+
+    Type type() const override { return SkRecorder::Type::kGraphite; }
+    skcpu::Recorder* cpuRecorder() override;
 
     std::unique_ptr<Recording> snap();
 
@@ -265,19 +272,22 @@ private:
     void registerDevice(sk_sp<Device>);
     void deregisterDevice(const Device*);
 
+    SkCanvas* makeCaptureCanvas(SkCanvas*) override;
+
     sk_sp<SharedContext> fSharedContext;
     ResourceProvider* fResourceProvider; // May point to the Context's resource provider
     std::unique_ptr<ResourceProvider> fOwnedResourceProvider; // May be null
-    std::unique_ptr<RuntimeEffectDictionary> fRuntimeEffectDict;
+
+    sk_sp<RuntimeEffectDictionary> fRuntimeEffectDict;
 
     // NOTE: These are stored by pointer to allow them to be forward declared.
     std::unique_ptr<TaskList> fRootTaskList;
     // Aggregated one-time uploads that preceed all tasks in the root task list.
     std::unique_ptr<UploadList> fRootUploads;
 
-    std::unique_ptr<TextureDataCache> fTextureDataCache;
     std::unique_ptr<DrawBufferManager> fDrawBufferManager;
     std::unique_ptr<UploadBufferManager> fUploadBufferManager;
+    sk_sp<FloatStorageManager> fFloatStorageManager;
     std::unique_ptr<ProxyReadCountMap> fProxyReadCounts;
 
     // Iterating over tracked devices in flushTrackedDevices() needs to be re-entrant and support
