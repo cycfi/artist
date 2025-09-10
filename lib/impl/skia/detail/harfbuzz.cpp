@@ -68,12 +68,12 @@ namespace cycfi::artist::detail
          if (_font)
          {
             hb_ot_font_set_funcs(_font.get());
-            int axis_count = tf->getVariationDesignPosition(nullptr, 0);
+            int axis_count = tf->getVariationDesignPosition(nullptr);
             if (axis_count > 0)
             {
                skia_private::AutoSTMalloc<4, SkFontArguments::VariationPosition::Coordinate> axis_values(axis_count);
 
-               if (tf->getVariationDesignPosition(axis_values, axis_count) == axis_count)
+               if (tf->getVariationDesignPosition(axis_values) == axis_count)
                {
                   hb_font_set_variations(
                      _font.get()
