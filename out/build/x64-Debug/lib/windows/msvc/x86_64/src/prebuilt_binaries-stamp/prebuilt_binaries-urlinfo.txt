@@ -1,0 +1,12 @@
+# This is a generated file and its contents are an internal implementation detail.
+# The download step will be re-executed if anything in this file changes.
+# No other meaning or use of this file is supported.
+
+method=url
+command=C:/Program Files/Microsoft Visual Studio/2022/Professional/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;E:/source/repos/silovaa/artist/out/build/x64-Debug/lib/windows/msvc/x86_64/src/prebuilt_binaries-stamp/download-prebuilt_binaries.cmake;COMMAND;C:/Program Files/Microsoft Visual Studio/2022/Professional/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;E:/source/repos/silovaa/artist/out/build/x64-Debug/lib/windows/msvc/x86_64/src/prebuilt_binaries-stamp/verify-prebuilt_binaries.cmake;COMMAND;C:/Program Files/Microsoft Visual Studio/2022/Professional/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;E:/source/repos/silovaa/artist/out/build/x64-Debug/lib/windows/msvc/x86_64/src/prebuilt_binaries-stamp/extract-prebuilt_binaries.cmake
+source_dir=E:/source/repos/silovaa/artist/out/build/x64-Debug/lib/windows/msvc/x86_64/src/prebuilt_binaries
+work_dir=E:/source/repos/silovaa/artist/out/build/x64-Debug/lib/windows/msvc/x86_64/src
+url(s)=https://github.com/silovaa/artist/raw/prebuilt_binaries_0.141/windows/skia/msvc/x86_64/skia.zip
+hash=MD5=d8d4624a5e7a5c0289d7edfdabc538e2
+      no_extract=
+
