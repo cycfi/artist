@@ -206,10 +206,12 @@ namespace cycfi::artist
             for (std::size_t j = 0; j != glyph_count; ++j)
                line_glyphs[j] = glyphs_info.glyphs[glyph_start + j].codepoint;
 
+            SkSpan<const SkScalar> xpos(positions.data(), positions.size());
+
             auto text_blob = SkTextBlob::MakeFromPosTextH(
                line_glyphs.data()
                , line_glyphs.size() * sizeof(SkGlyphID)
-               , positions.data(), 0
+               , xpos, 0
                , *_font.impl()
                , SkTextEncoding::kGlyphID
             );

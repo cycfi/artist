@@ -68,19 +68,20 @@ namespace cycfi::artist::detail
          if (_font)
          {
             hb_ot_font_set_funcs(_font.get());
-            int axis_count = tf->getVariationDesignPosition(nullptr);
+             SkSpan<SkFontArguments::VariationPosition::Coordinate> coordinates;
+            int axis_count = tf->getVariationDesignPosition(coordinates);
             if (axis_count > 0)
             {
-               skia_private::AutoSTMalloc<4, SkFontArguments::VariationPosition::Coordinate> axis_values(axis_count);
+               // skia_private::AutoSTMalloc<4, SkFontArguments::VariationPosition::Coordinate> axis_values(axis_count);
 
-               if (tf->getVariationDesignPosition(axis_values) == axis_count)
-               {
+               // if (tf->getVariationDesignPosition(axis_values) == axis_count)
+               // {
                   hb_font_set_variations(
                      _font.get()
-                  , reinterpret_cast<hb_variation_t*>(axis_values.get())
+                  , reinterpret_cast<hb_variation_t*>(coordinates.data())
                   , axis_count
                   );
-               }
+               //}
             }
          }
          hb_face_destroy(face);

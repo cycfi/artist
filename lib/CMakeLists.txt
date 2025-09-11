@@ -159,9 +159,9 @@ if (ARTIST_SKIA)
    elseif (UNIX)
 
       if (ARTIST_X11)
-         set(BINARIES_NAME libskia.a.zip)
+         set(BINARIES_NAME skia.a.zip)
       else()
-         set(BINARIES_NAME libskia_egl.a.zip)
+         set(BINARIES_NAME skia_egl.a.zip)
       endif()
 
       if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
