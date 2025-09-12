@@ -25,9 +25,9 @@ std::unique_ptr<WindowContext> MakeGraphiteVulkanForWin(HWND, std::unique_ptr<co
 #endif
 #endif
 
-#ifdef SK_GL
+//#ifdef SK_GL
 std::unique_ptr<WindowContext> MakeGLForWin(HWND, std::unique_ptr<const DisplayParams>);
-#endif
+//#endif
 
 #ifdef SK_ANGLE
 std::unique_ptr<WindowContext> MakeANGLEForWin(HWND, std::unique_ptr<const DisplayParams>);
