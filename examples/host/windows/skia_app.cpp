@@ -13,7 +13,7 @@
 #include <windows.h>
 #include <gl/gl.h>
 
-#include <gl/GrGLInterface.h>
+#include <gpu/ganesh/gl/GrGLInterface.h>
 #include <SkImage.h>
 #include <SkSurface.h>
 #include <SkCanvas.h>
@@ -98,7 +98,9 @@ window::window(extent size, color bkd, bool animate)
 
    SetWindowLongPtrW(WND, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
-   _skia_context = skwindow::MakeGLForWin(WND, skwindow::DisplayParams());
+   _skia_context = skwindow::MakeGLForWin(
+       WND,
+       std::make_unique<skwindow::DisplayParams>(skwindow::DisplayParams()));
    if (animate)
       SetTimer(WND, IDT_TIMER1, 16, (TIMERPROC) nullptr);
 

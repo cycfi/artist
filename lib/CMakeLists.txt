@@ -369,7 +369,7 @@ if (ARTIST_SKIA)
       artist
       PUBLIC
          ARTIST_SKIA
-         SK_RELEASE
+         #SK_RELEASE
          SK_GL
    )
 endif()
