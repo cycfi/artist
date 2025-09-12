@@ -99,12 +99,12 @@ if (ARTIST_SKIA)
          set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows/msvc/x86_64/src/prebuilt_binaries)
          if (CMAKE_BUILD_TYPE STREQUAL "Release")
             message(WARNING "Warning: Not supported")
-            set(ARTIST_BINARIES_URL https://github.com/silovaa/artist/raw/prebuilt_binaries_0.141/windows/skia/msvc/x86_64/skia.zip)
-            set(ARTIST_BINARIES_MD5 d8d4624a5e7a5c0289d7edfdabc538e2)
+            set(ARTIST_BINARIES_URL skia_msvc.zip)
+            set(ARTIST_BINARIES_HASH 114ad32f58489194161f14281c4dd821a171eb2c4e7ad706fbbe9af4c3582c71)
             set(ARTIST_BINARIES_PREFIX windows/msvc/x86_64)
          else()
-            set(ARTIST_BINARIES_URL https://github.com/silovaa/artist/raw/prebuilt_binaries_0.141/windows/skia/msvc/x86_64/skia_dbg.zip)
-            set(ARTIST_BINARIES_MD5 50f03ef9736588d555205ab0a225c69a)
+            set(ARTIST_BINARIES_URL skia_msvc_dbg.zip)
+            set(ARTIST_BINARIES_HASH 2e93daac067c6c956e9a453751e405cbfa868db0ede2edc7aaf638487cfa2606)
             set(ARTIST_BINARIES_PREFIX windows/msvc/x86_64)
          endif()
       elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
@@ -138,8 +138,8 @@ if (ARTIST_SKIA)
 
       ExternalProject_Add(prebuilt_binaries
          PREFIX "${ARTIST_BINARIES_PREFIX}"
-         URL ${ARTIST_BINARIES_URL}
-         URL_MD5 ${ARTIST_BINARIES_MD5}
+         URL https://github.com/silovaa/skia_bin/releases/download/m141/${ARTIST_BINARIES_URL}
+         URL_HASH SHA256=${ARTIST_BINARIES_HASH}
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
          INSTALL_COMMAND ""
@@ -158,33 +158,26 @@ if (ARTIST_SKIA)
 
    elseif (UNIX)
 
-      if (ARTIST_X11)
-         set(BINARIES_NAME skia.a.zip)
-      else()
-         set(BINARIES_NAME skia_egl.a.zip)
-      endif()
-
       if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
-         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/linux/gcc/x86_64/src/prebuilt_binaries)
-         #set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/linux/skia/gcc/x86_64/${BINARIES_NAME})
-         set(ARTIST_BINARIES_URL 
-            https://github.com/silovaa/artist/raw/prebuilt_binaries_0.141/linux/skia/gcc/x86_64/${BINARIES_NAME})
+         set(CPL gcc)
          if (ARTIST_X11)
-            set(ARTIST_BINARIES_MD5 f3af0f675fe7ed131072fcae4484d5ba)
+            set(PLATFORM x11)
+            set(ARTIST_BINARIES_HASH 7eaf98d3c739ba271b1c035b9f13c72d34e2ff1915f898351b6cea9fbf34b525)
          else()
-            set(ARTIST_BINARIES_MD5 6059c5491ef9c40447ac2bdba1fbea8d)
+            set(PLATFORM egl)
+            set(ARTIST_BINARIES_HASH 86ac9ce471cc1f734e7935989148ad7123248437a50bd554f4a9bc460eb0c0cf)
          endif()
-         set(ARTIST_BINARIES_PREFIX linux/gcc/x86_64)
+
       elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
-         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/linux/clang/x86_64/src/prebuilt_binaries)
-         set(ARTIST_BINARIES_URL 
-            https://github.com/silovaa/artist/raw/prebuilt_binaries_0.141/linux/skia/clang/x86_64/${BINARIES_NAME})
+         set(CPL clang)
          if (ARTIST_X11)
-            set(ARTIST_BINARIES_MD5 fca59ab7d40290264f771a629224da6d)
+            set(PLATFORM x11)
+            set(ARTIST_BINARIES_HASH 5877693a5cb4affb8861d9cfea76c9c698fb84729dfc978fdedd52a4477bb0ca)
          else()
-            set(ARTIST_BINARIES_MD5 a884c8211cc25e2e7fd5085fb21267ad)
+            set(PLATFORM egl)
+            set(ARTIST_BINARIES_HASH sha256:a536a8dac69644c71d7e817c98b0d22cea4664cbf9436c347d33f7153b8f7985)
          endif()
-         set(ARTIST_BINARIES_PREFIX linux/clang/x86_64)
+
       endif()
 
       find_package(Threads)
@@ -196,12 +189,13 @@ if (ARTIST_SKIA)
          fontconfig freetype2 zlib libpng libjpeg libwebp libwebpdemux
       )
 
-      set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
+      set(ARTIST_BINARIES_PREFIX linux/${CPL}/x86_64)
+      set(SKIA_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/${ARTIST_BINARIES_PREFIX}/src/prebuilt_binaries/libskia.a)
 
       ExternalProject_Add(prebuilt_binaries
          PREFIX "${ARTIST_BINARIES_PREFIX}"
-         URL ${ARTIST_BINARIES_URL}
-         URL_MD5 ${ARTIST_BINARIES_MD5}
+         URL https://github.com/silovaa/skia_bin/releases/download/m141/skia_${PLATFORM}_${CPL}.zip
+         URL_HASH SHA256=${ARTIST_BINARIES_HASH}
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
          INSTALL_COMMAND ""
