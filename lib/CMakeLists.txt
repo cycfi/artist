@@ -104,7 +104,7 @@ if (ARTIST_SKIA)
             set(ARTIST_BINARIES_PREFIX windows/msvc/x86_64)
          else()
             set(ARTIST_BINARIES_URL skia_msvc_dbg.zip)
-            set(ARTIST_BINARIES_HASH 2e93daac067c6c956e9a453751e405cbfa868db0ede2edc7aaf638487cfa2606)
+            set(ARTIST_BINARIES_HASH b3d8e147b1986b226ee346efc76475a696266a745d8cd6e528a378fb19b7ee4f)
             set(ARTIST_BINARIES_PREFIX windows/msvc/x86_64)
          endif()
       elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
@@ -153,8 +153,8 @@ if (ARTIST_SKIA)
          ${OPENGL_LIBRARIES}
       )
 
-      set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
-      set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Ob2 /Oi /Ot /GL /MT")
+      #set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+      #set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Ob2 /Oi /Ot /GL /MT")
 
    elseif (UNIX)
 
