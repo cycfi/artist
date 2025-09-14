@@ -98,13 +98,12 @@ if (ARTIST_SKIA)
       if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
          set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows/msvc/x86_64/src/prebuilt_binaries)
          if (CMAKE_BUILD_TYPE STREQUAL "Release")
-            message(WARNING "Warning: Not supported")
             set(ARTIST_BINARIES_URL skia_msvc.zip)
             set(ARTIST_BINARIES_HASH 114ad32f58489194161f14281c4dd821a171eb2c4e7ad706fbbe9af4c3582c71)
             set(ARTIST_BINARIES_PREFIX windows/msvc/x86_64)
          else()
             set(ARTIST_BINARIES_URL skia_msvc_dbg.zip)
-            set(ARTIST_BINARIES_HASH b3d8e147b1986b226ee346efc76475a696266a745d8cd6e528a378fb19b7ee4f)
+            set(ARTIST_BINARIES_HASH aaa0f809fdd7ce8e3cfa0b2d4688073e2788137c28686d050afc239475939642)
             set(ARTIST_BINARIES_PREFIX windows/msvc/x86_64)
          endif()
       elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
@@ -121,12 +120,12 @@ if (ARTIST_SKIA)
       set(SKIA_LIBRARIES
          ${ARTIST_BINARIES}/skia.lib
          ${ARTIST_BINARIES}/harfbuzz.lib
-         #${ARTIST_BINARIES}/fontconfig.lib
-         #${ARTIST_BINARIES}/freetype.lib
-         #${ARTIST_BINARIES}/bz2.lib
-         #${ARTIST_BINARIES}/brotlicommon.lib
-         #${ARTIST_BINARIES}/brotlienc.lib
-         #${ARTIST_BINARIES}/brotlidec.lib
+         ${ARTIST_BINARIES}/fontconfig.lib
+         ${ARTIST_BINARIES}/freetype.lib
+         ${ARTIST_BINARIES}/bz2.lib
+         ${ARTIST_BINARIES}/brotlicommon.lib
+         ${ARTIST_BINARIES}/brotlienc.lib
+         ${ARTIST_BINARIES}/brotlidec.lib
          ${ARTIST_BINARIES}/libjpeg.lib
          ${ARTIST_BINARIES}/libpng.lib
          ${ARTIST_BINARIES}/libwebp_sse41.lib
