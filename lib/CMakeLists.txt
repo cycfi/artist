@@ -99,7 +99,7 @@ if (ARTIST_SKIA)
          set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows/msvc/x86_64/src/prebuilt_binaries)
          if (CMAKE_BUILD_TYPE STREQUAL "Release")
             set(ARTIST_BINARIES_URL skia_msvc.zip)
-            set(ARTIST_BINARIES_HASH 436629afdfc8d329716e57adcd688c8aee4e4ad80cdc7c60a1adab8dccc1976f)
+            set(ARTIST_BINARIES_HASH c57b4bf6d3d64813fe2608f00ac6635cd997359274ce9e9065bba93af413c7b0)
             set(ARTIST_BINARIES_PREFIX windows/msvc/x86_64)
          else()
             set(ARTIST_BINARIES_URL skia_msvc_dbg.zip)
@@ -152,8 +152,8 @@ if (ARTIST_SKIA)
          ${OPENGL_LIBRARIES}
       )
 
-      #set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
-      #set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Ob2 /Oi /Ot /GL /MT")
+      set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+      set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Ob2 /Oi /Ot /GL /MT")
 
    elseif (UNIX)
 
