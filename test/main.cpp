@@ -850,6 +850,7 @@ void misc(canvas& cnv)
 
    {
       path p;
+      
       p.add_circle(circle{230, 230, 50});
       p.add_circle(circle{230, 230, 25});
       p.fill_rule(path::fill_odd_even);

@@ -99,11 +99,11 @@ if (ARTIST_SKIA)
          set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows/msvc/x86_64/src/prebuilt_binaries)
          if (CMAKE_BUILD_TYPE STREQUAL "Release")
             set(ARTIST_BINARIES_URL skia_msvc.zip)
-            set(ARTIST_BINARIES_HASH c57b4bf6d3d64813fe2608f00ac6635cd997359274ce9e9065bba93af413c7b0)
+            set(ARTIST_BINARIES_HASH db2820a86f18d6eafbe61aa622e477c2fd2f91266ded9903aed26b8be7ed84f6)
             set(ARTIST_BINARIES_PREFIX windows/msvc/x86_64)
          else()
             set(ARTIST_BINARIES_URL skia_msvc_dbg.zip)
-            set(ARTIST_BINARIES_HASH 274b1fb79b21787b0335a1c72005568c258b6b7cff96cd52a00b0767b45a600c)
+            set(ARTIST_BINARIES_HASH a8971d891f8e5fc4daa5432d3c9dc3b66730a168e4ece94c28a16bd0b8c101f2)
             set(ARTIST_BINARIES_PREFIX windows/msvc/x86_64)
          endif()
       elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
@@ -161,20 +161,20 @@ if (ARTIST_SKIA)
          set(CPL gcc)
          if (ARTIST_X11)
             set(PLATFORM x11)
-            set(ARTIST_BINARIES_HASH 7eaf98d3c739ba271b1c035b9f13c72d34e2ff1915f898351b6cea9fbf34b525)
+            set(ARTIST_BINARIES_HASH c8b3c6def4e870ac17d8805a9056999c311eb5f72b6df399f551628b56fa1af6)
          else()
             set(PLATFORM egl)
-            set(ARTIST_BINARIES_HASH 86ac9ce471cc1f734e7935989148ad7123248437a50bd554f4a9bc460eb0c0cf)
+            set(ARTIST_BINARIES_HASH acc9525fa0d1f7561da9298132921a62f9b37dfb65267a2e15ecc84e08e5f424)
          endif()
 
       elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
          set(CPL clang)
          if (ARTIST_X11)
             set(PLATFORM x11)
-            set(ARTIST_BINARIES_HASH 5877693a5cb4affb8861d9cfea76c9c698fb84729dfc978fdedd52a4477bb0ca)
+            set(ARTIST_BINARIES_HASH 785de1222ebe63b94d397e81693ea3b65cd09919e4546d142e29be79713714ce)
          else()
             set(PLATFORM egl)
-            set(ARTIST_BINARIES_HASH sha256:a536a8dac69644c71d7e817c98b0d22cea4664cbf9436c347d33f7153b8f7985)
+            set(ARTIST_BINARIES_HASH e18f6841e5acc246f4248da442a487b96c5ab8a768924eee4cad995b062e05f8)
          endif()
 
       endif()
@@ -274,6 +274,7 @@ if (ARTIST_SKIA)
       set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
          external/skia/tools/window/win/GLWindowContext_win.cpp
          external/skia/tools/window/win/RasterWindowContext_win.cpp
+	      external/skia/tools/gpu/gl/win/SkWGL_win.cpp
       )
    endif()
 
@@ -286,8 +287,8 @@ if (ARTIST_SKIA)
       impl/skia/detail/harfbuzz.cpp
       external/skia/tools/window/GLWindowContext.cpp
       external/skia/tools/window/WindowContext.cpp
-      #external/skia/tools/ToolUtils.cpp
-      #external/skia/tools/SkMetaData.cpp
+      external/skia/tools/ToolUtils.cpp
+      external/skia/tools/SkMetaData.cpp
       ${ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT}
    )
 endif()
@@ -344,7 +345,7 @@ if (ARTIST_SKIA)
       artist
       PUBLIC
          external/skia
-         external/skia/include
+         external/skia/include 
          external/skia/include/core
          external/skia/include/config
          external/skia/include/utils
@@ -363,6 +364,7 @@ if (ARTIST_SKIA)
       PUBLIC
          ARTIST_SKIA
          #SK_RELEASE
+         #SK_DEBUG
          SK_GL
    )
 endif()

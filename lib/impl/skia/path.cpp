@@ -11,8 +11,7 @@ namespace cycfi::artist
 {
    path::path()
     : _impl(new SkPath)
-   {
-   }
+   { }
 
    path::~path()
    {
@@ -22,8 +21,7 @@ namespace cycfi::artist
 
    path::path(path const& rhs)
     : _impl(new SkPath(*rhs._impl))
-   {
-   }
+   {}
 
    path::path(path&& rhs)
     : _impl(rhs._impl)
@@ -129,12 +127,11 @@ namespace cycfi::artist
 
    void path::fill_rule(fill_rule_enum rule)
    {
-      _impl->setFillType(rule == fill_winding? SkPathFillType::kWinding : SkPathFillType::kEvenOdd);
+      _impl->setFillType(rule == fill_winding ? SkPathFillType::kWinding : SkPathFillType::kEvenOdd);
    }
 
    void path::add_round_rect_impl(rect const& r, float radius)
    {
       _impl->addRoundRect({r.left, r.top, r.right, r.bottom}, radius, radius);
    }
-
 }
