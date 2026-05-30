@@ -20,6 +20,8 @@
 
 #if defined(ARTIST_SKIA)
 class SkCanvas;
+#elif defined(ARTIST_CAIRO)
+extern "C" { typedef struct _cairo cairo_t; }
 #endif
 
 namespace cycfi::artist
@@ -31,6 +33,8 @@ namespace cycfi::artist
 //#if defined(__APPLE__) && defined(__ARM_ARCH_ISA_A64)
 //# error "Artist does not currently support Skia on Apple Silicon"
 //#endif
+#elif defined(ARTIST_CAIRO)
+   using canvas_impl = cairo_t;
 #endif
 
    class canvas

@@ -17,6 +17,9 @@
 using path_impl = struct CGPath;
 #elif defined(ARTIST_SKIA)
 using path_impl = class SkPath;
+#elif defined(ARTIST_CAIRO)
+struct cairo_artist_path_t;
+using path_impl = cairo_artist_path_t;
 #endif
 
 namespace cycfi::artist

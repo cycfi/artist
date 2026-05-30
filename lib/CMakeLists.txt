@@ -269,6 +269,16 @@ if (ARTIST_SKIA)
    )
 endif()
 
+if (ARTIST_CAIRO)
+   set(ARTIST_IMPL
+      impl/cairo/canvas.cpp
+      impl/cairo/path.cpp
+      impl/cairo/image.cpp
+      impl/cairo/font.cpp
+      impl/cairo/text_layout.cpp
+   )
+endif()
+
 source_group("Source Files\\artist"
    FILES
    ${ARTIST_SOURCES}
@@ -294,6 +304,11 @@ endif()
 if (ARTIST_SKIA AND UNIX AND NOT APPLE)
    pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
    target_link_libraries(artist PUBLIC PkgConfig::fontconfig)
+endif()
+
+if (ARTIST_CAIRO AND NOT MSVC)
+   pkg_check_modules(cairo REQUIRED IMPORTED_TARGET cairo)
+   target_link_libraries(artist PUBLIC PkgConfig::cairo)
 endif()
 
 add_dependencies(artist libunibreak)
@@ -348,6 +363,14 @@ if (ARTIST_QUARTZ_2D)
       artist
       PUBLIC
          ARTIST_QUARTZ_2D
+   )
+endif()
+
+if (ARTIST_CAIRO)
+   target_compile_definitions(
+      artist
+      PUBLIC
+         ARTIST_CAIRO
    )
 endif()
 
