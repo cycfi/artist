@@ -104,6 +104,8 @@ elseif (MSVC)
 elseif (UNIX)
    if (ARTIST_SKIA)
       set(GOLDEN_PATH linux_golden/skia)
+   elseif (ARTIST_CAIRO)
+      set(GOLDEN_PATH linux_golden/cairo)
    endif()
 
    set(GOLDEN_DIR linux_golden)

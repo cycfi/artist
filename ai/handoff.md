@@ -2,128 +2,143 @@
 
 ## Current stage
 
-Stage 7: Cairo gradients, patterns, and compositing — complete.
+Stage 10: Documentation and cleanup — complete.
+
+---
+
+## Existing CI structure
+
+The repository has one workflow: `.github/workflows/build_test.yml`.
+
+It contains a matrix with three jobs:
+
+| Job name                | OS             | Compiler  | Default backend |
+|-------------------------|----------------|-----------|-----------------|
+| Windows Latest MSVC     | windows-latest | cl        | Skia (Windows)  |
+| Ubuntu Latest GCC       | ubuntu-latest  | gcc/g++   | Skia (Linux)    |
+| macOS Latest Clang      | macos-latest   | clang++   | Quartz2D (Apple)|
+
+All three jobs share the same steps: checkout, install deps, cmake configure, cmake build, ctest.
+
+The configure step uses no backend flag; CMake defaults apply per-platform:
+- Apple: Quartz2D ON
+- Linux/Windows: Skia ON
+
+A new separate job (`build-cairo`) was added outside the matrix (see below).
+
+---
+
+## Cairo dependency requirements
+
+Cairo requires these packages on Ubuntu/Debian Linux:
+
+```sh
+sudo apt-get install -y \
+  libcairo2-dev \
+  libfontconfig1-dev \
+  libfreetype6-dev \
+  pkg-config \
+  ninja-build
+```
+
+`libcairo2-dev` provides both the `cairo` and `cairo-ft` pkg-config modules.
+The `lib/CMakeLists.txt` requests all three: `cairo`, `cairo-ft`, `fontconfig`.
+
+On macOS (Homebrew):
+
+```sh
+brew install cairo fontconfig pkg-config
+```
+
+---
+
+## Visual golden considerations
+
+Cairo goldens are currently **macOS-only**, stored under `test/macos_golden/cairo/`.
+
+There are no `test/linux_golden/cairo/` goldens.
+
+The test framework compares rendered output pixel-by-pixel (SSI > 0.985) against
+backend/platform-specific golden images. Cairo rendering is font-stack dependent;
+macOS Cairo goldens cannot be used on Linux because the font rendering differs.
+
+The test CMakeLists.txt now wires `linux_golden/cairo` as the golden path for UNIX
+Cairo builds, so the path is ready when goldens are eventually generated:
+
+```cmake
+# test/CMakeLists.txt (UNIX branch)
+if (ARTIST_SKIA)
+   set(GOLDEN_PATH linux_golden/skia)
+elseif (ARTIST_CAIRO)
+   set(GOLDEN_PATH linux_golden/cairo)
+endif()
+```
+
+The directory `test/linux_golden/cairo/` is tracked with a `.gitkeep` file.
+
+Visual tests are **not run in Linux CI** for the Cairo job.
 
 ---
 
 ## What changed
 
-### `lib/impl/cairo/canvas.cpp`
+1. **`.github/workflows/build_test.yml`**: Added a new `build-cairo` job (Ubuntu, GCC)
+   that installs Cairo dependencies, configures with `-DARTIST_CAIRO=ON`, and builds.
+   No test step — see "CI behavior" section.
 
-1. **`global_composite_operation`: added `default:` throw for unhandled enum values.**
-   The switch previously initialised `op = CAIRO_OPERATOR_OVER` before the switch and
-   had no `default:` branch.  Any future `composite_op_enum` addition would have
-   silently used `OVER`.  The fix removes the pre-initialisation and adds a `default:`
-   that throws `std::runtime_error` — matching the project's existing error style and
-   the plan's "do not silently map unsupported ops to OVER" policy.
+2. **`test/CMakeLists.txt`**: Added `elseif (ARTIST_CAIRO)` branch in the UNIX section
+   so that `GOLDEN_PATH` is set to `linux_golden/cairo` when Cairo is selected on Linux.
+   Previously, Cairo on Linux left `GOLDEN_PATH` empty.
 
-2. **`global_composite_operation`: improved `darker` comment.**
-   The prior `// TODO(cairo): Approximate` gave no explanation.  The new comment
-   explains that CSS `darker` was a Porter-Duff subtract operation (removed from the
-   CSS spec), while Cairo's `CAIRO_OPERATOR_DARKEN` is channel-min blending — a
-   semantically different operation.  The mapping is intentionally kept as the closest
-   available approximation and is still labelled `// TODO(cairo): approximate`.
-
-3. **`global_composite_operation`: added Cairo ≥ 1.10 grouping comments.**
-   The extended blend operators (`MULTIPLY` … `HSL_LUMINOSITY`) were added in
-   Cairo 1.10.  Two inline section comments now make this requirement explicit.
+3. **`test/linux_golden/cairo/.gitkeep`**: Created the directory so it is tracked by git
+   and the copy step in CMakeLists.txt succeeds. No golden images in it yet.
 
 ---
 
 ## Files touched
 
-- `lib/impl/cairo/canvas.cpp`
+- `.github/workflows/build_test.yml`
+- `test/CMakeLists.txt`
+- `test/linux_golden/cairo/.gitkeep` (new)
+- `ai/handoff.md`
 
 ---
 
-## Gradient behavior verified
+## CI behavior
 
-| Check | Result |
-|-------|--------|
-| `fill_style(linear_gradient)` pattern created and destroyed | Pattern created in deferred lambda, destroyed with `cairo_pattern_destroy` immediately after `cairo_set_source`. Cairo holds its own reference. Correct. |
-| `fill_style(radial_gradient)` pattern lifetime | Same pattern — create → set_source → destroy. Correct. |
-| `stroke_style(linear_gradient)` pattern lifetime | Same. Correct. |
-| `stroke_style(radial_gradient)` pattern lifetime | Same. Correct. |
-| Color stops (offset, RGBA) | Forwarded via `cairo_pattern_add_color_stop_rgba`. Correct. |
-| Linear gradient coordinates | `gr.start`, `gr.end` mapped to `cairo_pattern_create_linear`. Correct. |
-| Radial gradient coordinates | `gr.c1/c1_radius`, `gr.c2/c2_radius` mapped to `cairo_pattern_create_radial`. Correct. |
+### Existing jobs (unchanged)
 
----
+| Job                  | Configures with       | Tests run? | Golden dir           |
+|----------------------|-----------------------|------------|----------------------|
+| Windows Latest MSVC  | default (Skia)        | Yes        | windows_golden/skia  |
+| Ubuntu Latest GCC    | default (Skia)        | Yes        | linux_golden/skia    |
+| macOS Latest Clang   | default (Quartz2D)    | Yes        | macos_golden/quartz2d|
 
-## Pattern lifetime behavior
+### New Cairo job
 
-After `cairo_set_source(ctx, pat)`, Cairo increments the pattern's reference count
-internally.  The caller's reference is released with `cairo_pattern_destroy(pat)`.
-Both calls are safe to pair immediately — the pattern survives until Cairo no longer
-needs it.
+| Job                              | Configures with    | Tests run? | Reason               |
+|----------------------------------|--------------------|------------|----------------------|
+| Ubuntu Latest GCC (Cairo, build) | ARTIST_CAIRO=ON    | No         | No linux Cairo goldens |
 
-This is already the pattern used in all four gradient style setters.  No leak exists.
+The Cairo CI job verifies that the Cairo backend builds cleanly on Linux with the current
+source. It does not run visual tests. A comment in the workflow explains why.
 
----
-
-## Composite operation behavior
-
-All 24 `composite_op_enum` values are explicitly mapped to a Cairo operator.
-No value silently falls through to `CAIRO_OPERATOR_OVER`.
-
-| Artist op | Cairo operator | Notes |
-|-----------|---------------|-------|
-| `source_over` | `CAIRO_OPERATOR_OVER` | Exact |
-| `source_atop` | `CAIRO_OPERATOR_ATOP` | Exact |
-| `source_in` | `CAIRO_OPERATOR_IN` | Exact |
-| `source_out` | `CAIRO_OPERATOR_OUT` | Exact |
-| `destination_over` | `CAIRO_OPERATOR_DEST_OVER` | Exact |
-| `destination_atop` | `CAIRO_OPERATOR_DEST_ATOP` | Exact |
-| `destination_in` | `CAIRO_OPERATOR_DEST_IN` | Exact |
-| `destination_out` | `CAIRO_OPERATOR_DEST_OUT` | Exact |
-| `lighter` | `CAIRO_OPERATOR_ADD` | Exact (additive) |
-| `darker` | `CAIRO_OPERATOR_DARKEN` | **Approximate** — CSS `darker` (Porter-Duff subtract, now removed from spec) ≠ Cairo DARKEN (channel-min blending). No exact Cairo equivalent. |
-| `copy` | `CAIRO_OPERATOR_SOURCE` | Exact |
-| `xor_` | `CAIRO_OPERATOR_XOR` | Exact |
-| `difference` | `CAIRO_OPERATOR_DIFFERENCE` | Exact; Cairo ≥ 1.10 |
-| `exclusion` | `CAIRO_OPERATOR_EXCLUSION` | Exact; Cairo ≥ 1.10 |
-| `multiply` | `CAIRO_OPERATOR_MULTIPLY` | Exact; Cairo ≥ 1.10 |
-| `screen` | `CAIRO_OPERATOR_SCREEN` | Exact; Cairo ≥ 1.10 |
-| `color_dodge` | `CAIRO_OPERATOR_COLOR_DODGE` | Exact; Cairo ≥ 1.10 |
-| `color_burn` | `CAIRO_OPERATOR_COLOR_BURN` | Exact; Cairo ≥ 1.10 |
-| `soft_light` | `CAIRO_OPERATOR_SOFT_LIGHT` | Exact; Cairo ≥ 1.10 |
-| `hard_light` | `CAIRO_OPERATOR_HARD_LIGHT` | Exact; Cairo ≥ 1.10 |
-| `hue` | `CAIRO_OPERATOR_HSL_HUE` | Exact; Cairo ≥ 1.10 |
-| `saturation` | `CAIRO_OPERATOR_HSL_SATURATION` | Exact; Cairo ≥ 1.10 |
-| `color_op` | `CAIRO_OPERATOR_HSL_COLOR` | Exact; Cairo ≥ 1.10 |
-| `luminosity` | `CAIRO_OPERATOR_HSL_LUMINOSITY` | Exact; Cairo ≥ 1.10 |
-
-A `default:` branch throws `std::runtime_error` for any future enum value not yet
-mapped, preventing silent misbehavior.
-
----
-
-## Shadow behavior
-
-`shadow_style(point, float, color)` remains an explicit no-op with a comment:
-
-```cpp
-// TODO(cairo): Shadow rendering requires compositing with a blurred copy.
-// Cairo has no native drop-shadow operation. Known limitation — no-op.
-```
-
-No workaround is implemented.
-
----
-
-## `draw(image)` unbounded-operator clipping
-
-`draw(image, src, dest)` clips to the destination rect before `cairo_paint`.
-Cairo's unbounded operators (SOURCE, IN, OUT, XOR, etc.) would otherwise affect
-the entire surface outside the intended destination.  The clip guard is in place.
+To enable Cairo visual tests in Linux CI, generate `test/linux_golden/cairo/*.png` on a
+representative Linux CI environment and commit them to the repository.
 
 ---
 
 ## Build commands tried
 
 ```sh
+# Cairo (local macOS)
+cmake -S . -B build-cairo -DARTIST_CAIRO=ON
 cmake --build build-cairo
+ctest --test-dir build-cairo --output-on-failure
+
+# Default backend (Quartz2D, local macOS)
 cmake --build build-quartz
+ctest --test-dir build-quartz --output-on-failure
 ```
 
 ---
@@ -139,103 +154,133 @@ ctest --test-dir build-quartz --output-on-failure
 
 ## Test results
 
-- **Cairo** (`build-cairo`): **8/8 PASS** — 0 failures.
-- **Quartz2D** (`build-quartz`): **8/8 PASS** — 0 failures.
-
----
-
-## Bugs fixed
-
-| Bug | Fix |
-|-----|-----|
-| `global_composite_operation` silently fell back to `CAIRO_OPERATOR_OVER` for any unhandled enum value | Added `default: throw std::runtime_error{...}` |
+- **Cairo** (`build-cairo`, macOS): **10/10 PASS** — 0 failures.
+- **Quartz2D** (`build-quartz`, macOS): **10/10 PASS** — 0 failures.
 
 ---
 
 ## Known limitations remaining
 
-- **`darker`**: approximate mapping to `CAIRO_OPERATOR_DARKEN` (channel-min blending).
-  The original CSS Porter-Duff `darker` (subtract) has no exact Cairo equivalent.
+- **No Linux Cairo golden images**: Visual tests cannot run for Cairo on Linux CI until
+  `test/linux_golden/cairo/*.png` is populated. This requires running Cairo on a Linux CI
+  environment, generating results, reviewing them, and committing as goldens.
 
-- **`shadow_style`**: no-op; Cairo has no native drop-shadow.
+- **No Cairo platform window host**: Cairo is limited to offscreen image surfaces. No
+  X11/XCB, Wayland, or macOS Cairo-Quartz window host exists.
 
-- **Extended blend operators** (`MULTIPLY` and above): require Cairo ≥ 1.10.
-  Older Cairo releases will fail to compile (link) against these constants.
-  Modern Linux distributions ship Cairo ≥ 1.16.
+- **`device_to_user` / `user_to_device` on platform hosts**: Cairo's current
+  implementation does not factor out an initial platform CTM. If a platform host applies
+  a device scale at context creation, Cairo would need the same initial-inverse-CTM
+  pattern as Skia and Quartz2D.
 
-- **`pixels()` write path**: after direct pixel writes, callers must call
-  `cairo_surface_mark_dirty` before the next draw.  The Artist API has no hook for
-  this; see Stage 6 handoff.
+- **`shadow_style`**: remains no-op; Cairo has no native drop-shadow.
 
-- **`image::image(uint8_t const*, pixel_format, extent)`** (`make_image`): still
-  throws.  Needs straight→premultiplied BGRA conversion when implemented.
+- **`darker` composite op**: approximate mapping to `CAIRO_OPERATOR_DARKEN`; no exact
+  Cairo equivalent for W3C PlusDarker.
 
-- **`bitmap_size()` / HiDPI**: returns logical pixel dimensions; Stage 8 will add
-  `cairo_surface_get_device_scale`.
-
-- **`pre_scale` / HiDPI surface scaling**: empty stub; Stage 8.
+- **`image::image(uint8_t const*, pixel_format, extent)`** (`make_image`): still throws.
 
 - **HarfBuzz shaping / bidi / OpenType**: Cairo text limitations from Stage 5 unchanged.
+
+- **`pre_scale`**: Not in the public API; not a Cairo-specific gap.
+
+---
+
+## Scale/platform behavior (from Stage 8)
+
+### `device_to_user` / `user_to_device` behavior
+
+| Backend    | Implementation                                     | Correct for offscreen? |
+|------------|----------------------------------------------------|------------------------|
+| Quartz2D   | Factors out initial CTM via stored inverse         | Yes                    |
+| Skia       | Factors out initial CTM via stored inverse         | Yes                    |
+| Cairo      | `cairo_device_to_user` / `cairo_user_to_device`    | Yes (identity initial) |
+
+### `bitmap_size()` behavior
+
+| Backend    | `size()`                               | `bitmap_size()`               |
+|------------|----------------------------------------|-------------------------------|
+| Quartz2D   | NSImage logical size (points)          | NSBitmapImageRep physical px  |
+| Skia       | SkBitmap pixel dimensions              | SkBitmap pixel dimensions     |
+| Cairo      | `cairo_image_surface_get_width/height` | Same as `size()`              |
 
 ---
 
 ## API changes considered
 
-No public Artist API changes were made in Stage 7.
+No public Artist API changes in Stage 9.
 
 ---
 
-## Cross-backend composite op inconsistencies (discovered Stage 7)
+---
 
-The Artist API follows the W3C Compositing and Blending spec.
+## Stage 10 changes
 
-### `lighter` — Skia bug
+### What changed
 
-W3C `lighter` = Porter-Duff Plus: `min(1, Cs + Cd)` (additive composite).
+1. **`README.md`**: Added "Backends" section documenting:
+   - Backend selection table (Quartz-2D / Skia / Cairo) with defaults.
+   - Cairo build instructions and CMake option (`ARTIST_CAIRO=ON`).
+   - Linux and macOS dependency lists.
+   - Supported platforms (offscreen only; no window host yet).
+   - All known Cairo limitations (shadow, darker, text shaping, make_image,
+     path equality, pixel format).
+   - CI status and how to unblock Linux visual tests.
+   - Mention of Cairo added to the introduction paragraph.
 
-| Backend | Mapped to | Correct? |
-|---------|-----------|---------|
-| Cairo | `CAIRO_OPERATOR_ADD` | ✓ |
-| Quartz2D | `kCGBlendModePlusLighter` | ✓ |
-| **Skia** | `kLighten` — channel-max blend, not Plus | **✗ bug** |
+2. **`lib/impl/cairo/text_layout.cpp`**: Consolidated two duplicate `TODO(cairo)` 
+   comments in `text_layout::text()` overloads into single clear TODOs. Removed
+   the always-false ternary `_impl->get_font().impl() ? font_descr{} : font_descr{}`
+   (both branches returned `font_descr{}`; simplified to a direct `font_descr{}`).
 
-Fix: `kLighten` → `kPlus` in `lib/impl/skia/canvas.cpp`.
+### Files touched
 
-### `darker` — Cairo and Skia have no native equivalent
+- `README.md`
+- `lib/impl/cairo/text_layout.cpp`
+- `ai/handoff.md`
 
-W3C `darker` = CSS2 subtractive: `max(0, Cs + Cd − 1)`. Removed from current CSS spec;
-only Quartz2D has a native equivalent (`kCGBlendModePlusDarker`).
+### Remaining TODOs in Cairo source
 
-| Backend | Mapped to | Correct? |
-|---------|-----------|---------|
-| Quartz2D | `kCGBlendModePlusDarker` | ✓ |
-| **Skia** | `kDarken` — channel-min blend, not subtractive | **✗ unsupported** |
-| **Cairo** | `CAIRO_OPERATOR_DARKEN` — channel-min blend, not subtractive | **✗ unsupported** |
+All remaining `TODO(cairo)` markers are specific and intentional:
 
-Both Skia and Cairo need their `darker` mapping labelled explicitly as unsupported
-(not "approximate") with a clear comment explaining W3C PlusDarker semantics and that
-no native equivalent exists for the backend.
+| File | Location | Description |
+|------|----------|-------------|
+| `canvas.cpp:408` | `shadow_style` | Drop-shadow via compositing — known limitation |
+| `canvas.cpp:431` | `darker` op | W3C PlusDarker not expressible in Cairo |
+| `image.cpp:65` | `pixels()` | BE endian verification |
+| `image.cpp:90` | `make_image` | Pixel-buffer constructor unimplemented; throws |
+| `image.cpp:158` | `_pixmap_size` | Needed by make_image |
+| `path.cpp:57` | `operator==` | Deep path equality unimplemented |
+| `text_layout.cpp:648` | `text(string_view)` | font_descr not stored in impl |
+| `text_layout.cpp:655` | `text(u32string_view)` | Same font_descr gap |
 
-These are **not** Stage 7 regressions — they are pre-existing across all three backends.
-They must be documented and fixed in a dedicated pass, not bundled into Stage 8.
+### Known limitations (unchanged from Stage 9)
+
+- Cairo is offscreen-only; no X11/XCB, Wayland, or macOS cairo-quartz window host.
+- `shadow_style` is a no-op.
+- `darker` op is approximate (OPERATOR_DARKEN, not W3C PlusDarker).
+- Text: no HarfBuzz, no OpenType ligatures, no complex scripts, no bidi.
+- `make_image` (pixel-buffer constructor) throws.
+- `path::operator==` compares by pointer identity.
+- `image::pixels()` returns premultiplied BGRA, not straight-alpha RGBA.
+- Linux Cairo goldens not generated; visual tests not run in CI.
 
 ---
 
 ## Recommended next task
 
-```text
-Do Stage 8 only: Cairo platform integration and HiDPI.
+To enable Cairo visual tests in Linux CI:
+1. Create a Linux CI environment with libcairo2-dev and the same fonts used in testing.
+2. Run `cmake -S . -B build-cairo -DARTIST_CAIRO=ON && cmake --build build-cairo`.
+3. Run the test binary once to generate result PNGs in `test/results/`.
+4. Review each PNG manually.
+5. Copy approved PNGs to `test/linux_golden/cairo/`.
+6. Commit and push — add a test step to the `build-cairo` CI job.
 
-Read ai/artist-cairo-backend-assimilation-plan.md Stage 8 section before starting.
-Read ai/handoff.md.
+To add a Cairo window host:
+- Linux: implement an XCB (`cairo_xcb_surface_create`) or Wayland host.
+- macOS: implement a Quartz-surface host using `cairo_quartz_surface_create_for_cg_context`.
+  Requires `cairo` built with Quartz support (`cairo-quartz` pkg-config module).
 
-Focus:
-- Implement pre_scale using cairo_surface_set_device_scale.
-- Target Linux as primary Cairo platform (X11/XCB or Wayland surface).
-- Document macOS cairo-quartz as a secondary target.
-- Validate HiDPI scaling on the primary platform.
-
-Do not work on text shaping, image rewrites, or CI.
-
-Update ai/handoff.md.
-```
+The full Cairo assimilation checklist from the plan is now satisfied
+except for the visual regression test coverage and the platform window host.

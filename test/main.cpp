@@ -15,6 +15,8 @@
 #include "app_paths.hpp"
 #include <cmath>
 #include <cstdint>
+#include <infra/support.hpp>
+#include <memory>
 
 using namespace cycfi::artist;
 using namespace font_constants;
@@ -1099,6 +1101,78 @@ TEST_CASE("Misc")
    compare_golden(pm, "misc");
 }
 
+
+void chessboard(canvas& cnv)
+{
+   int constexpr rows = 8;
+   int constexpr cols = 8;
+   int constexpr square_side = 60;
+   int constexpr square_area = square_side * square_side;
+   size_t constexpr pix_buf_size = rows * cols * square_area;
+
+   uint32_t constexpr white = 0xffffffff;
+   auto black = []() -> uint32_t { return cycfi::is_little_endian() ? 0xff000000 : 0x000000ff; };
+
+   std::unique_ptr<uint32_t[]> pix_buf(new uint32_t[pix_buf_size]);
+   for (int y = 0; y < rows; y++)
+   {
+      uint32_t* row_slice = &pix_buf[y * cols * square_area];
+      uint32_t color = (y % 2 != 0) ? white : black();
+      for (int x = 0; x < cols * square_area; x++)
+      {
+         if (x % square_side == 0)
+            color = (color == white) ? black() : white;
+         row_slice[x] = color;
+      }
+   }
+
+   auto img = make_image<pixel_format::rgba32>(
+      pix_buf.get(), {float(cols * square_side), float(rows * square_side)});
+   cnv.draw(img, {0, 0});
+}
+
+TEST_CASE("Chessboard")
+{
+   image pm{window_size};
+   {
+      offscreen_image ctx{pm};
+      canvas pm_cnv{ctx.context()};
+      chessboard(pm_cnv);
+   }
+   compare_golden(pm, "chessboard");
+}
+
+TEST_CASE("Scale and Coordinate Conversion")
+{
+   // Verify device_to_user / user_to_device are inverses of each other
+   // for a plain offscreen image surface (identity initial CTM).
+   image pm{window_size};
+   {
+      offscreen_image ctx{pm};
+      canvas pm_cnv{ctx.context()};
+
+      // With no transform: device coords == user coords.
+      auto d = pm_cnv.user_to_device({100.0f, 200.0f});
+      auto u = pm_cnv.device_to_user(d);
+      CHECK(u.x == Approx(100.0f).epsilon(0.001));
+      CHECK(u.y == Approx(200.0f).epsilon(0.001));
+
+      // After applying a scale transform: verify inverse round-trip.
+      pm_cnv.save();
+      pm_cnv.scale(2.0f, 2.0f);
+
+      auto d2 = pm_cnv.user_to_device({50.0f, 75.0f});
+      auto u2 = pm_cnv.device_to_user(d2);
+      CHECK(u2.x == Approx(50.0f).epsilon(0.001));
+      CHECK(u2.y == Approx(75.0f).epsilon(0.001));
+
+      // After scaling by 2, device coords should be 2x the user coords.
+      CHECK(d2.x == Approx(100.0f).epsilon(0.001));
+      CHECK(d2.y == Approx(150.0f).epsilon(0.001));
+
+      pm_cnv.restore();
+   }
+}
 
 TEST_CASE("Color Maths")
 {
