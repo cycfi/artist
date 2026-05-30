@@ -272,6 +272,7 @@ endif()
 if (ARTIST_CAIRO)
    set(ARTIST_IMPL
       impl/cairo/canvas.cpp
+      impl/cairo/shadow_blur.cpp
       impl/cairo/path.cpp
       impl/cairo/image.cpp
       impl/cairo/font.cpp

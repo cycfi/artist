@@ -106,8 +106,8 @@ namespace cycfi::artist
          double scale = px_bounds.size.width / pt_bounds.size.width;
 
          auto surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, pw, ph);
+         cairo_surface_set_device_scale(surface, scale, scale);
          auto cairo_ctx = cairo_create(surface);
-         cairo_scale(cairo_ctx, scale, scale);
          auto cnv = canvas{cairo_ctx};
          draw(cnv);
          cairo_destroy(cairo_ctx);
