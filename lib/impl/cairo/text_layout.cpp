@@ -8,21 +8,33 @@
 // See Skia text_layout.cpp for the expected behavior.
 #include <artist/text_layout.hpp>
 #include <artist/canvas.hpp>
+#include <memory>
 #include <string>
 
 namespace cycfi::artist
 {
    class text_layout::impl
    {
+   public:
       // TODO(cairo): Implement using HarfBuzz + Cairo glyph API in Stage 5.
+      // For now only store the text so callers that read it back don't crash.
+      std::u32string _text;
    };
 
-   text_layout::text_layout(font_descr /*font_*/, std::string_view /*utf8*/)
+   text_layout::text_layout(font_descr /*font_*/, std::string_view utf8)
+    : _impl(std::make_unique<impl>())
    {
+      // Convert UTF-8 to UTF-32 so text() returns valid data.
+      // Minimal byte-by-byte ASCII approximation; multi-byte chars become '?'.
+      // TODO(cairo): Replace with proper UTF-8 decode in Stage 5.
+      for (unsigned char c : utf8)
+         _impl->_text += (c < 0x80) ? char32_t(c) : U'?';
    }
 
-   text_layout::text_layout(font_descr /*font_*/, std::u32string_view /*utf32*/)
+   text_layout::text_layout(font_descr /*font_*/, std::u32string_view utf32)
+    : _impl(std::make_unique<impl>())
    {
+      _impl->_text = std::u32string(utf32);
    }
 
    text_layout::text_layout(text_layout&& rhs) noexcept
@@ -34,17 +46,24 @@ namespace cycfi::artist
    {
    }
 
-   void text_layout::text(std::string_view /*utf8*/)
+   void text_layout::text(std::string_view utf8)
    {
+      if (!_impl) _impl = std::make_unique<impl>();
+      _impl->_text.clear();
+      for (unsigned char c : utf8)
+         _impl->_text += (c < 0x80) ? char32_t(c) : U'?';
    }
 
-   void text_layout::text(std::u32string_view /*utf32*/)
+   void text_layout::text(std::u32string_view utf32)
    {
+      if (!_impl) _impl = std::make_unique<impl>();
+      _impl->_text = std::u32string(utf32);
    }
 
    std::u32string_view text_layout::text() const
    {
-      return {};
+      if (!_impl) return {};
+      return _impl->_text;
    }
 
    void text_layout::flow(float /*width*/, bool /*justify*/)
@@ -74,7 +93,9 @@ namespace cycfi::artist
 
    std::size_t text_layout::caret_index(point /*p*/) const
    {
-      return npos;
+      // TODO(cairo): Stub. Returns 0 to prevent out-of-bounds crashes in callers.
+      // Real implementation needed in Stage 5.
+      return 0;
    }
 
    text_layout::break_enum text_layout::line_break(std::size_t /*index*/) const

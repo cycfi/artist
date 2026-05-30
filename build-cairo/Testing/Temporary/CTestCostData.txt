@@ -1,0 +1,3 @@
+artist_test 0 0
+---
+artist_test

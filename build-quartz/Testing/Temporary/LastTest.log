@@ -1,0 +1,28 @@
+Start testing: May 30 10:12 PST
+----------------------------------------------------------
+1/1 Testing: artist_test
+1/1 Test: artist_test
+Command: "/Users/joel/dev/cycfi/artist/build-quartz/test/artist_test.app/Contents/MacOS/artist_test"
+Directory: /Users/joel/dev/cycfi/artist/build-quartz/test
+"artist_test" start time: May 30 10:12 PST
+Output:
+----------------------------------------------------------
+SSI result for shapes_and_images : 1
+SSI result for shapes2 : 1
+SSI result for typography : 1
+SSI result for composite_ops : 1
+SSI result for drop_shadow : 1
+SSI result for paths : 1
+SSI result for misc : 1
+===============================================================================
+All tests passed (134 assertions in 8 test cases)
+
+<end of output>
+Test time =   0.27 sec
+----------------------------------------------------------
+Test Passed.
+"artist_test" end time: May 30 10:12 PST
+"artist_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: May 30 10:12 PST
