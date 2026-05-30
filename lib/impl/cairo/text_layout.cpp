@@ -645,15 +645,14 @@ namespace cycfi::artist
 
    void text_layout::text(std::string_view utf8)
    {
-      _impl = std::make_unique<impl>(_impl->get_font().impl()
-         ? font_descr{} : font_descr{}, to_utf32(utf8));
-      // Re-create impl from current font — approximate; font_descr not stored.
-      // TODO(cairo): Store font_descr in impl so text() can reconstruct properly.
+      // TODO(cairo): font_descr is not stored in impl; re-created with default descr.
+      // Store font_descr in impl so these setters can reconstruct properly.
+      _impl = std::make_unique<impl>(font_descr{}, to_utf32(utf8));
    }
 
    void text_layout::text(std::u32string_view utf32)
    {
-      // TODO(cairo): Store font_descr for proper reconstruction in text().
+      // TODO(cairo): See text(string_view) — same font_descr gap.
       _impl = std::make_unique<impl>(font_descr{}, utf32);
    }
 

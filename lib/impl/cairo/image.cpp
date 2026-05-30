@@ -84,12 +84,107 @@ namespace cycfi::artist
       _impl = new image_impl(surface);
    }
 
-   image::image(uint8_t const* /*data*/, pixel_format /*fmt*/, extent /*size*/)
+   image::image(uint8_t const* data, pixel_format fmt, extent size)
     : _impl(nullptr)
    {
-      // TODO(cairo): Implement make_image pixel-buffer constructor.
-      // See Skia implementation for expected behavior.
-      throw std::runtime_error{"artist cairo backend: make_image is not yet implemented."};
+      if (fmt == pixel_format::invalid)
+         throw std::runtime_error{"artist cairo backend: make_image: invalid pixel format."};
+
+      int w = int(size.x);
+      int h = int(size.y);
+      auto surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+      if (!surface || cairo_surface_status(surface) != CAIRO_STATUS_SUCCESS)
+         throw std::runtime_error{"artist cairo backend: make_image: failed to create surface."};
+
+      uint8_t*  dest        = cairo_image_surface_get_data(surface);
+      int       dest_stride = cairo_image_surface_get_stride(surface);
+
+      // Convert each source format to Cairo ARGB32 (premultiplied BGRA, little-endian).
+      switch (fmt)
+      {
+         case pixel_format::gray8:
+         {
+            for (int y = 0; y < h; ++y)
+            {
+               uint8_t const* src = data + y * w;
+               uint8_t*       dst = dest + y * dest_stride;
+               for (int x = 0; x < w; ++x, ++src, dst += 4)
+               {
+                  dst[0] = *src;  // B
+                  dst[1] = *src;  // G
+                  dst[2] = *src;  // R
+                  dst[3] = 0xff;  // A
+               }
+            }
+            break;
+         }
+         case pixel_format::rgb16:
+         {
+            // Packed RGB565: RRRRRGGGGGGBBBBB
+            auto const* src16 = reinterpret_cast<uint16_t const*>(data);
+            for (int y = 0; y < h; ++y)
+            {
+               uint16_t const* src = src16 + y * w;
+               uint8_t*        dst = dest  + y * dest_stride;
+               for (int x = 0; x < w; ++x, ++src, dst += 4)
+               {
+                  uint8_t r = uint8_t(((*src >> 11) & 0x1f) * 255 / 31);
+                  uint8_t g = uint8_t(((*src >>  5) & 0x3f) * 255 / 63);
+                  uint8_t b = uint8_t( (*src        & 0x1f) * 255 / 31);
+                  dst[0] = b;
+                  dst[1] = g;
+                  dst[2] = r;
+                  dst[3] = 0xff;
+               }
+            }
+            break;
+         }
+         case pixel_format::rgb32:
+         {
+            // Straight RGBA, alpha ignored (treated as opaque).
+            auto const* src32 = reinterpret_cast<uint32_t const*>(data);
+            for (int y = 0; y < h; ++y)
+            {
+               uint32_t const* src = src32 + y * w;
+               uint8_t*        dst = dest  + y * dest_stride;
+               for (int x = 0; x < w; ++x, ++src, dst += 4)
+               {
+                  auto* s = reinterpret_cast<uint8_t const*>(src);
+                  dst[0] = s[2];  // B ← source B (alpha forced opaque)
+                  dst[1] = s[1];  // G
+                  dst[2] = s[0];  // R
+                  dst[3] = 0xff;  // A = 1
+               }
+            }
+            break;
+         }
+         case pixel_format::rgba32:
+         {
+            // Straight RGBA → premultiplied BGRA.
+            auto const* src32 = reinterpret_cast<uint32_t const*>(data);
+            for (int y = 0; y < h; ++y)
+            {
+               uint32_t const* src = src32 + y * w;
+               uint8_t*        dst = dest  + y * dest_stride;
+               for (int x = 0; x < w; ++x, ++src, dst += 4)
+               {
+                  auto* s = reinterpret_cast<uint8_t const*>(src);
+                  uint8_t a = s[3];
+                  dst[0] = uint8_t((uint32_t(s[2]) * a + 127) / 255);  // B premul
+                  dst[1] = uint8_t((uint32_t(s[1]) * a + 127) / 255);  // G premul
+                  dst[2] = uint8_t((uint32_t(s[0]) * a + 127) / 255);  // R premul
+                  dst[3] = a;
+               }
+            }
+            break;
+         }
+         default:
+            cairo_surface_destroy(surface);
+            throw std::runtime_error{"artist cairo backend: make_image: unsupported pixel format."};
+      }
+
+      cairo_surface_mark_dirty(surface);
+      _impl = new image_impl(surface);
    }
 
    image::~image()
@@ -145,14 +240,25 @@ namespace cycfi::artist
 
    extent image::bitmap_size() const
    {
-      // TODO(cairo): Does not account for device scale (HiDPI). See Stage 8.
+      // cairo_image_surface_get_width/height returns physical pixel dimensions.
+      // size() uses the same functions, so bitmap_size() == size() for Cairo image
+      // surfaces.  If cairo_surface_set_device_scale were applied, size() would
+      // still return physical pixels (unchanged by device scale), so the two remain
+      // equivalent — bitmap_size() is always in physical pixels on all backends.
       return size();
    }
 
-   size_t image::_pixmap_size(pixel_format /*fmt*/, extent /*size*/)
+   size_t image::_pixmap_size(pixel_format fmt, extent size)
    {
-      // TODO(cairo): Needed by make_image — implement alongside the pixel-buffer constructor.
-      return 0;
+      size_t pixels = size_t(size.x) * size_t(size.y);
+      switch (fmt)
+      {
+         case pixel_format::gray8:  return pixels;
+         case pixel_format::rgb16:  return pixels * 2;
+         case pixel_format::rgb32:
+         case pixel_format::rgba32: return pixels * 4;
+         default:                   return 0;
+      }
    }
 
    ////////////////////////////////////////////////////////////////////////////

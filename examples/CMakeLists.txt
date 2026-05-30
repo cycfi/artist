@@ -129,5 +129,4 @@ add_example(space)
 add_example(composite_ops)
 add_example(paths)
 add_example(shadow)
-add_example(chessboard)
 
