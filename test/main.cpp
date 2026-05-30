@@ -1237,6 +1237,192 @@ TEST_CASE("Scale and Coordinate Conversion")
    }
 }
 
+TEST_CASE("Text Shaping")
+{
+   image pm{window_size};
+   offscreen_image ctx{pm};
+   canvas cnv{ctx.context()};
+
+   // Basic shaping sanity: positive advance, longer text wider than shorter.
+   {
+      cnv.font(font_descr{"Open Sans", 36});
+      auto m1 = cnv.measure_text("A");
+      auto m2 = cnv.measure_text("AA");
+      auto m3 = cnv.measure_text("AAA");
+      CHECK(m1.size.x > 0);
+      CHECK(m2.size.x > m1.size.x);
+      CHECK(m3.size.x > m2.size.x);
+   }
+
+   // Ligature / kern: "fi" must not be wider than "f"+"i" measured separately.
+   // With HarfBuzz liga enabled, "fi" is typically narrower (ligature substitution).
+   // Without liga it is still ≤ sum because no negative-kern penalty applies.
+   {
+      cnv.font(font_descr{"Open Sans", 36}.bold());
+      auto mf  = cnv.measure_text("f");
+      auto mi  = cnv.measure_text("i");
+      auto mfi = cnv.measure_text("fi");
+      CHECK(mf.size.x > 0);
+      CHECK(mi.size.x > 0);
+      CHECK(mfi.size.x <= mf.size.x + mi.size.x + 1.0f);  // 1px tolerance
+   }
+
+   // text_layout::num_lines() must reflect reflow width.
+   // "Hello World" at Open Sans 14 fits on one line at 640px, two or more at 1px.
+   {
+      {
+         text_layout tl{font_descr{"Open Sans", 14}, "Hello World"};
+         tl.flow(640, false);
+         CHECK(tl.num_lines() == 1);
+      }
+      {
+         text_layout tl{font_descr{"Open Sans", 14}, "Hello World"};
+         tl.flow(1, false);
+         CHECK(tl.num_lines() >= 2);
+      }
+   }
+
+   // Narrower flow always produces at least as many lines as wider flow.
+   {
+      std::string const txt =
+         "The quick brown fox jumps over the lazy dog";
+      text_layout wide {font_descr{"Open Sans", 14}, txt};
+      text_layout narrow{font_descr{"Open Sans", 14}, txt};
+      wide.flow(640, false);
+      narrow.flow(100, false);
+      CHECK(narrow.num_lines() >= wide.num_lines());
+   }
+
+   // caret_point(0) is the start of the first glyph (x near 0, y >= 0).
+   {
+      text_layout tl{font_descr{"Open Sans", 14}, "Hello"};
+      tl.flow(640, false);
+      auto p = tl.caret_point(0);
+      CHECK(p.x >= 0.0f);
+      CHECK(p.y >= 0.0f);
+   }
+
+   // caret_point advances monotonically left-to-right for simple ASCII.
+   {
+      std::string const txt = "Hello";
+      text_layout tl{font_descr{"Open Sans", 14}, txt};
+      tl.flow(640, false);
+      float prev_x = -1.0f;
+      for (std::size_t i = 0; i < txt.size(); ++i)
+      {
+         auto p = tl.caret_point(i);
+         CHECK(p.x >= prev_x);
+         prev_x = p.x;
+      }
+   }
+}
+
+TEST_CASE("Path Equality")
+{
+   // Identical paths are equal
+   {
+      path a, b;
+      a.add_rect(10, 10, 100, 50);
+      b.add_rect(10, 10, 100, 50);
+      CHECK(a == b);
+   }
+
+   // Same path object is equal to itself
+   {
+      path a;
+      a.add_circle(50, 50, 30);
+      CHECK(a == a);
+   }
+
+   // Different geometry is not equal
+   {
+      path a, b;
+      a.add_rect(10, 10, 100, 50);
+      b.add_rect(10, 10, 100, 51);  // height differs
+      CHECK(!(a == b));
+   }
+
+   // Different shape type is not equal
+   {
+      path a, b;
+      a.add_rect(10, 10, 80, 80);
+      b.add_circle(50, 50, 40);
+      CHECK(!(a == b));
+   }
+
+   // Different fill rule makes paths not equal
+   {
+      path a, b;
+      a.add_circle(50, 50, 30);
+      a.add_circle(50, 50, 15);
+      b.add_circle(50, 50, 30);
+      b.add_circle(50, 50, 15);
+      a.fill_rule(path::fill_winding);
+      b.fill_rule(path::fill_odd_even);
+      CHECK(!(a == b));
+   }
+
+   // Same fill rule with same geometry is equal
+   {
+      path a, b;
+      a.add_circle(50, 50, 30);
+      a.add_circle(50, 50, 15);
+      a.fill_rule(path::fill_odd_even);
+      b.add_circle(50, 50, 30);
+      b.add_circle(50, 50, 15);
+      b.fill_rule(path::fill_odd_even);
+      CHECK(a == b);
+   }
+
+   // SVG-parsed paths with identical strings are equal
+   {
+      path a{"M 100 100 L 300 100 L 200 300 z"};
+      path b{"M 100 100 L 300 100 L 200 300 z"};
+      CHECK(a == b);
+   }
+
+   // SVG-parsed paths with different strings are not equal
+   {
+      path a{"M 100 100 L 300 100 L 200 300 z"};
+      path b{"M 100 100 L 300 100 L 200 301 z"};
+      CHECK(!(a == b));
+   }
+}
+
+TEST_CASE("Image Pixel Round Trip")
+{
+   // Opaque white pixels must survive make_image<rgba32> → pixels() intact.
+   // White is premultiplied-invariant so this holds across all backends.
+   {
+      constexpr int w = 4, h = 4;
+      uint32_t src[w * h];
+      // RGBA32: R=255, G=255, B=255, A=255
+      std::fill(src, src + w * h, uint32_t(0xFFFFFFFF));
+
+      auto img = make_image<pixel_format::rgba32>(src, {float(w), float(h)});
+      auto* pix = img.pixels();
+      REQUIRE(pix != nullptr);
+      for (int i = 0; i < w * h; ++i)
+         CHECK(pix[i] == 0xFFFFFFFF);
+   }
+
+   // Opaque black must also round-trip correctly (A=255, RGB=0).
+   // On little-endian, rgba32 uint32 bytes are [R,G,B,A], so black+opaque = 0xFF000000.
+   {
+      constexpr int w = 2, h = 2;
+      // RGBA32 little-endian: bytes[R=0,G=0,B=0,A=255] → uint32 = 0xFF000000
+      // Cairo ARGB32 output: A=255,R=0,G=0,B=0 → uint32 = 0xFF000000
+      uint32_t src[w * h];
+      std::fill(src, src + w * h, uint32_t(0xFF000000));
+
+      auto img = make_image<pixel_format::rgba32>(src, {float(w), float(h)});
+      auto* pix = img.pixels();
+      REQUIRE(pix != nullptr);
+      for (int i = 0; i < w * h; ++i)
+         CHECK(pix[i] == 0xFF000000);
+   }
+}
+
 TEST_CASE("Color Maths")
 {
   color a(0.2, 0.25, 0.5, 1.0);
