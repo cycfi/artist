@@ -50,7 +50,12 @@ else()
   option(ARTIST_SKIA "build Artist using skia" ON)
 endif()
 
-if (ARTIST_SKIA)
+option(ARTIST_CAIRO "build Artist using cairo" OFF)
+
+if (ARTIST_CAIRO)
+  set(ARTIST_SKIA OFF)
+  set(ARTIST_QUARTZ_2D OFF)
+elseif (ARTIST_SKIA)
   set(ARTIST_QUARTZ_2D OFF)
 endif()
 
@@ -60,6 +65,8 @@ elseif (ARTIST_SKIA AND APPLE)
    message(STATUS "Building Artist lib for MacOS with Skia.")
 elseif (ARTIST_QUARTZ_2D AND APPLE)
    message(STATUS "Building Artist lib for MacOS with Quartz2D.")
+elseif (ARTIST_CAIRO)
+   message(STATUS "Building Artist lib with Cairo.")
 endif()
 
 if (APPLE)
