@@ -60,6 +60,16 @@ namespace cycfi::artist
       extent            size() const;
       void              save_png(std::string_view path) const;
 
+      // Returns a pointer to the raw pixel buffer in backend-native format.
+      // The memory layout depends on the active backend:
+      //   Quartz2D : premultiplied ARGB (host byte order)
+      //   Skia     : premultiplied BGRA (little-endian, kN32_SkColorType)
+      //   Cairo    : premultiplied BGRA (CAIRO_FORMAT_ARGB32, little-endian)
+      // None of the backends expose straight-alpha RGBA. Callers that interpret
+      // individual channels must account for the backend-specific layout.
+      // Cairo note: pixels() calls cairo_surface_flush() before returning the
+      // pointer. If you write to the buffer, you must mark the surface dirty
+      // before using the image again; this API does not expose that call.
       uint32_t*         pixels();
       uint32_t const*   pixels() const;
       extent            bitmap_size() const;

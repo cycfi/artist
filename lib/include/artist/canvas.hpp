@@ -183,8 +183,8 @@ namespace cycfi::artist
          destination_in,
          destination_out,
 
-         lighter,
-         darker,
+         lighter,           // W3C Porter-Duff Plus (Cs+Cd) — all backends correct
+         darker,            // W3C PlusDarker max(0,Cs+Cd-1) — Quartz2D correct; Skia/Cairo use channel-min approximation
          copy,
          xor_,
 

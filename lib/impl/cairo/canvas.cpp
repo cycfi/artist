@@ -415,7 +415,8 @@ namespace cycfi::artist
       // Porter-Duff ops: directly supported by Cairo.
       // Extended blend modes (MULTIPLY … HSL_LUMINOSITY): require Cairo >= 1.10.
       // lighter: W3C Porter-Duff Plus (additive) — CAIRO_OPERATOR_ADD is correct.
-      // darker: W3C PlusDarker (max(0, Cs+Cd-1)) — Cairo has no equivalent; see TODO.
+      // darker: W3C PlusDarker = max(0, Cs+Cd-1). Cairo has no native equivalent;
+      //   OPERATOR_DARKEN (channel-min) is used as a known approximation.
       cairo_operator_t op;
       switch (mode)
       {
@@ -428,8 +429,6 @@ namespace cycfi::artist
          case destination_in:   op = CAIRO_OPERATOR_DEST_IN;         break;
          case destination_out:  op = CAIRO_OPERATOR_DEST_OUT;        break;
          case lighter:          op = CAIRO_OPERATOR_ADD;             break;
-         // TODO(cairo): W3C darker = PlusDarker (max(0, Cs+Cd-1)); Cairo has no
-         // equivalent. OPERATOR_DARKEN (channel-min) is approximate and visually wrong.
          case darker:           op = CAIRO_OPERATOR_DARKEN;          break;
          case copy:             op = CAIRO_OPERATOR_SOURCE;          break;
          case xor_:             op = CAIRO_OPERATOR_XOR;             break;

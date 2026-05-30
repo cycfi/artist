@@ -219,14 +219,6 @@ namespace cycfi::artist
    uint32_t* image::pixels()
    {
       if (!_impl || !_impl->surface) return nullptr;
-      // Pixel format: premultiplied BGRA (CAIRO_FORMAT_ARGB32 on little-endian).
-      // Artist public API convention is straight-alpha RGBA; callers that read or
-      // write pixels must account for the format difference.
-      //
-      // cairo_surface_flush() synchronises Cairo's internal state to the CPU buffer
-      // before the pointer is handed out.  After writing to the returned pointer,
-      // callers must call cairo_surface_mark_dirty(surface) on the underlying
-      // surface before using the image again — this API does not expose that call.
       cairo_surface_flush(_impl->surface);
       return reinterpret_cast<uint32_t*>(cairo_image_surface_get_data(_impl->surface));
    }

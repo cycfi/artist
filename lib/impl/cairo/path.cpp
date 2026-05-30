@@ -54,9 +54,35 @@ namespace cycfi::artist
 
    bool path::operator==(path const& rhs) const
    {
-      // TODO(cairo): Deep path equality not implemented.
-      // See Skia implementation for expected behavior.
-      return _impl == rhs._impl;
+      if (_impl == rhs._impl) return true;
+      if (!_impl || !rhs._impl) return false;
+      if (_impl->fill_rule != rhs._impl->fill_rule) return false;
+
+      cairo_path_t* lp = cairo_copy_path(_impl->ctx);
+      cairo_path_t* rp = cairo_copy_path(rhs._impl->ctx);
+
+      bool equal = false;
+      if (lp && rp && lp->num_data == rp->num_data)
+      {
+         equal = true;
+         for (int i = 0; i < lp->num_data && equal; )
+         {
+            auto const& lh = lp->data[i].header;
+            auto const& rh = rp->data[i].header;
+            if (lh.type != rh.type || lh.length != rh.length) { equal = false; break; }
+            for (int j = 1; j < lh.length && equal; ++j)
+            {
+               auto const& lpt = lp->data[i + j].point;
+               auto const& rpt = rp->data[i + j].point;
+               if (lpt.x != rpt.x || lpt.y != rpt.y) equal = false;
+            }
+            i += lh.length;
+         }
+      }
+
+      if (lp) cairo_path_destroy(lp);
+      if (rp) cairo_path_destroy(rp);
+      return equal;
    }
 
    bool path::is_empty() const
