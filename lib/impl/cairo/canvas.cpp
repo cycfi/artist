@@ -197,6 +197,11 @@ namespace cycfi::artist
          cairo_append_path(_context, cp);
          cairo_path_destroy(cp);
       }
+      // Apply the path's fill rule before clipping — Cairo clips with the
+      // current fill rule, so odd-even paths need it set on the context.
+      cairo_set_fill_rule(_context,
+         p.impl()->fill_rule == path::fill_odd_even
+            ? CAIRO_FILL_RULE_EVEN_ODD : CAIRO_FILL_RULE_WINDING);
       cairo_clip(_context);
    }
 
@@ -642,8 +647,12 @@ namespace cycfi::artist
       auto sx = w / src.width();
       auto sy = h / src.height();
       scale({sx, sy});
-      cairo_set_source_surface(_context, pic.impl()->surface, -src.left, -src.top);
+      // Clip to the destination rect before painting. Cairo's unbounded operators
+      // (IN, OUT, SOURCE, DEST_IN, XOR, etc.) affect the entire clip region, not
+      // just the filled path. Without this clip they would clear the whole surface.
       cairo_rectangle(_context, 0, 0, src.width(), src.height());
-      cairo_fill(_context);
+      cairo_clip(_context);
+      cairo_set_source_surface(_context, pic.impl()->surface, -src.left, -src.top);
+      cairo_paint(_context);
    }
 }

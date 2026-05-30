@@ -69,13 +69,13 @@ namespace cycfi::artist
                }
             }
             stbi_image_free(src_data);
+            if (surface && cairo_surface_status(surface) == CAIRO_STATUS_SUCCESS)
+               cairo_surface_mark_dirty(surface);
          }
       }
 
       if (!surface || cairo_surface_status(surface) != CAIRO_STATUS_SUCCESS)
          throw std::runtime_error{"artist cairo backend: Failed to load image: " + path_.string()};
-
-      cairo_surface_mark_dirty(surface);
       _impl = new image_impl(surface);
    }
 

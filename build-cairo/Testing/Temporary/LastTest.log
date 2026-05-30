@@ -1,0 +1,258 @@
+Start testing: May 30 10:12 PST
+----------------------------------------------------------
+1/1 Testing: artist_test
+1/1 Test: artist_test
+Command: "/Users/joel/dev/cycfi/artist/build-cairo/test/artist_test.app/Contents/MacOS/artist_test"
+Directory: /Users/joel/dev/cycfi/artist/build-cairo/test
+"artist_test" start time: May 30 10:12 PST
+Output:
+----------------------------------------------------------
+SSI result for shapes_and_images : 1
+SSI result for shapes2 : 1
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+artist_test is a Catch v2.13.8 host application.
+Run with -? for options
+
+-------------------------------------------------------------------------------
+Typography
+-------------------------------------------------------------------------------
+/Users/joel/dev/cycfi/artist/test/main.cpp:1013
+...............................................................................
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:507: FAILED:
+  CHECK( std::floor(m.ascent) == 55 )
+with expansion:
+  7.0f == 55
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:508: FAILED:
+  CHECK( std::floor(m.descent) == 15 )
+with expansion:
+  2.0f == 15
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:510: FAILED:
+  CHECK( std::floor(m.size.x) == 198 )
+with expansion:
+  35.0f == 198
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:511: FAILED:
+  CHECK( std::floor(m.size.y) == 70 )
+with expansion:
+  7.0f == 70
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:578: FAILED:
+  CHECK( i == tlayout.npos )
+with expansion:
+  0
+  ==
+  18446744073709551615 (0xffffffffffffffff)
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:584: FAILED:
+  CHECK( i == 64 )
+with expansion:
+  0 == 64
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:585: FAILED:
+  CHECK( text[i] == ' ' )
+with expansion:
+  'A' == ' '
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:588: FAILED:
+  CHECK( i == 133 )
+with expansion:
+  0 == 133
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:589: FAILED:
+  CHECK( text[i] == 'b' )
+with expansion:
+  'A' == 'b'
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:592: FAILED:
+  CHECK( i == 134 )
+with expansion:
+  0 == 134
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:593: FAILED:
+  CHECK( text[i] == 'e' )
+with expansion:
+  'A' == 'e'
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:596: FAILED:
+  CHECK( i == 192 )
+with expansion:
+  0 == 192
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:597: FAILED:
+  CHECK( text[i] == '\n' )
+with expansion:
+  'A' == '\n'
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:600: FAILED:
+  CHECK( i == 154 )
+with expansion:
+  0 == 154
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:601: FAILED:
+  CHECK( text[i] == 'a' )
+with expansion:
+  'A' == 'a'
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:604: FAILED:
+  CHECK( i == 132 )
+with expansion:
+  0 == 132
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:605: FAILED:
+  CHECK( text[i] == ' ' )
+with expansion:
+  'A' == ' '
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:612: FAILED:
+  CHECK( check_index )
+with expansion:
+  false
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:613: FAILED:
+  CHECK( check_char )
+with expansion:
+  false
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:616: FAILED:
+  CHECK( i == 193 )
+with expansion:
+  0 == 193
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:617: FAILED:
+  CHECK( text[i] == '\n' )
+with expansion:
+  'A' == '\n'
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:620: FAILED:
+  CHECK( i == 403 )
+with expansion:
+  0 == 403 (0x193)
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:622: FAILED:
+  CHECK( cp == 8288 )
+with expansion:
+  65 == 8288 (0x2060)
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:625: FAILED:
+  CHECK( i == tlayout.text().size() )
+with expansion:
+  0 == 426 (0x1aa)
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:636: FAILED:
+  CHECK( std::floor(pos.x) == 86 )
+with expansion:
+  0.0f == 86
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:637: FAILED:
+  CHECK( std::floor(pos.y) == 147 )
+with expansion:
+  0.0f == 147
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:636: FAILED:
+  CHECK( std::floor(pos.x) == 86 )
+with expansion:
+  0.0f == 86
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:637: FAILED:
+  CHECK( std::floor(pos.y) == 147 )
+with expansion:
+  0.0f == 147
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:642: FAILED:
+  CHECK( got_index == index )
+with expansion:
+  0 == 10
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:642: FAILED:
+  CHECK( got_index == index )
+with expansion:
+  0 == 64
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:642: FAILED:
+  CHECK( got_index == index )
+with expansion:
+  0 == 193
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:642: FAILED:
+  CHECK( got_index == index )
+with expansion:
+  0 == 132
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:642: FAILED:
+  CHECK( got_index == index )
+with expansion:
+  0 == 133
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:642: FAILED:
+  CHECK( got_index == index )
+with expansion:
+  0 == 154
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:642: FAILED:
+  CHECK( got_index == index )
+with expansion:
+  0 == 325 (0x145)
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:642: FAILED:
+  CHECK( got_index == index )
+with expansion:
+  0 == 326 (0x146)
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:642: FAILED:
+  CHECK( got_index == index )
+with expansion:
+  0 == 405 (0x195)
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:642: FAILED:
+  CHECK( got_index == index )
+with expansion:
+  0 == 420 (0x1a4)
+
+SSI result for typography : 1
+SSI result for composite_ops : 1
+SSI result for drop_shadow : 1
+SSI result for paths : 1
+-------------------------------------------------------------------------------
+Misc
+-------------------------------------------------------------------------------
+/Users/joel/dev/cycfi/artist/test/main.cpp:1060
+...............................................................................
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:955: FAILED:
+  CHECK( std::abs(m.size.x-205.0f) <= 1.0 )
+with expansion:
+  151.98242f <= 1.0
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:956: FAILED:
+  CHECK( std::abs(m.size.y-49) <= 1.0 )
+with expansion:
+  40.31836f <= 1.0
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:957: FAILED:
+  CHECK( std::floor(m.ascent) == 38 )
+with expansion:
+  7.0f == 38
+
+/Users/joel/dev/cycfi/artist/test/main.cpp:958: FAILED:
+  CHECK( std::floor(m.descent) == 10 )
+with expansion:
+  2.0f == 10
+
+SSI result for misc : 1
+===============================================================================
+test cases:   8 |  6 passed |  2 failed
+assertions: 134 | 92 passed | 42 failed
+
+<end of output>
+Test time =   0.12 sec
+----------------------------------------------------------
+Test Failed.
+"artist_test" end time: May 30 10:12 PST
+"artist_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: May 30 10:12 PST

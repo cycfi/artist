@@ -1,0 +1,2 @@
+"/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar" cr libfoo.a CMakeFiles/foo.dir/foo.cpp.o
+"/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib" libfoo.a

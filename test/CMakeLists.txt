@@ -76,6 +76,8 @@ if (APPLE)
       set(GOLDEN_PATH macos_golden/skia)
    elseif (ARTIST_QUARTZ_2D)
       set(GOLDEN_PATH macos_golden/quartz2d)
+   elseif (ARTIST_CAIRO)
+      set(GOLDEN_PATH macos_golden/cairo)
    endif()
 
    set(GOLDEN_DIR macos_golden)
