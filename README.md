@@ -24,7 +24,7 @@ Artist supports three rendering backends. Only one backend is active per build.
 |------------|-----------------|-----------------------|---------|
 | Quartz-2D  | macOS           | `ARTIST_QUARTZ_2D=ON` | macOS   |
 | Skia       | macOS, Linux, Windows | `ARTIST_SKIA=ON` | Linux, Windows |
-| Cairo      | macOS, Linux    | `ARTIST_CAIRO=ON`     | off     |
+| Cairo      | macOS, Linux, Windows | `ARTIST_CAIRO=ON` | off     |
 
 ### Building with Cairo
 
@@ -54,44 +54,39 @@ sudo apt-get install -y \
 brew install cairo fontconfig pkg-config
 ```
 
+#### Windows dependencies
+
+Cairo for Windows can be obtained via [vcpkg](https://vcpkg.io/):
+
+```sh
+vcpkg install cairo fontconfig
+```
+
 ### Cairo: supported platforms and known limitations
 
-**Supported:** offscreen image surfaces on macOS and Linux.
-
-**Not yet supported:** live window rendering — there is no X11/XCB,
-Wayland, or macOS cairo-quartz window host. Cairo is currently usable
-for offscreen rendering and the visual test suite only.
+**Supported:**
+- Offscreen image surfaces on macOS, Linux, and Windows.
+- Live window rendering on macOS (`cairo_app.mm`), Linux/GTK (`cairo_app.cpp`),
+  and Windows/Win32 (`cairo_app.cpp`).
+- Visual test suite with goldens for macOS and Linux.
+- CI build and visual tests on Ubuntu/GCC.
 
 **Known limitations:**
 
-- `shadow_style` is a no-op — Cairo has no native drop-shadow. The
-  Skia `SkImageFilters::DropShadow` equivalent requires an explicit
-  compositing step not yet implemented.
-- `darker` composite op maps to `CAIRO_OPERATOR_DARKEN` (channel-min),
-  not the W3C PlusDarker formula `max(0, Cs+Cd-1)`. No exact Cairo
-  equivalent exists.
+- `shadow_style` is a no-op — Cairo has no native drop-shadow; an explicit
+  offscreen compositing step is required and not yet implemented.
+- `darker` composite op uses `CAIRO_OPERATOR_DARKEN` (channel-min) as a known
+  approximation of the W3C PlusDarker formula `max(0, Cs+Cd-1)`. No exact
+  Cairo equivalent exists. Quartz-2D is exact; Skia has the same approximation.
 - Text rendering uses FreeType/Fontconfig. HarfBuzz shaping, OpenType
   ligatures, complex scripts, and bidi are not implemented.
-- `text_layout::text(…)` re-creates the layout impl but does not
-  preserve the original `font_descr`; font selection may be approximate
-  after a text update.
-- `image::image(uint8_t const*, pixel_format, extent)` (`make_image`)
-  is not yet implemented and throws at runtime.
-- `path::operator==` compares by pointer identity only; deep path
-  equality is not implemented.
-- Cairo pixel format for `image::pixels()` is premultiplied BGRA
-  (`CAIRO_FORMAT_ARGB32` on little-endian), not straight-alpha RGBA.
-  Callers that read or write raw pixels must account for this.
-
-**CI:** the `build-cairo` CI job builds on Ubuntu/GCC with
-`ARTIST_CAIRO=ON`. Visual tests are not run in CI because Linux Cairo
-golden images have not been generated yet. To enable visual tests,
-generate `test/linux_golden/cairo/*.png` on a representative Linux
-environment, review them, and commit.
+- `image::pixels()` returns backend-native premultiplied BGRA
+  (`CAIRO_FORMAT_ARGB32` on little-endian). See the `image.hpp` header for
+  the full per-backend pixel layout contract.
 
 ## News
 
-* 30 May 2026: Cairo backend fully integrated — supports macOS, Linux, and Windows; CI build job added for Ubuntu.
+* 30 May 2026: Cairo backend fully integrated — live window hosts on macOS, Linux, and Windows; visual test suite with CI on Ubuntu.
 
 ## Documentation
 

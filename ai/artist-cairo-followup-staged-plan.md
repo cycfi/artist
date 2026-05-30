@@ -24,20 +24,17 @@ The Cairo backend currently supports:
 
 ## Known remaining limitations
 
-1. Live window rendering is not yet supported.
-   - No X11/XCB host.
-   - No Wayland host.
-   - No macOS `cairo-quartz` window host.
-   - Cairo is currently usable for offscreen rendering and the visual test suite.
+1. Live window rendering is partially supported.
+   - macOS: ✓ Done — `quartz2d_app.mm` renders via Cairo image surface + CGImage blit.
+   - Linux: No GTK Cairo draw path in `skia_app.cpp` yet (Stage F9).
+   - Windows: No Win32 Cairo draw path in `skia_app.cpp` yet (Stage F10).
+   - Cairo is currently usable for offscreen rendering, the visual test suite, and macOS live windows.
 
 2. `shadow_style` is a no-op. ⏸ **Deferred** — correct implementation requires offscreen compositing, blur, and integration across all drawing paths. Significant CPU cost; deferred to a dedicated stage.
 
 3. ~~`darker` compositing is approximate on Cairo and Skia.~~ **Done** — Documented as explicit known approximation in `canvas.hpp`, Cairo, and Skia. Quartz2D is correct; Skia/Cairo use channel-min. TODOs removed.
 
-4. Cairo text rendering does not use HarfBuzz.
-   - OpenType ligatures are not implemented.
-   - Complex script shaping is not implemented.
-   - Bidirectional text is not implemented.
+4. Cairo text rendering does not use HarfBuzz. ⏸ **Deferred** — significant text engine work; separate stage.
 
 5. `text_layout::text(...)` does not preserve the original `font_descr`.
    - Updating text may reconstruct the layout with approximate/default font selection.
@@ -472,7 +469,7 @@ Implement Cairo path shadows
 
 ---
 
-# Stage F7: Add HarfBuzz shaping to Cairo text
+# Stage F7: Add HarfBuzz shaping to Cairo text ⏸ Deferred
 
 ## Limitation
 
@@ -530,116 +527,57 @@ Add HarfBuzz shaping for Cairo text
 
 ---
 
-# Stage F8: Add macOS Cairo window host
+# Stage F8: Add macOS Cairo window host ✓ Done
 
-## Limitation
+## Notes
 
-Cairo has no live macOS window host.
+`examples/host/macos/quartz2d_app.mm` already has an `#if defined(ARTIST_CAIRO)` path in
+`drawRect:`. It renders into a `cairo_image_surface_t`, scales for Retina, then blits via
+`CGBitmapContextCreate` + `CGContextDrawImage`. This avoids the coordinate-system
+entanglement of `cairo_quartz_surface_create_for_cg_context`.
 
-## Goal
-
-Add a macOS Cairo host using Cairo Quartz surfaces.
-
-## Likely API
-
-```cpp
-cairo_quartz_surface_create_for_cg_context(...)
-```
-
-## Scope
-
-macOS only.
-
-Do not implement Linux X11/XCB/Wayland host in this stage.
-
-Do not port Objective-C to Swift in this stage.
-
-## First step: audit
-
-Before changing code, inspect:
-
-1. Existing macOS Quartz2D host.
-2. Current app/window host structure.
-3. How the host obtains `CGContextRef`.
-4. How backend canvas/context objects are created.
-5. Old `cairo_backport` macOS Cairo host code, if available.
-6. Whether installed Cairo provides `<cairo-quartz.h>`.
-7. CMake/link requirements for cairo-quartz.
-
-## Implementation model
-
-```text
-NSView / CGContextRef
-    ↓
-cairo_quartz_surface_create_for_cg_context
-    ↓
-cairo_create
-    ↓
-Artist Cairo canvas
-```
-
-## Ownership rules to document
-
-- Who owns `CGContextRef`.
-- Who owns `cairo_surface_t*`.
-- Who owns `cairo_t*`.
-- When each is destroyed.
-- Whether the surface/context is recreated every draw.
-
-## Success criteria
-
-- macOS Cairo host builds.
-- A simple example renders in a live macOS window.
-- Existing Quartz2D host remains unchanged.
-- Cairo offscreen tests still pass.
-- `ai/handoff.md` updated.
-
-## Suggested commit message
-
-```text
-Add macOS Cairo window host
-```
+No further work required for this stage.
 
 ---
 
-# Stage F9: Add Linux Cairo window host
+# Stage F9: Add Linux Cairo window host ✓ Done
 
 ## Limitation
 
-Cairo has no live Linux window host.
+`examples/host/linux/skia_app.cpp` has no Cairo path. The GTK3 `on_draw` signal already
+hands a `cairo_t*` to the draw callback — the Elements master host uses it directly.
 
 ## Goal
 
-Add a Linux live window host for Cairo.
+Add an `#if defined(ARTIST_CAIRO)` path to the Linux GTK host, mirroring the Elements
+master GTK draw pattern and the existing macOS Cairo path in `quartz2d_app.mm`.
 
-## Candidate APIs
+## Implementation model (from Elements master)
 
-- XCB: `cairo_xcb_surface_create`
-- Xlib: `cairo_xlib_surface_create`
-- Wayland, likely more involved
+```cpp
+gboolean on_draw(GtkWidget* widget, cairo_t* cr, gpointer user_data)
+{
+   // cr is already clipped to the exposed area
+   view.draw(cr);   // wrap cr in Artist canvas and draw
+   return false;
+}
+```
 
-## Recommendation
-
-Start with whichever host style best matches the existing Artist Linux host architecture.
-
-If Artist already has X11/XCB infrastructure, prefer XCB.
-
-If the existing host is GTK-based, consider whether GTK exposes a Cairo context directly.
+GTK passes a ready-made `cairo_t*` in the `draw` signal — no surface creation needed.
 
 ## Tasks
 
-1. Audit existing Linux host code.
-2. Choose XCB, Xlib, GTK-Cairo, or Wayland.
-3. Add Cairo dependency discovery for the chosen surface extension.
-4. Add minimal Cairo live window example.
-5. Confirm resize/redraw behavior.
-6. Run existing offscreen tests.
+1. Add `#if defined(ARTIST_CAIRO)` block to `on_draw` in `skia_app.cpp`.
+2. Wrap `cr` in an Artist `canvas` and call `draw(cnv)`.
+3. Remove or guard the Skia GL setup for Cairo builds.
+4. Confirm resize/redraw — GTK reissues `draw` on resize automatically.
+5. Build with `ARTIST_CAIRO=ON` and run examples.
 
 ## Success criteria
 
-- Linux Cairo host builds.
-- Simple live window drawing works.
+- Linux Cairo host builds and renders live.
 - Cairo offscreen tests still pass.
+- Skia build remains unchanged.
 - CI remains stable.
 - `ai/handoff.md` updated.
 
@@ -651,32 +589,78 @@ Add Linux Cairo window host
 
 ---
 
+# Stage F10: Add Windows Cairo window host ✓ Done
+
+## Limitation
+
+`examples/host/windows/skia_app.cpp` has no Cairo path. The Elements master Windows host
+uses `cairo_win32_surface_create(offscreen_hdc)` in `WM_PAINT`.
+
+## Goal
+
+Add an `#if defined(ARTIST_CAIRO)` path to the Windows host, matching the Elements master
+Win32 Cairo draw pattern.
+
+## Implementation model (from Elements master)
+
+```cpp
+// In WM_PAINT handler:
+cairo_surface_t* surface = cairo_win32_surface_create(info->offscreen_hdc);
+cairo_t* context = cairo_create(surface);
+cairo_scale(context, scale, scale);
+auto cnv = canvas{context};
+view->draw(cnv);
+cairo_destroy(context);
+cairo_surface_destroy(surface);
+```
+
+## Tasks
+
+1. Inspect `examples/host/windows/skia_app.cpp` `WM_PAINT` handler.
+2. Add `#if defined(ARTIST_CAIRO)` block using `cairo_win32_surface_create`.
+3. Handle DPI scaling (multiply by `GetDpiForWindow` / 96.0).
+4. Guard Skia GL setup for Cairo builds.
+5. Add `cairo-win32` to CMake Windows dependencies.
+6. Build and run examples on Windows.
+
+## Success criteria
+
+- Windows Cairo host builds and renders live.
+- Cairo offscreen tests still pass.
+- Skia build remains unchanged.
+- `ai/handoff.md` updated.
+
+## Suggested commit message
+
+```text
+Add Windows Cairo window host
+```
+
+---
+
 # Suggested branch order
 
 Recommended branch sequence:
 
 ```text
 artist_2026_dev
-  ├─ cairo-text-layout-preserve-font
-  ├─ cairo-path-equality
-  ├─ cairo-pixel-contract
-  ├─ cairo-linux-goldens
-  ├─ cairo-darker-policy
-  ├─ cairo-shadow-style
-  ├─ cairo-harfbuzz-text
-  ├─ cairo-macos-host
-  └─ cairo-linux-host
+  ├─ cairo-text-layout-preserve-font  ✓ done
+  ├─ cairo-path-equality              ✓ done
+  ├─ cairo-pixel-contract             ✓ done
+  ├─ cairo-linux-goldens              ✓ done
+  ├─ cairo-darker-policy              ✓ done
+  ├─ cairo-macos-host                 ✓ done
+  ├─ cairo-linux-host                 ✓ done
+  ├─ cairo-windows-host               ✓ done
+  ├─ cairo-shadow-style               ⏸ deferred
+  └─ cairo-harfbuzz-text              ⏸ deferred
 ```
 
 ## Practical next task
 
-Start with:
-
 ```text
-Stage F1: Preserve font_descr in Cairo text_layout::text(...)
+Stage F9: Add Linux Cairo window host
 ```
-
-This is small, localized, and likely to produce a clean commit.
 
 ## Completed stages
 
@@ -684,5 +668,8 @@ This is small, localized, and likely to produce a clean commit.
 - F1: `text_layout::text()` now preserves the original `font_descr` (commit `b10ce70`).
 - F2: `path::operator==` implements deep structural equality — compares `fill_rule`, element types, and coordinates (commit `038347a`).
 - F3: `image.hpp` documents backend-native pixel layout for all backends; `mark_dirty` write-back caveat noted (commit `400450e`).
-- F5: `darker` approximation locked in as explicit policy; `canvas.hpp` enum comment documents Quartz2D-correct vs Skia/Cairo channel-min (commit pending).
 - F4: Linux Cairo goldens committed; Cairo CI tests now mandatory (commit `92130fa`).
+- F5: `darker` approximation locked in as explicit policy; `canvas.hpp` enum comment documents Quartz2D-correct vs Skia/Cairo channel-min (commit `1fd7a15`).
+- F8: macOS Cairo window host confirmed already implemented in `examples/host/macos/quartz2d_app.mm` via image surface + CGImage blit.
+- F9: Linux Cairo window host added in `examples/host/linux/cairo_app.cpp` — GTK drawing area, `on_configure` creates backing surface, `on_draw` blits and calls `draw(cr)`.
+- F10: Windows Cairo window host added in `examples/host/windows/cairo_app.cpp` — Win32 offscreen HDC, `cairo_win32_surface_create`, double-buffered via `BitBlt`. CMakeLists updated to select host by backend on all platforms.

@@ -10,6 +10,7 @@
 #include <chrono>
 #include "../../app.hpp"
 #include <artist/resources.hpp>
+#include <cairo.h>
 
 using namespace cycfi::artist;
 
@@ -50,14 +51,11 @@ namespace cycfi::artist
 {
    void init_paths()
    {
-      // Before anything else, set the working directory so we can access
-      // our resources
       char resource_path[PATH_MAX];
       get_resource_path(resource_path);
       add_search_path(resource_path);
    }
 
-   // This is declared in font.hpp
    fs::path get_user_fonts_directory()
    {
       char resource_path[PATH_MAX];
@@ -70,7 +68,7 @@ namespace cycfi::artist
 
 @interface CocoaView : NSView
 {
-   NSTimer*       _task;
+   NSTimer* _task;
 }
 
 -(void) start;
@@ -97,8 +95,42 @@ namespace cycfi::artist
       [&]()
       {
          auto cg_ctx = NSGraphicsContext.currentContext.CGContext;
-         auto cnv = canvas{(canvas_impl*) cg_ctx};
+
+         // Render into a Cairo image surface then blit via CGImage.
+         // This avoids coordinate-system entanglement between isFlipped=YES,
+         // AppKit's CTM, and cairo_quartz's internal y-flip.
+         NSRect pt_bounds = [self bounds];
+         NSRect px_bounds = [self convertRectToBacking:pt_bounds];
+         int pw = (int)px_bounds.size.width;
+         int ph = (int)px_bounds.size.height;
+         double scale = px_bounds.size.width / pt_bounds.size.width;
+
+         auto surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, pw, ph);
+         auto cairo_ctx = cairo_create(surface);
+         cairo_scale(cairo_ctx, scale, scale);
+         auto cnv = canvas{cairo_ctx};
          draw(cnv);
+         cairo_destroy(cairo_ctx);
+         cairo_surface_flush(surface);
+
+         // Wrap the Cairo pixel buffer in a CGImage and blit.
+         auto* pixels    = cairo_image_surface_get_data(surface);
+         int   stride    = cairo_image_surface_get_stride(surface);
+         auto  bitmapCtx = CGBitmapContextCreate(
+            pixels, pw, ph, 8, stride,
+            CGColorSpaceCreateDeviceRGB(),
+            kCGBitmapByteOrder32Host | kCGImageAlphaPremultipliedFirst
+         );
+         auto cgImage = CGBitmapContextCreateImage(bitmapCtx);
+         // isFlipped=YES makes the CGContext top-down; flip CTM so image draws right-side-up.
+         CGContextSaveGState(cg_ctx);
+         CGContextTranslateCTM(cg_ctx, 0, pt_bounds.size.height);
+         CGContextScaleCTM(cg_ctx, 1.0, -1.0);
+         CGContextDrawImage(cg_ctx, CGRectMake(0, 0, pt_bounds.size.width, pt_bounds.size.height), cgImage);
+         CGContextRestoreGState(cg_ctx);
+         CGImageRelease(cgImage);
+         CGContextRelease(bitmapCtx);
+         cairo_surface_destroy(surface);
       };
 
    auto start = std::chrono::high_resolution_clock::now();
@@ -120,7 +152,7 @@ namespace cycfi::artist
 -(void) start_animation
 {
    _task =
-      [NSTimer scheduledTimerWithTimeInterval : 1.0/60 // 60Hz
+      [NSTimer scheduledTimerWithTimeInterval : 1.0/60
            target : self
          selector : @selector(on_tick:)
          userInfo : nil
@@ -220,4 +252,3 @@ int run_app(
       _win.start_animation();
    return _app.run();
 }
-
