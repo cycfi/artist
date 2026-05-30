@@ -1177,7 +1177,7 @@ This fixes blank/upside-down rendering for all Cairo macOS examples.
 | `darker` composite op | Approximate (OPERATOR_DARKEN, not W3C PlusDarker) |
 | Text shaping | No HarfBuzz, OpenType, bidi |
 | `text_layout::text()` | Does not preserve `font_descr` across updates |
-| `path::operator==` | Pointer identity only |
+| `path::operator==` | Fixed — deep equality via `cairo_copy_path` |
 | `image::pixels()` | Premultiplied BGRA, not straight-alpha RGBA |
 | Cairo window host | macOS examples use CGBitmap blit, not a native Cairo window surface |
 
@@ -1187,7 +1187,6 @@ This fixes blank/upside-down rendering for all Cairo macOS examples.
 - Implement `shadow_style` via offscreen compositing.
 - Implement HarfBuzz shaping for Cairo text.
 - Fix `text_layout::text()` to preserve `font_descr`.
-- Fix `path::operator==` for deep equality.
 
 ---
 
