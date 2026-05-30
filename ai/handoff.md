@@ -2,10 +2,9 @@
 
 ## Current state
 
-All ten assimilation stages are complete. The branch is `artist_2026_dev`.
-
-The Cairo backend is now a fully tested, CI-verified optional backend alongside
-Skia and Quartz2D.
+Branch: `artist_2026_dev`. All Cairo follow-up stages F0–F5, F8–F10 are complete.
+The Cairo backend is a fully tested, CI-verified optional backend alongside Skia and
+Quartz2D, with live window hosts on all three platforms.
 
 ---
 
@@ -24,6 +23,37 @@ All jobs use `actions/checkout@v4`.
 
 ---
 
+## Window host layout
+
+One dedicated file per backend per platform. CMakeLists selects the right one.
+
+| File | Backend | Platform |
+|------|---------|----------|
+| `examples/host/macos/cairo_app.mm` | Cairo | macOS |
+| `examples/host/macos/quartz2d_app.mm` | Quartz2D | macOS |
+| `examples/host/macos/skia_app.mm` | Skia | macOS |
+| `examples/host/linux/cairo_app.cpp` | Cairo | Linux/GTK |
+| `examples/host/linux/skia_app.cpp` | Skia | Linux/GTK+GL |
+| `examples/host/windows/cairo_app.cpp` | Cairo | Windows/Win32 |
+| `examples/host/windows/skia_app.cpp` | Skia | Windows/GL |
+
+### macOS Cairo host
+Renders into a `cairo_image_surface` (ARGB32, Retina-aware), then blits via
+`CGBitmapContextCreate` + `CGImage` + `CGContextDrawImage` with a CTM flip to
+land right-side-up inside the `isFlipped=YES` NSView.
+
+### Linux Cairo host
+Uses a `GtkDrawingArea`. `on_configure` creates a `gdk_window_create_similar_surface`
+backing surface. `on_draw` blits it then calls `draw(cr)` with the GTK-provided
+`cairo_t*` directly. No GL required.
+
+### Windows Cairo host
+Uses a Win32 child window with an offscreen HDC for double-buffering.
+`WM_PAINT` creates `cairo_win32_surface_create(offscreen_hdc)`, calls `draw(cnv)`,
+destroys both, then `BitBlt`s to screen. DPI scaled via `GetDpiForWindow`.
+
+---
+
 ## Golden image layout
 
 | Directory | Backend | Platform |
@@ -32,69 +62,28 @@ All jobs use `actions/checkout@v4`.
 | `test/macos_golden/quartz2d/` | Quartz2D | macOS |
 | `test/macos_golden/cairo/` | Cairo | macOS |
 | `test/linux_golden/skia/` | Skia | Linux |
-| `test/linux_golden/cairo/` | Cairo | Linux ← generated from CI |
+| `test/linux_golden/cairo/` | Cairo | Linux |
 | `test/windows_golden/skia/` | Skia | Windows |
 
 Each directory contains 10 golden PNGs: `shapes_and_images`, `shapes2`,
 `typography`, `composite_ops`, `composite_ops2`, `drop_shadow`, `paths`,
-`misc`, `chessboard`, (scale test has no golden).
-
-### Chessboard test
-
-The `Chessboard` test case (added during this session) exercises
-`make_image<pixel_format::rgba32>` — the pixel-buffer image constructor.
-It lives in `test/main.cpp` and replaced `examples/chessboard.cpp`.
+`misc`, `chessboard`.
 
 ---
 
-## What changed in the post-Stage-10 session
+## Completed follow-up stages
 
-### Branch rename
-`artist-cairo-backend` → `artist_2026_dev`
-
-### CI fixes
-- Added `-DARTIST_BUILD_EXAMPLES=OFF` to Cairo CI job (avoids OpenGL/GTK dependency).
-- Added missing `windows_golden/skia/shapes2.png` and `composite_ops2.png`.
-- Added missing `linux_golden/skia/shapes2.png` and `composite_ops2.png`.
-- Enabled Cairo CI tests; generated and committed `linux_golden/cairo/` goldens.
-- Upgraded `actions/checkout@v2` → `@v4`.
-
-### make_image implemented
-`image::image(uint8_t const*, pixel_format, extent)` is now fully implemented
-for Cairo in `lib/impl/cairo/image.cpp`. Converts gray8 / rgb16 / rgb32 / rgba32
-input to Cairo's premultiplied BGRA ARGB32 format. `_pixmap_size()` also implemented
-(was returning 0).
-
-### Chessboard moved to tests
-`examples/chessboard.cpp` deleted. `chessboard()` draw function and `Chessboard`
-TEST_CASE added to `test/main.cpp`. Goldens for all platforms committed.
-
-### Cairo macOS example host fixed
-`examples/host/macos/quartz2d_app.mm` Cairo path now:
-1. Renders into a `cairo_image_surface` (plain ARGB32, top-down, Retina-aware).
-2. Blits via `CGBitmapContextCreate` + `CGImage` + `CGContextDrawImage` with an
-   explicit CTM flip to land right-side-up inside the `isFlipped=YES` NSView.
-
-This fixes the blank/upside-down rendering that affected all Cairo examples on macOS.
-
-### Examples verified (Cairo, macOS)
-All examples build and render correctly:
-
-| Example | Status |
-|---------|--------|
-| rain | ✓ |
-| shadow | ✓ |
-| shapes | ✓ |
-| paths | ✓ |
-| composite_ops | ✓ |
-| typography | ✓ |
-| space | ✓ |
-| tauri | ✓ |
-
-### README updated
-- News entry added.
-- Known limitations updated: `make_image` no longer listed as unimplemented.
-- CI section updated to reflect that visual tests now run for Cairo.
+| Stage | Description | Commit |
+|-------|-------------|--------|
+| F0 | Reconnaissance — `make_image` confirmed, limitations verified | — |
+| F1 | `text_layout::text()` preserves `font_descr` | `b10ce70` |
+| F2 | `path::operator==` deep structural equality | `038347a` |
+| F3 | `image.hpp` pixel layout contract documented for all backends | `400450e` |
+| F4 | Linux Cairo goldens committed; Cairo CI tests mandatory | `92130fa` |
+| F5 | `darker` approximation locked in; `canvas.hpp` documents cross-backend policy | `1fd7a15` |
+| F8 | macOS Cairo window host (`cairo_app.mm`) separated from `quartz2d_app.mm` | `02dc969` |
+| F9 | Linux Cairo window host (`cairo_app.cpp`) | `ad6cc7f` |
+| F10 | Windows Cairo window host (`cairo_app.cpp`) | `ad6cc7f` |
 
 ---
 
@@ -102,26 +91,20 @@ All examples build and render correctly:
 
 | Area | Status |
 |------|--------|
-| `shadow_style` | No-op — Cairo has no native drop-shadow |
-| `darker` composite op | Approximate: `CAIRO_OPERATOR_DARKEN` (channel-min), not W3C PlusDarker |
-| Text shaping | No HarfBuzz, no OpenType ligatures, no complex scripts, no bidi |
-| `text_layout::text(…)` | Re-creates impl but does not preserve `font_descr`; font selection may drift |
-| `path::operator==` | Compares by pointer identity only; deep equality not implemented |
-| `image::pixels()` | Returns premultiplied BGRA, not straight-alpha RGBA |
-| Cairo window host | macOS/Linux examples use CGBitmapContext blit — not a native Cairo window surface |
+| `shadow_style` | No-op — requires offscreen compositing; deferred (F6) |
+| `darker` composite op | Known approximation: `CAIRO_OPERATOR_DARKEN` (channel-min), not W3C PlusDarker. Quartz2D is exact; Cairo/Skia are not. Documented in `canvas.hpp`. |
+| Text shaping | No HarfBuzz, no OpenType ligatures, no complex scripts, no bidi; deferred (F7) |
+| `image::pixels()` | Returns premultiplied BGRA. Documented in `image.hpp` with per-backend layout table. |
 
 ---
 
 ## Remaining TODO markers in Cairo source
 
-| File | Location | Description |
-|------|----------|-------------|
-| `canvas.cpp:408` | `shadow_style` | Drop-shadow via compositing — known limitation |
-| `canvas.cpp:431` | `darker` op | W3C PlusDarker not expressible in Cairo |
-| `image.cpp:65` | `pixels()` | BE endian verification |
-| `path.cpp:57` | `operator==` | Deep path equality unimplemented |
-| `text_layout.cpp:648` | `text(string_view)` | font_descr not stored in impl |
-| `text_layout.cpp:655` | `text(u32string_view)` | Same font_descr gap |
+| File | Description |
+|------|-------------|
+| `canvas.cpp` — `shadow_style` | Drop-shadow via compositing — deferred |
+
+All other TODOs from the original assimilation have been resolved.
 
 ---
 
@@ -146,19 +129,9 @@ ctest --test-dir build-quartz --output-on-failure
 
 ---
 
-## Test results (local, macOS)
-
-- **Cairo** (`build-cairo`): 10/10 PASS
-- **Skia** (`build-skia`): 11/11 PASS
-- **Quartz2D** (`build-quartz`): not run this session (Skia/Cairo cover it)
-
----
-
 ## Possible next tasks
 
-- Implement a proper Cairo window surface host (XCB on Linux, Quartz on macOS) so the
-  examples use a real Cairo surface rather than a CGBitmap blit.
-- Implement `shadow_style` via an offscreen compositing step.
-- Implement HarfBuzz shaping for Cairo text.
-- Fix `text_layout::text()` to preserve `font_descr` across updates.
-- Fix `path::operator==` for deep equality.
+- Implement `shadow_style` via offscreen compositing (F6) — significant CPU work,
+  needs blur + per-draw-call intercept.
+- Add HarfBuzz shaping to Cairo text (F7) — major text engine work.
+- Merge `artist_2026_dev` to `master` once branch is considered stable.

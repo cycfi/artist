@@ -6,9 +6,11 @@
 project(examples)
 
 if (UNIX AND NOT APPLE)
-   find_package(OpenGL REQUIRED COMPONENTS OpenGL)
    find_package(PkgConfig REQUIRED)
    pkg_check_modules(gtk3 REQUIRED IMPORTED_TARGET gtk+-3.0)
+   if (NOT ARTIST_CAIRO)
+      find_package(OpenGL REQUIRED COMPONENTS OpenGL)
+   endif()
 endif()
 
 file(
@@ -21,6 +23,11 @@ function(add_example name)
       if (ARTIST_SKIA)
          set(MAIN_APP
             host/macos/skia_app.mm
+            print_elapsed.cpp
+         )
+      elseif (ARTIST_CAIRO)
+         set(MAIN_APP
+            host/macos/cairo_app.mm
             print_elapsed.cpp
          )
       else()
@@ -56,10 +63,16 @@ function(add_example name)
 
    elseif (MSVC)
 
+      if (ARTIST_CAIRO)
+         set(WINDOWS_HOST host/windows/cairo_app.cpp)
+      else()
+         set(WINDOWS_HOST host/windows/skia_app.cpp)
+      endif()
+
       add_executable(
          ${name}
          ${name}.cpp
-         host/windows/skia_app.cpp
+         ${WINDOWS_HOST}
          print_elapsed.cpp
       )
 
@@ -79,18 +92,31 @@ function(add_example name)
 
    elseif (UNIX)
 
+      if (ARTIST_CAIRO)
+         set(LINUX_HOST host/linux/cairo_app.cpp)
+      else()
+         set(LINUX_HOST host/linux/skia_app.cpp)
+      endif()
+
       add_executable(
          ${name}
          ${name}.cpp
-         host/linux/skia_app.cpp
+         ${LINUX_HOST}
          print_elapsed.cpp
       )
 
-      target_link_libraries(
-         ${name}
-         PkgConfig::gtk3
-         OpenGL::GL
-      )
+      if (ARTIST_CAIRO)
+         target_link_libraries(
+            ${name}
+            PkgConfig::gtk3
+         )
+      else()
+         target_link_libraries(
+            ${name}
+            PkgConfig::gtk3
+            OpenGL::GL
+         )
+      endif()
 
    endif()
 
