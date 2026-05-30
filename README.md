@@ -79,14 +79,17 @@ vcpkg install cairo fontconfig
 - `darker` composite op uses `CAIRO_OPERATOR_DARKEN` (channel-min) as a known
   approximation of the W3C PlusDarker formula `max(0, Cs+Cd-1)`. No exact
   Cairo equivalent exists. Quartz-2D is exact; Skia has the same approximation.
-- Text rendering uses FreeType/Fontconfig. HarfBuzz shaping, OpenType
-  ligatures, complex scripts, and bidi are not implemented.
+- Text rendering uses HarfBuzz for shaping (OpenType GSUB/GPOS), FreeType for
+  rasterization, and Fontconfig for font selection. Standard ligatures (`liga`)
+  and kerning are active. Deferred: font fallback, bidirectional text, complex
+  script segmentation (Arabic, Indic, etc.), explicit OpenType feature control.
 - `image::pixels()` returns backend-native premultiplied BGRA
   (`CAIRO_FORMAT_ARGB32` on little-endian). See the `image.hpp` header for
   the full per-backend pixel layout contract.
 
 ## News
 
+* 31 May 2026: Cairo backend gains HarfBuzz text shaping — OpenType ligatures, kerning, and correct complex-text advances for `fill_text`, `stroke_text`, `measure_text`, and `text_layout`.
 * 30 May 2026: Cairo backend fully integrated — drop-shadow support, live window hosts on macOS, Linux, and Windows; visual test suite with CI on Ubuntu and Windows.
 
 ## Documentation

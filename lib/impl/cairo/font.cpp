@@ -8,8 +8,11 @@
 // font face, then cairo_scaled_font_new with the requested size.
 // Font matching mirrors the Skia backend's Fontconfig approach.
 #include "cairo_private.hpp"
+#include "cairo_text.hpp"
 #include <cairo/cairo-ft.h>
 #include <fontconfig/fontconfig.h>
+#include <hb-ft.h>
+#include <hb-ot.h>
 #include <infra/support.hpp>
 #include <algorithm>
 #include <sstream>
@@ -140,8 +143,9 @@ namespace cycfi::artist
          return match; // may be nullptr
       }
 
-      // Create a cairo_scaled_font_t from a font_descr using FreeType/Fontconfig.
-      cairo_scaled_font_t* make_scaled_font(font_descr const& descr)
+      // Create a font_impl from a font_descr: Cairo scaled font + HarfBuzz font.
+      // Returns nullptr if font matching or creation fails.
+      font_impl* make_font_impl(font_descr const& descr)
       {
          FcPattern* fc_pat = fc_match(descr);
          if (!fc_pat)
@@ -177,7 +181,43 @@ namespace cycfi::artist
             if (sf) cairo_scaled_font_destroy(sf);
             return nullptr;
          }
-         return sf;
+
+         // Create HarfBuzz font via hb_ft_face_create_referenced + hb_ot_font_set_funcs.
+         //
+         // Do NOT use hb_ft_font_create_referenced: that keeps the FT_Face live for
+         // metric queries during hb_shape, but Cairo's FT_Face is shared and its size
+         // state changes between canvas operations.  hb_ot_font_set_funcs reads glyph
+         // advances directly from the OpenType hmtx/GSUB/GPOS tables — no dependency
+         // on the FT_Face's current ppem — and activates GSUB lookups (liga, etc.).
+         font_impl::hb_font_ptr hb_fnt;
+         FT_Face ft_face = cairo_ft_scaled_font_lock_face(sf);
+         if (ft_face)
+         {
+            // hb_ft_face_create_referenced copies/references the font blob from the
+            // FT_Face — safe to unlock immediately after.
+            hb_face_t* hb_face = hb_ft_face_create_referenced(ft_face);
+            cairo_ft_scaled_font_unlock_face(sf);
+            if (hb_face)
+            {
+               hb_font_t* raw = hb_font_create(hb_face);
+               if (raw)
+               {
+                  // OT funcs read metrics from OpenType tables; scale at upem so
+                  // positions are in font units.  Pixel value = hb_value*(size/upem).
+                  hb_ot_font_set_funcs(raw);
+                  unsigned upem = hb_face_get_upem(hb_face);
+                  hb_font_set_scale(raw, int(upem), int(upem));
+                  hb_fnt.reset(raw);
+               }
+               hb_face_destroy(hb_face);
+            }
+         }
+         else
+         {
+            cairo_ft_scaled_font_unlock_face(sf);
+         }
+
+         return new font_impl(sf, descr._size, std::move(hb_fnt));
       }
    }
 
@@ -188,8 +228,9 @@ namespace cycfi::artist
    }
 
    font::font(font_descr descr)
-    : _ptr(new font_impl(make_scaled_font(descr)))
+    : _ptr(make_font_impl(descr))
    {
+      if (!_ptr) _ptr = new font_impl;
    }
 
    font::font(font const& rhs)
@@ -242,11 +283,8 @@ namespace cycfi::artist
 
    float font::measure_text(std::string_view str) const
    {
-      if (!_ptr || !_ptr->_scaled_font)
+      if (!_ptr || !_ptr->_hb_font)
          return 0.0f;
-      cairo_text_extents_t ext;
-      cairo_scaled_font_text_extents(_ptr->_scaled_font,
-         std::string{str}.c_str(), &ext);
-      return float(ext.x_advance);
+      return shape_text(_ptr->_hb_font.get(), _ptr->_size, str).advance_x;
    }
 }

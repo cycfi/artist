@@ -50,23 +50,36 @@ struct cairo_artist_path_t
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// font_impl — Cairo FreeType-backed scaled font.
+// font_impl — Cairo FreeType-backed scaled font with HarfBuzz shaping font.
 // Declared as 'struct font_impl' inside namespace cycfi::artist in font.hpp.
-// Each font_impl owns one Cairo reference to _scaled_font.
+// Each font_impl owns one Cairo reference to _scaled_font and one HarfBuzz
+// font created via hb_ft_font_create_referenced.
+
+#include <hb.h>
+#include <infra/support.hpp>
 
 namespace cycfi::artist
 {
    struct font_impl
    {
       cairo_scaled_font_t* _scaled_font = nullptr;
+      float                _size        = 0.0f;
+
+      using hb_font_ptr = std::unique_ptr<hb_font_t, deleter<hb_font_t, hb_font_destroy>>;
+      hb_font_ptr          _hb_font;
 
       font_impl() = default;
 
-      explicit font_impl(cairo_scaled_font_t* sf)
-       : _scaled_font(sf) {}
+      font_impl(cairo_scaled_font_t* sf, float size, hb_font_ptr hb_fnt)
+       : _scaled_font(sf)
+       , _size(size)
+       , _hb_font(std::move(hb_fnt))
+      {}
 
       font_impl(font_impl const& rhs)
        : _scaled_font(rhs._scaled_font)
+       , _size(rhs._size)
+       , _hb_font(rhs._hb_font ? hb_font_ptr(hb_font_reference(rhs._hb_font.get())) : nullptr)
       {
          if (_scaled_font) cairo_scaled_font_reference(_scaled_font);
       }
@@ -75,6 +88,7 @@ namespace cycfi::artist
 
       ~font_impl()
       {
+         // _hb_font unique_ptr destructs first (hb_font_destroy), then:
          if (_scaled_font) cairo_scaled_font_destroy(_scaled_font);
       }
    };
