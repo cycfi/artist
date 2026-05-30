@@ -440,8 +440,8 @@ namespace cycfi::artist
 
          // W3C lighter = Porter-Duff Plus (additive: Cs + Cd).
          case lighter:           mode_ = SkBlendMode::kPlus;         break;
-         // TODO(skia): W3C darker = PlusDarker (max(0, Cs+Cd-1)); Skia has no
-         // equivalent. kDarken (channel-min) is approximate and visually wrong.
+         // darker: W3C PlusDarker = max(0, Cs+Cd-1). Skia has no native equivalent;
+         // kDarken (channel-min) is used as a known approximation.
          case darker:            mode_ = SkBlendMode::kDarken;       break;
          case copy:              mode_ = SkBlendMode::kSrc;          break;
          case xor_:              mode_ = SkBlendMode::kXor;          break;

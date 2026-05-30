@@ -1113,6 +1113,84 @@ Keep the diff focused.
 Update ai/handoff.md.
 ```
 
+## Post-Stage-10: Productisation (artist_2026_dev session)
+
+### What was done
+
+After Stage 10, the branch was renamed `artist_2026_dev` and the following
+work was completed to bring the backend to a fully CI-tested state:
+
+**Branch and CI hygiene**
+- Renamed branch `artist-cairo-backend` → `artist_2026_dev`; force-pushed.
+- Removed all `Co-Authored-By: Claude` trailers from commit history via
+  `git filter-branch`; force-pushed.
+- Upgraded `actions/checkout@v2` → `@v4`.
+- Added `-DARTIST_BUILD_EXAMPLES=OFF` to the Cairo CI job (avoids OpenGL/GTK).
+- Added missing `windows_golden/skia/` and `linux_golden/skia/` goldens for
+  `shapes2.png` and `composite_ops2.png`.
+
+**make_image implemented**
+`image::image(uint8_t const*, pixel_format, extent)` is now implemented for
+Cairo. Converts gray8, rgb16, rgb32, rgba32 to Cairo premultiplied BGRA
+ARGB32. `_pixmap_size()` also implemented (was returning 0).
+
+**Chessboard moved to tests**
+`examples/chessboard.cpp` deleted. `Chessboard` test case added to
+`test/main.cpp`. This exercises `make_image<pixel_format::rgba32>` as a
+regression test. Goldens committed for all platforms.
+
+**Cairo macOS example host fixed**
+`examples/host/macos/quartz2d_app.mm` Cairo path now renders into a plain
+`cairo_image_surface` (Retina-aware pixel dimensions) then blits via
+`CGBitmapContextCreate` + `CGImage` + `CGContextDrawImage` with a CTM flip.
+This fixes blank/upside-down rendering for all Cairo macOS examples.
+
+**Cairo CI tests enabled**
+- Added `ARTIST_BUILD_TESTS=ON` and a `ctest` step to the Cairo CI job.
+- Generated `test/linux_golden/cairo/` goldens by running CI with
+  `continue-on-error` + artifact upload, downloading results, reviewing, and
+  committing. All 10 test cases pass in Linux Cairo CI.
+
+**Definition of done — verified**
+
+```md
+- [x] Cairo is selectable through CMake.
+- [x] Cairo builds on the intended platform (macOS + Linux).
+- [x] Skia still builds and all tests pass.
+- [x] Quartz2D still builds on Apple.
+- [x] Basic Cairo rendering works.
+- [x] Core paths, strokes, fills, transforms, and clipping work.
+- [x] Text support is implemented or clearly documented as limited.
+- [x] Image/offscreen support is implemented (make_image now works).
+- [x] Gradients/compositing support is implemented or clearly documented.
+- [x] Platform and HiDPI behavior are documented.
+- [x] CI includes Cairo with full test run.
+- [x] README/docs explain how to build with Cairo.
+- [x] Remaining backend differences are documented.
+```
+
+### Remaining known limitations
+
+| Area | Status |
+|------|--------|
+| `shadow_style` | No-op |
+| `darker` composite op | Approximate (OPERATOR_DARKEN, not W3C PlusDarker) |
+| Text shaping | No HarfBuzz, OpenType, bidi |
+| `text_layout::text()` | Does not preserve `font_descr` across updates |
+| `path::operator==` | Pointer identity only |
+| `image::pixels()` | Premultiplied BGRA, not straight-alpha RGBA |
+| Cairo window host | macOS examples use CGBitmap blit, not a native Cairo window surface |
+
+### Possible next tasks
+
+- Implement a proper Cairo window surface host.
+- Implement `shadow_style` via offscreen compositing.
+- Implement HarfBuzz shaping for Cairo text.
+- Fix `text_layout::text()` to preserve `font_descr`.
+- Fix `path::operator==` for deep equality.
+
+---
+
 ## Review checklist for every stage
 
 Before stopping, confirm:

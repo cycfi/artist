@@ -48,8 +48,9 @@ namespace cycfi::artist
       std::size_t caret_index(point p) const;
       std::size_t num_lines() const;
 
-      std::u32string_view get_text() const { return _text; }
-      font&               get_font()       { return _font; }
+      std::u32string_view get_text() const      { return _text; }
+      font&               get_font()            { return _font; }
+      font_descr const&   get_font_descr() const { return _fdesc; }
 
       break_enum  line_break(std::size_t index) const;
       break_enum  word_break(std::size_t index) const;
@@ -82,6 +83,7 @@ namespace cycfi::artist
                     std::vector<float> const& char_positions,
                     get_line_info const& glf);
 
+      font_descr               _fdesc;
       font                     _font;
       std::u32string           _text;
       std::string              _utf8;     // UTF-8 version used for Cairo calls
@@ -613,7 +615,8 @@ namespace cycfi::artist
    ////////////////////////////////////////////////////////////////////////////
    // Constructor — build the font and character advance table.
    text_layout::impl::impl(font_descr const& fdesc, std::u32string_view utf32)
-    : _font(fdesc)
+    : _fdesc(fdesc)
+    , _font(fdesc)
     , _text(utf32)
     , _utf8(to_utf8(utf32))
    {
@@ -645,15 +648,12 @@ namespace cycfi::artist
 
    void text_layout::text(std::string_view utf8)
    {
-      // TODO(cairo): font_descr is not stored in impl; re-created with default descr.
-      // Store font_descr in impl so these setters can reconstruct properly.
-      _impl = std::make_unique<impl>(font_descr{}, to_utf32(utf8));
+      _impl = std::make_unique<impl>(_impl->get_font_descr(), to_utf32(utf8));
    }
 
    void text_layout::text(std::u32string_view utf32)
    {
-      // TODO(cairo): See text(string_view) — same font_descr gap.
-      _impl = std::make_unique<impl>(font_descr{}, utf32);
+      _impl = std::make_unique<impl>(_impl->get_font_descr(), utf32);
    }
 
    std::u32string_view text_layout::text() const
