@@ -6,6 +6,7 @@
 #include <artist/canvas.hpp>
 #include <artist/image.hpp>
 #include "cairo_private.hpp"
+#include "cairo_text.hpp"
 #include "shadow_blur.hpp"
 #include <stack>
 #include <cmath>
@@ -38,6 +39,7 @@ namespace cycfi::artist
          int                    align       = 0;
          pattern_state          pattern_set = none_set;
          shadow_info            shadow;
+         class font             font;       // current font, for HarfBuzz shaping
       };
 
       void  apply_fill_style();
@@ -711,25 +713,26 @@ namespace cycfi::artist
    {
       if (font_.impl() && font_.impl()->_scaled_font)
          cairo_set_scaled_font(_context, font_.impl()->_scaled_font);
+      _state->_info.font = font_;
    }
 
    namespace
    {
-      point get_text_start(cairo_t* ctx, point p, int align, char const* utf8)
+      // Compute the draw origin from the requested point, alignment flags, shaped
+      // advance, and font vertical metrics.  advance_x is the HarfBuzz-shaped
+      // horizontal advance used for left/center/right alignment.
+      point get_text_start(cairo_t* ctx, point p, int align, float advance_x)
       {
-         cairo_text_extents_t extents;
-         cairo_text_extents(ctx, utf8, &extents);
-
          cairo_font_extents_t font_extents;
          cairo_scaled_font_extents(cairo_get_scaled_font(ctx), &font_extents);
 
          switch (align & 0x3)
          {
             case canvas::text_halign::right:
-               p.x -= float(extents.width);
+               p.x -= advance_x;
                break;
             case canvas::text_halign::center:
-               p.x -= float(extents.width) / 2;
+               p.x -= advance_x / 2;
                break;
             default:
                break;
@@ -752,44 +755,102 @@ namespace cycfi::artist
 
          return p;
       }
+
+      // Build a Cairo glyph array from a shaped_run at baseline position (bx, by).
+      // HarfBuzz y_offset is positive-upward; Cairo y is positive-downward, so
+      // the offset is subtracted.
+      std::vector<cairo_glyph_t> make_cairo_glyphs(
+         shaped_run const& run, float bx, float by)
+      {
+         std::vector<cairo_glyph_t> out;
+         out.reserve(run.glyphs.size());
+         float pen = bx;
+         for (auto const& g : run.glyphs)
+         {
+            out.push_back({g.codepoint,
+                           double(pen + g.x_offset),
+                           double(by  - g.y_offset)});
+            pen += g.x_advance;
+         }
+         return out;
+      }
    }
 
    void canvas::fill_text(std::string_view utf8, point p)
    {
-      auto str = std::string{utf8.data(), utf8.size()};
-      p = get_text_start(_context, p, _state->_info.align, str.c_str());
-      cairo_move_to(_context, p.x, p.y);
-      if (_state->_info.shadow.active)
+      auto const* fi = _state->_info.font.impl();
+      if (fi && fi->_hb_font)
       {
-         cairo_text_path(_context, str.c_str());
-         draw_shadow(_context, _state->_info.shadow, _state->shadow_scratch, true);
-         _state->apply_fill_style();
-         cairo_fill(_context);
+         auto run = shape_text(fi->_hb_font.get(), fi->_size, utf8);
+         p = get_text_start(_context, p, _state->_info.align, run.advance_x);
+         auto glyphs = make_cairo_glyphs(run, p.x, p.y);
+         if (glyphs.empty()) return;
+
+         if (_state->_info.shadow.active)
+         {
+            cairo_glyph_path(_context, glyphs.data(), int(glyphs.size()));
+            draw_shadow(_context, _state->_info.shadow, _state->shadow_scratch, true);
+            _state->apply_fill_style();
+            cairo_fill(_context);
+         }
+         else
+         {
+            _state->apply_fill_style();
+            cairo_show_glyphs(_context, glyphs.data(), int(glyphs.size()));
+         }
       }
       else
       {
-         _state->apply_fill_style();
-         cairo_show_text(_context, str.c_str());
+         // Fallback: no HarfBuzz font set — use unshaped Cairo text.
+         auto str = std::string{utf8.data(), utf8.size()};
+         cairo_text_extents_t ext;
+         cairo_text_extents(_context, str.c_str(), &ext);
+         p = get_text_start(_context, p, _state->_info.align, float(ext.x_advance));
+         cairo_move_to(_context, p.x, p.y);
+         if (_state->_info.shadow.active)
+         {
+            cairo_text_path(_context, str.c_str());
+            draw_shadow(_context, _state->_info.shadow, _state->shadow_scratch, true);
+            _state->apply_fill_style();
+            cairo_fill(_context);
+         }
+         else
+         {
+            _state->apply_fill_style();
+            cairo_show_text(_context, str.c_str());
+         }
       }
    }
 
    void canvas::stroke_text(std::string_view utf8, point p)
    {
-      auto str = std::string{utf8.data(), utf8.size()};
-      _state->apply_stroke_style();
-      p = get_text_start(_context, p, _state->_info.align, str.c_str());
-      cairo_move_to(_context, p.x, p.y);
-      cairo_text_path(_context, str.c_str());
-      stroke();
+      auto const* fi = _state->_info.font.impl();
+      if (fi && fi->_hb_font)
+      {
+         auto run = shape_text(fi->_hb_font.get(), fi->_size, utf8);
+         p = get_text_start(_context, p, _state->_info.align, run.advance_x);
+         auto glyphs = make_cairo_glyphs(run, p.x, p.y);
+         if (glyphs.empty()) return;
+         _state->apply_stroke_style();
+         cairo_glyph_path(_context, glyphs.data(), int(glyphs.size()));
+         stroke();
+      }
+      else
+      {
+         // Fallback: no HarfBuzz font set — use unshaped Cairo text.
+         auto str = std::string{utf8.data(), utf8.size()};
+         cairo_text_extents_t ext;
+         cairo_text_extents(_context, str.c_str(), &ext);
+         _state->apply_stroke_style();
+         p = get_text_start(_context, p, _state->_info.align, float(ext.x_advance));
+         cairo_move_to(_context, p.x, p.y);
+         cairo_text_path(_context, str.c_str());
+         stroke();
+      }
    }
 
    canvas::text_metrics canvas::measure_text(std::string_view utf8)
    {
-      auto str = std::string{utf8.data(), utf8.size()};
-      cairo_text_extents_t extents;
-      cairo_scaled_font_text_extents(cairo_get_scaled_font(_context),
-         str.c_str(), &extents);
-
       cairo_font_extents_t font_extents;
       cairo_scaled_font_extents(cairo_get_scaled_font(_context), &font_extents);
 
@@ -798,12 +859,27 @@ namespace cycfi::artist
       float leading = float(font_extents.height) - ascent - descent;
       if (leading < 0) leading = 0;
 
+      // Use HarfBuzz shaped advance for width when a font has been set;
+      // fall back to Cairo text extents otherwise.
+      float width;
+      auto const* fi = _state->_info.font.impl();
+      if (fi && fi->_hb_font)
+         width = shape_text(fi->_hb_font.get(), fi->_size, utf8).advance_x;
+      else
+      {
+         auto str = std::string{utf8.data(), utf8.size()};
+         cairo_text_extents_t extents;
+         cairo_scaled_font_text_extents(cairo_get_scaled_font(_context),
+            str.c_str(), &extents);
+         width = float(extents.x_advance);
+      }
+
       return {
          ascent,
          descent,
          leading,
-         // size.x = advance width; size.y = line height (ascent + descent)
-         {float(extents.x_advance), ascent + descent}
+         // size.x = shaped advance width; size.y = line height (ascent + descent)
+         {width, ascent + descent}
       };
    }
 
