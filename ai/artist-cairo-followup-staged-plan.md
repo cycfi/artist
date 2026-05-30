@@ -30,7 +30,7 @@ The Cairo backend currently supports:
    - Windows: No Win32 Cairo draw path in `skia_app.cpp` yet (Stage F10).
    - Cairo is currently usable for offscreen rendering, the visual test suite, and macOS live windows.
 
-2. `shadow_style` is a no-op. ⏸ **Deferred** — correct implementation requires offscreen compositing, blur, and integration across all drawing paths. Significant CPU cost; deferred to a dedicated stage.
+2. ~~`shadow_style` is a no-op.~~ **Done (F6)** — implemented via software Gaussian blur and offscreen compositing. Works correctly for widget shadows. Very large shapes are slower (border-only optimisation deferred).
 
 3. ~~`darker` compositing is approximate on Cairo and Skia.~~ **Done** — Documented as explicit known approximation in `canvas.hpp`, Cairo, and Skia. Quartz2D is correct; Skia/Cairo use channel-min. TODOs removed.
 
@@ -404,7 +404,7 @@ Clarify darker composite semantics
 
 ---
 
-# Stage F6: Implement Cairo shadow_style ⏸ Deferred
+# Stage F6: Implement Cairo shadow_style ✓ Done
 
 ## Limitation
 
@@ -652,7 +652,7 @@ artist_2026_dev
   ├─ cairo-macos-host                 ✓ done
   ├─ cairo-linux-host                 ✓ done
   ├─ cairo-windows-host               ✓ done
-  ├─ cairo-shadow-style               ⏸ deferred
+  ├─ cairo-shadow-style               ✓ done (F6)
   └─ cairo-harfbuzz-text              ⏸ deferred
 ```
 

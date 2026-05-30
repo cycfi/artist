@@ -68,13 +68,14 @@ vcpkg install cairo fontconfig
 - Offscreen image surfaces on macOS, Linux, and Windows.
 - Live window rendering on macOS (`cairo_app.mm`), Linux/GTK (`cairo_app.cpp`),
   and Windows/Win32 (`cairo_app.cpp`).
-- Visual test suite with goldens for macOS and Linux.
-- CI build and visual tests on Ubuntu/GCC.
+- Visual test suite with goldens for macOS, Linux, and Windows.
+- CI build and visual tests on Ubuntu/GCC and Windows/MSVC.
 
 **Known limitations:**
 
-- `shadow_style` is a no-op — Cairo has no native drop-shadow; an explicit
-  offscreen compositing step is required and not yet implemented.
+- `shadow_style` is implemented via a software Gaussian blur (SIMD-accelerated
+  where available). There is no GPU-accelerated path; very large blur radii or
+  high-frequency redraws may be CPU-intensive.
 - `darker` composite op uses `CAIRO_OPERATOR_DARKEN` (channel-min) as a known
   approximation of the W3C PlusDarker formula `max(0, Cs+Cd-1)`. No exact
   Cairo equivalent exists. Quartz-2D is exact; Skia has the same approximation.
@@ -86,7 +87,7 @@ vcpkg install cairo fontconfig
 
 ## News
 
-* 30 May 2026: Cairo backend fully integrated — live window hosts on macOS, Linux, and Windows; visual test suite with CI on Ubuntu.
+* 30 May 2026: Cairo backend fully integrated — drop-shadow support, live window hosts on macOS, Linux, and Windows; visual test suite with CI on Ubuntu and Windows.
 
 ## Documentation
 
@@ -117,5 +118,5 @@ peer-reviewed, Open Source, collaborative development effort.
 
 -------------------------------------------------------------------------------
 
-*Copyright (c) 2014-2023 Joel de Guzman. All rights reserved.*
+*Copyright (c) 2014-2026 Joel de Guzman. All rights reserved.*
 *Distributed under the [MIT License](https://opensource.org/licenses/MIT)*

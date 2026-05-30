@@ -117,6 +117,14 @@ jobs:
       run: ctest --verbose --test-dir build
       shell: bash
 
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ matrix.config.name }}
+        path: build/test/results/
+        if-no-files-found: ignore
+
   build-cairo:
     name: "Ubuntu Latest GCC (Cairo)"
     runs-on: ubuntu-latest
@@ -146,4 +154,12 @@ jobs:
       run: cmake --build build-cairo
     - name: Test (Cairo)
       run: ctest --verbose --test-dir build-cairo
+
+    - name: Upload test results (Cairo)
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-ubuntu-cairo
+        path: build-cairo/test/results/
+        if-no-files-found: ignore
 
