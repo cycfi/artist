@@ -750,6 +750,26 @@ void composite_ops(canvas& cnv)
    composite_draw(cnv, {360, 240}, cnv.xor_);
 }
 
+void composite_ops2(canvas& cnv)
+{
+   cnv.font(font_descr{"Open Sans", 10});
+
+   composite_draw(cnv, {0, 0},   cnv.difference);
+   composite_draw(cnv, {120, 0}, cnv.exclusion);
+   composite_draw(cnv, {240, 0}, cnv.multiply);
+   composite_draw(cnv, {360, 0}, cnv.screen);
+
+   composite_draw(cnv, {0, 130},   cnv.color_dodge);
+   composite_draw(cnv, {120, 130}, cnv.color_burn);
+   composite_draw(cnv, {240, 130}, cnv.soft_light);
+   composite_draw(cnv, {360, 130}, cnv.hard_light);
+
+   composite_draw(cnv, {0, 260},   cnv.hue);
+   composite_draw(cnv, {120, 260}, cnv.saturation);
+   composite_draw(cnv, {240, 260}, cnv.color_op);
+   composite_draw(cnv, {360, 260}, cnv.luminosity);
+}
+
 void drop_shadow(canvas& cnv)
 {
    cnv.shadow_style({20, 20}, 10, colors::black);
@@ -1033,6 +1053,17 @@ TEST_CASE("Composite")
       composite_ops(pm_cnv);
    }
    compare_golden(pm, "composite_ops");
+}
+
+TEST_CASE("Composite2")
+{
+   image pm{window_size};
+   {
+      offscreen_image ctx{pm};
+      canvas pm_cnv{ctx.context()};
+      composite_ops2(pm_cnv);
+   }
+   compare_golden(pm, "composite_ops2");
 }
 
 TEST_CASE("DropShadow")

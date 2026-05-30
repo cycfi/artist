@@ -26,6 +26,7 @@ xcuserdata/
 /.vscode/
 /.idea/
 /build/
+/build-*/
 /cmake-build-debug/
 /cmake-build-release/
 /.vs/
