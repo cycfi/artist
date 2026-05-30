@@ -532,14 +532,12 @@ namespace cycfi::artist
    }
 
    ////////////////////////////////////////////////////////////////////////////
-   // Font / text
-   // TODO(cairo): Text uses Cairo's toy font API as a placeholder.
-   // Approximate implementation — ignores the Artist font object.
-   // See Stage 5 for proper FreeType/Fontconfig integration.
+   // Font / text — Stage 5: FreeType/Fontconfig-backed font support.
 
-   void canvas::font(class font const& /*font_*/)
+   void canvas::font(class font const& font_)
    {
-      // TODO(cairo): Map Artist font to Cairo font face in Stage 5.
+      if (font_.impl() && font_.impl()->_scaled_font)
+         cairo_set_scaled_font(_context, font_.impl()->_scaled_font);
    }
 
    namespace
@@ -606,16 +604,23 @@ namespace cycfi::artist
    {
       auto str = std::string{utf8.data(), utf8.size()};
       cairo_text_extents_t extents;
-      cairo_text_extents(_context, str.c_str(), &extents);
+      cairo_scaled_font_text_extents(cairo_get_scaled_font(_context),
+         str.c_str(), &extents);
 
       cairo_font_extents_t font_extents;
       cairo_scaled_font_extents(cairo_get_scaled_font(_context), &font_extents);
 
+      float ascent  = float(font_extents.ascent);
+      float descent = float(font_extents.descent);
+      float leading = float(font_extents.height) - ascent - descent;
+      if (leading < 0) leading = 0;
+
       return {
-         float(font_extents.ascent),
-         float(font_extents.descent),
-         float(font_extents.height - (font_extents.ascent + font_extents.descent)),
-         {float(extents.width), float(extents.height)}
+         ascent,
+         descent,
+         leading,
+         // size.x = advance width; size.y = line height (ascent + descent)
+         {float(extents.x_advance), ascent + descent}
       };
    }
 

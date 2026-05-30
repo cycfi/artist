@@ -9,6 +9,7 @@
 #pragma once
 #include <cairo.h>
 #include <artist/path.hpp>
+#include <artist/font.hpp>
 
 ///////////////////////////////////////////////////////////////////////////////
 // cairo_artist_path_t — backing storage for the Artist path class on Cairo.
@@ -47,6 +48,37 @@ struct cairo_artist_path_t
 
    cairo_artist_path_t& operator=(cairo_artist_path_t const&) = delete;
 };
+
+///////////////////////////////////////////////////////////////////////////////
+// font_impl — Cairo FreeType-backed scaled font.
+// Declared as 'struct font_impl' inside namespace cycfi::artist in font.hpp.
+// Each font_impl owns one Cairo reference to _scaled_font.
+
+namespace cycfi::artist
+{
+   struct font_impl
+   {
+      cairo_scaled_font_t* _scaled_font = nullptr;
+
+      font_impl() = default;
+
+      explicit font_impl(cairo_scaled_font_t* sf)
+       : _scaled_font(sf) {}
+
+      font_impl(font_impl const& rhs)
+       : _scaled_font(rhs._scaled_font)
+      {
+         if (_scaled_font) cairo_scaled_font_reference(_scaled_font);
+      }
+
+      font_impl& operator=(font_impl const&) = delete;
+
+      ~font_impl()
+      {
+         if (_scaled_font) cairo_scaled_font_destroy(_scaled_font);
+      }
+   };
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // image_impl — opaque Cairo image backing.

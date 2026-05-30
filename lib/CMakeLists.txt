@@ -308,7 +308,9 @@ endif()
 
 if (ARTIST_CAIRO AND NOT MSVC)
    pkg_check_modules(cairo REQUIRED IMPORTED_TARGET cairo)
-   target_link_libraries(artist PUBLIC PkgConfig::cairo)
+   pkg_check_modules(cairo_ft REQUIRED IMPORTED_TARGET cairo-ft)
+   pkg_check_modules(fc REQUIRED IMPORTED_TARGET fontconfig)
+   target_link_libraries(artist PUBLIC PkgConfig::cairo PkgConfig::cairo_ft PkgConfig::fc)
 endif()
 
 add_dependencies(artist libunibreak)
