@@ -21,7 +21,8 @@ namespace cycfi::artist
    {
       if (!_impl->surface || cairo_surface_status(_impl->surface) != CAIRO_STATUS_SUCCESS)
          throw std::runtime_error{"artist cairo backend: Failed to create image surface."};
-      cairo_surface_mark_dirty(_impl->surface);
+      // No cairo_surface_mark_dirty: Cairo owns the zero-initialized pixel data.
+      // mark_dirty is only needed after *external* writes to the pixel buffer.
    }
 
    image::image(fs::path const& path_)
@@ -57,12 +58,16 @@ namespace cycfi::artist
                   uint8_t*       dest = dest_data + (row * dest_stride);
                   for (int col = 0; col != w; ++col)
                   {
-                     // stb_image gives RGBA; Cairo ARGB32 on LE is BGRA.
+                     // stb_image gives straight-alpha RGBA.
+                     // Cairo ARGB32 (little-endian) is premultiplied BGRA in memory:
+                     //   byte[0]=B, byte[1]=G, byte[2]=R, byte[3]=A
+                     // Each channel must be premultiplied by alpha/255.
                      // TODO(cairo): Verify endian behavior on BE platforms.
-                     dest[0] = src[2];  // B ← R
-                     dest[1] = src[1];  // G
-                     dest[2] = src[0];  // R ← B
-                     dest[3] = src[3];  // A
+                     uint8_t a = src[3];
+                     dest[0] = uint8_t((uint32_t(src[2]) * a + 127) / 255);  // B ← R * A
+                     dest[1] = uint8_t((uint32_t(src[1]) * a + 127) / 255);  // G * A
+                     dest[2] = uint8_t((uint32_t(src[0]) * a + 127) / 255);  // R ← B * A
+                     dest[3] = a;                                              // A
                      src  += 4;
                      dest += 4;
                   }
@@ -119,8 +124,14 @@ namespace cycfi::artist
    uint32_t* image::pixels()
    {
       if (!_impl || !_impl->surface) return nullptr;
-      // TODO(cairo): Pixel format is premultiplied BGRA (CAIRO_FORMAT_ARGB32 on LE).
-      // Artist API convention is straight-alpha RGBA. Caller must account for this.
+      // Pixel format: premultiplied BGRA (CAIRO_FORMAT_ARGB32 on little-endian).
+      // Artist public API convention is straight-alpha RGBA; callers that read or
+      // write pixels must account for the format difference.
+      //
+      // cairo_surface_flush() synchronises Cairo's internal state to the CPU buffer
+      // before the pointer is handed out.  After writing to the returned pointer,
+      // callers must call cairo_surface_mark_dirty(surface) on the underlying
+      // surface before using the image again — this API does not expose that call.
       cairo_surface_flush(_impl->surface);
       return reinterpret_cast<uint32_t*>(cairo_image_surface_get_data(_impl->surface));
    }

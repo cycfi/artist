@@ -438,7 +438,10 @@ namespace cycfi::artist
          case destination_in:    mode_ = SkBlendMode::kDstIn;        break;
          case destination_out:   mode_ = SkBlendMode::kDstOut;       break;
 
-         case lighter:           mode_ = SkBlendMode::kLighten;      break;
+         // W3C lighter = Porter-Duff Plus (additive: Cs + Cd).
+         case lighter:           mode_ = SkBlendMode::kPlus;         break;
+         // TODO(skia): W3C darker = PlusDarker (max(0, Cs+Cd-1)); Skia has no
+         // equivalent. kDarken (channel-min) is approximate and visually wrong.
          case darker:            mode_ = SkBlendMode::kDarken;       break;
          case copy:              mode_ = SkBlendMode::kSrc;          break;
          case xor_:              mode_ = SkBlendMode::kXor;          break;

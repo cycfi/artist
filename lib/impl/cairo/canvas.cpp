@@ -412,7 +412,11 @@ namespace cycfi::artist
 
    void canvas::global_composite_operation(composite_op_enum mode)
    {
-      cairo_operator_t op = CAIRO_OPERATOR_OVER;
+      // Porter-Duff ops: directly supported by Cairo.
+      // Extended blend modes (MULTIPLY … HSL_LUMINOSITY): require Cairo >= 1.10.
+      // lighter: W3C Porter-Duff Plus (additive) — CAIRO_OPERATOR_ADD is correct.
+      // darker: W3C PlusDarker (max(0, Cs+Cd-1)) — Cairo has no equivalent; see TODO.
+      cairo_operator_t op;
       switch (mode)
       {
          case source_over:      op = CAIRO_OPERATOR_OVER;            break;
@@ -424,9 +428,12 @@ namespace cycfi::artist
          case destination_in:   op = CAIRO_OPERATOR_DEST_IN;         break;
          case destination_out:  op = CAIRO_OPERATOR_DEST_OUT;        break;
          case lighter:          op = CAIRO_OPERATOR_ADD;             break;
-         case darker:           op = CAIRO_OPERATOR_DARKEN;          break; // TODO(cairo): Approximate
+         // TODO(cairo): W3C darker = PlusDarker (max(0, Cs+Cd-1)); Cairo has no
+         // equivalent. OPERATOR_DARKEN (channel-min) is approximate and visually wrong.
+         case darker:           op = CAIRO_OPERATOR_DARKEN;          break;
          case copy:             op = CAIRO_OPERATOR_SOURCE;          break;
          case xor_:             op = CAIRO_OPERATOR_XOR;             break;
+         // Cairo >= 1.10 extended blend operators:
          case difference:       op = CAIRO_OPERATOR_DIFFERENCE;      break;
          case exclusion:        op = CAIRO_OPERATOR_EXCLUSION;       break;
          case multiply:         op = CAIRO_OPERATOR_MULTIPLY;        break;
@@ -435,10 +442,14 @@ namespace cycfi::artist
          case color_burn:       op = CAIRO_OPERATOR_COLOR_BURN;      break;
          case soft_light:       op = CAIRO_OPERATOR_SOFT_LIGHT;      break;
          case hard_light:       op = CAIRO_OPERATOR_HARD_LIGHT;      break;
+         // Cairo >= 1.10 HSL blend operators:
          case hue:              op = CAIRO_OPERATOR_HSL_HUE;         break;
          case saturation:       op = CAIRO_OPERATOR_HSL_SATURATION;  break;
          case color_op:         op = CAIRO_OPERATOR_HSL_COLOR;       break;
          case luminosity:       op = CAIRO_OPERATOR_HSL_LUMINOSITY;  break;
+         default:
+            throw std::runtime_error{
+               "artist cairo backend: unhandled composite_op_enum value"};
       }
       cairo_set_operator(_context, op);
    }
