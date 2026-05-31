@@ -8,9 +8,12 @@
 #include "cairo_private.hpp"
 #include "cairo_text.hpp"
 #include "shadow_blur.hpp"
-#include <stack>
+#include <algorithm>
+#include <array>
 #include <cmath>
 #include <functional>
+#include <optional>
+#include <stack>
 #include <stdexcept>
 
 namespace cycfi::artist
@@ -60,6 +63,32 @@ namespace cycfi::artist
          std::vector<int32_t>  cum;       // prefix-sum scratch (max(w,h)+1 elements)
          int                   stride = 0;
       } shadow_scratch;
+
+      struct shadow_cache_key
+      {
+         int         sw, sh_h;
+         float       sigma;
+         uint8_t     r, g, b, a;
+         std::size_t path_hash;
+
+         bool operator==(shadow_cache_key const& o) const noexcept
+         {
+            return sw == o.sw && sh_h == o.sh_h && sigma == o.sigma
+                && r == o.r && g == o.g && b == o.b && a == o.a
+                && path_hash == o.path_hash;
+         }
+      };
+
+      struct shadow_cache_entry
+      {
+         shadow_cache_key     key;
+         std::vector<uint8_t> pixels;
+         int                  stride;
+      };
+
+      static constexpr std::size_t k_shadow_cache_size = 32;
+      std::array<std::optional<shadow_cache_entry>, k_shadow_cache_size> shadow_cache;
+      std::size_t shadow_cache_next = 0;
    };
 
    inline void canvas::canvas_state::apply_fill_style()
@@ -184,12 +213,72 @@ namespace cycfi::artist
 
    namespace
    {
-      using shadow_scratch = canvas::canvas_state::shadow_scratch_t;
+      using shadow_scratch    = canvas::canvas_state::shadow_scratch_t;
+      using shadow_cache_key   = canvas::canvas_state::shadow_cache_key;
+      using shadow_cache_entry = canvas::canvas_state::shadow_cache_entry;
+
+      std::size_t hash_path(cairo_path_t* path) noexcept
+      {
+         // FNV-1a over raw cairo_path_data_t bytes
+         std::size_t h = 14695981039346656037ULL;
+         auto const* bytes = reinterpret_cast<uint8_t const*>(path->data);
+         std::size_t n = static_cast<std::size_t>(path->num_data)
+                         * sizeof(cairo_path_data_t);
+         for (std::size_t i = 0; i < n; ++i)
+            { h ^= bytes[i]; h *= 1099511628211ULL; }
+         return h;
+      }
+
+      shadow_cache_entry* find_shadow_cache(canvas::canvas_state& state,
+                                             shadow_cache_key const& key) noexcept
+      {
+         auto it = std::find_if(state.shadow_cache.begin(), state.shadow_cache.end(),
+            [&](auto const& e) { return e && e->key == key; });
+         return it != state.shadow_cache.end() ? &**it : nullptr;
+      }
+
+      shadow_cache_entry& alloc_shadow_cache_entry(canvas::canvas_state& state,
+                                                    shadow_cache_key key,
+                                                    std::vector<uint8_t> pixels,
+                                                    int stride)
+      {
+         auto& slot = state.shadow_cache[state.shadow_cache_next];
+         state.shadow_cache_next =
+            (state.shadow_cache_next + 1) % canvas::canvas_state::k_shadow_cache_size;
+         slot.emplace(shadow_cache_entry{std::move(key), std::move(pixels), stride});
+         return *slot;
+      }
+
+      auto composite_shadow(
+         cairo_t* cr,
+         uint8_t* pixels,
+         int sw, int sh_h, int stride,
+         double x1, double y1,
+         double render_scale, int margin,
+         double off_sx, double off_sy)
+      {
+         // surface = render_scale * (user - (x1 - off)) + margin
+         cairo_surface_t* surf = cairo_image_surface_create_for_data(
+            pixels, CAIRO_FORMAT_ARGB32, sw, sh_h, stride);
+         cairo_save(cr);
+         cairo_set_source_surface(cr, surf, 0, 0);
+         auto* pat = cairo_get_source(cr);
+         cairo_matrix_t pm;
+         cairo_matrix_init_identity(&pm);
+         cairo_matrix_translate(&pm, margin, margin);
+         cairo_matrix_scale(&pm, render_scale, render_scale);
+         cairo_matrix_translate(
+            &pm, -(x1 + off_sx / render_scale), -(y1 + off_sy / render_scale));
+         cairo_pattern_set_matrix(pat, &pm);
+         cairo_paint(cr);
+         cairo_restore(cr);
+         cairo_surface_destroy(surf);
+      }
 
       void draw_shadow(
          cairo_t* cr,
          canvas::canvas_state::shadow_info const& sh,
-         canvas::canvas_state::shadow_scratch_t& sc_buf,
+         canvas::canvas_state& state,
          bool is_fill)
       {
          cairo_path_t* path = cairo_copy_path(cr);
@@ -251,7 +340,27 @@ namespace cycfi::artist
             return;
          }
 
-         // Reuse scratch buffers — only reallocate when the shadow grows larger.
+         shadow_cache_key cache_key{
+            sw, sh_h, sigma,
+            static_cast<uint8_t>(sh.c.red   * 255.0f),
+            static_cast<uint8_t>(sh.c.green * 255.0f),
+            static_cast<uint8_t>(sh.c.blue  * 255.0f),
+            static_cast<uint8_t>(sh.c.alpha * 255.0f),
+            hash_path(path)
+         };
+
+         if (auto* cached = find_shadow_cache(state, cache_key))
+         {
+            composite_shadow(cr,
+               cached->pixels.data(), sw, sh_h, cached->stride,
+               x1, y1, render_scale, margin, off_sx, off_sy);
+            cairo_append_path(cr, path);
+            cairo_path_destroy(path);
+            return;
+         }
+
+         // Cache miss — render shape and blur.
+         auto& sc_buf = state.shadow_scratch;
          int stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, sw);
          std::size_t surf_size = static_cast<std::size_t>(stride * sh_h);
          std::size_t px_count  = static_cast<std::size_t>(sw * sh_h);
@@ -293,26 +402,19 @@ namespace cycfi::artist
             shadow_reconstruct(pixels, stride, sc_buf.alpha.data(), sw, sh_h, sr, sg, sb);
             cairo_surface_mark_dirty(surf);
          }
-
-         // Composite. The surface is at render_scale resolution; use a pattern
-         // matrix that maps current user space to surface pixels so the shadow
-         // lands exactly at the shape (shifted by the offset) and is sampled
-         // 1:1 in device space — crisp, with no extra upscaling softness.
-         // surface = render_scale * (user - (x1 - off)) + margin
-         cairo_save(cr);
-         cairo_set_source_surface(cr, surf, 0, 0);
-         cairo_pattern_t* pat = cairo_get_source(cr);
-         cairo_matrix_t pm;
-         cairo_matrix_init_identity(&pm);
-         cairo_matrix_translate(&pm, margin, margin);
-         cairo_matrix_scale(&pm, render_scale, render_scale);
-         cairo_matrix_translate(
-            &pm, -(x1 + off_sx / render_scale), -(y1 + off_sy / render_scale));
-         cairo_pattern_set_matrix(pat, &pm);
-         cairo_paint(cr);
-         cairo_restore(cr);
-
          cairo_surface_destroy(surf);
+
+         // Store blurred pixels in cache before compositing.
+         auto& entry = alloc_shadow_cache_entry(
+            state, cache_key,
+            std::vector<uint8_t>(sc_buf.surf_buf.begin(),
+                                 sc_buf.surf_buf.begin() + surf_size),
+            stride);
+
+         composite_shadow(cr,
+            entry.pixels.data(), sw, sh_h, stride,
+            x1, y1, render_scale, margin, off_sx, off_sy);
+
          cairo_append_path(cr, path);
          cairo_path_destroy(path);
       }
@@ -321,7 +423,7 @@ namespace cycfi::artist
    void canvas::fill()
    {
       if (_state->_info.shadow.active)
-         draw_shadow(_context, _state->_info.shadow, _state->shadow_scratch, true);
+         draw_shadow(_context, _state->_info.shadow, *_state, true);
       _state->apply_fill_style();
       cairo_fill(_context);
    }
@@ -329,7 +431,7 @@ namespace cycfi::artist
    void canvas::fill_preserve()
    {
       if (_state->_info.shadow.active)
-         draw_shadow(_context, _state->_info.shadow, _state->shadow_scratch, true);
+         draw_shadow(_context, _state->_info.shadow, *_state, true);
       _state->apply_fill_style();
       cairo_fill_preserve(_context);
    }
@@ -337,7 +439,7 @@ namespace cycfi::artist
    void canvas::stroke()
    {
       if (_state->_info.shadow.active)
-         draw_shadow(_context, _state->_info.shadow, _state->shadow_scratch, false);
+         draw_shadow(_context, _state->_info.shadow, *_state, false);
       _state->apply_stroke_style();
       cairo_stroke(_context);
    }
@@ -345,7 +447,7 @@ namespace cycfi::artist
    void canvas::stroke_preserve()
    {
       if (_state->_info.shadow.active)
-         draw_shadow(_context, _state->_info.shadow, _state->shadow_scratch, false);
+         draw_shadow(_context, _state->_info.shadow, *_state, false);
       _state->apply_stroke_style();
       cairo_stroke_preserve(_context);
    }
@@ -811,7 +913,7 @@ namespace cycfi::artist
          if (_state->_info.shadow.active)
          {
             cairo_glyph_path(_context, glyphs.data(), int(glyphs.size()));
-            draw_shadow(_context, _state->_info.shadow, _state->shadow_scratch, true);
+            draw_shadow(_context, _state->_info.shadow, *_state, true);
             _state->apply_fill_style();
             cairo_fill(_context);
          }
@@ -835,7 +937,7 @@ namespace cycfi::artist
          if (_state->_info.shadow.active)
          {
             cairo_text_path(_context, str.c_str());
-            draw_shadow(_context, _state->_info.shadow, _state->shadow_scratch, true);
+            draw_shadow(_context, _state->_info.shadow, *_state, true);
             _state->apply_fill_style();
             cairo_fill(_context);
          }
