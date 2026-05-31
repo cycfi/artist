@@ -278,11 +278,28 @@ namespace cycfi::artist
       if (_rows.empty()) return;
 
       cairo_t* ctx = cnv.impl();
-      cairo_scaled_font_t* sf = _font.impl()->_scaled_font;
-      if (!sf) return;
+      auto* fi = _font.impl();
+      if (!fi || !fi->_scaled_font) return;
 
       cairo_save(ctx);
-      cairo_set_scaled_font(ctx, sf);
+
+#ifdef __APPLE__
+      if (fi->_face &&
+          cairo_surface_get_type(cairo_get_target(ctx)) == CAIRO_SURFACE_TYPE_QUARTZ)
+      {
+         cairo_set_font_face(ctx, fi->_face);
+         cairo_set_font_size(ctx, fi->_size);
+         // DEBUG: verify the scaled font is non-default
+         auto* sf_check = cairo_get_scaled_font(ctx);
+         (void)sf_check;
+      }
+      else
+      {
+         cairo_set_scaled_font(ctx, fi->_scaled_font);
+      }
+#else
+      cairo_set_scaled_font(ctx, fi->_scaled_font);
+#endif
       cairo_set_source_rgba(ctx, c.red, c.green, c.blue, c.alpha);
 
       for (auto const& row : _rows)
@@ -298,9 +315,12 @@ namespace cycfi::artist
             cg.push_back({
                g.codepoint,
                double(p.x + row.x + gx),
-               double(p.y + row.y - g.y_offset)  // HB y_offset: positive-up
+               double(p.y + row.y - g.y_offset)
             });
          }
+         // cairo_show_glyphs on the Quartz CG backend requires the current
+         // point to be set; without it glyphs are silently not rendered.
+         cairo_move_to(ctx, cg.front().x, cg.front().y);
          cairo_show_glyphs(ctx, cg.data(), int(cg.size()));
       }
 
