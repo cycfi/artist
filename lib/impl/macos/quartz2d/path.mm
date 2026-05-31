@@ -52,7 +52,7 @@ namespace cycfi::artist
 
    bool path::operator==(path const& rhs) const
    {
-      return CGPathEqualToPath(_impl, rhs._impl);
+      return _fill_rule == rhs._fill_rule && CGPathEqualToPath(_impl, rhs._impl);
    }
 
    bool path::is_empty() const

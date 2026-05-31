@@ -39,9 +39,22 @@ namespace cycfi::artist
 
       uint32_t* get_pixels(NSImage* image)
       {
+         // Fast path: image already has a bitmap rep (offscreen draw or PNG load).
          if (auto bitmap = get_bitmap(image))
             return (uint32_t*) [bitmap bitmapData];
-         return nullptr;
+
+         // Slow path: CGImage-backed image (e.g. from make_image).
+         // initWithCGImage: wraps the CGImage without copying; bitmapData unpacks
+         // it lazily into an internal buffer.  Attach the rep so this is free
+         // on subsequent calls.
+         CGImageRef cg = [image CGImageForProposedRect : NULL context : nil hints : nil];
+         if (!cg) return nullptr;
+
+         NSBitmapImageRep* rep = [[NSBitmapImageRep alloc] initWithCGImage : cg];
+         if (!rep) return nullptr;
+
+         [image addRepresentation : rep];
+         return (uint32_t*) [rep bitmapData];
       }
    }
 
