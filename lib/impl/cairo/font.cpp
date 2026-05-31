@@ -7,24 +7,30 @@
 #include "cairo_text.hpp"
 #include <cairo/cairo-ft.h>
 #include <fontconfig/fontconfig.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 #include <hb-ft.h>
 #include <hb-ot.h>
 #include <infra/support.hpp>
 #include <algorithm>
+#include <map>
+#include <mutex>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #ifdef __APPLE__
 #  include <cairo-quartz.h>
 #  include <CoreGraphics/CoreGraphics.h>
-#  include <ft2build.h>
-#  include FT_FREETYPE_H
 #endif
 
 namespace cycfi::artist
 {
    namespace
    {
+      ///////////////////////////////////////////////////////////////////////////
+      // Helpers
+
       inline void trim(std::string& s)
       {
          auto notpad = [](int ch){ return ch != ' ' && ch != '"'; };
@@ -32,138 +38,271 @@ namespace cycfi::artist
          s.erase(std::find_if(s.rbegin(), s.rend(), notpad).base(), s.end());
       }
 
-      enum fc_weight_vals
-      {
-         fc_thin       = 0,
-         fc_extralight = 40,
-         fc_light      = 50,
-         fc_normal     = 80,
-         fc_medium     = 100,
-         fc_semibold   = 180,
-         fc_bold       = 200,
-         fc_extrabold  = 205,
-         fc_black      = 210,
-      };
+      ///////////////////////////////////////////////////////////////////////////
+      // Fontconfig weight/slant/stretch → Artist scale conversions.
+      // These are the inverse of the Artist→FC maps used for FcFontMatch.
 
-      int to_fc_weight(int w)
+      int map_fc_weight(int w)
+      {
+         // Fontconfig: 0=Thin .. 210=Black
+         // Artist:    10=thin .. 90=black (see font_constants)
+         namespace fc = font_constants;
+         enum fc_vals { fc_thin=0, fc_extralight=40, fc_light=50, fc_normal=80,
+                        fc_medium=100, fc_semibold=180, fc_bold=200,
+                        fc_extrabold=205, fc_black=210 };
+
+         auto lerp = [](double a, double b, double t){ return int(a + (b-a)*t); };
+         auto seg  = [&](int f0, int f1, int a0, int a1) -> int {
+            return lerp(a0, a1, double(w-f0) / (f1-f0));
+         };
+
+         if (w <= fc_thin)       return fc::thin;
+         if (w <= fc_extralight) return seg(fc_thin,       fc_extralight, fc::thin,          fc::extra_light);
+         if (w <= fc_light)      return seg(fc_extralight, fc_light,      fc::extra_light,   fc::light);
+         if (w <= fc_normal)     return seg(fc_light,      fc_normal,     fc::light,         fc::weight_normal);
+         if (w <= fc_medium)     return seg(fc_normal,     fc_medium,     fc::weight_normal, fc::medium);
+         if (w <= fc_semibold)   return seg(fc_medium,     fc_semibold,   fc::medium,        fc::semi_bold);
+         if (w <= fc_bold)       return seg(fc_semibold,   fc_bold,       fc::semi_bold,     fc::bold);
+         if (w <= fc_extrabold)  return seg(fc_bold,       fc_extrabold,  fc::bold,          fc::extra_bold);
+         return seg(fc_extrabold, fc_black, fc::extra_bold, 90);
+      }
+
+      int map_fc_slant(int s)
       {
          namespace fc = font_constants;
-         auto lerp = [](double a, double b, double t){ return a + (b-a)*t; };
-         auto seg  = [&](int amin, int amax, int fmin, int fmax) -> double {
-            return lerp(fmin, fmax, double(w-amin)/(amax-amin));
-         };
-         if (w <= fc::thin)          return fc_thin;
-         if (w <= fc::extra_light)   return int(seg(fc::thin,         fc::extra_light,  fc_thin,      fc_extralight));
-         if (w <= fc::light)         return int(seg(fc::extra_light,  fc::light,        fc_extralight, fc_light));
-         if (w <= fc::weight_normal) return int(seg(fc::light,        fc::weight_normal,fc_light,      fc_normal));
-         if (w <= fc::medium)        return int(seg(fc::weight_normal,fc::medium,       fc_normal,     fc_medium));
-         if (w <= fc::semi_bold)     return int(seg(fc::medium,       fc::semi_bold,    fc_medium,     fc_semibold));
-         if (w <= fc::bold)          return int(seg(fc::semi_bold,    fc::bold,         fc_semibold,   fc_bold));
-         if (w <= fc::extra_bold)    return int(seg(fc::bold,         fc::extra_bold,   fc_bold,       fc_extrabold));
-         return int(seg(fc::extra_bold, 100, fc_extrabold, fc_black));
+         if (s == FC_SLANT_ITALIC)  return fc::italic;
+         if (s == FC_SLANT_OBLIQUE) return fc::oblique;
+         return fc::slant_normal;
       }
 
-      struct fc_state
+      // Forward declaration — defined below in the FreeType section.
+      FT_Library get_ft_library();
+
+      ///////////////////////////////////////////////////////////////////////////
+      // Font map — enumerate all fonts once at startup, then resolve
+      // font_descr via a local std::map lookup (no FcFontMatch per call).
+
+      struct font_entry
       {
-         FcConfig* config = nullptr;
-         fc_state()
-         {
-            FcInit();
-            config = FcConfigGetCurrent();
-            auto user_path = get_user_fonts_directory();
-            FcConfigAppFontAddDir(config,
-               reinterpret_cast<FcChar8 const*>(user_path.string().c_str()));
-         }
+         std::string full_name;  // FC_FULLNAME (also the CGFont name on macOS)
+         std::string file;       // FC_FILE path for FT_New_Face
+         uint8_t     weight  = font_constants::weight_normal;
+         uint8_t     slant   = font_constants::slant_normal;
+         uint8_t     stretch = font_constants::stretch_normal;
       };
 
-      FcConfig* get_fc_config()
+      using font_map_t = std::map<std::string, std::vector<font_entry>>;
+
+      std::pair<font_map_t&, std::mutex&> get_font_map()
       {
-         static fc_state state;
-         return state.config;
+         static font_map_t map;
+         static std::mutex mutex;
+         return {map, mutex};
       }
 
-      FcPattern* fc_match(font_descr const& descr)
+      void init_font_map()
       {
-         FcConfig* cfg = get_fc_config();
-         std::istringstream fs(std::string{descr._families});
+         // Touch the FT library first so its static is constructed before the
+         // face cache, guaranteeing it is destroyed after (reverse order).
+         // This prevents a teardown segfault where face cache cleanup calls
+         // FT_Done_Face after the FT library has already been freed.
+         get_ft_library();
+
+         FcInit();
+         FcConfig* cfg = FcConfigGetCurrent();
+
+         // Register bundled/user fonts so they appear in FC_FILE results.
+         auto user_path = get_user_fonts_directory();
+         FcConfigAppFontAddDir(cfg,
+            reinterpret_cast<FcChar8 const*>(user_path.string().c_str()));
+
+         FcObjectSet* os = FcObjectSetBuild(
+            FC_FAMILY, FC_FULLNAME, FC_FILE, FC_WEIGHT, FC_SLANT, FC_WIDTH, nullptr);
+         FcPattern* pat = FcPatternCreate();
+         FcFontSet* fs  = FcFontList(cfg, pat, os);
+         FcPatternDestroy(pat);
+         FcObjectSetDestroy(os);
+         if (!fs) return;
+
+         auto [map, mutex] = get_font_map();
+         std::lock_guard lock(mutex);
+
+         for (int i = 0; i < fs->nfont; ++i)
+         {
+            FcPattern* p = fs->fonts[i];
+            FcChar8 *family_raw, *fullname_raw, *file_raw;
+            if (FcPatternGetString(p, FC_FAMILY,   0, &family_raw)   != FcResultMatch) continue;
+            if (FcPatternGetString(p, FC_FULLNAME, 0, &fullname_raw) != FcResultMatch) continue;
+            if (FcPatternGetString(p, FC_FILE,     0, &file_raw)     != FcResultMatch) continue;
+
+            font_entry e;
+            e.full_name = reinterpret_cast<char const*>(fullname_raw);
+            e.file      = reinterpret_cast<char const*>(file_raw);
+
+            int fc_weight = FC_WEIGHT_NORMAL;
+            FcPatternGetInteger(p, FC_WEIGHT, 0, &fc_weight);
+            e.weight = uint8_t(map_fc_weight(fc_weight));
+
+            int fc_slant = FC_SLANT_ROMAN;
+            FcPatternGetInteger(p, FC_SLANT, 0, &fc_slant);
+            e.slant = uint8_t(map_fc_slant(fc_slant));
+
+            int fc_width = FC_WIDTH_NORMAL;  // 100
+            FcPatternGetInteger(p, FC_WIDTH, 0, &fc_width);
+            e.stretch = uint8_t((fc_width * 100) / 200);
+
+            std::string key = reinterpret_cast<char const*>(family_raw);
+            trim(key);
+            map[key].push_back(std::move(e));
+         }
+
+         FcFontSetDestroy(fs);
+      }
+
+      font_entry const* match(font_descr const& descr)
+      {
+         static std::once_flag init_flag;
+         std::call_once(init_flag, init_font_map);
+
+         auto [map, mutex] = get_font_map();
+         std::lock_guard lock(mutex);
+
+         std::istringstream families(std::string{descr._families});
          std::string family;
-         while (std::getline(fs, family, ','))
+         while (std::getline(families, family, ','))
          {
             trim(family);
-            if (family.empty()) continue;
-            FcPattern* pat = FcPatternCreate();
-            FcPatternAddString(pat,  FC_FAMILY,
-               reinterpret_cast<FcChar8 const*>(family.c_str()));
-            FcPatternAddDouble(pat,  FC_SIZE,   descr._size);
-            FcPatternAddInteger(pat, FC_WEIGHT, to_fc_weight(descr._weight));
-            FcPatternAddInteger(pat, FC_SLANT,
-               (descr._slant == font_constants::italic)  ? FC_SLANT_ITALIC  :
-               (descr._slant == font_constants::oblique) ? FC_SLANT_OBLIQUE :
-               FC_SLANT_ROMAN);
-            FcPatternAddInteger(pat, FC_WIDTH, descr._stretch * 2);
-            FcConfigSubstitute(cfg, pat, FcMatchPattern);
-            FcDefaultSubstitute(pat);
-            FcResult result;
-            FcPattern* match = FcFontMatch(cfg, pat, &result);
-            FcPatternDestroy(pat);
-            if (match && result == FcResultMatch) return match;
-            if (match) FcPatternDestroy(match);
+            auto it = map.find(family);
+            if (it == map.end()) continue;
+
+            double best_score = 1e9;
+            font_entry const* best = nullptr;
+            for (auto const& e : it->second)
+            {
+               // Biased score: slant has highest weight (×3), then weight (×1),
+               // then stretch (×0.25). Lower is better.
+               double score =
+                  std::abs(int(descr._weight)  - int(e.weight))  * 1.0  +
+                  std::abs(int(descr._slant)   - int(e.slant))   * 3.0  +
+                  std::abs(int(descr._stretch) - int(e.stretch)) * 0.25 ;
+               if (score < best_score) { best_score = score; best = &e; }
+            }
+            if (best) return best;
          }
-         FcPattern* pat = FcPatternCreate();
-         FcPatternAddDouble(pat, FC_SIZE, descr._size);
-         FcConfigSubstitute(cfg, pat, FcMatchPattern);
-         FcDefaultSubstitute(pat);
-         FcResult result;
-         FcPattern* match = FcFontMatch(cfg, pat, &result);
-         FcPatternDestroy(pat);
-         return match;
+         return nullptr;
       }
 
-      // Build a HarfBuzz font from a FreeType face.
-      // hb_ft_face_create_referenced copies the font blob from ft_face so the
-      // caller may destroy ft_face (and its library) immediately after.
-      font_impl::hb_font_ptr make_hb_font(FT_Face ft_face)
+      ///////////////////////////////////////////////////////////////////////////
+      // FreeType library — single process-wide instance.
+
+      const cairo_user_data_key_t& ft_user_data_key()
       {
-         hb_face_t* hb_face = hb_ft_face_create_referenced(ft_face);
-         if (!hb_face) return nullptr;
-         hb_font_t* raw = hb_font_create(hb_face);
-         if (raw)
-         {
-            hb_ot_font_set_funcs(raw);
-            unsigned upem = hb_face_get_upem(hb_face);
-            hb_font_set_scale(raw, int(upem), int(upem));
-         }
-         hb_face_destroy(hb_face);
-         return font_impl::hb_font_ptr(raw);
+         static const cairo_user_data_key_t key = {};
+         return key;
       }
 
-#ifdef __APPLE__
-      font_impl* make_font_impl(font_descr const& descr)
+      void destroy_ft_face(void* face)
       {
-         FcPattern* fc_pat = fc_match(descr);
-         if (!fc_pat) return nullptr;
+         FT_Done_Face(reinterpret_cast<FT_Face>(face));
+      }
 
-         // Copy FC_FULLNAME before destroying the pattern.
-         FcChar8* fullname_raw = nullptr;
-         FcPatternGetString(fc_pat, FC_FULLNAME, 0, &fullname_raw);
-         std::string full_name = fullname_raw ? (char*)fullname_raw : "";
-
-         // FT-backed cairo face — used to create the FT scaled font (_scaled_font)
-         // which serves both standalone metrics AND non-Quartz rendering (tests,
-         // offscreen).  The FT face itself is not stored; only the scaled font is.
-         auto* ft_face = cairo_ft_font_face_create_for_pattern(fc_pat);
-         FcPatternDestroy(fc_pat);
-
-         if (!ft_face || cairo_font_face_status(ft_face) != CAIRO_STATUS_SUCCESS)
+      FT_Library get_ft_library()
+      {
+         struct ft_lib_t
          {
-            if (ft_face) cairo_font_face_destroy(ft_face);
+            FT_Library lib = nullptr;
+            ft_lib_t()  { FT_Init_FreeType(&lib); }
+            ~ft_lib_t() { if (lib) FT_Done_FreeType(lib); }
+         };
+         static ft_lib_t inst;
+         return inst.lib;
+      }
+
+      // Load a FT_Face from a file path and wrap it in a cairo_font_face_t.
+      // The FT_Face lifetime is tied to the Cairo face via user data.
+      cairo_font_face_t* make_ft_cairo_face(std::string const& file)
+      {
+         FT_Face ft_face = nullptr;
+         if (FT_New_Face(get_ft_library(), file.c_str(), 0, &ft_face) != 0)
+            return nullptr;
+
+         cairo_font_face_t* face =
+            cairo_ft_font_face_create_for_ft_face(ft_face, 0);
+         if (!face || cairo_font_face_status(face) != CAIRO_STATUS_SUCCESS)
+         {
+            FT_Done_Face(ft_face);
+            if (face) cairo_font_face_destroy(face);
             return nullptr;
          }
 
-         // FT scaled font: bake HINT_METRICS_OFF so metrics match the original
-         // FT-based values expected by tests (CoreText and FT agree here).
+         // Attach ft_face to the cairo face so it is freed when Cairo releases it.
+         if (cairo_font_face_set_user_data(
+               face, &ft_user_data_key(), ft_face, destroy_ft_face)
+            != CAIRO_STATUS_SUCCESS)
+         {
+            cairo_font_face_destroy(face);
+            FT_Done_Face(ft_face);
+            return nullptr;
+         }
+
+         return face;
+      }
+
+      ///////////////////////////////////////////////////////////////////////////
+      // HarfBuzz font construction
+
+      font_impl::hb_font_ptr make_hb_font(hb_face_t* hb_face)
+      {
+         hb_font_t* raw = hb_font_create(hb_face);
+         if (!raw) return nullptr;
+         hb_ot_font_set_funcs(raw);
+         unsigned upem = hb_face_get_upem(hb_face);
+         hb_font_set_scale(raw, int(upem), int(upem));
+         return font_impl::hb_font_ptr(raw);
+      }
+
+      ///////////////////////////////////////////////////////////////////////////
+      // Face cache — keyed by FC_FULLNAME, holds ref-counted Cairo + HarfBuzz
+      // faces. Scaled fonts are created per-size outside the cache.
+
+      struct face_entry
+      {
+         cairo_font_face_t* ft_face = nullptr;  // FT-backed (metrics + non-Quartz)
+         cairo_font_face_t* cg_face = nullptr;  // CG-backed (macOS Quartz only)
+         hb_face_t*         hb_face = nullptr;  // HarfBuzz face (ref-counted)
+      };
+
+      using face_map_t = std::map<std::string, face_entry>;
+
+      std::pair<face_map_t&, std::mutex&> get_face_cache()
+      {
+         static face_map_t map;
+         static std::mutex mutex;
+
+         struct cleanup
+         {
+            face_map_t& map_;
+            ~cleanup()
+            {
+               for (auto& [key, e] : map_)
+               {
+                  if (e.ft_face) cairo_font_face_destroy(e.ft_face);
+                  if (e.cg_face) cairo_font_face_destroy(e.cg_face);
+                  if (e.hb_face) hb_face_destroy(e.hb_face);
+               }
+            }
+         };
+         static cleanup cleanup_{map};
+         return {map, mutex};
+      }
+
+      ///////////////////////////////////////////////////////////////////////////
+      // Scaled font creation (per-size, from a cached FT cairo face)
+
+      cairo_scaled_font_t* make_scaled_font(cairo_font_face_t* ft_face, float size)
+      {
          cairo_matrix_t fm, ctm;
-         cairo_matrix_init_scale(&fm, descr._size, descr._size);
+         cairo_matrix_init_scale(&fm, size, size);
          cairo_matrix_init_identity(&ctm);
          auto* opts = cairo_font_options_create();
          cairo_font_options_set_antialias(opts,    CAIRO_ANTIALIAS_GRAY);
@@ -171,98 +310,80 @@ namespace cycfi::artist
          cairo_font_options_set_hint_metrics(opts, CAIRO_HINT_METRICS_OFF);
          auto* sf = cairo_scaled_font_create(ft_face, &fm, &ctm, opts);
          cairo_font_options_destroy(opts);
-
-         // Bootstrap HarfBuzz from the FT face locked via the scaled font.
-         font_impl::hb_font_ptr hb_fnt;
-         if (sf)
-         {
-            FT_Face hb_ft = cairo_ft_scaled_font_lock_face(sf);
-            if (hb_ft)
-            {
-               hb_fnt = make_hb_font(hb_ft);
-               cairo_ft_scaled_font_unlock_face(sf);
-            }
-         }
-
-         cairo_font_face_destroy(ft_face);  // scaled font holds its own reference
-
-         if (full_name.empty())
-         {
-            if (sf) cairo_scaled_font_destroy(sf);
-            return nullptr;
-         }
-
-         // CG-backed Cairo face for Quartz surface rendering (isFlipped=YES).
-         // CGFontCreateWithFontName requires the font to be registered with
-         // Core Text (system fonts are; bundled fonts need
-         // CTFontManagerRegisterFontsForURL, done in cairo_app.mm init_paths).
-         auto cfstr  = CFStringCreateWithCString(
-            kCFAllocatorDefault, full_name.c_str(), kCFStringEncodingUTF8);
-         auto cgfont = CGFontCreateWithFontName(cfstr);
-         CFRelease(cfstr);
-
-         cairo_font_face_t* cg_face = nullptr;
-         if (cgfont)
-         {
-            cg_face = cairo_quartz_font_face_create_for_cgfont(cgfont);
-            CGFontRelease(cgfont);
-            if (cg_face && cairo_font_face_status(cg_face) != CAIRO_STATUS_SUCCESS)
-            {
-               cairo_font_face_destroy(cg_face);
-               cg_face = nullptr;
-            }
-         }
-         // cg_face may be null if the font isn't registered; non-Quartz path
-         // (cairo_set_scaled_font with the FT sf) remains fully functional.
-
-         return new font_impl(cg_face, sf, descr._size, std::move(hb_fnt));
+         return sf;
       }
 
-#else
+      ///////////////////////////////////////////////////////////////////////////
+      // make_font_impl — main font construction
+
       font_impl* make_font_impl(font_descr const& descr)
       {
-         FcPattern* fc_pat = fc_match(descr);
-         if (!fc_pat) return nullptr;
+         auto const* entry = match(descr);
+         if (!entry) return nullptr;
 
-         auto* face = cairo_ft_font_face_create_for_pattern(fc_pat);
-         FcPatternDestroy(fc_pat);
+         auto [face_map, face_mutex] = get_face_cache();
+         std::lock_guard lock(face_mutex);
 
-         if (!face || cairo_font_face_status(face) != CAIRO_STATUS_SUCCESS)
+         auto it = face_map.find(entry->full_name);
+         if (it == face_map.end())
          {
-            if (face) cairo_font_face_destroy(face);
-            return nullptr;
+            face_entry fe;
+
+            fe.ft_face = make_ft_cairo_face(entry->file);
+            if (!fe.ft_face) return nullptr;
+
+            // Bootstrap HarfBuzz from the raw FT_Face tied to the cairo face.
+            auto* ft_raw = reinterpret_cast<FT_Face>(
+               cairo_font_face_get_user_data(fe.ft_face, &ft_user_data_key()));
+            if (ft_raw)
+            {
+               fe.hb_face = hb_ft_face_create_referenced(ft_raw);
+            }
+
+#ifdef __APPLE__
+            auto cfstr  = CFStringCreateWithCString(
+               kCFAllocatorDefault, entry->full_name.c_str(), kCFStringEncodingUTF8);
+            auto cgfont = CGFontCreateWithFontName(cfstr);
+            CFRelease(cfstr);
+            if (cgfont)
+            {
+               fe.cg_face = cairo_quartz_font_face_create_for_cgfont(cgfont);
+               CGFontRelease(cgfont);
+               if (fe.cg_face &&
+                   cairo_font_face_status(fe.cg_face) != CAIRO_STATUS_SUCCESS)
+               {
+                  cairo_font_face_destroy(fe.cg_face);
+                  fe.cg_face = nullptr;
+               }
+            }
+#endif
+            it = face_map.emplace(entry->full_name, std::move(fe)).first;
          }
 
-         cairo_matrix_t fm, ctm;
-         cairo_matrix_init_scale(&fm, descr._size, descr._size);
-         cairo_matrix_init_identity(&ctm);
-         auto* opts = cairo_font_options_create();
-         cairo_font_options_set_antialias(opts,    CAIRO_ANTIALIAS_GRAY);
-         cairo_font_options_set_hint_style(opts,   CAIRO_HINT_STYLE_NONE);
-         cairo_font_options_set_hint_metrics(opts, CAIRO_HINT_METRICS_OFF);
-         auto* sf = cairo_scaled_font_create(face, &fm, &ctm, opts);
-         cairo_font_options_destroy(opts);
-         cairo_font_face_destroy(face);
+         face_entry const& fe = it->second;
+         if (!fe.ft_face) return nullptr;
 
+         // Scaled font is per-size — cheap to create from the cached FT face.
+         auto* sf = make_scaled_font(fe.ft_face, descr._size);
          if (!sf || cairo_scaled_font_status(sf) != CAIRO_STATUS_SUCCESS)
          {
             if (sf) cairo_scaled_font_destroy(sf);
             return nullptr;
          }
 
+         // HarfBuzz font from cached hb_face — O(1).
          font_impl::hb_font_ptr hb_fnt;
-         FT_Face ft_face = cairo_ft_scaled_font_lock_face(sf);
-         if (ft_face)
-         {
-            hb_fnt = make_hb_font(ft_face);
-            cairo_ft_scaled_font_unlock_face(sf);
-         }
+         if (fe.hb_face)
+            hb_fnt = make_hb_font(fe.hb_face);
 
-         // _face is null on non-macOS: cairo_set_scaled_font is used everywhere
-         return new font_impl(nullptr, sf, descr._size, std::move(hb_fnt));
+         // CG face reference (macOS Quartz only, may be null).
+         cairo_font_face_t* cg_face = fe.cg_face;
+         if (cg_face) cairo_font_face_reference(cg_face);
+
+         return new font_impl(cg_face, sf, descr._size, std::move(hb_fnt));
       }
-#endif
-   }
+
+   } // namespace
 
    ////////////////////////////////////////////////////////////////////////////
    font::font()
