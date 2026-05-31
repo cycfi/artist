@@ -9,7 +9,7 @@
 #include <fontconfig/fontconfig.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
-#include <hb-ft.h>
+#include <hb.h>
 #include <hb-ot.h>
 #include <infra/support.hpp>
 #include <algorithm>
@@ -75,9 +75,6 @@ namespace cycfi::artist
          return fc::slant_normal;
       }
 
-      // Forward declaration — defined below in the FreeType section.
-      FT_Library get_ft_library();
-
       ///////////////////////////////////////////////////////////////////////////
       // Font map — enumerate all fonts once at startup, then resolve
       // font_descr via a local std::map lookup (no FcFontMatch per call).
@@ -102,12 +99,6 @@ namespace cycfi::artist
 
       void init_font_map()
       {
-         // Touch the FT library first so its static is constructed before the
-         // face cache, guaranteeing it is destroyed after (reverse order).
-         // This prevents a teardown segfault where face cache cleanup calls
-         // FT_Done_Face after the FT library has already been freed.
-         get_ft_library();
-
          FcInit();
          FcConfig* cfg = FcConfigGetCurrent();
 
@@ -250,6 +241,20 @@ namespace cycfi::artist
 
       ///////////////////////////////////////////////////////////////////////////
       // HarfBuzz font construction
+      //
+      // We create the hb_face_t from the font file blob rather than from the
+      // FT_Face. This decouples HarfBuzz from FreeType's lifecycle entirely:
+      // hb_face_destroy at process exit only frees the blob (raw memory), not
+      // an FT_Face — avoiding cross-dylib teardown ordering crashes.
+
+      hb_face_t* make_hb_face(std::string const& file)
+      {
+         hb_blob_t* blob = hb_blob_create_from_file(file.c_str());
+         if (!blob) return nullptr;
+         hb_face_t* face = hb_face_create(blob, 0);
+         hb_blob_destroy(blob);
+         return face;
+      }
 
       font_impl::hb_font_ptr make_hb_font(hb_face_t* hb_face)
       {
@@ -332,13 +337,9 @@ namespace cycfi::artist
             fe.ft_face = make_ft_cairo_face(entry->file);
             if (!fe.ft_face) return nullptr;
 
-            // Bootstrap HarfBuzz from the raw FT_Face tied to the cairo face.
-            auto* ft_raw = reinterpret_cast<FT_Face>(
-               cairo_font_face_get_user_data(fe.ft_face, &ft_user_data_key()));
-            if (ft_raw)
-            {
-               fe.hb_face = hb_ft_face_create_referenced(ft_raw);
-            }
+            // HarfBuzz face from the font file directly — no FT_Face reference.
+            // This keeps HarfBuzz and FreeType lifecycle-independent.
+            fe.hb_face = make_hb_face(entry->file);
 
 #ifdef __APPLE__
             auto cfstr  = CFStringCreateWithCString(
