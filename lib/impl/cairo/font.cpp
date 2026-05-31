@@ -137,22 +137,6 @@ namespace cycfi::artist
          return font_impl::hb_font_ptr(raw);
       }
 
-      // Derive a correctly-sized cairo_scaled_font_t via a recording surface.
-      // Matches the Elements scratch_context approach; works for both CG and
-      // FreeType faces since set_font_face + set_font_size is surface-agnostic.
-      cairo_scaled_font_t* make_scaled_font(cairo_font_face_t* face, float size)
-      {
-         auto* surf = cairo_recording_surface_create(CAIRO_CONTENT_COLOR_ALPHA, nullptr);
-         auto* ctx  = cairo_create(surf);
-         cairo_set_font_face(ctx, face);
-         cairo_set_font_size(ctx, size);
-         auto* sf = cairo_get_scaled_font(ctx);
-         cairo_scaled_font_reference(sf);
-         cairo_destroy(ctx);
-         cairo_surface_destroy(surf);
-         return sf;
-      }
-
 #ifdef __APPLE__
       font_impl* make_font_impl(font_descr const& descr)
       {
@@ -249,7 +233,15 @@ namespace cycfi::artist
             return nullptr;
          }
 
-         auto* sf = make_scaled_font(face, descr._size);
+         cairo_matrix_t fm, ctm;
+         cairo_matrix_init_scale(&fm, descr._size, descr._size);
+         cairo_matrix_init_identity(&ctm);
+         auto* opts = cairo_font_options_create();
+         cairo_font_options_set_antialias(opts,    CAIRO_ANTIALIAS_GRAY);
+         cairo_font_options_set_hint_style(opts,   CAIRO_HINT_STYLE_NONE);
+         cairo_font_options_set_hint_metrics(opts, CAIRO_HINT_METRICS_OFF);
+         auto* sf = cairo_scaled_font_create(face, &fm, &ctm, opts);
+         cairo_font_options_destroy(opts);
          cairo_font_face_destroy(face);
 
          if (!sf || cairo_scaled_font_status(sf) != CAIRO_STATUS_SUCCESS)
