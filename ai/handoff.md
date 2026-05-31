@@ -256,6 +256,49 @@ Core Text `CTFramesetter`, not from rendering.
 
 ---
 
+## Cairo font performance fix + teardown crash (061d426, a8cd07b)
+
+### Problem
+
+`BasicSlidersAndKnobs` in Elements was sluggish under the Cairo backend.
+Profiling with `sample(1)` showed ~80% of CPU time inside `FcFontMatch` →
+`FcFontSetMatchInternal`, called from `draw_slider_labels` which constructs a
+`font(font_descr)` on every draw call.
+
+### Root cause
+
+`make_font_impl` called `fc_match()` → `FcFontMatch` on every `font(font_descr)`
+construction. Skia and Elements master Cairo both pre-enumerate fonts once via
+`FcFontList` into a static map; the artist_2026_dev Cairo backend was the only
+backend missing this.
+
+### Fix (`061d426`)
+
+Replaced `fc_match()` / `FcFontMatch` with a pre-enumerated font map:
+
+- `init_font_map()`: calls `FcFontList` once at startup, builds
+  `std::map<family, vector<font_entry>>` with weight/slant/stretch in Artist
+  scale.
+- `match(font_descr)`: `std::map::find` + biased-score vector scan — no
+  Fontconfig search.
+- Face cache keyed by `FC_FULLNAME`: stores FT cairo face + CG face (macOS) +
+  `hb_face_t*`, created once per unique typeface.
+- Scaled fonts (per-size) and `hb_font_t` (O(1)) still created per call.
+
+### Teardown crash fix (`a8cd07b`)
+
+`hb_ft_face_create_referenced` stores `FT_Done_Face` as a HarfBuzz blob
+destructor. At process exit `hb_face_destroy` fired `FT_Done_Face` after
+FreeType's dylib had begun teardown → SIGSEGV at `FT_Done_Face+36`.
+
+Fix: create `hb_face_t` via `hb_blob_create_from_file` + `hb_face_create`.
+HarfBuzz holds a plain font data blob — no FT_Face reference, no cross-dylib
+ordering dependency, no crash.
+
+All 224 Artist Cairo test assertions pass. `BasicSlidersAndKnobs` is responsive.
+
+---
+
 ## Post-optimisation regression fix (ce4f9a0)
 
 The macOS optimisation pass introduced a `make_scaled_font()` helper that
