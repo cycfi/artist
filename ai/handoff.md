@@ -256,6 +256,19 @@ Core Text `CTFramesetter`, not from rendering.
 
 ---
 
+## Post-optimisation regression fix (ce4f9a0)
+
+The macOS optimisation pass introduced a `make_scaled_font()` helper that
+created the FT scaled font via a recording surface context, inheriting default
+font options (hint metrics ON). On Linux this caused ascent/descent values to
+be rounded up by ~1 px, breaking 10 metric/layout assertions and the typography
+golden image comparison.
+
+Fix: restored explicit `HINT_METRICS_OFF` + `HINT_STYLE_NONE` font options in
+the non-macOS `make_font_impl`; removed the unused `make_scaled_font()` helper.
+
+---
+
 ## Remaining TODO markers in Cairo source
 
 None.
