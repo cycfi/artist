@@ -50,10 +50,19 @@ struct cairo_artist_path_t
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// font_impl — Cairo FreeType-backed scaled font with HarfBuzz shaping font.
+// font_impl — Cairo font face + scaled font + HarfBuzz shaping font.
+//
+// _face        : cairo_font_face_t* used by canvas::font() via
+//                cairo_set_font_face + cairo_set_font_size (Elements style).
+//                On macOS this is a CG-backed face; on other platforms a
+//                FreeType face.
+// _scaled_font : pre-computed scaled font for standalone font::metrics() and
+//                font::measure_text() (no live canvas context available).
+// _hb_font     : HarfBuzz font for OpenType shaping (always FreeType-backed
+//                since hb_ft_face_create_referenced reads from OT tables).
+// _size        : requested point size.
+//
 // Declared as 'struct font_impl' inside namespace cycfi::artist in font.hpp.
-// Each font_impl owns one Cairo reference to _scaled_font and one HarfBuzz
-// font created via hb_ft_font_create_referenced.
 
 #include <hb.h>
 #include <infra/support.hpp>
@@ -62,6 +71,14 @@ namespace cycfi::artist
 {
    struct font_impl
    {
+      // _face       : CG-backed cairo font face, non-null on macOS only.
+      //               Used exclusively on Quartz surfaces (live rendering).
+      //               Null on non-macOS platforms.
+      // _scaled_font: FreeType-backed scaled font on all platforms.
+      //               Used for standalone font::metrics() / font::measure_text()
+      //               and for cairo_set_scaled_font on non-Quartz surfaces
+      //               (tests, offscreen rendering).
+      cairo_font_face_t*   _face        = nullptr;
       cairo_scaled_font_t* _scaled_font = nullptr;
       float                _size        = 0.0f;
 
@@ -70,17 +87,21 @@ namespace cycfi::artist
 
       font_impl() = default;
 
-      font_impl(cairo_scaled_font_t* sf, float size, hb_font_ptr hb_fnt)
-       : _scaled_font(sf)
+      font_impl(cairo_font_face_t* face, cairo_scaled_font_t* sf,
+                float size, hb_font_ptr hb_fnt)
+       : _face(face)
+       , _scaled_font(sf)
        , _size(size)
        , _hb_font(std::move(hb_fnt))
       {}
 
       font_impl(font_impl const& rhs)
-       : _scaled_font(rhs._scaled_font)
+       : _face(rhs._face)
+       , _scaled_font(rhs._scaled_font)
        , _size(rhs._size)
        , _hb_font(rhs._hb_font ? hb_font_ptr(hb_font_reference(rhs._hb_font.get())) : nullptr)
       {
+         if (_face)        cairo_font_face_reference(_face);
          if (_scaled_font) cairo_scaled_font_reference(_scaled_font);
       }
 
@@ -88,7 +109,7 @@ namespace cycfi::artist
 
       ~font_impl()
       {
-         // _hb_font unique_ptr destructs first (hb_font_destroy), then:
+         if (_face)        cairo_font_face_destroy(_face);
          if (_scaled_font) cairo_scaled_font_destroy(_scaled_font);
       }
    };

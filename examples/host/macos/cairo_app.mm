@@ -10,7 +10,8 @@
 #include <chrono>
 #include "../../app.hpp"
 #include <artist/resources.hpp>
-#include <cairo.h>
+#include <cairo-quartz.h>
+#import <CoreText/CoreText.h>
 
 using namespace cycfi::artist;
 
@@ -21,6 +22,16 @@ float elapsed_ = 0;
 // Helper utils
 namespace
 {
+   void activate_font(cycfi::fs::path font_path)
+   {
+      auto furl = [NSURL fileURLWithPath:[NSString stringWithUTF8String:font_path.c_str()]];
+      if (!furl) return;
+      CFErrorRef error = nullptr;
+      CTFontManagerRegisterFontsForURL(
+         (__bridge CFURLRef)furl, kCTFontManagerScopeProcess, &error);
+      if (error) CFRelease(error);
+   }
+
    CFBundleRef get_bundle_from_executable(const char* filepath)
    {
       NSString* exec_str = [NSString stringWithCString:filepath encoding : NSUTF8StringEncoding];
@@ -54,6 +65,12 @@ namespace cycfi::artist
       char resource_path[PATH_MAX];
       get_resource_path(resource_path);
       add_search_path(resource_path);
+
+      // Register bundled .ttf fonts with Core Text so CGFontCreateWithFontName
+      // can find them (mirrors Elements' resource_setter / activate_font).
+      for (fs::directory_iterator it{resource_path}; it != fs::directory_iterator{}; ++it)
+         if (it->path().extension() == ".ttf")
+            activate_font(it->path());
    }
 
    fs::path get_user_fonts_directory()
@@ -91,50 +108,22 @@ namespace cycfi::artist
 
 - (void) drawRect : (NSRect) dirty
 {
-   auto draw_f =
-      [&]()
-      {
-         auto cg_ctx = NSGraphicsContext.currentContext.CGContext;
-
-         // Render into a Cairo image surface then blit via CGImage.
-         // This avoids coordinate-system entanglement between isFlipped=YES,
-         // AppKit's CTM, and cairo_quartz's internal y-flip.
-         NSRect pt_bounds = [self bounds];
-         NSRect px_bounds = [self convertRectToBacking:pt_bounds];
-         int pw = (int)px_bounds.size.width;
-         int ph = (int)px_bounds.size.height;
-         double scale = px_bounds.size.width / pt_bounds.size.width;
-
-         auto surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, pw, ph);
-         cairo_surface_set_device_scale(surface, scale, scale);
-         auto cairo_ctx = cairo_create(surface);
-         auto cnv = canvas{cairo_ctx};
-         draw(cnv);
-         cairo_destroy(cairo_ctx);
-         cairo_surface_flush(surface);
-
-         // Wrap the Cairo pixel buffer in a CGImage and blit.
-         auto* pixels    = cairo_image_surface_get_data(surface);
-         int   stride    = cairo_image_surface_get_stride(surface);
-         auto  bitmapCtx = CGBitmapContextCreate(
-            pixels, pw, ph, 8, stride,
-            CGColorSpaceCreateDeviceRGB(),
-            kCGBitmapByteOrder32Host | kCGImageAlphaPremultipliedFirst
-         );
-         auto cgImage = CGBitmapContextCreateImage(bitmapCtx);
-         // isFlipped=YES makes the CGContext top-down; flip CTM so image draws right-side-up.
-         CGContextSaveGState(cg_ctx);
-         CGContextTranslateCTM(cg_ctx, 0, pt_bounds.size.height);
-         CGContextScaleCTM(cg_ctx, 1.0, -1.0);
-         CGContextDrawImage(cg_ctx, CGRectMake(0, 0, pt_bounds.size.width, pt_bounds.size.height), cgImage);
-         CGContextRestoreGState(cg_ctx);
-         CGImageRelease(cgImage);
-         CGContextRelease(bitmapCtx);
-         cairo_surface_destroy(surface);
-      };
-
    auto start = std::chrono::high_resolution_clock::now();
-   draw_f();
+
+   // isFlipped=YES has AppKit supply a top-down CGContext. cairo_quartz wraps
+   // it without adding its own flip, so Cairo's coordinate system is top-down.
+   // CG-backed font faces (cairo_quartz_font_face_create_for_cgfont) render
+   // correctly under this CTM; FreeType-backed faces do not.
+   auto cg_ctx = NSGraphicsContext.currentContext.CGContext;
+   auto bounds = [self bounds];
+   auto surface = cairo_quartz_surface_create_for_cg_context(
+      cg_ctx, bounds.size.width, bounds.size.height);
+   auto cairo_ctx = cairo_create(surface);
+   auto cnv = canvas{cairo_ctx};
+   draw(cnv);
+   cairo_destroy(cairo_ctx);
+   cairo_surface_destroy(surface);
+
    auto stop = std::chrono::high_resolution_clock::now();
    elapsed_ = std::chrono::duration<double>{stop - start}.count();
 }
