@@ -7,6 +7,10 @@ and F7 (HarfBuzz text shaping) are complete. The Cairo backend is a fully
 tested, CI-verified optional backend alongside Skia and Quartz2D, with live
 window hosts on all three platforms.
 
+A macOS rendering optimisation pass was completed (see section below):
+cairo_quartz surface + CG-backed font faces replace the old per-frame image
+surface + FreeType approach, giving a significant speed improvement.
+
 ---
 
 ## CI structure
@@ -161,13 +165,92 @@ cases assert logical correctness:
 
 ---
 
+## macOS Cairo rendering optimisation (this session)
+
+### Problem
+The original `cairo_app.mm` host rendered via `cairo_image_surface_create`
+every frame: allocate ARGB32 buffer → draw → wrap in `CGBitmapContext` →
+`CGBitmapContextCreateImage` → `CGContextDrawImage`. Per-frame allocation and
+a full pixel-buffer copy made this the dominant cost.
+
+FreeType-backed font faces were also used everywhere, including on the Quartz
+surface. This silently failed on Quartz (FreeType glyphs don't render under the
+`isFlipped=YES` flipped CTM), causing blank text in `text_layout::draw` and
+requiring `cairo_show_glyphs` to have `cairo_move_to` called first on Quartz.
+
+### Solution
+
+**`cairo_app.mm`** (macOS host):
+- Switched from image surface to `cairo_quartz_surface_create_for_cg_context`
+  (direct Quartz rendering, no pixel-buffer copy).
+- Registers bundled `.ttf` fonts with `CTFontManagerRegisterFontsForURL` in
+  `init_paths()` so `CGFontCreateWithFontName` can resolve them.
+
+**`font.cpp` / `cairo_private.hpp`** — dual-face architecture on macOS:
+- `font_impl._face`: CG-backed `cairo_font_face_t*` via
+  `cairo_quartz_font_face_create_for_cgfont(CGFontCreateWithFontName(FC_FULLNAME))`.
+  Used only on `CAIRO_SURFACE_TYPE_QUARTZ` surfaces.
+- `font_impl._scaled_font`: FreeType-backed `cairo_scaled_font_t*` with
+  `HINT_METRICS_OFF`. Used for standalone `font::metrics()` /
+  `font::measure_text()` and for `cairo_set_scaled_font` on image/recording
+  surfaces (tests, offscreen).
+- `font_impl._hb_font`: HarfBuzz font bootstrapped from FT face via
+  `cairo_ft_scaled_font_lock_face`; unchanged.
+
+**Font face cache** (`get_face_cache()`):
+- Keyed by `FC_FULLNAME` (std::string).
+- Caches `cairo_font_face_t*` + `hb_face_t*` (both ref-counted, mutex-protected).
+- Avoids redundant fontconfig lookup + CGFont + FreeType face + HarfBuzz face
+  creation on repeated `font(font_descr)` calls (common in animated UIs).
+- HarfBuzz: `hb_face_t*` is cached (expensive); `hb_font_t*` is created cheaply
+  per `font_impl` from the shared face.
+
+**`canvas::font()`** (macOS):
+- Quartz surface → `cairo_set_font_face(cg_face)` + `cairo_set_font_size`.
+- Other surfaces → `cairo_set_scaled_font(ft_scaled_font)` (original behaviour).
+
+**`text_layout::impl::draw()`**:
+- Same surface-type dispatch as `canvas::font()`.
+- Added `cairo_move_to(ctx, first_glyph_x, first_glyph_y)` before each
+  `cairo_show_glyphs` — required by the Quartz CG backend (silently no-ops
+  otherwise).
+
+**`canvas::fill_text()` HarfBuzz path**:
+- Same `cairo_move_to` fix before `cairo_show_glyphs`.
+
+**`examples/typo_perf.cpp`** — new animated text-reflow benchmark:
+- Creates a `text_layout` (HarfBuzz shape + reflow) every frame with an
+  animating width. Measures raw text-layout throughput.
+
+### Benchmark results (macOS, Release, M-series)
+
+| Backend | avg ms/frame | avg FPS | Notes |
+|---------|-------------|---------|-------|
+| Cairo + HarfBuzz | 4.31 ms | ~232 | Full OT shaping |
+| Cairo no-HB | 4.31 ms | ~232 | HarfBuzz adds ~0ms |
+| Quartz2D | 0.92 ms | ~1089 | Core Text native layout |
+
+HarfBuzz overhead is negligible. Quartz2D's 4.7× advantage comes from Apple's
+Core Text `CTFramesetter`, not from rendering.
+
+### Key implementation notes
+- CG faces only work on `CAIRO_SURFACE_TYPE_QUARTZ`. On image/recording
+  surfaces (tests, offscreen) they fall back silently to toy font at size 10.
+  The FT scaled font path is the authoritative non-Quartz path.
+- `cairo_show_glyphs` on Quartz requires a prior `cairo_move_to`; without it
+  glyphs are not rendered (silent no-op from the CG backend).
+- `FC_FULLNAME` from fontconfig is the Core Text font name accepted by
+  `CGFontCreateWithFontName` for system-installed fonts. Bundled fonts need
+  `CTFontManagerRegisterFontsForURL` first.
+
+---
+
 ## Remaining known limitations
 
 | Area | Status |
 |------|--------|
 | `shadow_style` performance | Correct for widget shadows; very large shapes slower than GPU-backed backends |
 | `darker` composite op | Approximation: `CAIRO_OPERATOR_DARKEN` (channel-min), not W3C PlusDarker. Documented in `canvas.hpp` |
-| `text_layout::text()` | Does not preserve `font_descr` across updates — deferred |
 | `image::pixels()` | Returns premultiplied BGRA. Documented in `image.hpp` with per-backend layout table |
 | `image::pixels()` on Quartz2D | Works for all image types including `make_image` (lazy `initWithCGImage:` path) |
 
@@ -204,5 +287,8 @@ ctest --test-dir build-quartz --output-on-failure
 
 - Merge `artist_2026_dev` to `master` once branch is considered stable.
 - Implement `stroke_text` shadow support via `text_layout` path.
-- `text_layout::text()` — preserve `font_descr` across updates.
 - Implement `shadow_style` border-only blur optimisation for large shapes.
+- `text_layout` per-frame allocation: cache layout across frames, only reflow on
+  width change (application-level; library API is already efficient).
+- Port the macOS optimisations to the Linux/Windows Cairo hosts (minor; those
+  platforms already use the correct surface types).
