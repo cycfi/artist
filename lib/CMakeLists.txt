@@ -314,6 +314,10 @@ if (ARTIST_CAIRO AND NOT MSVC)
    pkg_check_modules(harfbuzz REQUIRED IMPORTED_TARGET harfbuzz)
    target_link_libraries(artist PUBLIC
       PkgConfig::cairo PkgConfig::cairo_ft PkgConfig::fc PkgConfig::harfbuzz)
+   if (APPLE)
+      target_link_libraries(artist PUBLIC
+         "-framework CoreGraphics" "-framework CoreFoundation")
+   endif()
 endif()
 
 add_dependencies(artist libunibreak)

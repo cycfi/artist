@@ -711,8 +711,30 @@ namespace cycfi::artist
 
    void canvas::font(class font const& font_)
    {
-      if (font_.impl() && font_.impl()->_scaled_font)
-         cairo_set_scaled_font(_context, font_.impl()->_scaled_font);
+      if (font_.impl())
+      {
+         auto* fi = font_.impl();
+#ifdef __APPLE__
+         // On macOS: CG face (Quartz surface) vs FT scaled font (everything else).
+         // CG faces render correctly under the isFlipped=YES Quartz CTM; FT faces
+         // fail silently on non-Quartz surfaces. The FT scaled font has
+         // HINT_METRICS_OFF baked in so metrics remain consistent for tests.
+         if (fi->_face &&
+             cairo_surface_get_type(cairo_get_target(_context))
+                == CAIRO_SURFACE_TYPE_QUARTZ)
+         {
+            cairo_set_font_face(_context, fi->_face);
+            cairo_set_font_size(_context, fi->_size);
+         }
+         else if (fi->_scaled_font)
+         {
+            cairo_set_scaled_font(_context, fi->_scaled_font);
+         }
+#else
+         if (fi->_scaled_font)
+            cairo_set_scaled_font(_context, fi->_scaled_font);
+#endif
+      }
       _state->_info.font = font_;
    }
 
