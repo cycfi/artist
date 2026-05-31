@@ -818,6 +818,9 @@ namespace cycfi::artist
          else
          {
             _state->apply_fill_style();
+            // Quartz CG backend requires current point set before show_glyphs.
+            if (!glyphs.empty())
+               cairo_move_to(_context, glyphs.front().x, glyphs.front().y);
             cairo_show_glyphs(_context, glyphs.data(), int(glyphs.size()));
          }
       }
