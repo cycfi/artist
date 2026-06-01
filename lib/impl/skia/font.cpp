@@ -25,7 +25,7 @@
 # include <Windows.h>
 # include "sysinfoapi.h"
 # include "tchar.h"
-# include <ports/SkFontMgr_win_dw.h>
+# include <ports/SkTypeface_win.h>   // declares SkFontMgr_New_DirectWrite()
 #else
 # include <ports/SkFontMgr_fontconfig.h>
 # include <ports/SkFontScanner_FreeType.h>
@@ -149,11 +149,74 @@ namespace cycfi::artist
       using fc_font_set_ptr = std::unique_ptr<FcFontSet, deleter<FcFontSet, FcFontSetDestroy>>;
 #endif
 
+#if defined(__APPLE__) || defined(_WIN32)
+      // Read an OpenType 'name' table entry (by name ID) from a typeface,
+      // returned as ASCII. Prefers the Windows (3,1,0x409) record, falling
+      // back to the Mac (1,0) record. Used to recover the typographic family
+      // name (ID 16): DirectWrite's getFamilyName() returns the legacy ID 1
+      // family (e.g. "Open Sans Condensed Light") rather than the typographic
+      // family ("Open Sans Condensed") that callers request. Empty if absent.
+      std::string get_name_id(SkTypeface* tf, unsigned want_id)
+      {
+         constexpr SkFontTableTag name_tag = SkSetFourByteTag('n', 'a', 'm', 'e');
+         size_t size = tf->getTableSize(name_tag);
+         if (size < 6)
+            return {};
+         std::vector<uint8_t> buf(size);
+         if (tf->getTableData(name_tag, 0, size, buf.data()) != size)
+            return {};
+
+         auto u16 = [&](size_t o) -> unsigned {
+            return (o + 1 < buf.size())? (unsigned(buf[o]) << 8 | buf[o + 1]) : 0u;
+         };
+         unsigned count = u16(2);
+         unsigned storage = u16(4);
+         std::string win, mac;
+         for (unsigned i = 0; i < count; ++i)
+         {
+            size_t rec = 6 + i * 12;
+            if (rec + 12 > size)
+               break;
+            unsigned platform = u16(rec);
+            unsigned encoding = u16(rec + 2);
+            unsigned language = u16(rec + 4);
+            unsigned nameid   = u16(rec + 6);
+            unsigned len      = u16(rec + 8);
+            unsigned off      = u16(rec + 10);
+            if (nameid != want_id)
+               continue;
+            size_t str = storage + off;
+            if (str + len > size)
+               continue;
+            if (platform == 3 && encoding == 1) // Windows, UTF-16BE
+            {
+               std::string s;
+               for (unsigned k = 0; k + 1 < len; k += 2)
+               {
+                  unsigned cp = unsigned(buf[str + k]) << 8 | buf[str + k + 1];
+                  s.push_back(cp < 0x80? char(cp) : '?');
+               }
+               if (language == 0x409 || win.empty())
+                  win = s;
+            }
+            else if (platform == 1 && encoding == 0) // Mac Roman (ASCII subset)
+            {
+               mac.assign(reinterpret_cast<char const*>(&buf[str]), len);
+            }
+         }
+         return !win.empty()? win : mac;
+      }
+#endif
+
       void init_font_map()
       {
-#if defined(__APPLE__)
-         // On macOS, fontconfig is unavailable. Scan the user fonts directory
-         // using Skia so we use the same bundled font files as other backends.
+#if defined(__APPLE__) || defined(_WIN32)
+         // On macOS and Windows, fontconfig is unavailable. Scan the user fonts
+         // directory using Skia (portable across the CoreText and DirectWrite
+         // font managers) so we use the same bundled font files as other
+         // backends. Without this, only system-installed fonts are visible and
+         // the bundled fonts (used by tests/examples) load as null typefaces,
+         // yielding zero metrics and downstream crashes.
          auto mgr = get_font_mgr();
          auto user_fonts_path = get_user_fonts_directory();
          auto [font_map, font_map_mutex] = get_font_map();
@@ -193,7 +256,19 @@ namespace cycfi::artist
                   // Map SkFontStyle width (1-9) to artist 0-100 scale
                   fe.stretch = uint8_t(sk_style.width() * 100 / 9);
 
-                  font_map[key].push_back(std::move(fe));
+                  // Register under the family name the font manager reports
+                  // (DirectWrite: legacy name-ID-1 family; CoreText: typographic
+                  // name-ID-16 family) AND under the typographic family read
+                  // straight from the 'name' table, so a lookup by either name
+                  // succeeds on every platform — matching fontconfig, which
+                  // exposes both. e.g. "Open Sans Condensed Light" (ID 1) and
+                  // "Open Sans Condensed" (ID 16).
+                  std::string typo = get_name_id(tf.get(), 16);
+                  trim(typo);
+
+                  font_map[key].push_back(fe);
+                  if (!typo.empty() && typo != key)
+                     font_map[typo].push_back(fe);
                   ++face_count;
                } while (true);
             }
