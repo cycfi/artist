@@ -25,7 +25,7 @@
 # include <Windows.h>
 # include "sysinfoapi.h"
 # include "tchar.h"
-# include <ports/SkFontMgr_win_gdi.h>
+# include <ports/SkFontMgr_win_dw.h>
 #else
 # include <ports/SkFontMgr_fontconfig.h>
 # include <ports/SkFontScanner_FreeType.h>
@@ -40,7 +40,7 @@ namespace cycfi::artist
 #if defined(__APPLE__)
          return SkFontMgr_New_CoreText(nullptr);
 #elif defined(_WIN32)
-         return SkFontMgr_New_GDI();
+         return SkFontMgr_New_DirectWrite();
 #else
          // m148: SkFontMgr_New_FontConfig now requires an explicit font
          // scanner. Use the FreeType scanner (matches SK_TYPEFACE_FACTORY_FREETYPE).
