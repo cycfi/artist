@@ -11,15 +11,39 @@
 
 #include <SDKDDKVer.h>
 #include <windows.h>
-#include <gl/gl.h>
+#include <GL/gl.h>
 
-#include <gl/GrGLInterface.h>
+// Windows' <GL/gl.h> is frozen at OpenGL 1.1, so tokens introduced in later
+// versions are absent. Define the few we need (used only as constant args to
+// glGetIntegerv / Skia's GrGLFramebufferInfo) rather than pull in <GL/glext.h>.
+#ifndef GL_RGBA8
+# define GL_RGBA8 0x8058
+#endif
+#ifndef GL_FRAMEBUFFER_BINDING
+# define GL_FRAMEBUFFER_BINDING 0x8CA6
+#endif
+
+// Windows' <GL/gl.h> is frozen at OpenGL 1.1, so tokens introduced in later
+// versions are absent. Define the few we need (used only as constant args to
+// glGetIntegerv / Skia's GrGLFramebufferInfo) rather than pull in <GL/glext.h>.
+#ifndef GL_RGBA8
+# define GL_RGBA8 0x8058
+#endif
+#ifndef GL_FRAMEBUFFER_BINDING
+# define GL_FRAMEBUFFER_BINDING 0x8CA6
+#endif
+
 #include <SkImage.h>
-#include <SkSurface.h>
+#include <SkColorSpace.h>
 #include <SkCanvas.h>
-#include <tools/sk_app/DisplayParams.h>
-#include <tools/sk_app/WindowContext.h>
-#include <tools/sk_app/win/WindowContextFactory_win.h>
+#include <SkSurface.h>
+#include <ganesh/GrDirectContext.h>
+#include <ganesh/GrBackendSurface.h>
+#include <ganesh/SkSurfaceGanesh.h>
+#include <ganesh/gl/GrGLInterface.h>
+#include <ganesh/gl/GrGLDirectContext.h>
+#include <ganesh/gl/GrGLBackendSurface.h>
+#include <ganesh/gl/GrGLTypes.h>
 
 #include <ShellScalingAPI.h>
 
@@ -29,6 +53,18 @@
 using namespace cycfi::artist;
 float elapsed_ = 0;  // rendering elapsed time
 constexpr unsigned IDT_TIMER1 = 100;
+
+// WGL ARB context-creation bits (avoid depending on <GL/wglext.h>). These let
+// us request a core-profile OpenGL 3.3 context, which Skia's Ganesh GL backend
+// targets. We fall back to the legacy wglCreateContext context if the ARB
+// extension is unavailable (desktop drivers usually return a high-version
+// compatibility context there anyway).
+#define WGL_CONTEXT_MAJOR_VERSION_ARB    0x2091
+#define WGL_CONTEXT_MINOR_VERSION_ARB    0x2092
+#define WGL_CONTEXT_PROFILE_MASK_ARB     0x9126
+#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB 0x00000001
+using PFNWGLCREATECONTEXTATTRIBSARBPROC =
+   HGLRC (WINAPI*)(HDC, HGLRC, const int*);
 
 class window
 {
@@ -42,23 +78,27 @@ public:
 private:
 
    ATOM           registerClass(HINSTANCE hInstance);
-   void           destroy();
-
-   using skia_context = std::unique_ptr<sk_app::WindowContext>;
+   void           make_gl_context();
+   void           init_skia();
 
    extent         _size;
    bool           _animate;
-   skia_context   _skia_context;
    float          _scale;
+   color          _bkd;
 
-   HGLRC          RC;         // Rendering Context
-   HDC            DC;         // Device Context
-   HWND           WND;        // Window
+   HGLRC          RC = nullptr;   // Rendering Context
+   HDC            DC = nullptr;   // Device Context
+   HWND           WND = nullptr;  // Window
+
+   sk_sp<const GrGLInterface> _xface;
+   sk_sp<GrDirectContext>     _ctx;
+   sk_sp<SkSurface>           _surface;
 };
 
 window::window(extent size, color bkd, bool animate)
  : _size{size}
  , _animate{animate}
+ , _bkd{bkd}
 {
    auto error = [](char const* msg){ throw std::runtime_error(msg); };
    auto style = WS_CAPTION | WS_SYSMENU | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
@@ -97,7 +137,9 @@ window::window(extent size, color bkd, bool animate)
 
    SetWindowLongPtrW(WND, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
-   _skia_context = sk_app::window_context_factory::MakeGLForWin(WND, sk_app::DisplayParams());
+   make_gl_context();
+   init_skia();
+
    if (animate)
       SetTimer(WND, IDT_TIMER1, 16, (TIMERPROC) nullptr);
 
@@ -107,6 +149,13 @@ window::window(extent size, color bkd, bool animate)
 
 window::~window()
 {
+   if (_animate && WND)
+      KillTimer(WND, IDT_TIMER1);
+
+   _surface.reset();
+   _ctx.reset();
+   _xface.reset();
+
    wglMakeCurrent(nullptr, nullptr);
    if (RC)
       wglDeleteContext(RC);
@@ -114,8 +163,74 @@ window::~window()
       ReleaseDC(WND, DC);
    if (WND)
       DestroyWindow(WND);
-   if (_animate)
-      KillTimer(WND, IDT_TIMER1);
+}
+
+// Create a WGL OpenGL context on the window's device context. Sets a double-
+// buffered RGBA pixel format, makes a legacy context, then upgrades to a
+// core-profile 3.3 context via wglCreateContextAttribsARB when available.
+void window::make_gl_context()
+{
+   auto error = [](char const* msg){ throw std::runtime_error(msg); };
+
+   DC = GetDC(WND);
+   if (!DC)
+      error("Error: GetDC failed.");
+
+   PIXELFORMATDESCRIPTOR pfd = {};
+   pfd.nSize = sizeof(pfd);
+   pfd.nVersion = 1;
+   pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+   pfd.iPixelType = PFD_TYPE_RGBA;
+   pfd.cColorBits = 32;
+   pfd.cAlphaBits = 8;
+   pfd.cDepthBits = 24;
+   pfd.cStencilBits = 8;
+   pfd.iLayerType = PFD_MAIN_PLANE;
+
+   int pf = ChoosePixelFormat(DC, &pfd);
+   if (pf == 0 || !SetPixelFormat(DC, pf, &pfd))
+      error("Error: SetPixelFormat failed.");
+
+   HGLRC legacy = wglCreateContext(DC);
+   if (!legacy)
+      error("Error: wglCreateContext failed.");
+   wglMakeCurrent(DC, legacy);
+
+   auto wglCreateContextAttribsARB =
+      reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(
+         wglGetProcAddress("wglCreateContextAttribsARB"));
+
+   if (wglCreateContextAttribsARB)
+   {
+      const int attribs[] =
+      {
+         WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+         WGL_CONTEXT_MINOR_VERSION_ARB, 3,
+         WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+         0
+      };
+      if (HGLRC core = wglCreateContextAttribsARB(DC, nullptr, attribs))
+      {
+         wglMakeCurrent(DC, core);
+         wglDeleteContext(legacy);
+         RC = core;
+      }
+   }
+   if (!RC)
+      RC = legacy;   // fall back to the legacy (compatibility) context
+}
+
+void window::init_skia()
+{
+   auto error = [](char const* msg){ throw std::runtime_error(msg); };
+
+   glClearColor(_bkd.red, _bkd.green, _bkd.blue, _bkd.alpha);
+   glClear(GL_COLOR_BUFFER_BIT);
+
+   if (_xface = GrGLMakeNativeInterface(); _xface == nullptr)
+      error("Error: GrGLMakeNativeInterface failed.");
+   if (_ctx = GrDirectContexts::MakeGL(_xface); _ctx == nullptr)
+      error("Error: GrDirectContexts::MakeGL failed.");
 }
 
 LRESULT CALLBACK handle_event(
@@ -127,7 +242,7 @@ LRESULT CALLBACK handle_event(
    switch (message)
    {
       case WM_TIMER:
-         if (wParam == IDT_TIMER1)
+         if (wParam == IDT_TIMER1 && win)
          {
             auto start = std::chrono::steady_clock::now();
             win->render();
@@ -180,31 +295,39 @@ ATOM window::registerClass(HINSTANCE hInstance)
 
 void window::render()
 {
-   sk_sp<SkSurface> surface = _skia_context->getBackbufferSurface();
-   if (surface)
+   auto error = [](char const* msg){ throw std::runtime_error(msg); };
+   wglMakeCurrent(DC, RC);
+
+   if (!_surface)
    {
-      SkCanvas* gpu_canvas = surface->getCanvas();
-      gpu_canvas->save();
-      gpu_canvas->scale(_scale, _scale);
-      auto cnv = canvas{gpu_canvas};
+      GrGLint buffer = 0;
+      glGetIntegerv(GL_FRAMEBUFFER_BINDING, &buffer);
+      GrGLFramebufferInfo info;
+      info.fFBOID = (GrGLuint) buffer;
+      info.fFormat = GL_RGBA8;
+      SkColorType colorType = kRGBA_8888_SkColorType;
 
-      draw(cnv);
+      auto target = GrBackendRenderTargets::MakeGL(
+         int(_size.x*_scale), int(_size.y*_scale), 0, 8, info);
 
-      gpu_canvas->restore();
-      surface->flush();
-      _skia_context->swapBuffers();
+      _surface = SkSurfaces::WrapBackendRenderTarget(
+         _ctx.get(), target, kBottomLeft_GrSurfaceOrigin,
+         colorType, nullptr, nullptr);
+
+      if (!_surface)
+         error("Error: SkSurfaces::WrapBackendRenderTarget returned null.");
    }
-}
 
-void window::destroy()
-{
-   wglMakeCurrent(nullptr, nullptr);
-   if (RC)
-      wglDeleteContext(RC);
-   if (DC)
-      ReleaseDC(WND, DC);
-   if (WND)
-      DestroyWindow(WND);
+   SkCanvas* gpu_canvas = _surface->getCanvas();
+   gpu_canvas->save();
+   gpu_canvas->scale(_scale, _scale);
+   auto cnv = canvas{gpu_canvas};
+
+   draw(cnv);
+
+   gpu_canvas->restore();
+   _ctx->flushAndSubmit(_surface.get());
+   SwapBuffers(DC);
 }
 
 namespace cycfi::artist
@@ -245,10 +368,8 @@ int run_app(
    SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE);
    window win{window_size, bkd, animate};
 
-   MSG msg;
+   MSG msg = {};
    bool active = true;
-   int i = 0;
-   float acc = 0;
    while (active)
    {
       while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
@@ -260,8 +381,5 @@ int run_app(
       }
    }
 
-   return msg.wParam;
+   return int(msg.wParam);
 }
-
-
-

@@ -96,6 +96,14 @@ function(add_example name)
          /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup shcore.lib
       )
 
+      # The Skia host uses WGL + OpenGL directly (wgl*/gl* in opengl32,
+      # ChoosePixelFormat/SetPixelFormat/SwapBuffers in gdi32). The old host
+      # got these transitively via the now-removed sk_app, so link explicitly.
+      if (NOT ARTIST_CAIRO)
+         find_package(OpenGL REQUIRED)
+         target_link_libraries(${name} OpenGL::GL gdi32)
+      endif()
+
    elseif (UNIX)
 
       if (ARTIST_CAIRO)
