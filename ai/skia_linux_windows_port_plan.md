@@ -2,7 +2,8 @@
 
 **Branch:** `artist_2026_skia_upgrade`
 **Date:** 2026-06-01
-**Status:** Planning
+**Status:** Linux lib/tests DONE; Linux examples DONE (built, headless-verified);
+Windows NOT STARTED
 
 ---
 
@@ -11,6 +12,64 @@
 Get `Skia (Ubuntu GCC)` and `Skia (Windows MSVC)` CI jobs green, and have
 working example apps runnable on an OrbStack Linux VM and a remote Windows
 machine.
+
+---
+
+## PROGRESS (2026-06-01)
+
+### Done — Linux Skia (committed: `01e7dce`, `cd38107`)
+- `vcpkg.json`: added `skia[gl]` for `!osx`.
+- `lib/CMakeLists.txt`: Linux + Windows blocks now use vcpkg
+  `find_package(unofficial-skia)` (same pattern as macOS); removed all
+  deleted `external/skia/tools/sk_app/` source refs; unified include dirs
+  via `ARTIST_SKIA_EXTRA_INCLUDES`; added `SK_GANESH` define; dropped stale
+  `add_dependencies(prebuilt_binaries)` and the Linux fontconfig
+  pkg_check_modules (fontconfig now comes from vcpkg).
+- `lib/impl/skia/font.cpp`: m148 `SkFontMgr_New_FontConfig` now needs a
+  scanner arg — pass `SkFontScanner_Make_FreeType()` (added
+  `<ports/SkFontScanner_FreeType.h>`).
+- Regenerated 4 stale Linux goldens (shapes_and_images, shapes2, typography,
+  tauri) — visually identical, deltas are gradient/AA from version bump.
+- CI: Ubuntu Skia installs `libgl1-mesa-dev libglu1-mesa-dev` (for `gl.pc`)
+  and `autoconf autoconf-archive automake libtool` (for vcpkg gperf port);
+  Linux configure exports `PKG_CONFIG_PATH` + `VCPKG_ENV_PASSTHROUGH_UNTRACKED`
+  so vcpkg's sandboxed skia build can find system OpenGL.
+- **Verified locally in OrbStack arm64 VM**: 15/15 tests pass (224 assertions).
+  Local build used `-DVCPKG_TARGET_TRIPLET=arm64-linux`. CI is x64 (no override).
+- **CI status at handoff**: lib/test changes pushed; Skia jobs were still
+  building from source (cold x-gha cache, ~15 min) when context was cleared.
+  CONFIRM Skia (Ubuntu GCC) went green.
+
+### Done — Linux example host (UNCOMMITTED — `examples/host/linux/skia_app.cpp`)
+m148 + Wayland port, verified locally (all 9 examples build; `shapes` runs
+under Xvfb with software GL, no crash):
+- Include paths → `<ganesh/...>` style; added `<ganesh/gl/GrGLDirectContext.h>`,
+  `<ganesh/gl/GrGLBackendSurface.h>`, `<ganesh/gl/egl/GrGLMakeEGLInterface.h>`.
+- Removed `<GL/glx.h>` and the `glXGetProcAddress` assembled-interface fallback
+  (broke Wayland). Native interface + `GrGLInterfaces::MakeEGL()` fallback.
+- API: `GrDirectContexts::MakeGL`, `GrBackendRenderTargets::MakeGL`,
+  `SkSurfaces::WrapBackendRenderTarget`, `ctx->flushAndSubmit(surface.get())`.
+- **NEEDS COMMIT.**
+
+### Display reality on OrbStack (corrected)
+OrbStack has **no** built-in Wayland/X11 display server (my earlier doc claim
+was wrong, now fixed in `ai/setup-remote-dev.md`). GTK apps fail with
+`cannot open display`. To view examples on macOS: install XQuartz + `ssh -X`.
+Headless build/test needs no display. Pixel correctness is already covered by
+`artist_test`.
+
+### Not started — Windows Skia
+- CMake wiring is already in place (the MSVC block mirrors macOS/Linux).
+- `examples/host/windows/skia_app.cpp` still needs the full Win32+WGL rewrite
+  (Step 8 below). The lib/tests may build via CI once vcpkg skia[gl] resolves
+  on Windows — CONFIRM `Skia (Windows MSVC)` CI result.
+- Remote Windows machine available for interactive verification.
+
+### Immediate next steps on resume
+1. Confirm `Skia (Ubuntu GCC)` + `Skia (Windows MSVC)` CI conclusions (run 26729520119 or later).
+2. Commit `examples/host/linux/skia_app.cpp` (verified, just uncommitted).
+3. If Windows Skia lib/test fails, debug via CI (or the remote Windows box).
+4. Step 8: write Windows Win32+WGL host.
 
 ---
 

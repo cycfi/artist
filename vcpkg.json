@@ -9,6 +9,12 @@
       "platform": "osx"
     },
     {
+      "name": "skia",
+      "default-features": true,
+      "features": ["gl"],
+      "platform": "!osx"
+    },
+    {
       "name": "cairo",
       "features": ["freetype", "fontconfig"],
       "platform": "windows"

@@ -27,7 +27,8 @@
 # include "tchar.h"
 # include <ports/SkFontMgr_win_gdi.h>
 #else
-# include <ports/SkFontMgr_FontConfig.h>
+# include <ports/SkFontMgr_fontconfig.h>
+# include <ports/SkFontScanner_FreeType.h>
 #endif
 
 namespace cycfi::artist
@@ -41,7 +42,9 @@ namespace cycfi::artist
 #elif defined(_WIN32)
          return SkFontMgr_New_GDI();
 #else
-         return SkFontMgr_New_FontConfig(nullptr);
+         // m148: SkFontMgr_New_FontConfig now requires an explicit font
+         // scanner. Use the FreeType scanner (matches SK_TYPEFACE_FACTORY_FREETYPE).
+         return SkFontMgr_New_FontConfig(nullptr, SkFontScanner_Make_FreeType());
 #endif
       }
    }

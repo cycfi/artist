@@ -6,15 +6,19 @@
 #include "../../app.hpp"
 #include <gtk/gtk.h>
 #include <GL/gl.h>
-#include <GL/glx.h>
 
-#include "GrDirectContext.h"
-#include "gl/GrGLInterface.h"
-#include "gl/GrGLAssembleInterface.h"
-#include "SkImage.h"
-#include "SkColorSpace.h"
-#include "SkCanvas.h"
-#include "SkSurface.h"
+#include <SkImage.h>
+#include <SkColorSpace.h>
+#include <SkCanvas.h>
+#include <SkSurface.h>
+#include <ganesh/GrDirectContext.h>
+#include <ganesh/GrBackendSurface.h>
+#include <ganesh/SkSurfaceGanesh.h>
+#include <ganesh/gl/GrGLInterface.h>
+#include <ganesh/gl/GrGLDirectContext.h>
+#include <ganesh/gl/GrGLBackendSurface.h>
+#include <ganesh/gl/GrGLTypes.h>
+#include <ganesh/gl/egl/GrGLMakeEGLInterface.h>
 #include <chrono>
 
 using namespace cycfi::artist;
@@ -55,19 +59,14 @@ namespace
       glClear(GL_COLOR_BUFFER_BIT);
       if (state._xface = GrGLMakeNativeInterface(); state._xface == nullptr)
       {
-         //backup plan. see https://gist.github.com/ad8e/dd150b775ae6aa4d5cf1a092e4713add?permalink_comment_id=4680136#gistcomment-4680136
-         state._xface = GrGLMakeAssembledInterface(
-			   nullptr, (GrGLGetProc) *
-               [](void*, const char* p) -> void*
-               {
-                  return (void*)glXGetProcAddress((const GLubyte*)p);
-               }
-            );
+         // Fallback for Wayland/EGL where the native interface may not
+         // resolve via the default platform path.
+         state._xface = GrGLInterfaces::MakeEGL();
          if (state._xface == nullptr)
-            error("Error. GLMakeNativeInterface failed");
+            error("Error. GrGLMakeNativeInterface failed");
       }
-      if (state._ctx = GrDirectContext::MakeGL(state._xface); state._ctx == nullptr)
-         error("Error. GrDirectContext::MakeGL failed");
+      if (state._ctx = GrDirectContexts::MakeGL(state._xface); state._ctx == nullptr)
+         error("Error. GrDirectContexts::MakeGL failed");
    }
 
    gboolean render(GtkGLArea* area, GdkGLContext* context, gpointer user_data)
@@ -87,20 +86,20 @@ namespace
                SkColorType colorType = kRGBA_8888_SkColorType;
 
                info.fFormat = GL_RGBA8;
-               GrBackendRenderTarget target(
+               auto target = GrBackendRenderTargets::MakeGL(
                   state._size.x*state._scale
                 , state._size.y*state._scale
                 , 0, 8, info
                );
 
                state._surface =
-                  SkSurface::MakeFromBackendRenderTarget(
+                  SkSurfaces::WrapBackendRenderTarget(
                      state._ctx.get(), target,
                      kBottomLeft_GrSurfaceOrigin, colorType, nullptr, nullptr
                   );
 
                if (!state._surface)
-                  error("Error: SkSurface::MakeRenderTarget returned null");
+                  error("Error: SkSurfaces::WrapBackendRenderTarget returned null");
             }
 
             SkCanvas* gpu_canvas = state._surface->getCanvas();
@@ -111,7 +110,7 @@ namespace
             draw(cnv);
 
             gpu_canvas->restore();
-            state._surface->flush();
+            state._ctx->flushAndSubmit(state._surface.get());
          };
 
       auto start = std::chrono::steady_clock::now();
@@ -129,14 +128,8 @@ namespace
       return true;
    }
 
-   static auto proc = &glXGetProcAddress;
-
    void activate(GtkApplication* app, gpointer user_data)
    {
-      auto error = [](char const* msg) { throw std::runtime_error(msg); };
-      if (!proc)
-         error("Error: glXGetProcAddress is null");
-
       view_state& state = *reinterpret_cast<view_state*>(user_data);
       auto* window = gtk_application_window_new(app);
       gtk_window_set_title(GTK_WINDOW(window), "Drawing Area");
