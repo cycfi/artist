@@ -249,6 +249,7 @@ namespace cycfi::artist
 
 #if defined(ARTIST_SKIA) && defined(_WIN32)
 #include <SkPath.h>
+#include <SkPathBuilder.h>
 
 namespace cycfi::artist
 {
