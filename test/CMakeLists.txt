@@ -91,6 +91,8 @@ if (APPLE)
 elseif (MSVC)
    if (ARTIST_SKIA)
       set(GOLDEN_PATH windows_golden/skia)
+   elseif (ARTIST_CAIRO)
+      set(GOLDEN_PATH windows_golden/cairo)
    endif()
 
    set(GOLDEN_DIR windows_golden)
@@ -139,4 +141,3 @@ add_definitions(
 
 include(CTest)
 add_test(NAME artist_test COMMAND artist_test)
-

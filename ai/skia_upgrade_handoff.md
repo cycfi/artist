@@ -1,13 +1,13 @@
 # Skia Upgrade Handoff
 
 **Branch:** `artist_2026_skia_upgrade`
-**Last commit:** `772d5e8`
-**Date:** 2026-05-31
+**Last commit:** `3cbf77e`
+**Date:** 2026-06-01
 **Plan:** `ai/skia_upgrade_plan.md`
 
 ---
 
-## Current CI State (run 26714940061)
+## Current CI State (run 26716759177)
 
 | Job | Result | Notes |
 |-----|--------|-------|
@@ -16,70 +16,27 @@
 | Skia (Windows MSVC) | ❌ configure failure | Same pre-existing missing tools files. Needs vcpkg port for Windows. |
 | Cairo (macOS Clang) | ✅ | |
 | Cairo (Ubuntu GCC) | ✅ | |
-| Cairo (Windows MSVC) | ❌ build failure | Configure works. Two MSVC source portability bugs. **Fix these next.** |
+| Cairo (Windows MSVC) | ✅ | Configure, build, and tests pass. |
 | Quartz2D (macOS Clang) | ✅ | |
 
 ---
 
 ## Immediate Task: Fix Cairo (Windows MSVC) Build Failures
 
-Configure and dependency resolution (pkg_check_modules + pkgconf via vcpkg) now work correctly. The build fails on two source-level portability issues.
+✅ Done in commits `7ec7eae`, `f30f956`, and `5e19a9e`; handoff updated in `3cbf77e`.
 
-### Fix 1 — `M_PI` undeclared in `lib/impl/cairo/canvas.cpp`
+Changes made:
+- Replaced Cairo `canvas.cpp` `M_PI` use with a local literal constant.
+- Converted `find_file(path_)` result to `.string()` in Cairo `image.cpp` for MSVC.
+- Replaced test `M_PI` use in `test/main.cpp` with a local `pi` constant.
+- Added `test/windows_golden/cairo/` and wired `ARTIST_CAIRO` on MSVC to those goldens in `test/CMakeLists.txt`.
 
-**Error:** `canvas.cpp(609): error C2065: 'M_PI': undeclared identifier`
+Local verification:
+- `cmake -S . -B build-cairo-local -DARTIST_CAIRO=ON -DARTIST_BUILD_EXAMPLES=OFF -DARTIST_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release -G Ninja`
+- `cmake --build build-cairo-local`
+- `ctest --verbose --test-dir build-cairo-local`
 
-MSVC does not define `M_PI` unless `_USE_MATH_DEFINES` is defined before `<cmath>`. Rather than adding a global macro, replace the usage inline.
-
-**Location:** `lib/impl/cairo/canvas.cpp`, function `add_round_rect_impl` (around line 607):
-
-```cpp
-// BEFORE:
-void canvas::add_round_rect_impl(rect const& r, float radius)
-{
-   auto x = r.left, y = r.top, w = r.right, b = r.bottom;
-   constexpr auto a = M_PI / 180.0;
-```
-
-```cpp
-// AFTER:
-void canvas::add_round_rect_impl(rect const& r, float radius)
-{
-   auto x = r.left, y = r.top, w = r.right, b = r.bottom;
-   constexpr auto a = 3.14159265358979323846 / 180.0;
-```
-
-### Fix 2 — `fs::path` implicit `std::string` conversion in `lib/impl/cairo/image.cpp`
-
-**Error:** `image.cpp(31): error C2440: 'initializing': cannot convert from 'std::filesystem::path' to 'std::string'`
-
-`find_file` (defined in `lib/src/artist/resources.cpp:43`) has signature:
-```cpp
-fs::path find_file(fs::path const& file)
-```
-It returns `fs::path`, not `std::string`. On GCC/Clang, `fs::path` has an implicit `std::string` conversion operator. MSVC does not provide this implicit conversion.
-
-**Location:** `lib/impl/cairo/image.cpp:31`:
-
-```cpp
-// BEFORE:
-std::string full_path = find_file(path_);
-```
-
-```cpp
-// AFTER:
-std::string full_path = find_file(path_).string();
-```
-
-The rest of the function uses `full_path.c_str()` (passes to Cairo C API and stbi_load), so keeping it as `std::string` is correct — just add `.string()` at the assignment.
-
----
-
-## After those two fixes
-
-Cairo (Windows MSVC) should build and reach the test stage. Expect some tests to fail if there are additional Windows-specific runtime issues (e.g. font paths, window host), but the build itself should be clean.
-
-Once Cairo Windows is green, update this handoff and move on to the next milestone: porting Skia to Linux and Windows via vcpkg (replacing the `ExternalProject_Add` prebuilt binary path).
+Next milestone: port Skia to Linux and Windows via vcpkg, replacing the `ExternalProject_Add` prebuilt binary path.
 
 ---
 
@@ -160,7 +117,7 @@ endif()
 
 ## Next Milestones (in order)
 
-1. ✅ ~~Cairo Windows source fix~~ → **IN PROGRESS** (two fixes above)
+1. ✅ Cairo Windows source/test/golden fixes
 2. Port Skia to Linux via vcpkg — replace `ExternalProject_Add` prebuilt binary in `lib/CMakeLists.txt` Linux block; verify fontconfig vcpkg feature builds on Linux
 3. Port Skia to Windows via vcpkg — same for MSVC block; write Windows GL/D3D host
 4. Fix `composite_ops` lighter/darker blend mode bug (pre-existing in both Skia and Cairo)
