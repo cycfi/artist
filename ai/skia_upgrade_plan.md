@@ -23,16 +23,17 @@ vcpkg as a submodule: pins the exact vcpkg commit alongside the source, builds S
 | Step | Status |
 |------|--------|
 | 1. Add vcpkg as submodule | ✅ Done — `lib/external/vcpkg/` |
-| 2. Add `vcpkg.json` (skia[gl,metal]) | ✅ Done |
+| 2. Add `vcpkg.json` (skia[gl,metal] for osx) | ✅ Done |
 | 3. Wire up `lib/CMakeLists.txt` for macOS | ✅ Done |
 | 4. Fix API in impl files | ✅ Done — see API Migration section |
 | 5. Fix `text_layout.cpp` | ✅ Done |
 | 6. Write macOS Metal host | ✅ Done — CAMetalLayer + GrDirectContexts::MakeMetal |
 | 7. Delete `lib/external/skia/` | ✅ Done |
 | 8. Test — `artist_test`, examples | ✅ 14/15 tests pass; all examples render |
-| 9. Port to Linux | ⬜ TODO |
-| 10. Port to Windows | ⬜ TODO |
-| 11. Update CI | ⬜ TODO |
+| 9. Cairo Windows vcpkg wiring | ✅ Done — pkg_check_modules + pkgconf host tool |
+| 10. CI restructure | ✅ Done — 7 named jobs; Skia/Cairo/Quartz2D × all platforms |
+| 11. Port Skia to Linux | ⬜ TODO |
+| 12. Port Skia to Windows | ⬜ TODO |
 
 ---
 
@@ -115,19 +116,18 @@ cmake --build build-skia
 
 ## Remaining Work
 
-### Linux
-- Wire up `lib/CMakeLists.txt` Linux block to use vcpkg Skia (currently still uses `ExternalProject_Add` + prebuilt binary)
-- vcpkg fontconfig: `gperf` fails to build on macOS but should work on Linux — test
-- Verify fontconfig feature flag in vcpkg for Linux skia build
+### Skia — Linux
+- Wire up `lib/CMakeLists.txt` Linux block to use vcpkg Skia (currently still uses `ExternalProject_Add` + prebuilt binary, causing CI failure on `external/skia/tools/` missing files)
+- vcpkg fontconfig: `gperf` fails on macOS but should work on Linux — verify
+- Add `Skia (Ubuntu GCC)` cache step in CI once vcpkg is wired up
 
-### Windows
-- Wire up `lib/CMakeLists.txt` Windows/MSVC block similarly
-- Write Windows GL context replacement or port Metal approach to D3D
+### Skia — Windows
+- Wire up `lib/CMakeLists.txt` MSVC block to use vcpkg Skia similarly
+- Write Windows GL/D3D host (Metal approach → D3D12 or GL via ANGLE)
+- Same `external/skia/tools/` missing-file CI failure until resolved
 
-### CI
-- Bootstrap vcpkg in CI and pass `CMAKE_TOOLCHAIN_FILE`
-- Cache `vcpkg_installed/` between runs (keyed on `vcpkg.json` hash)
-- Add `VCPKG_BINARY_SOURCES` for binary caching
+### Cairo — Windows
+- CI job `Cairo (Windows MSVC)` in progress (commit 846cb09); monitoring pkg_check_modules + pkgconf approach
 
 ---
 
