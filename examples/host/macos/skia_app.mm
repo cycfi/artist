@@ -3,9 +3,9 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-
 #import <Cocoa/Cocoa.h>
+#import <Metal/Metal.h>
+#import <QuartzCore/CAMetalLayer.h>
 #include <dlfcn.h>
 #include <string>
 #include <stdexcept>
@@ -13,14 +13,17 @@
 #include "../../app.hpp"
 #include <artist/resources.hpp>
 
-#include <gl/GrGLInterface.h>
-#include <SkImage.h>
+#include <SkColor.h>
+#include <SkColorSpace.h>
 #include <SkSurface.h>
 #include <SkCanvas.h>
-#include <tools/sk_app/DisplayParams.h>
-#include <tools/sk_app/WindowContext.h>
-#include <tools/sk_app/mac/WindowContextFactory_mac.h>
-#include <OpenGL/gl.h>
+#include <ganesh/GrDirectContext.h>
+#include <ganesh/GrBackendSurface.h>
+#include <ganesh/SkSurfaceGanesh.h>
+#include <ganesh/mtl/GrMtlBackendContext.h>
+#include <ganesh/mtl/GrMtlBackendSurface.h>
+#include <ganesh/mtl/GrMtlDirectContext.h>
+#include <ganesh/mtl/GrMtlTypes.h>
 
 using namespace cycfi::artist;
 
@@ -61,14 +64,11 @@ namespace cycfi::artist
 {
    void init_paths()
    {
-      // Before anything else, set the working directory so we can access
-      // our resources
       char resource_path[PATH_MAX];
       get_resource_path(resource_path);
       add_search_path(resource_path);
    }
 
-   // This is declared in font.hpp
    fs::path get_user_fonts_directory()
    {
       char resource_path[PATH_MAX];
@@ -79,13 +79,15 @@ namespace cycfi::artist
 
 //=======================================================================
 
-using skia_context = std::unique_ptr<sk_app::WindowContext>;
-
 @interface CocoaView : NSView
 {
-   NSTimer*       _task;
-   skia_context   _skia_context;
-   float          _scale;
+   NSTimer*                  _task;
+   id<MTLDevice>             _device;
+   id<MTLCommandQueue>       _queue;
+   CAMetalLayer*             _metal_layer;
+   sk_sp<GrDirectContext>    _gr_context;
+   float                     _scale;
+   SkColor                   _clear_color;
 }
 
 -(void) start : (SkColor) bkd;
@@ -100,44 +102,125 @@ using skia_context = std::unique_ptr<sk_app::WindowContext>;
 - (void) dealloc
 {
    _task = nullptr;
+   _gr_context.reset();
 }
 
 - (void) start : (SkColor) bkd
 {
-   _task = nullptr;
+   _task        = nullptr;
+   _clear_color = bkd;
 
-   sk_app::window_context_factory::MacWindowInfo info;
-   info.fMainView = self;
-   _skia_context = sk_app::window_context_factory::MakeGLForMac(info, sk_app::DisplayParams());
+   // Metal device and queue
+   _device = MTLCreateSystemDefaultDevice();
+   if (!_device)
+      throw std::runtime_error{"No Metal device found"};
+   _queue = [_device newCommandQueue];
 
-   NSRect user = {{0, 0}, { 100, 100}};
-   NSRect backing_bounds = [self convertRectToBacking : user];
-   _scale = backing_bounds.size.height / user.size.height;
+   // CAMetalLayer attached to this view
+   _metal_layer = [CAMetalLayer layer];
+   _metal_layer.device          = _device;
+   _metal_layer.pixelFormat     = MTLPixelFormatBGRA8Unorm;
+   _metal_layer.framebufferOnly = NO;
+   _metal_layer.contentsGravity = kCAGravityTopLeft;
+   _metal_layer.autoresizingMask = kCALayerHeightSizable | kCALayerWidthSizable;
 
-   auto surface = _skia_context->getBackbufferSurface();
-   if (surface)
-      surface->getCanvas()->clear(bkd);
+   self.wantsLayer = YES;
+   self.layer      = _metal_layer;
+
+   // HiDPI backing scale
+   _scale = self.window.backingScaleFactor;
+   if (_scale == 0) _scale = NSScreen.mainScreen.backingScaleFactor;
+   _metal_layer.contentsScale  = _scale;
+   _metal_layer.drawableSize   = CGSizeMake(
+      self.bounds.size.width  * _scale,
+      self.bounds.size.height * _scale
+   );
+
+   // Skia GrDirectContext over Metal
+   GrMtlBackendContext backend{};
+   backend.fDevice.retain((__bridge GrMTLHandle)_device);
+   backend.fQueue.retain((__bridge GrMTLHandle)_queue);
+   _gr_context = GrDirectContexts::MakeMetal(backend);
+   if (!_gr_context)
+      throw std::runtime_error{"Failed to create Skia Metal GrDirectContext"};
+
+   // Draw the first frame now that everything is set up.
+   [self render];
 }
 
-- (void) drawRect : (NSRect) dirty
+- (void) render
 {
+   if (!_gr_context)
+      return;
+
+   // Acquire the next drawable from the Metal layer
+   id<CAMetalDrawable> drawable = [_metal_layer nextDrawable];
+   if (!drawable)
+      return;
+
    auto start = std::chrono::high_resolution_clock::now();
-   auto surface = _skia_context->getBackbufferSurface();
-   if (surface)
-   {
-      SkCanvas* gpu_canvas = surface->getCanvas();
-      gpu_canvas->save();
-      gpu_canvas->scale(_scale, _scale);
-      auto cnv = canvas{gpu_canvas};
 
-      draw(cnv);
+   // Wrap drawable texture in a Skia surface
+   GrMtlTextureInfo tex_info;
+   tex_info.fTexture.retain((__bridge GrMTLHandle)drawable.texture);
 
-      gpu_canvas->restore();
-      surface->flush();
-      _skia_context->swapBuffers();
-   }
+   int w = (int)_metal_layer.drawableSize.width;
+   int h = (int)_metal_layer.drawableSize.height;
+   auto backend_rt = GrBackendRenderTargets::MakeMtl(w, h, tex_info);
+
+   auto surface = SkSurfaces::WrapBackendRenderTarget(
+      _gr_context.get(),
+      backend_rt,
+      kTopLeft_GrSurfaceOrigin,    // Metal: Y=0 at top, no flip needed
+      kBGRA_8888_SkColorType,
+      nullptr,
+      nullptr
+   );
+   if (!surface)
+      return;
+
+   SkCanvas* gpu_canvas = surface->getCanvas();
+   gpu_canvas->save();
+   gpu_canvas->scale(_scale, _scale);
+   auto cnv = canvas{gpu_canvas};
+
+   draw(cnv);
+
+   gpu_canvas->restore();
+
+   // Flush Skia and present the drawable
+   _gr_context->flushAndSubmit(surface.get());
+
+   id<MTLCommandBuffer> cmd = [_queue commandBuffer];
+   [cmd presentDrawable : drawable];
+   [cmd commit];
+
    auto stop = std::chrono::high_resolution_clock::now();
    elapsed_ = std::chrono::duration<double>{stop - start}.count();
+}
+
+// A CAMetalLayer-hosting view does not get drawRect: callbacks, so drive
+// rendering directly rather than via setNeedsDisplay:.
+- (void) drawRect : (NSRect) dirty
+{
+   [self render];
+}
+
+- (void) viewDidMoveToWindow
+{
+   [super viewDidMoveToWindow];
+   if (self.window)
+      [self render];
+}
+
+- (void) viewDidEndLiveResize
+{
+   [super viewDidEndLiveResize];
+   _metal_layer.drawableSize = CGSizeMake(
+      self.bounds.size.width  * _scale,
+      self.bounds.size.height * _scale
+   );
+   [self render];
 }
 
 -(BOOL) isFlipped
@@ -147,13 +230,13 @@ using skia_context = std::unique_ptr<sk_app::WindowContext>;
 
 - (void) on_tick : (id) sender
 {
-   [self setNeedsDisplay : YES];
+   [self render];
 }
 
 -(void) start_animation
 {
    _task =
-      [NSTimer scheduledTimerWithTimeInterval : 1.0/60 // 60Hz
+      [NSTimer scheduledTimerWithTimeInterval : 1.0/60
            target : self
          selector : @selector(on_tick:)
          userInfo : nil
@@ -222,14 +305,14 @@ public:
       id app_menu = [NSMenu new];
       id quitTitle = @"Quit";
       id quitMenuItem = [[NSMenuItem alloc] initWithTitle : quitTitle
-         action:@selector(terminate:) keyEquivalent:@"q"];
-      [app_menu addItem:quitMenuItem];
+         action : @selector(terminate:) keyEquivalent : @"q"];
+      [app_menu addItem : quitMenuItem];
       [app_menu_item setSubmenu : app_menu];
    }
 
    int run()
    {
-      [NSApp activateIgnoringOtherApps:YES];
+      [NSApp activateIgnoringOtherApps : YES];
       [NSApp run];
       return 0;
    }
@@ -253,4 +336,3 @@ int run_app(
       _win.start_animation();
    return _app.run();
 }
-
