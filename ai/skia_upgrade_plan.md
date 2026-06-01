@@ -29,11 +29,13 @@ vcpkg as a submodule: pins the exact vcpkg commit alongside the source, builds S
 | 5. Fix `text_layout.cpp` | ✅ Done |
 | 6. Write macOS Metal host | ✅ Done — CAMetalLayer + GrDirectContexts::MakeMetal |
 | 7. Delete `lib/external/skia/` | ✅ Done |
-| 8. Test — `artist_test`, examples | ✅ 14/15 tests pass; all examples render |
+| 8. Test — `artist_test`, examples | ✅ 15/15 tests pass; all examples render |
 | 9. Cairo Windows vcpkg wiring | ✅ Done — pkg_check_modules + pkgconf host tool |
 | 10. CI restructure | ✅ Done — 7 named jobs; Skia/Cairo/Quartz2D × all platforms |
-| 11. Port Skia to Linux | ⬜ TODO |
-| 12. Port Skia to Windows | ⬜ TODO |
+| 11. Fix composite_ops Porter-Duff regression | ✅ Done — offscreen_image uses SkSurfaces::Raster |
+| 12. vcpkg binary caching (x-gha) | ✅ Done — VCPKG_BINARY_SOURCES=clear;x-gha,readwrite |
+| 13. Port Skia to Linux | ⬜ TODO |
+| 14. Port Skia to Windows | ⬜ TODO |
 
 ---
 
@@ -127,7 +129,7 @@ cmake --build build-skia
 - Same `external/skia/tools/` missing-file CI failure until resolved
 
 ### Cairo — Windows
-- CI job `Cairo (Windows MSVC)` in progress (commit 846cb09); monitoring pkg_check_modules + pkgconf approach
+- ✅ Done — `pkg_check_modules` + pkgconf vcpkg host tool; all tests pass
 
 ---
 
