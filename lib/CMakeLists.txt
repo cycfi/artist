@@ -310,6 +310,20 @@ if (ARTIST_CAIRO AND NOT MSVC)
    endif()
 endif()
 
+if (ARTIST_CAIRO AND MSVC)
+   # cairo, harfbuzz, and fontconfig are meson-built vcpkg ports; they
+   # install pkg-config files only (no cmake config). pkgconf (also in
+   # vcpkg.json) provides the pkg-config executable so pkg_check_modules
+   # works on Windows the same way it does on Linux and macOS.
+   find_package(PkgConfig REQUIRED)
+   pkg_check_modules(cairo REQUIRED IMPORTED_TARGET cairo)
+   pkg_check_modules(cairo_ft REQUIRED IMPORTED_TARGET cairo-ft)
+   pkg_check_modules(harfbuzz REQUIRED IMPORTED_TARGET harfbuzz)
+   pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
+   target_link_libraries(artist PUBLIC
+      PkgConfig::cairo PkgConfig::cairo_ft PkgConfig::harfbuzz PkgConfig::fontconfig)
+endif()
+
 add_dependencies(artist libunibreak)
 
 if (ARTIST_SKIA AND NOT APPLE)
