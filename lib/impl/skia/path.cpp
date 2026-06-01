@@ -5,12 +5,13 @@
 =============================================================================*/
 #include <infra/support.hpp>
 #include <artist/path.hpp>
-#include <SkPath.h>
+#include <SkPathBuilder.h>
+#include <SkRRect.h>
 
 namespace cycfi::artist
 {
    path::path()
-    : _impl(new SkPath)
+    : _impl(new SkPathBuilder)
    {
    }
 
@@ -21,7 +22,7 @@ namespace cycfi::artist
    }
 
    path::path(path const& rhs)
-    : _impl(new SkPath(*rhs._impl))
+    : _impl(new SkPathBuilder(*rhs._impl))
    {
    }
 
@@ -50,7 +51,7 @@ namespace cycfi::artist
 
    bool path::operator==(path const& rhs) const
    {
-      return *_impl == *rhs._impl;
+      return _impl->snapshot() == rhs._impl->snapshot();
    }
 
    bool path::is_empty() const
@@ -60,14 +61,14 @@ namespace cycfi::artist
 
    bool path::includes(point p) const
    {
-      return _impl->contains(p.x, p.y);
+      return _impl->snapshot().contains(p.x, p.y);
    }
 
 // See comments at the bottom of path.hpp
 #if !defined(_WIN32)
   rect path::bounds() const
   {
-     auto const& r = _impl->getBounds();
+     auto const& r = _impl->snapshot().getBounds();
      return rect{r.fLeft, r.fTop, r.fRight, r.fBottom};
   }
 #endif
@@ -99,7 +100,7 @@ namespace cycfi::artist
 
    void path::arc_to(point p1, point p2, float radius)
    {
-      _impl->arcTo(p1.x, p1.y, p2.x, p2.y, radius);
+      _impl->arcTo({p1.x, p1.y}, {p2.x, p2.y}, radius);
    }
 
    void path::arc(
@@ -137,7 +138,9 @@ namespace cycfi::artist
 
    void path::add_round_rect_impl(rect const& r, float radius)
    {
-      _impl->addRoundRect({r.left, r.top, r.right, r.bottom}, radius, radius);
+      SkRRect rrect;
+      rrect.setRectXY({r.left, r.top, r.right, r.bottom}, radius, radius);
+      _impl->addRRect(rrect);
    }
 
 }

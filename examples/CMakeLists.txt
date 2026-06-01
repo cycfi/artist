@@ -53,6 +53,12 @@ function(add_example name)
       )
 
       target_link_options(${name} PRIVATE -framework AppKit)
+      if (ARTIST_SKIA)
+         target_link_libraries(${name}
+            "-framework Metal"
+            "-framework QuartzCore"
+         )
+      endif()
 
       set_source_files_properties(
          ${artist_fonts}

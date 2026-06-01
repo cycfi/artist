@@ -11,6 +11,8 @@
 #include "SkImage.h"
 #include "SkPicture.h"
 #include "SkSurface.h"
+#include <ganesh/SkSurfaceGanesh.h>
+#include <encode/SkPngEncoder.h>
 #include "SkCanvas.h"
 #include "SkPictureRecorder.h"
 #include "SkStream.h"
@@ -136,7 +138,7 @@ namespace cycfi::artist
       };
 
       auto size_ = size();
-      sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(size_.x, size_.y);
+      sk_sp<SkSurface> surface = SkSurfaces::Raster(SkImageInfo::MakeN32Premul(size_.x, size_.y));
       SkCanvas* sk_canvas = surface->getCanvas();
 
       auto draw_picture =
@@ -163,7 +165,7 @@ namespace cycfi::artist
       if (!image)
          fail();
 
-      sk_sp<SkData> png(image->encodeToData());
+      sk_sp<SkData> png(SkPngEncoder::Encode(nullptr, image.get(), {}));
       if (!png)
          fail();
 

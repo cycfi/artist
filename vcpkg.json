@@ -1,0 +1,11 @@
+{
+  "name": "artist",
+  "version": "0",
+  "dependencies": [
+    {
+      "name": "skia",
+      "default-features": true,
+      "features": ["gl", "metal"]
+    }
+  ]
+}

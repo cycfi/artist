@@ -16,7 +16,9 @@
 #include <SkSurface.h>
 #include <SkCanvas.h>
 #include <SkPath.h>
-#include <SkGradientShader.h>
+#include <SkPathBuilder.h>
+#include <SkRRect.h>
+#include <effects/SkGradient.h>
 #include <SkImageFilter.h>
 #include <SkImageFilters.h>
 #include <SkTextBlob.h>
@@ -38,7 +40,7 @@ namespace cycfi::artist
 
       canvas_state();
 
-      SkPath&           path();
+      SkPathBuilder&    path();
       SkPaint&          fill_paint();
       SkPaint&          stroke_paint();
       class font&       font();
@@ -64,7 +66,7 @@ namespace cycfi::artist
             _stroke_paint.setStyle(SkPaint::kStroke_Style);
          }
 
-         SkPath         _path;
+         SkPathBuilder  _path;
          SkPaint        _fill_paint;
          SkPaint        _stroke_paint;
          class font     _font;
@@ -90,7 +92,7 @@ namespace cycfi::artist
       _clear_paint.setBlendMode(SkBlendMode::kClear);
    }
 
-   SkPath& canvas::canvas_state::path()
+   SkPathBuilder& canvas::canvas_state::path()
    {
       return current()->_path;
    }
@@ -240,7 +242,7 @@ namespace cycfi::artist
 
    void canvas::begin_path()
    {
-      _state->path() = {};
+      _state->path().reset();
    }
 
    void canvas::close_path()
@@ -250,35 +252,32 @@ namespace cycfi::artist
 
    void canvas::fill()
    {
-      fill_preserve();
-      _state->path().reset();
+      _context->drawPath(_state->path().detach(), _state->fill_paint());
    }
 
    void canvas::fill_preserve()
    {
-      _context->drawPath(_state->path(), _state->fill_paint());
+      _context->drawPath(_state->path().snapshot(), _state->fill_paint());
    }
 
    void canvas::stroke()
    {
-      stroke_preserve();
-      _state->path().reset();
+      _context->drawPath(_state->path().detach(), _state->stroke_paint());
    }
 
    void canvas::stroke_preserve()
    {
-      _context->drawPath(_state->path(), _state->stroke_paint());
+      _context->drawPath(_state->path().snapshot(), _state->stroke_paint());
    }
 
    void canvas::clip()
    {
-      _context->clipPath(_state->path(), true);
-      _state->path().reset();
+      _context->clipPath(_state->path().detach(), true);
    }
 
    void canvas::clip(class path const& p)
    {
-      _context->clipPath(*p.impl(), true);
+      _context->clipPath(p.impl()->snapshot(), true);
    }
 
    rect canvas::clip_extent() const
@@ -290,7 +289,7 @@ namespace cycfi::artist
 
    bool canvas::point_in_path(point p) const
    {
-      return _state->path().contains(p.x, p.y);
+      return _state->path().snapshot().contains(p.x, p.y);
    }
 
    void canvas::move_to(point p)
@@ -305,7 +304,7 @@ namespace cycfi::artist
 
    void canvas::arc_to(point p1, point p2, float radius)
    {
-      _state->path().arcTo(p1.x, p1.y, p2.x, p2.y, radius);
+      _state->path().arcTo({p1.x, p1.y}, {p2.x, p2.y}, radius);
    }
 
    void canvas::arc(
@@ -490,6 +489,26 @@ namespace cycfi::artist
          }
       }
 
+      // Build an SkGradient from artist gradient color stops.
+      // kInterpolateColorsInPremul + linear-gamma colorspace matches old behaviour.
+      SkGradient make_sk_gradient(
+         std::vector<SkColor4f> const& colors_
+       , std::vector<SkScalar> const& pos
+      )
+      {
+         SkGradient::Interpolation interp;
+         interp.fInPremul     = SkGradient::Interpolation::InPremul::kYes;
+         interp.fColorSpace   = SkGradient::Interpolation::ColorSpace::kSRGBLinear;
+
+         SkGradient::Colors color_spec(
+            SkSpan<const SkColor4f>(colors_.data(), colors_.size()),
+            SkSpan<const float>(pos.data(), pos.size()),
+            SkTileMode::kClamp,
+            SkColorSpace::MakeSRGBLinear()
+         );
+         return SkGradient(color_spec, interp);
+      }
+
       void set_linear(canvas::linear_gradient const& gr, SkPaint& paint)
       {
          paint.setColor(SkColorSetRGB(0, 0, 0));
@@ -500,15 +519,7 @@ namespace cycfi::artist
          std::vector<SkColor4f> colors_;
          std::vector<SkScalar> pos;
          convert_gradient(gr, colors_, pos);
-         paint.setShader(
-            SkGradientShader::MakeLinear(
-               points, colors_.data()
-             , SkColorSpace::MakeSRGB()->makeLinearGamma()
-             , pos.data(), colors_.size()
-             , SkTileMode::kClamp
-             , SkGradientShader::Flags::kInterpolateColorsInPremul_Flag
-             , nullptr
-            ));
+         paint.setShader(SkShaders::LinearGradient(points, make_sk_gradient(colors_, pos)));
       }
 
       void set_radial(canvas::radial_gradient const& gr, SkPaint& paint)
@@ -518,15 +529,10 @@ namespace cycfi::artist
          std::vector<SkScalar> pos;
          convert_gradient(gr, colors_, pos);
          paint.setShader(
-            SkGradientShader::MakeTwoPointConical(
+            SkShaders::TwoPointConicalGradient(
                {gr.c1.x, gr.c1.y}, gr.c1_radius
              , {gr.c2.x, gr.c2.y}, gr.c2_radius
-             , colors_.data()
-             , SkColorSpace::MakeSRGB()->makeLinearGamma()
-             , pos.data(), colors_.size()
-             , SkTileMode::kClamp
-             , SkGradientShader::Flags::kInterpolateColorsInPremul_Flag
-             , nullptr
+             , make_sk_gradient(colors_, pos)
             ));
       }
    }
@@ -669,7 +675,9 @@ namespace cycfi::artist
 
    void canvas::add_round_rect_impl(rect const& r, float radius)
    {
-      _state->path().addRoundRect({r.left, r.top, r.right, r.bottom}, radius, radius);
+      SkRRect rrect;
+      rrect.setRectXY({r.left, r.top, r.right, r.bottom}, radius, radius);
+      _state->path().addRRect(rrect);
    }
 
 }

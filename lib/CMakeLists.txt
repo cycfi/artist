@@ -47,50 +47,42 @@ endif()
 if (ARTIST_SKIA)
 
    ############################################################################
-   # Prebuilt binaries
+   # Skia dependency
    ############################################################################
    if (APPLE)
 
-      find_package(PkgConfig REQUIRED)
-      pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
+      find_package(unofficial-skia CONFIG REQUIRED)
 
-      if (${CMAKE_OSX_ARCHITECTURES} STREQUAL "arm64")
-         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/macos/arm64/src/prebuilt_binaries)
-         set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/macos/skia/arm64/arm64.zip)
-         set(ARTIST_BINARIES_MD5 5a8b2ef69844bdfff8f384538b63a962)
-      elseif (${CMAKE_OSX_ARCHITECTURES} STREQUAL "x86_64")
-         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/macos/x86_64/src/prebuilt_binaries)
-         set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/macos/skia/x86_64/x86_64.zip)
-         set(ARTIST_BINARIES_MD5 553b7073295cf9650c54a79478658761)
-      endif()
-
-      set(SKIA_LIBRARIES
-         ${ARTIST_BINARIES}/libskia.a
-         ${ARTIST_BINARIES}/libharfbuzz.a
-         ${ARTIST_BINARIES}/libthird_party__libpng.a
-         ${ARTIST_BINARIES}/libthird_party__zlib.a
-         ${ARTIST_BINARIES}/libthird_party__libwebp.a
-         ${ARTIST_BINARIES}/libthird_party__libwebp_libwebp_sse41.a
-         ${ARTIST_BINARIES}/libthird_party__libjpeg-turbo_libjpeg.a
-         ${ARTIST_BINARIES}/libmodules__skcms.a
+      # vcpkg installs Skia headers in subdirectories (core/, effects/, gpu/, …).
+      # Derive the base from the installed target and expose subdirs so existing
+      # flat #include <SkCanvas.h> style continues to work.
+      get_target_property(_skia_inc unofficial::skia::skia INTERFACE_INCLUDE_DIRECTORIES)
+      set(SKIA_INCLUDE_BASE "${_skia_inc}")
+      set(ARTIST_SKIA_EXTRA_INCLUDES
+         ${SKIA_INCLUDE_BASE}/core
+         ${SKIA_INCLUDE_BASE}/config
+         ${SKIA_INCLUDE_BASE}/codec
+         ${SKIA_INCLUDE_BASE}/effects
+         ${SKIA_INCLUDE_BASE}/gpu
+         ${SKIA_INCLUDE_BASE}/ports
+         ${SKIA_INCLUDE_BASE}/utils
+         ${SKIA_INCLUDE_BASE}/../harfbuzz
       )
 
-      ExternalProject_Add(prebuilt_binaries
-         PREFIX "macos/${CMAKE_OSX_ARCHITECTURES}"
-         URL ${ARTIST_BINARIES_URL}
-         URL_MD5 ${ARTIST_BINARIES_MD5}
-         CONFIGURE_COMMAND ""
-         BUILD_COMMAND ""
-         INSTALL_COMMAND ""
-         BUILD_BYPRODUCTS ${SKIA_LIBRARIES}
-      )
-
-      find_package(OpenGL REQUIRED)
+      set(_vcpkg_lib "${SKIA_INCLUDE_BASE}/../../lib")
+      find_library(HARFBUZZ_LIB  harfbuzz     PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
+      find_library(FREETYPE_LIB  freetype     PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
+      find_library(BROTLIDEC_LIB brotlidec    PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
+      find_library(BROTLICOM_LIB brotlicommon PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
+      find_library(BZ2_LIB       bz2          PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
 
       set(ARTIST_DEPEPENDENCIES
-         "${SKIA_LIBRARIES}"
-         PkgConfig::fontconfig
-         ${OPENGL_LIBRARIES}
+         unofficial::skia::skia
+         ${HARFBUZZ_LIB}
+         ${FREETYPE_LIB}
+         ${BROTLIDEC_LIB}
+         ${BROTLICOM_LIB}
+         ${BZ2_LIB}
       )
 
    elseif (MSVC)
@@ -239,15 +231,7 @@ endif()
 
 if (ARTIST_SKIA)
 
-   if (APPLE)
-      set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
-         external/skia/tools/sk_app/mac/GLWindowContext_mac.mm
-         external/skia/tools/sk_app/mac/RasterWindowContext_mac.mm
-      )
-      set_source_files_properties(${ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT}
-         PROPERTIES COMPILE_FLAGS -fno-objc-arc
-      )
-   elseif (MSVC)
+   if (MSVC)
       set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
          external/skia/tools/sk_app/win/GLWindowContext_win.cpp
          external/skia/tools/sk_app/win/RasterWindowContext_win.cpp
@@ -261,12 +245,18 @@ if (ARTIST_SKIA)
       impl/skia/text_layout.cpp
       impl/skia/path.cpp
       impl/skia/detail/harfbuzz.cpp
-      external/skia/tools/sk_app/GLWindowContext.cpp
-      external/skia/tools/sk_app/WindowContext.cpp
-      external/skia/tools/ToolUtils.cpp
-      external/skia/tools/SkMetaData.cpp
       ${ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT}
    )
+
+   if (NOT APPLE)
+      list(APPEND ARTIST_IMPL
+         external/skia/tools/sk_app/GLWindowContext.cpp
+         external/skia/tools/sk_app/WindowContext.cpp
+         external/skia/tools/ToolUtils.cpp
+         external/skia/tools/SkMetaData.cpp
+      )
+   endif()
+
 endif()
 
 if (ARTIST_CAIRO)
@@ -322,7 +312,7 @@ endif()
 
 add_dependencies(artist libunibreak)
 
-if (ARTIST_SKIA)
+if (ARTIST_SKIA AND NOT APPLE)
    add_dependencies(artist prebuilt_binaries)
 endif()
 
@@ -341,29 +331,45 @@ target_include_directories(
 )
 
 if (ARTIST_SKIA)
-   target_include_directories(
-      artist
-      PUBLIC
-         external/skia
-         external/skia/include
-         external/skia/include/core
-         external/skia/include/config
-         external/skia/include/utils
-         external/skia/include/gpu
-         external/skia/include/codec
-         external/skia/include/effects
-         external/skia/include/ports
-         external/skia/src/gpu
-         external/skia/modules/skshaper/include
-         external/filesystem/include/
-         external/harfbuzz/include/
-         external/fontconfig/include/
-   )
+   if (APPLE)
+      # vcpkg Skia puts headers in subdirectories; expose them so flat
+      # #include <SkCanvas.h> style continues to resolve.
+      target_include_directories(
+         artist
+         PUBLIC
+            ${SKIA_INCLUDE_BASE}/core
+            ${SKIA_INCLUDE_BASE}/config
+            ${SKIA_INCLUDE_BASE}/codec
+            ${SKIA_INCLUDE_BASE}/effects
+            ${SKIA_INCLUDE_BASE}/gpu
+            ${SKIA_INCLUDE_BASE}/ports
+            ${SKIA_INCLUDE_BASE}/utils
+            ${SKIA_INCLUDE_BASE}/../harfbuzz
+      )
+   else()
+      target_include_directories(
+         artist
+         PUBLIC
+            external/skia
+            external/skia/include
+            external/skia/include/core
+            external/skia/include/config
+            external/skia/include/utils
+            external/skia/include/gpu
+            external/skia/include/codec
+            external/skia/include/effects
+            external/skia/include/ports
+            external/skia/src/gpu
+            external/skia/modules/skshaper/include
+            external/filesystem/include/
+            external/harfbuzz/include/
+            external/fontconfig/include/
+      )
+   endif()
    target_compile_definitions(
       artist
       PUBLIC
          ARTIST_SKIA
-         SK_RELEASE
    )
 endif()
 
@@ -383,7 +389,7 @@ if (ARTIST_CAIRO)
    )
 endif()
 
-if (ARTIST_SKIA)
+if (ARTIST_SKIA AND NOT APPLE)
    target_compile_definitions(
       artist
       PUBLIC
@@ -460,10 +466,11 @@ target_link_libraries(artist
 )
 
 if (ARTIST_SKIA)
-   target_link_libraries(artist
-   PRIVATE
-      "${ARTIST_DEPEPENDENCIES}"
-   )
+   if (APPLE)
+      target_link_libraries(artist PUBLIC ${ARTIST_DEPEPENDENCIES})
+   else()
+      target_link_libraries(artist PRIVATE "${ARTIST_DEPEPENDENCIES}")
+   endif()
 endif()
 
 
