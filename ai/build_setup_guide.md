@@ -18,6 +18,24 @@ during development and verification.
 | Ubuntu 24.04 | arm64 | Skia | ❌ harfbuzz 8.3.0 bug | GTK crashes on widget realize |
 | Ubuntu 26.04 LTS | arm64 | Skia | ✅ Working | harfbuzz 12.3.2; Mesa EGL warnings harmless |
 | Windows 10/11 | x86-64 | Skia | ✅ Working | 15/15 tests pass; example host (Win32+WGL) verified |
+| macOS (Intel) | x86-64 | all | ⬜ Not yet tested | needs an Intel Mac / x86-64 build |
+
+---
+
+## Remaining verification
+
+Tracked follow-ups before this is considered fully validated:
+
+- [ ] **macOS x86-64 (Intel)** — all three backends untested on Intel; only
+      arm64 has been verified. Needs an Intel Mac (or `x86_64` cross build).
+- [ ] **Example apps on Ubuntu x86-64** — CI covers only the headless test
+      suite on x86-64 Linux; the GTK/GtkGLArea window hosts have been visually
+      verified on **arm64** (Ubuntu 26.04) but not on x86-64. Run the example
+      apps on an x86-64 Ubuntu desktop.
+- [ ] **Clean-room dry run of this guide** — follow `build_setup_guide.md`
+      from scratch on a fresh machine for each platform to confirm the steps
+      and prerequisite lists are complete and correct (no reliance on tools
+      that happened to already be installed during development).
 
 ---
 
