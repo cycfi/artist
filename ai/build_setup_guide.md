@@ -17,7 +17,7 @@ during development and verification.
 | Ubuntu 24.04 | x86-64 | Cairo | ✅ CI green | |
 | Ubuntu 24.04 | arm64 | Skia | ❌ harfbuzz 8.3.0 bug | GTK crashes on widget realize |
 | Ubuntu 26.04 LTS | arm64 | Skia | ✅ Working | harfbuzz 12.3.2; Mesa EGL warnings harmless |
-| Windows 10/11 | x86-64 | Skia | 🔄 In progress | CI lib/tests failing (being fixed) |
+| Windows 10/11 | x86-64 | Skia | ✅ Working | 15/15 tests pass; DirectWrite fonts |
 
 ---
 
@@ -169,9 +169,18 @@ Same as x86-64 above but:
 
 ### Prerequisites
 
-- Visual Studio 2022 with C++ workload
-- CMake (bundled with VS or standalone)
-- Ninja: `choco install ninja`
+- Visual Studio 2022 with C++ workload (Community edition is fine)
+- CMake (bundled with VS or standalone in `C:\Program Files\CMake`)
+- Ninja. If `winget`/`choco` are unavailable, download the binary directly:
+  ```powershell
+  New-Item -Force -Path 'C:\tools' -ItemType Directory
+  Invoke-WebRequest -Uri 'https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-win.zip' -OutFile 'C:\tools\ninja.zip'
+  Expand-Archive -Path 'C:\tools\ninja.zip' -DestinationPath 'C:\tools\ninja' -Force
+  ```
+  Then pass `-DCMAKE_MAKE_PROGRAM=C:/tools/ninja/ninja.exe`.
+- The configure must run inside a VS x64 dev environment. Either use the
+  "x64 Native Tools Command Prompt", or prefix the cmake call with:
+  `"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" &&`
 
 ### Skia
 
@@ -198,6 +207,17 @@ ctest --test-dir build --output-on-failure
   bumping `CMAKE_CXX_STANDARD` to 20.
 - `SkPathBuilder` undefined in `path.hpp` Windows inline — fixed by adding
   `#include <SkPathBuilder.h>`.
+- **Stale vcpkg lock**: if `cmake` hangs printing `vcpkg-running.lock: note:
+  waiting to take filesystem lock...` repeatedly, an orphaned `vcpkg.exe` from
+  a prior session is holding the lock. Fix: `taskkill /F /IM vcpkg.exe`, wipe
+  the partial `build-skia` dir, and re-run configure.
+- **Directory junctions / cross-drive paths**: do NOT build through a path
+  that crosses drive letters via a junction (e.g. `C:\dev\...` junctioned to
+  `D:\...`). The vcpkg harfbuzz meson install step calls Python
+  `os.path.relpath`, which throws `ValueError: path is on mount 'C:', start on
+  mount 'D:'` when the build dir and resolved source land on different drives.
+  Fix: build from the real physical path on a single drive
+  (`Get-Item <path> | Select Target` to resolve the junction).
 
 ---
 
@@ -225,3 +245,36 @@ output:
 2. Visually inspect the PNG — confirm it matches the expected output.
 3. Copy to `test/<platform>_golden/<backend>/`.
 4. Commit and push.  Never lower test thresholds to paper over a regression.
+
+### Confirming a golden delta is not a regression
+
+Non-text scenes (shapes, gradients, composite ops, images) render
+**byte-identically across platforms** for the same Skia version + backend.
+So to prove a failing golden is merely stale (not a regression), diff the new
+render against another platform's *current* golden for the same scene:
+
+```sh
+python3 - <<'PY'
+from PIL import Image
+a=Image.open('build-skia/test/results/shapes_and_images.png').convert('RGB')
+b=Image.open('test/linux_golden/skia/shapes_and_images.png').convert('RGB')
+W,H=a.size; pa=a.load(); pb=b.load(); c=0
+for y in range(H):
+  for x in range(W):
+    if sum(abs(p-q) for p,q in zip(pa[x,y],pb[x,y]))>30: c+=1
+print('diff>30:', c, '(%.2f%%)'%(100*c/(W*H)))
+PY
+```
+
+0% diff ⇒ the render matches the other platform's current golden ⇒ the failing
+golden is stale, regenerate it.  **Text scenes are the exception**: glyph
+rasterization differs per platform (DirectWrite vs FreeType vs CoreText), so
+text goldens legitimately differ between platforms and must each be kept.
+
+### IMPORTANT: goldens are copied into the build dir at configure time
+
+`test/CMakeLists.txt` copies `*_golden/` into the build tree at configure
+time, and the test reads them from there.  After editing a source golden you
+must refresh the build-dir copy — either re-run cmake configure, or copy the
+file directly into `build-*/test/<platform>_golden/<backend>/`.  Re-running
+`ctest` alone will keep comparing against the stale build-dir copy.
