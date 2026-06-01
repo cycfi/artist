@@ -49,7 +49,13 @@ jobs:
           fontconfig \
           libgtkglext1-dev \
           libgtk-3-dev \
-          ninja-build
+          libgl1-mesa-dev \
+          libglu1-mesa-dev \
+          ninja-build \
+          autoconf \
+          autoconf-archive \
+          automake \
+          libtool
 
     - name: Install dependencies (macOS)
       if: runner.os == 'macOS'
@@ -59,9 +65,18 @@ jobs:
       if: runner.os == 'macOS'
       run: lib/external/vcpkg/bootstrap-vcpkg.sh -disableMetrics
 
+    - name: Bootstrap vcpkg (Linux)
+      if: runner.os == 'Linux'
+      run: lib/external/vcpkg/bootstrap-vcpkg.sh -disableMetrics
+
     - name: Install dependencies (Windows)
       if: runner.os == 'Windows'
       run: choco install ninja
+      shell: cmd
+
+    - name: Bootstrap vcpkg (Windows)
+      if: runner.os == 'Windows'
+      run: lib\external\vcpkg\bootstrap-vcpkg.bat -disableMetrics
       shell: cmd
 
     - name: Configure
@@ -90,6 +105,17 @@ jobs:
           list(APPEND extra_args
             -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake
             -DVCPKG_TARGET_TRIPLET=arm64-osx)
+        elseif ("${{ runner.os }}" STREQUAL "Linux")
+          # The vcpkg skia port needs the system gl.pc during its build, but
+          # vcpkg sanitizes the environment. Expose PKG_CONFIG_PATH and pass
+          # it through so pkgconf can locate the system OpenGL package.
+          set(ENV{PKG_CONFIG_PATH} "/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig")
+          list(APPEND extra_args
+            -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake
+            -DVCPKG_ENV_PASSTHROUGH_UNTRACKED=PKG_CONFIG_PATH)
+        elseif ("${{ runner.os }}" STREQUAL "Windows")
+          list(APPEND extra_args
+            -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake)
         endif()
 
         execute_process(
