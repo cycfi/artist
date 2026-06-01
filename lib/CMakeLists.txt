@@ -150,7 +150,16 @@ if (ARTIST_SKIA)
       )
 
       set(_vcpkg_lib "${SKIA_INCLUDE_BASE}/../../lib")
-      find_library(HARFBUZZ_LIB    harfbuzz     PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
+      # Use the system harfbuzz (shared) instead of vcpkg's static harfbuzz.
+      # When GTK is loaded (window host, e.g. Elements), it brings in the system
+      # harfbuzz dynamically. Having both a static vcpkg harfbuzz AND the system
+      # shared harfbuzz in the same process causes symbol interposition — GTK/
+      # Pango calls get routed to the static 14.x copy and crash on widget
+      # realize. Using the system harfbuzz exclusively avoids the conflict.
+      # (The APPLE block already does this; headless Artist tests never load GTK
+      # so they don't hit it, but Elements does.)
+      find_package(PkgConfig REQUIRED)
+      pkg_check_modules(HARFBUZZ REQUIRED IMPORTED_TARGET harfbuzz)
       find_library(FREETYPE_LIB    freetype     PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
       find_library(FONTCONFIG_LIB  fontconfig   PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
       find_library(BROTLIDEC_LIB   brotlidec    PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
@@ -162,7 +171,7 @@ if (ARTIST_SKIA)
 
       set(ARTIST_DEPEPENDENCIES
          unofficial::skia::skia
-         ${HARFBUZZ_LIB}
+         PkgConfig::HARFBUZZ
          ${FREETYPE_LIB}
          ${FONTCONFIG_LIB}
          ${BROTLIDEC_LIB}
