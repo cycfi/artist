@@ -17,7 +17,7 @@ during development and verification.
 | Ubuntu 24.04 | x86-64 | Cairo | ✅ CI green | |
 | Ubuntu 24.04 | arm64 | Skia | ❌ harfbuzz 8.3.0 bug | GTK crashes on widget realize |
 | Ubuntu 26.04 LTS | arm64 | Skia | ✅ Working | harfbuzz 12.3.2; Mesa EGL warnings harmless |
-| Windows 10/11 | x86-64 | Skia | ✅ Working | 15/15 tests pass; DirectWrite fonts |
+| Windows 10/11 | x86-64 | Skia | ✅ Working | 15/15 tests pass; example host (Win32+WGL) verified |
 
 ---
 
@@ -198,15 +198,46 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
+### Building and running the example apps
+
+```bat
+cmake -S . -B build-examples -G Ninja ^
+  -DARTIST_SKIA=ON ^
+  -DARTIST_BUILD_EXAMPLES=ON ^
+  -DARTIST_BUILD_TESTS=OFF ^
+  -DCMAKE_BUILD_TYPE=Release ^
+  -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake ^
+  -DCMAKE_MAKE_PROGRAM=C:/tools/ninja/ninja.exe
+cmake --build build-examples
+```
+
+Resources and Skia DLLs are staged next to each `.exe` in
+`build-examples\examples\`. The host is Win32 + WGL + Ganesh GL
+(`examples/host/windows/skia_app.cpp`). Run from an **interactive desktop
+session** — launching over SSH lands in the isolated services session 0, which
+has no GPU/WGL.
+
 ### Known issues
 
-- `SkFontMgr_win_gdi.h` not installed by vcpkg — use DirectWrite instead
-  (`SkFontMgr_win_dw.h` / `SkFontMgr_New_DirectWrite()`). Fixed in
-  `lib/impl/skia/font.cpp`.
+- Font manager: vcpkg ships **no** `SkFontMgr_win_*.h` header. Both
+  `SkFontMgr_New_DirectWrite()` and `SkFontMgr_New_GDI()` are declared in
+  `ports/SkTypeface_win.h`. We use DirectWrite (matches
+  `SK_TYPEFACE_FACTORY_DIRECTWRITE`).
 - `SkHdrMetadata.h` requires C++20 (designated initialisers). Fixed by
   bumping `CMAKE_CXX_STANDARD` to 20.
-- `SkPathBuilder` undefined in `path.hpp` Windows inline — fixed by adding
-  `#include <SkPathBuilder.h>`.
+- `SkPathBuilder` has no `getBounds()` in m148 — use `computeBounds()`
+  (returns `SkRect` by value). The Windows `path::bounds()` is force-inlined in
+  `path.hpp` (an MSVC debug-mode codegen bug crashes if it lives in the .cpp).
+- **Bundled fonts not matched**: DirectWrite's `getFamilyName()` returns the
+  legacy `name` table ID 1 family (e.g. "Open Sans Condensed Light"), not the
+  typographic ID 16 family ("Open Sans Condensed") that callers request. The
+  Skia font-map scan reads ID 16 directly from the `name` table and registers
+  each face under both names (mirroring fontconfig). Without this, condensed
+  fonts fall back to a wider face (visible as text overlap).
+- The example host's GL tokens `GL_RGBA8` / `GL_FRAMEBUFFER_BINDING` are absent
+  from Windows' OpenGL-1.1 `<GL/gl.h>`; define them manually.
+- `<GL/gl.h>` on Windows is OpenGL 1.1 only; link `opengl32` + `gdi32`
+  explicitly (the old host got them transitively via the removed sk_app).
 - **Stale vcpkg lock**: if `cmake` hangs printing `vcpkg-running.lock: note:
   waiting to take filesystem lock...` repeatedly, an orphaned `vcpkg.exe` from
   a prior session is holding the lock. Fix: `taskkill /F /IM vcpkg.exe`, wipe
