@@ -37,11 +37,7 @@ if(VCPKG_TOOLCHAIN OR NOT ARTIST_SKIA_PREBUILT)
   return()
 endif()
 
-set(_help
-  "Build Skia from source instead: configure with the 'source' CMake preset, "
-  "or pass -DCMAKE_TOOLCHAIN_FILE=<vcpkg>/scripts/buildsystems/vcpkg.cmake "
-  "(elements also needs -DVCPKG_MANIFEST_DIR=lib/artist). "
-  "Set -DARTIST_SKIA_PREBUILT=OFF to silence the prebuilt path.")
+set(_help "Build Skia from source instead: configure with the 'source' CMake preset, or pass -DCMAKE_TOOLCHAIN_FILE=<vcpkg>/scripts/buildsystems/vcpkg.cmake (elements also needs -DVCPKG_MANIFEST_DIR=lib/artist). Set -DARTIST_SKIA_PREBUILT=OFF to silence the prebuilt path.")
 
 # --- derive the os+arch triplet -------------------------------------------
 set(_arch "${CMAKE_SYSTEM_PROCESSOR}")
