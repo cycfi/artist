@@ -70,15 +70,23 @@ if (ARTIST_SKIA)
       )
 
       set(_vcpkg_lib "${SKIA_INCLUDE_BASE}/../../lib")
-      find_library(HARFBUZZ_LIB  harfbuzz     PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
       find_library(FREETYPE_LIB  freetype     PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
       find_library(BROTLIDEC_LIB brotlidec    PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
       find_library(BROTLICOM_LIB brotlicommon PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
       find_library(BZ2_LIB       bz2          PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
 
+      # Use the system harfbuzz (shared) instead of vcpkg's static harfbuzz.
+      # When GTK is loaded (window host), it brings in the system harfbuzz dynamically.
+      # Having both a static vcpkg harfbuzz AND the system shared harfbuzz in the same
+      # process causes symbol interposition — GTK/Pango calls get routed to the static
+      # 14.x copy with 8.x data structures, causing a crash.  Using the system harfbuzz
+      # exclusively avoids the conflict.
+      find_package(PkgConfig REQUIRED)
+      pkg_check_modules(HARFBUZZ REQUIRED IMPORTED_TARGET harfbuzz)
+
       set(ARTIST_DEPEPENDENCIES
          unofficial::skia::skia
-         ${HARFBUZZ_LIB}
+         PkgConfig::HARFBUZZ
          ${FREETYPE_LIB}
          ${BROTLIDEC_LIB}
          ${BROTLICOM_LIB}
@@ -87,108 +95,91 @@ if (ARTIST_SKIA)
 
    elseif (MSVC)
 
-      if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows/msvc/x86_64/src/prebuilt_binaries)
-         if (CMAKE_BUILD_TYPE STREQUAL "Release")
-            set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/windows/skia/msvc/x86_64/x86_64.zip)
-            set(ARTIST_BINARIES_MD5 93b0a532f87c1068bc2adabf19da086d)
-            set(ARTIST_BINARIES_PREFIX windows/msvc/x86_64)
-         else()
-            set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/windows/skia/msvc/x86_64-dbg/x86_64-dbg.zip)
-            set(ARTIST_BINARIES_MD5 b2e5f3927c3b6b3f41ca1c51c8b6a55f)
-            set(ARTIST_BINARIES_PREFIX windows/msvc/x86_64)
-         endif()
-      elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
-         if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-            message(WARNING "Warning: There are no precompiled binaries built using MTd for Clang. Use MT.")
-         endif()
-         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows/clang/x86_64/src/prebuilt_binaries)
-         set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/windows/skia/clang/x86_64/x86_64.zip)
-         set(ARTIST_BINARIES_MD5 b2bc06c19cd61f93505b7e37eaf489db)
-         set(ARTIST_BINARIES_PREFIX windows/clang/x86_64)
-      endif()
+      find_package(unofficial-skia CONFIG REQUIRED)
 
-      set(SKIA_LIBRARIES
-         ${ARTIST_BINARIES}/skia.lib
-         ${ARTIST_BINARIES}/harfbuzz.lib
-         ${ARTIST_BINARIES}/fontconfig.lib
-         ${ARTIST_BINARIES}/freetype.lib
-         ${ARTIST_BINARIES}/bz2.lib
-         ${ARTIST_BINARIES}/brotlicommon.lib
-         ${ARTIST_BINARIES}/brotlienc.lib
-         ${ARTIST_BINARIES}/brotlidec.lib
-         ${ARTIST_BINARIES}/libjpeg.lib
-         ${ARTIST_BINARIES}/libpng.lib
-         ${ARTIST_BINARIES}/libwebp_sse41.lib
-         ${ARTIST_BINARIES}/libwebp.lib
-         ${ARTIST_BINARIES}/zlib.lib
-         ${ARTIST_BINARIES}/skcms.lib
-         ${ARTIST_BINARIES}/expat.lib
+      get_target_property(_skia_inc unofficial::skia::skia INTERFACE_INCLUDE_DIRECTORIES)
+      set(SKIA_INCLUDE_BASE "${_skia_inc}")
+      set(ARTIST_SKIA_EXTRA_INCLUDES
+         ${SKIA_INCLUDE_BASE}/core
+         ${SKIA_INCLUDE_BASE}/config
+         ${SKIA_INCLUDE_BASE}/codec
+         ${SKIA_INCLUDE_BASE}/effects
+         ${SKIA_INCLUDE_BASE}/gpu
+         ${SKIA_INCLUDE_BASE}/ports
+         ${SKIA_INCLUDE_BASE}/utils
+         ${SKIA_INCLUDE_BASE}/../harfbuzz
       )
 
-      ExternalProject_Add(prebuilt_binaries
-         PREFIX "${ARTIST_BINARIES_PREFIX}"
-         URL ${ARTIST_BINARIES_URL}
-         URL_MD5 ${ARTIST_BINARIES_MD5}
-         CONFIGURE_COMMAND ""
-         BUILD_COMMAND ""
-         INSTALL_COMMAND ""
-         BUILD_BYPRODUCTS ${SKIA_LIBRARIES}
-      )
+      set(_vcpkg_lib "${SKIA_INCLUDE_BASE}/../../lib")
+      find_library(HARFBUZZ_LIB  harfbuzz     PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
+      find_library(FREETYPE_LIB  freetype     PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
+      find_library(BROTLIDEC_LIB brotlidec    PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
+      find_library(BROTLICOM_LIB brotlicommon PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
+      find_library(BZ2_LIB       bz2          PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
 
       find_package(OpenGL REQUIRED)
 
       set(ARTIST_DEPEPENDENCIES
-         "${SKIA_LIBRARIES}"
+         unofficial::skia::skia
+         ${HARFBUZZ_LIB}
+         ${FREETYPE_LIB}
+         ${BROTLIDEC_LIB}
+         ${BROTLICOM_LIB}
+         ${BZ2_LIB}
          ${OPENGL_LIBRARIES}
       )
 
-      set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
-      set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Ob2 /Oi /Ot /GL /MT")
+      set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG}   /MTd")
+      set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Ob2 /Oi /Ot /GL /MT")
 
    elseif (UNIX)
 
-      if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
-         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/linux/gcc/x86_64/src/prebuilt_binaries)
-         set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/linux/skia/gcc/x86_64/libskia.a.zip)
-         set(ARTIST_BINARIES_MD5 18def70ddce24ea79a7a308163dfbda3)
-         set(ARTIST_BINARIES_PREFIX linux/gcc/x86_64)
-      elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
-      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/linux/clang/x86_64/src/prebuilt_binaries)
-      set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/linux/skia/clang/x86_64/libskia.a.zip)
-      set(ARTIST_BINARIES_MD5 db92deccb22589f2551955003ef37ce6)
-      set(ARTIST_BINARIES_PREFIX linux/clang/x86_64)
-   endif()
+      find_package(unofficial-skia CONFIG REQUIRED)
 
-      find_package(Threads)
-      find_package(PkgConfig REQUIRED)
-      find_package(OpenGL REQUIRED)
-
-      pkg_check_modules(harfbuzz REQUIRED IMPORTED_TARGET harfbuzz)
-      pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
-      pkg_check_modules(freetype2 REQUIRED IMPORTED_TARGET freetype2)
-
-      set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
-
-      ExternalProject_Add(prebuilt_binaries
-         PREFIX "${ARTIST_BINARIES_PREFIX}"
-         URL ${ARTIST_BINARIES_URL}
-         URL_MD5 ${ARTIST_BINARIES_MD5}
-         CONFIGURE_COMMAND ""
-         BUILD_COMMAND ""
-         INSTALL_COMMAND ""
-         BUILD_BYPRODUCTS ${SKIA_LIBRARY}
+      get_target_property(_skia_inc unofficial::skia::skia INTERFACE_INCLUDE_DIRECTORIES)
+      set(SKIA_INCLUDE_BASE "${_skia_inc}")
+      set(ARTIST_SKIA_EXTRA_INCLUDES
+         ${SKIA_INCLUDE_BASE}/core
+         ${SKIA_INCLUDE_BASE}/config
+         ${SKIA_INCLUDE_BASE}/codec
+         ${SKIA_INCLUDE_BASE}/effects
+         ${SKIA_INCLUDE_BASE}/gpu
+         ${SKIA_INCLUDE_BASE}/ports
+         ${SKIA_INCLUDE_BASE}/utils
+         ${SKIA_INCLUDE_BASE}/../harfbuzz
       )
 
+      set(_vcpkg_lib "${SKIA_INCLUDE_BASE}/../../lib")
+      # Use the system harfbuzz (shared) instead of vcpkg's static harfbuzz.
+      # When GTK is loaded (window host, e.g. Elements), it brings in the system
+      # harfbuzz dynamically. Having both a static vcpkg harfbuzz AND the system
+      # shared harfbuzz in the same process causes symbol interposition — GTK/
+      # Pango calls get routed to the static 14.x copy and crash on widget
+      # realize. Using the system harfbuzz exclusively avoids the conflict.
+      # (The APPLE block already does this; headless Artist tests never load GTK
+      # so they don't hit it, but Elements does.)
+      find_package(PkgConfig REQUIRED)
+      pkg_check_modules(HARFBUZZ REQUIRED IMPORTED_TARGET harfbuzz)
+      find_library(FREETYPE_LIB    freetype     PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
+      find_library(FONTCONFIG_LIB  fontconfig   PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
+      find_library(BROTLIDEC_LIB   brotlidec    PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
+      find_library(BROTLICOM_LIB   brotlicommon PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
+      find_library(BZ2_LIB         bz2          PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
+
+      find_package(Threads REQUIRED)
+      find_package(OpenGL REQUIRED)
+
       set(ARTIST_DEPEPENDENCIES
-         "${SKIA_LIBRARY}"
+         unofficial::skia::skia
+         PkgConfig::HARFBUZZ
+         ${FREETYPE_LIB}
+         ${FONTCONFIG_LIB}
+         ${BROTLIDEC_LIB}
+         ${BROTLICOM_LIB}
+         ${BZ2_LIB}
          ${CMAKE_DL_LIBS}
-         PkgConfig::harfbuzz
-         PkgConfig::fontconfig
-         PkgConfig::freetype2
          Threads::Threads
          OpenGL::OpenGL
-         OpenGL::GLX
       )
 
    endif()
@@ -231,13 +222,6 @@ endif()
 
 if (ARTIST_SKIA)
 
-   if (MSVC)
-      set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
-         external/skia/tools/sk_app/win/GLWindowContext_win.cpp
-         external/skia/tools/sk_app/win/RasterWindowContext_win.cpp
-      )
-   endif()
-
    set(ARTIST_IMPL
       impl/skia/canvas.cpp
       impl/skia/image.cpp
@@ -245,17 +229,7 @@ if (ARTIST_SKIA)
       impl/skia/text_layout.cpp
       impl/skia/path.cpp
       impl/skia/detail/harfbuzz.cpp
-      ${ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT}
    )
-
-   if (NOT APPLE)
-      list(APPEND ARTIST_IMPL
-         external/skia/tools/sk_app/GLWindowContext.cpp
-         external/skia/tools/sk_app/WindowContext.cpp
-         external/skia/tools/ToolUtils.cpp
-         external/skia/tools/SkMetaData.cpp
-      )
-   endif()
 
 endif()
 
@@ -291,11 +265,6 @@ if (NOT MSVC)
    find_package(PkgConfig REQUIRED)
 endif()
 
-# Additional dependencies
-if (ARTIST_SKIA AND UNIX AND NOT APPLE)
-   pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
-   target_link_libraries(artist PUBLIC PkgConfig::fontconfig)
-endif()
 
 if (ARTIST_CAIRO AND NOT MSVC)
    pkg_check_modules(cairo REQUIRED IMPORTED_TARGET cairo)
@@ -326,9 +295,6 @@ endif()
 
 add_dependencies(artist libunibreak)
 
-if (ARTIST_SKIA AND NOT APPLE)
-   add_dependencies(artist prebuilt_binaries)
-endif()
 
 target_sources(artist
    PRIVATE ${ARTIST_SOURCES} ${ARTIST_IMPL}
@@ -345,41 +311,14 @@ target_include_directories(
 )
 
 if (ARTIST_SKIA)
-   if (APPLE)
-      # vcpkg Skia puts headers in subdirectories; expose them so flat
-      # #include <SkCanvas.h> style continues to resolve.
-      target_include_directories(
-         artist
-         PUBLIC
-            ${SKIA_INCLUDE_BASE}/core
-            ${SKIA_INCLUDE_BASE}/config
-            ${SKIA_INCLUDE_BASE}/codec
-            ${SKIA_INCLUDE_BASE}/effects
-            ${SKIA_INCLUDE_BASE}/gpu
-            ${SKIA_INCLUDE_BASE}/ports
-            ${SKIA_INCLUDE_BASE}/utils
-            ${SKIA_INCLUDE_BASE}/../harfbuzz
-      )
-   else()
-      target_include_directories(
-         artist
-         PUBLIC
-            external/skia
-            external/skia/include
-            external/skia/include/core
-            external/skia/include/config
-            external/skia/include/utils
-            external/skia/include/gpu
-            external/skia/include/codec
-            external/skia/include/effects
-            external/skia/include/ports
-            external/skia/src/gpu
-            external/skia/modules/skshaper/include
-            external/filesystem/include/
-            external/harfbuzz/include/
-            external/fontconfig/include/
-      )
-   endif()
+   # vcpkg Skia puts headers in subdirectories; expose them so flat
+   # #include <SkCanvas.h> style continues to resolve.
+   # ARTIST_SKIA_EXTRA_INCLUDES is set in the APPLE/MSVC/UNIX blocks above.
+   target_include_directories(
+      artist
+      PUBLIC
+         ${ARTIST_SKIA_EXTRA_INCLUDES}
+   )
    target_compile_definitions(
       artist
       PUBLIC
@@ -407,7 +346,8 @@ if (ARTIST_SKIA AND NOT APPLE)
    target_compile_definitions(
       artist
       PUBLIC
-        SK_GL
+         SK_GL
+         SK_GANESH
    )
 endif()
 
