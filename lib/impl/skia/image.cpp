@@ -11,6 +11,8 @@
 #include "SkImage.h"
 #include "SkPicture.h"
 #include "SkSurface.h"
+#include <ganesh/SkSurfaceGanesh.h>
+#include <encode/SkPngEncoder.h>
 #include "SkCanvas.h"
 #include "SkPictureRecorder.h"
 #include "SkStream.h"
@@ -136,7 +138,7 @@ namespace cycfi::artist
       };
 
       auto size_ = size();
-      sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(size_.x, size_.y);
+      sk_sp<SkSurface> surface = SkSurfaces::Raster(SkImageInfo::MakeN32Premul(size_.x, size_.y));
       SkCanvas* sk_canvas = surface->getCanvas();
 
       auto draw_picture =
@@ -163,7 +165,7 @@ namespace cycfi::artist
       if (!image)
          fail();
 
-      sk_sp<SkData> png(image->encodeToData());
+      sk_sp<SkData> png(SkPngEncoder::Encode(nullptr, image.get(), {}));
       if (!png)
          fail();
 
@@ -235,10 +237,15 @@ namespace cycfi::artist
       return static_cast<size_t>(size.x) * static_cast<size_t>(size.y) * fmt_bytes_per_pixel;
    }
 
+   // offscreen_image uses a raster SkSurface (not SkPictureRecorder) so that
+   // the resulting image variant holds a SkBitmap.  canvas::draw() then takes
+   // the drawImageRect path, which honours all SkBlendMode values correctly.
+   // Using SkPictureRecorder + drawPicture(pic, mat, paint) in Skia m148 does
+   // not correctly apply Porter-Duff blend modes during playback.
+
    struct offscreen_image::state
    {
-      SkPictureRecorder recorder;
-      SkCanvas* recording_canvas;
+      sk_sp<SkSurface> surface;
    };
 
    offscreen_image::offscreen_image(image& img)
@@ -246,18 +253,30 @@ namespace cycfi::artist
     , _state{new offscreen_image::state{}}
    {
       auto size = _image.size();
-      _state->recording_canvas = _state->recorder.beginRecording(size.x, size.y);
+      _state->surface = SkSurfaces::Raster(
+         SkImageInfo::MakeN32Premul(
+            static_cast<int>(size.x),
+            static_cast<int>(size.y)));
+      _state->surface->getCanvas()->clear(SK_ColorTRANSPARENT);
    }
 
    offscreen_image::~offscreen_image()
    {
-      *(_image.impl()) = _state->recorder.finishRecordingAsPicture();
+      // Snapshot to a SkBitmap so canvas::draw() uses drawImageRect, which
+      // correctly composites with arbitrary blend modes.
+      sk_sp<SkImage> snap = _state->surface->makeImageSnapshot();
+      SkBitmap bitmap;
+      SkImageInfo info = SkImageInfo::MakeN32Premul(snap->width(), snap->height());
+      bitmap.allocPixels(info);
+      snap->readPixels(nullptr, info, bitmap.getPixels(), bitmap.rowBytes(), 0, 0);
+      bitmap.setImmutable();
+      *(_image.impl()) = std::move(bitmap);
       delete _state;
    }
 
    canvas_impl* offscreen_image::context() const
    {
-      return _state->recording_canvas;
+      return _state->surface->getCanvas();
    }
 }
 

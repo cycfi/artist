@@ -7,6 +7,7 @@
 #include <SkStream.h>
 #include <SkTypeface.h>
 #include <cmath>
+#include <vector>
 
 #if defined(_MSC_VER) && _MSC_VER < 1900  // VS < 2015 lacked roundf
 static inline float roundf(float x)
@@ -62,16 +63,16 @@ namespace cycfi::artist::detail
          if (_font)
          {
             hb_ot_font_set_funcs(_font.get());
-            int axis_count = tf->getVariationDesignPosition(nullptr, 0);
+            int axis_count = tf->getVariationDesignPosition({});
             if (axis_count > 0)
             {
-               SkAutoSTMalloc<4, SkFontArguments::VariationPosition::Coordinate> axis_values(axis_count);
-               if (tf->getVariationDesignPosition(axis_values, axis_count) == axis_count)
+               std::vector<SkFontArguments::VariationPosition::Coordinate> axis_values(axis_count);
+               if (tf->getVariationDesignPosition(axis_values) == axis_count)
                {
                   hb_font_set_variations(
                      _font.get()
-                  , reinterpret_cast<hb_variation_t*>(axis_values.get())
-                  , axis_count
+                   , reinterpret_cast<hb_variation_t*>(axis_values.data())
+                   , axis_count
                   );
                }
             }

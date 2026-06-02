@@ -1,0 +1,26 @@
+{
+  "name": "artist",
+  "version": "0",
+  "dependencies": [
+    {
+      "name": "skia",
+      "default-features": true,
+      "features": ["gl", "metal"],
+      "platform": "osx"
+    },
+    {
+      "name": "cairo",
+      "features": ["freetype", "fontconfig"],
+      "platform": "windows"
+    },
+    {
+      "name": "harfbuzz",
+      "platform": "windows"
+    },
+    {
+      "name": "pkgconf",
+      "host": true,
+      "platform": "windows"
+    }
+  ]
+}

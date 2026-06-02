@@ -7,6 +7,7 @@
 ## Build generated
 _build/
 DerivedData/
+/vcpkg_installed/
 
 ## Various settings
 *.pbxuser

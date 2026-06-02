@@ -26,41 +26,69 @@ Artist supports three rendering backends. Only one backend is active per build.
 | Skia       | macOS, Linux, Windows | `ARTIST_SKIA=ON` | Linux, Windows |
 | Cairo      | macOS, Linux, Windows | `ARTIST_CAIRO=ON` | off     |
 
-### Building with Cairo
+### Building with Skia
 
-Cairo is an optional backend, disabled by default. To enable it:
+Skia is the default backend on Linux and Windows. On macOS, Skia is built via
+[vcpkg](https://vcpkg.io/), which is included as a git submodule at
+`lib/external/vcpkg/`. Bootstrap it once, then configure normally:
 
 ```sh
-cmake -S . -B build-cairo -DARTIST_CAIRO=ON
-cmake --build build-cairo
+# One-time bootstrap (already done if you cloned with --recurse-submodules)
+lib/external/vcpkg/bootstrap-vcpkg.sh -disableMetrics   # macOS/Linux
+lib\external\vcpkg\bootstrap-vcpkg.bat -disableMetrics  # Windows
+
+cmake -S . -B build-skia -DARTIST_SKIA=ON \
+  -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake \
+  -DARTIST_BUILD_EXAMPLES=ON -DARTIST_BUILD_TESTS=ON
+cmake --build build-skia
 ```
 
-Enabling `ARTIST_CAIRO` automatically disables `ARTIST_SKIA` and
-`ARTIST_QUARTZ_2D`.
+### Building with Cairo
 
-#### Linux dependencies
+Cairo is an optional backend, disabled by default. Enabling `ARTIST_CAIRO`
+automatically disables `ARTIST_SKIA` and `ARTIST_QUARTZ_2D`.
+
+#### Linux
+
+Install system packages, then configure:
 
 ```sh
 sudo apt-get install -y \
   libcairo2-dev \
   libfontconfig1-dev \
   libfreetype6-dev \
+  libharfbuzz-dev \
   pkg-config
+
+cmake -S . -B build-cairo -DARTIST_CAIRO=ON
+cmake --build build-cairo
 ```
 
-#### macOS dependencies (Homebrew)
+#### macOS (Homebrew)
 
 ```sh
-brew install cairo fontconfig pkg-config
+brew install cairo fontconfig freetype harfbuzz ninja
+
+cmake -S . -B build-cairo -DARTIST_CAIRO=ON
+cmake --build build-cairo
 ```
 
-#### Windows dependencies
+#### Windows
 
-Cairo for Windows can be obtained via [vcpkg](https://vcpkg.io/):
+Dependencies are managed via the bundled vcpkg submodule — no separate
+installation needed. Bootstrap vcpkg once, then pass the toolchain file:
 
 ```sh
-vcpkg install cairo fontconfig
+lib\external\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+
+cmake -S . -B build-cairo -DARTIST_CAIRO=ON ^
+  -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake
+cmake --build build-cairo
 ```
+
+vcpkg will build cairo, freetype, fontconfig, and harfbuzz from source on the
+first run (~15–20 min). Subsequent builds reuse the cached `vcpkg_installed/`
+directory.
 
 ### Cairo: supported platforms and known limitations
 
@@ -69,7 +97,7 @@ vcpkg install cairo fontconfig
 - Live window rendering on macOS (`cairo_app.mm`), Linux/GTK (`cairo_app.cpp`),
   and Windows/Win32 (`cairo_app.cpp`).
 - Visual test suite with goldens for macOS, Linux, and Windows.
-- CI build and visual tests on Ubuntu/GCC and Windows/MSVC.
+- CI build and visual tests on Ubuntu/GCC, macOS/Clang, and Windows/MSVC.
 
 **Known limitations:**
 
@@ -89,6 +117,8 @@ vcpkg install cairo fontconfig
 
 ## News
 
+* 1 Jun 2026: All 15/15 Skia tests pass — fixed a Porter-Duff composite ops regression introduced by the m148 upgrade (`offscreen_image` now uses `SkSurfaces::Raster` instead of `SkPictureRecorder`; `drawPicture` with blend-mode paint is broken for Porter-Duff ops in m148). CI vcpkg builds now use the GitHub Actions binary cache (`x-gha`) for fast warm runs.
+* 31 May 2026: Skia backend upgraded to m148 via vcpkg — replaces hand-managed prebuilt binaries; vcpkg added as a git submodule at `lib/external/vcpkg/`. Cairo Windows support wired up through the same vcpkg submodule. CI now runs the Cairo backend on Ubuntu, macOS, and Windows.
 * 31 May 2026: Cairo backend gains HarfBuzz text shaping — OpenType ligatures, kerning, and correct complex-text advances for `fill_text`, `stroke_text`, `measure_text`, and `text_layout`.
 * 30 May 2026: Cairo backend fully integrated — drop-shadow support, live window hosts on macOS, Linux, and Windows; visual test suite with CI on Ubuntu and Windows.
 

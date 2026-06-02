@@ -28,7 +28,7 @@ namespace cycfi::artist
    image::image(fs::path const& path_)
     : _impl(nullptr)
    {
-      std::string full_path = find_file(path_);
+      std::string full_path = find_file(path_).string();
       if (full_path.empty())
          throw std::runtime_error{"artist cairo backend: File does not exist: " + path_.string()};
 

@@ -136,6 +136,7 @@ namespace detail
 
 void draw_round_rect(canvas& cnv, rect bounds, detail::corner_radii radius)
 {
+   constexpr auto pi = 3.14159265358979323846;
    auto l = bounds.left;
    auto t = bounds.top;
    auto r = bounds.right;
@@ -146,10 +147,10 @@ void draw_round_rect(canvas& cnv, rect bounds, detail::corner_radii radius)
    radius.bottom_left =  std::min(radius.bottom_left,  std::min(bounds.width(), bounds.height()) / 2);
 
    cnv.begin_path();
-   cnv.arc({r-radius.bottom_right, b-radius.bottom_right}, radius.bottom_right, 0,        M_PI*0.5);
-   cnv.arc({l+radius.bottom_left,  b-radius.bottom_left }, radius.bottom_left,  M_PI*0.5, M_PI    );
-   cnv.arc({l+radius.top_left,     t+radius.top_left    }, radius.top_left,     M_PI,     M_PI*1.5);
-   cnv.arc({r-radius.top_right,    t+radius.top_right   }, radius.top_right,    M_PI*1.5, 0       );
+   cnv.arc({r-radius.bottom_right, b-radius.bottom_right}, radius.bottom_right, 0,       pi*0.5);
+   cnv.arc({l+radius.bottom_left,  b-radius.bottom_left }, radius.bottom_left,  pi*0.5, pi    );
+   cnv.arc({l+radius.top_left,     t+radius.top_left    }, radius.top_left,     pi,     pi*1.5);
+   cnv.arc({r-radius.top_right,    t+radius.top_right   }, radius.top_right,    pi*1.5, 0      );
    cnv.close_path();
 }
 

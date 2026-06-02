@@ -606,7 +606,7 @@ namespace cycfi::artist
    void canvas::add_round_rect_impl(rect const& r, float radius)
    {
       auto x = r.left, y = r.top, w = r.right, b = r.bottom;
-      constexpr auto a = M_PI / 180.0;
+      constexpr auto a = 3.14159265358979323846 / 180.0;
       cairo_new_sub_path(_context);
       cairo_arc(_context, w-radius, y+radius, radius, -90*a,   0*a);
       cairo_arc(_context, w-radius, b-radius, radius,   0*a,  90*a);
