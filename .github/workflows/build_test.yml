@@ -69,18 +69,16 @@ jobs:
         # NOTE: macOS Intel (x64-osx) and windows-11-arm/arm64-windows are
         # deferred (see cycfi_ai_dev TODO) — Intel-mac needs a billable larger
         # runner, and arm64-windows needs a vswhere vcvars fix.
+        # NOTE: arm64-linux (ubuntu-24.04-arm) is deferred for artist — the
+        # build + R2 restore work, but one rendering-tolerance test needs an
+        # arm64-linux golden established first (see cycfi_ai_dev TODO). The
+        # arm64-linux Skia ABI is still cached (cycfi/elements seeds it).
         - name: "macOS Clang arm64"
           os: macos-latest
           cc: clang
           cxx: clang++
           triplet: arm64-osx
           pkg_config_path: "/opt/homebrew/lib/pkgconfig"
-        - name: "Ubuntu GCC arm64"
-          os: ubuntu-24.04-arm
-          cc: gcc
-          cxx: g++
-          triplet: arm64-linux
-          pkg_config_path: "/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig"
     steps:
     - name: Checkout
       uses: actions/checkout@v4
