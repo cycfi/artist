@@ -6,19 +6,24 @@
 # compatible across compiler versions (unlike vcpkg's ABI-exact binary cache),
 # so a fresh clone builds fast without compiling Skia.
 #
-# It is a no-op when a vcpkg toolchain is in use (VCPKG_TOOLCHAIN) — there vcpkg
-# provides Skia (and its own ABI-exact binary cache). The producer (CI / a local
-# seed) uses the vcpkg path; everyone else uses these bundles.
+# No-op when a vcpkg toolchain is in use (VCPKG_TOOLCHAIN) — there vcpkg provides
+# Skia (the producer/CI path, and the "source" CMake preset). So once this code
+# runs, there is NO toolchain; if we cannot supply a usable bundle we stop with a
+# clear instruction to use the source path ("simple" fallback — we never switch
+# the toolchain mid-configure).
 #
-# Bundles live at:
-#   ${ARTIST_SKIA_PREBUILT_URL}/${version}/<triplet>.tar.zst  (+ .sha256)
+# Bundles live at ${ARTIST_SKIA_PREBUILT_URL}/${version}/<triplet>.tar.zst (+ .sha256)
 # and are the tarred vcpkg installed/<triplet> tree.
 #
-# Controls (cache vars):
-#   ARTIST_SKIA_PREBUILT          ON  - master switch
-#   ARTIST_SKIA_PREBUILT_VERSION  148 - bundle version (Skia milestone)
-#   ARTIST_SKIA_PREBUILT_URL          - base URL
-#   ARTIST_SKIA_PREBUILT_DIR          - local cache dir (downloaded/extracted)
+# COMPATIBILITY: <triplet> (os+arch) is necessary but not sufficient, so a gate
+# checks the bundle's baseline against the local toolchain and refuses an
+# incompatible bundle (else the user gets cryptic link/loader errors):
+#   Linux   - bundles built on glibc 2.35 (ubuntu-22.04); need local glibc >= that
+#   Windows - bundles built with MSVC v143; need the same toolset major
+#   macOS   - bundles target macOS 11.0 (libc++ stable across clang versions)
+#
+# Controls: ARTIST_SKIA_PREBUILT (ON), ARTIST_SKIA_PREBUILT_VERSION (148),
+#           ARTIST_SKIA_PREBUILT_URL, ARTIST_SKIA_PREBUILT_DIR (cache dir).
 
 option(ARTIST_SKIA_PREBUILT
   "Fetch a prebuilt Skia bundle from R2 instead of building Skia via vcpkg" ON)
@@ -32,11 +37,16 @@ if(VCPKG_TOOLCHAIN OR NOT ARTIST_SKIA_PREBUILT)
   return()
 endif()
 
-# --- derive the compatibility triplet (os + arch) -------------------------
+set(_help
+  "Build Skia from source instead: configure with the 'source' CMake preset, "
+  "or pass -DCMAKE_TOOLCHAIN_FILE=<vcpkg>/scripts/buildsystems/vcpkg.cmake "
+  "(elements also needs -DVCPKG_MANIFEST_DIR=lib/artist). "
+  "Set -DARTIST_SKIA_PREBUILT=OFF to silence the prebuilt path.")
+
+# --- derive the os+arch triplet -------------------------------------------
 set(_arch "${CMAKE_SYSTEM_PROCESSOR}")
 if(APPLE AND CMAKE_OSX_ARCHITECTURES)
-  # honour an explicit cross/target arch (e.g. x86_64 on an arm64 host)
-  list(GET CMAKE_OSX_ARCHITECTURES 0 _arch)
+  list(GET CMAKE_OSX_ARCHITECTURES 0 _arch)   # honour an explicit target arch
 endif()
 string(TOLOWER "${_arch}" _arch)
 
@@ -53,7 +63,7 @@ elseif(WIN32)
   else()
     set(_triplet "x64-windows")
   endif()
-else() # Linux / other Unix
+else()
   if(_arch MATCHES "arm64|aarch64")
     set(_triplet "arm64-linux")
   elseif(_arch MATCHES "x86_64|amd64|x64")
@@ -62,10 +72,32 @@ else() # Linux / other Unix
 endif()
 
 if(NOT _triplet)
-  message(STATUS
-    "Artist: no prebuilt Skia triplet for arch '${_arch}' — "
-    "falling back to vcpkg (pass -DCMAKE_TOOLCHAIN_FILE=.../vcpkg.cmake).")
-  return()
+  message(FATAL_ERROR "Artist: no prebuilt Skia bundle for arch '${_arch}'. ${_help}")
+endif()
+
+# --- compatibility gate (bundle baseline vs local toolchain) --------------
+set(_incompat "")
+if(WIN32)
+  if(DEFINED MSVC_TOOLSET_VERSION AND NOT MSVC_TOOLSET_VERSION STREQUAL "143")
+    set(_incompat "MSVC toolset v${MSVC_TOOLSET_VERSION} != bundle v143")
+  endif()
+elseif(APPLE)
+  if(CMAKE_OSX_DEPLOYMENT_TARGET AND CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS "11.0")
+    set(_incompat "deployment target ${CMAKE_OSX_DEPLOYMENT_TARGET} < bundle 11.0")
+  endif()
+else() # Linux: compare runtime glibc to the bundle's build floor
+  execute_process(COMMAND getconf GNU_LIBC_VERSION
+    OUTPUT_VARIABLE _glibc OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+  string(REGEX MATCH "[0-9]+\\.[0-9]+" _glibc "${_glibc}")
+  if(_glibc AND _glibc VERSION_LESS "2.35")
+    set(_incompat "glibc ${_glibc} < bundle floor 2.35")
+  endif()
+endif()
+
+if(_incompat)
+  message(FATAL_ERROR
+    "Artist: prebuilt Skia for ${_triplet} is incompatible with this toolchain "
+    "(${_incompat}). ${_help}")
 endif()
 
 # --- local cache location -------------------------------------------------
@@ -92,16 +124,13 @@ if(NOT EXISTS "${_marker}")
   set(_tar "${_root}/${_triplet}.tar.zst")
   file(MAKE_DIRECTORY "${_root}")
 
-  # fetch the expected checksum first
   set(_shafile "${_root}/${_triplet}.tar.zst.sha256")
   file(DOWNLOAD "${_base}.sha256" "${_shafile}" STATUS _shast)
   list(GET _shast 0 _shacode)
   if(NOT _shacode EQUAL 0)
-    message(STATUS
+    message(FATAL_ERROR
       "Artist: no prebuilt Skia bundle for ${_triplet}@${_ver} "
-      "(${_base}.sha256: ${_shast}). Falling back to vcpkg "
-      "(-DCMAKE_TOOLCHAIN_FILE=.../vcpkg.cmake to build from source).")
-    return()
+      "(${_base}.sha256: ${_shast}). ${_help}")
   endif()
   file(READ "${_shafile}" _sha)
   string(STRIP "${_sha}" _sha)
@@ -113,22 +142,22 @@ if(NOT EXISTS "${_marker}")
   list(GET _dlst 0 _dlcode)
   if(NOT _dlcode EQUAL 0)
     file(REMOVE "${_tar}")
-    message(STATUS
+    message(FATAL_ERROR
       "Artist: prebuilt Skia download/verify failed for ${_triplet}@${_ver} "
-      "(${_dlst}). Falling back to vcpkg.")
-    return()
+      "(${_dlst}). Retry, or: ${_help}")
   endif()
 
   file(ARCHIVE_EXTRACT INPUT "${_tar}" DESTINATION "${_root}")
   file(REMOVE "${_tar}")
 endif()
 
-if(EXISTS "${_marker}")
-  # include() runs in the caller's scope, so this updates the includer's
-  # CMAKE_PREFIX_PATH directly (no PARENT_SCOPE needed).
-  list(PREPEND CMAKE_PREFIX_PATH "${_dest}")
-  message(STATUS "Artist: using prebuilt Skia ${_triplet}@${_ver} (${_dest})")
-else()
-  message(STATUS
-    "Artist: prebuilt Skia not available after fetch; falling back to vcpkg.")
+if(NOT EXISTS "${_marker}")
+  message(FATAL_ERROR
+    "Artist: prebuilt Skia bundle for ${_triplet}@${_ver} is corrupt "
+    "(missing unofficial-skia config after extract). ${_help}")
 endif()
+
+# include() runs in the caller's scope, so this updates the includer's
+# CMAKE_PREFIX_PATH directly (no PARENT_SCOPE needed).
+list(PREPEND CMAKE_PREFIX_PATH "${_dest}")
+message(STATUS "Artist: using prebuilt Skia ${_triplet}@${_ver} (${_dest})")
