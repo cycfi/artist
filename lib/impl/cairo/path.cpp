@@ -5,6 +5,7 @@
 =============================================================================*/
 #include <artist/path.hpp>
 #include "cairo_private.hpp"
+#include <infra/support.hpp>
 #include <cmath>
 #include <algorithm>
 
@@ -220,7 +221,7 @@ namespace cycfi::artist
    {
       if (!_impl) return;
       auto x = r.left, y = r.top, rr = r.right, b = r.bottom;
-      constexpr auto a = M_PI / 180.0;
+      constexpr auto a = cycfi::pi / 180.0;
       cairo_new_sub_path(_impl->ctx);
       cairo_arc(_impl->ctx, rr-radius, y+radius,  radius, -90*a,   0*a);
       cairo_arc(_impl->ctx, rr-radius, b-radius,  radius,   0*a,  90*a);

@@ -249,12 +249,16 @@ namespace cycfi::artist
 
 #if defined(ARTIST_SKIA) && defined(_WIN32)
 #include <SkPath.h>
+#include <SkPathBuilder.h>
 
 namespace cycfi::artist
 {
    inline rect path::bounds() const
    {
-      auto const& r = _impl->getBounds();
+      // m148: SkPathBuilder has no getBounds(); computeBounds() returns
+      // an SkRect by value (matches the snapshot().getBounds() path used in
+      // the non-Windows path.cpp definition).
+      auto const r = _impl->computeBounds();
       return rect{r.fLeft, r.fTop, r.fRight, r.fBottom};
    }
 }
