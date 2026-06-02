@@ -49,6 +49,11 @@ if (ARTIST_SKIA)
    ############################################################################
    # Skia dependency
    ############################################################################
+   # Default (local builds): fetch a prebuilt Skia bundle from R2 and add it to
+   # CMAKE_PREFIX_PATH so the find_package(unofficial-skia) calls below resolve
+   # it — no Skia compile. No-op under a vcpkg toolchain (vcpkg supplies Skia).
+   include(${CMAKE_CURRENT_LIST_DIR}/../cmake/SkiaPrebuilt.cmake)
+
    if (APPLE)
 
       find_package(unofficial-skia CONFIG REQUIRED)

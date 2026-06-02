@@ -28,29 +28,57 @@ jobs:
       inputs.job == 'all' ||
       inputs.job == 'skia'
     runs-on: ${{ matrix.config.os }}
+    permissions:
+      packages: write
+      contents: read
     env:
-      # vcpkg binary caching: pre-built package archives are stored in and
-      # restored from the GitHub Actions cache, keyed by the package ABI hash
-      # (which includes the compiler version).  This survives runner image
-      # updates far better than caching vcpkg_installed/ by vcpkg.json hash.
-      VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+      # vcpkg binary cache, keyed by package ABI hash (compiler + portfile +
+      # triplet). Three layers, in read priority:
+      #   1. http  -> public anonymous read from Cloudflare R2 (media.cycfi.com);
+      #              lets a fresh clone / fork restore with no auth.
+      #   2. x-aws -> CI-only authenticated write of new archives to the same R2
+      #              bucket via the S3 API (AWS CLI redirected by AWS_ENDPOINT_URL).
+      # A cold build (cache miss) is uploaded once via x-aws; thereafter every
+      # run, fork, and clone restores anonymously over http (shared with
+      # cycfi/elements). (NuGet and the removed x-gha backend are no longer used.)
+      VCPKG_BINARY_SOURCES: "clear;http,https://media.cycfi.com/vcpkg-cache/{sha}.zip,read;x-aws,s3://cycfi-media/vcpkg-cache/,write"
+      # R2 (S3-compatible) credentials for the x-aws write layer. Withheld from
+      # fork PR runs by GitHub; x-aws write then no-ops and http read still works.
+      AWS_ENDPOINT_URL: "https://24c350f8d000d722e6bcc12e3b03469a.r2.cloudflarestorage.com"
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
     strategy:
       fail-fast: false
       matrix:
         config:
-        - name: "Windows MSVC"
+        # --- x86-64 ---
+        - name: "Windows MSVC x64"
           os: windows-latest
           cc: cl
           cxx: cl
+          triplet: x64-windows
           environment_script: "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
-        - name: "macOS Clang"
-          os: macos-latest
-          cc: clang
-          cxx: clang++
-        - name: "Ubuntu GCC"
+        - name: "Ubuntu GCC x64"
           os: ubuntu-latest
           cc: gcc
           cxx: g++
+          triplet: x64-linux
+          pkg_config_path: "/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig"
+        # --- arm64 ---
+        # NOTE: macOS Intel (x64-osx) and windows-11-arm/arm64-windows are
+        # deferred (see cycfi_ai_dev TODO) — Intel-mac needs a billable larger
+        # runner, and arm64-windows needs a vswhere vcvars fix.
+        # NOTE: arm64-linux (ubuntu-24.04-arm) is deferred for artist — the
+        # build + R2 restore work, but one rendering-tolerance test needs an
+        # arm64-linux golden established first (see cycfi_ai_dev TODO). The
+        # arm64-linux Skia ABI is still cached (cycfi/elements seeds it).
+        - name: "macOS Clang arm64"
+          os: macos-latest
+          cc: clang
+          cxx: clang++
+          triplet: arm64-osx
+          pkg_config_path: "/opt/homebrew/lib/pkgconfig"
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -116,24 +144,18 @@ jobs:
           endforeach()
         endif()
 
-        set(extra_args)
-        if ("${{ runner.os }}" STREQUAL "macOS")
-          # macos-latest runners are arm64; vcpkg must target the same
-          # triplet or it builds x64 libraries that fail to link.
+        # Triplet pinned per matrix entry (the runner arch must match or vcpkg
+        # builds libraries for the wrong arch).
+        set(extra_args
+          -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake
+          -DVCPKG_TARGET_TRIPLET=${{ matrix.config.triplet }})
+        if (NOT "${{ runner.os }}" STREQUAL "Windows")
+          # vcpkg sanitizes the environment; expose the platform pkg-config dir
+          # so the skia port's build + system GL/fontconfig/harfbuzz resolve
+          # (Homebrew on macOS, system multiarch dir on Linux).
+          set(ENV{PKG_CONFIG_PATH} "${{ matrix.config.pkg_config_path }}:$ENV{PKG_CONFIG_PATH}")
           list(APPEND extra_args
-            -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake
-            -DVCPKG_TARGET_TRIPLET=arm64-osx)
-        elseif ("${{ runner.os }}" STREQUAL "Linux")
-          # The vcpkg skia port needs the system gl.pc during its build, but
-          # vcpkg sanitizes the environment. Expose PKG_CONFIG_PATH and pass
-          # it through so pkgconf can locate the system OpenGL package.
-          set(ENV{PKG_CONFIG_PATH} "/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig")
-          list(APPEND extra_args
-            -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake
             -DVCPKG_ENV_PASSTHROUGH_UNTRACKED=PKG_CONFIG_PATH)
-        elseif ("${{ runner.os }}" STREQUAL "Windows")
-          list(APPEND extra_args
-            -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake)
         endif()
 
         execute_process(
@@ -201,8 +223,8 @@ jobs:
       inputs.job == 'all' ||
       inputs.job == 'cairo'
     runs-on: ${{ matrix.config.os }}
-    env:
-      VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+    # No binary cache: cairo + deps build fast from source on Windows, so they
+    # are deliberately left out of the R2/vcpkg binary cache (Skia-only).
     strategy:
       fail-fast: false
       matrix:
