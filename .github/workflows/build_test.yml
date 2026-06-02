@@ -28,12 +28,16 @@ jobs:
       inputs.job == 'all' ||
       inputs.job == 'skia'
     runs-on: ${{ matrix.config.os }}
+    permissions:
+      packages: write
+      contents: read
     env:
       # vcpkg binary caching: pre-built package archives are stored in and
-      # restored from the GitHub Actions cache, keyed by the package ABI hash
-      # (which includes the compiler version).  This survives runner image
-      # updates far better than caching vcpkg_installed/ by vcpkg.json hash.
-      VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+      # restored from the package ABI hash (compiler + portfile + triplet).
+      # The shared GitHub Packages NuGet feed (cross-repo, persistent,
+      # local-usable; shared with cycfi/elements) is layered over x-gha
+      # (per-repo, fast, LRU-evicted at 10 GB).
+      VCPKG_BINARY_SOURCES: "clear;nuget,GitHubPackages,readwrite;x-gha,readwrite"
     strategy:
       fail-fast: false
       matrix:
@@ -73,11 +77,12 @@ jobs:
           autoconf \
           autoconf-archive \
           automake \
-          libtool
+          libtool \
+          mono-complete
 
     - name: Install dependencies (macOS)
       if: runner.os == 'macOS'
-      run: brew install fontconfig ninja
+      run: brew install fontconfig ninja mono
 
     - name: Bootstrap vcpkg (macOS)
       if: runner.os == 'macOS'
@@ -96,6 +101,30 @@ jobs:
       if: runner.os == 'Windows'
       run: lib\external\vcpkg\bootstrap-vcpkg.bat -disableMetrics
       shell: cmd
+
+    - name: Setup vcpkg NuGet cache (Unix)
+      if: runner.os != 'Windows'
+      shell: bash
+      env:
+        TOKEN: ${{ secrets.VCPKG_NUGET_TOKEN }}
+      run: |
+        NUGET="$(lib/external/vcpkg/vcpkg fetch nuget | tail -n1)"
+        mono "$NUGET" sources add \
+          -Source "https://nuget.pkg.github.com/cycfi/index.json" \
+          -Name GitHubPackages -Username cycfi -Password "$TOKEN" \
+          -StorePasswordInClearText
+        mono "$NUGET" setapikey "$TOKEN" \
+          -Source "https://nuget.pkg.github.com/cycfi/index.json"
+
+    - name: Setup vcpkg NuGet cache (Windows)
+      if: runner.os == 'Windows'
+      shell: cmd
+      env:
+        TOKEN: ${{ secrets.VCPKG_NUGET_TOKEN }}
+      run: |
+        for /f "delims=" %%i in ('lib\external\vcpkg\vcpkg fetch nuget') do set NUGET=%%i
+        "%NUGET%" sources add -Source "https://nuget.pkg.github.com/cycfi/index.json" -Name GitHubPackages -Username cycfi -Password "%TOKEN%" -StorePasswordInClearText
+        "%NUGET%" setapikey "%TOKEN%" -Source "https://nuget.pkg.github.com/cycfi/index.json"
 
     - name: Configure
       shell: cmake -P {0}
@@ -201,8 +230,13 @@ jobs:
       inputs.job == 'all' ||
       inputs.job == 'cairo'
     runs-on: ${{ matrix.config.os }}
+    permissions:
+      packages: write
+      contents: read
     env:
-      VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+      # See build-skia for the binary-cache rationale. Cairo only uses vcpkg on
+      # Windows, so the NuGet setup step below is Windows-only.
+      VCPKG_BINARY_SOURCES: "clear;nuget,GitHubPackages,readwrite;x-gha,readwrite"
     strategy:
       fail-fast: false
       matrix:
@@ -246,6 +280,16 @@ jobs:
       if: runner.os == 'Windows'
       run: lib\external\vcpkg\bootstrap-vcpkg.bat -disableMetrics
       shell: cmd
+
+    - name: Setup vcpkg NuGet cache (Windows)
+      if: runner.os == 'Windows'
+      shell: cmd
+      env:
+        TOKEN: ${{ secrets.VCPKG_NUGET_TOKEN }}
+      run: |
+        for /f "delims=" %%i in ('lib\external\vcpkg\vcpkg fetch nuget') do set NUGET=%%i
+        "%NUGET%" sources add -Source "https://nuget.pkg.github.com/cycfi/index.json" -Name GitHubPackages -Username cycfi -Password "%TOKEN%" -StorePasswordInClearText
+        "%NUGET%" setapikey "%TOKEN%" -Source "https://nuget.pkg.github.com/cycfi/index.json"
 
     - name: Configure
       shell: cmake -P {0}
