@@ -3,62 +3,74 @@ on: [push, pull_request]
 env:
   BUILD_TYPE: Release
 jobs:
-  build:
-    name: ${{ matrix.config.name }}
+
+  ###########################################################################
+  # Skia
+  ###########################################################################
+  build-skia:
+    name: "Skia (${{ matrix.config.name }})"
     runs-on: ${{ matrix.config.os }}
+    env:
+      # vcpkg binary caching: pre-built package archives are stored in and
+      # restored from the GitHub Actions cache, keyed by the package ABI hash
+      # (which includes the compiler version).  This survives runner image
+      # updates far better than caching vcpkg_installed/ by vcpkg.json hash.
+      VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
     strategy:
       fail-fast: false
       matrix:
         config:
-        - name: "Windows Latest MSVC"
+        - name: "Windows MSVC"
           os: windows-latest
-          cc: "cl"
-          cxx: "cl"
+          cc: cl
+          cxx: cl
           environment_script: "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
-        - name: "Ubuntu Latest GCC"
-          os: ubuntu-latest
-          cc: "gcc"
-          cxx: "g++"
-        - name: "macOS Latest Clang"
+        - name: "macOS Clang"
           os: macos-latest
-          cc: "clang"
-          cxx: "clang++"
+          cc: clang
+          cxx: clang++
+        - name: "Ubuntu GCC"
+          os: ubuntu-latest
+          cc: gcc
+          cxx: g++
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        submodules: 'recursive'
-    - name: Install package dependencies
-      id: cmake_and_ninja
-      shell: cmake -P {0}
+        submodules: recursive
+
+    - name: Install dependencies (Ubuntu)
+      if: runner.os == 'Linux'
       run: |
-        if ("${{ runner.os }}" STREQUAL "Windows")
-          execute_process(COMMAND choco install ninja)
-        elseif ("${{ runner.os }}" STREQUAL "Linux")
-          execute_process(COMMAND sudo apt-get update)
-          execute_process(COMMAND sudo apt-get install libharfbuzz-dev)
-          execute_process(COMMAND sudo apt-get install libunibreak-dev)
-          execute_process(COMMAND sudo apt-get install fontconfig)
-          execute_process(COMMAND sudo apt-get install libgtkglext1-dev)
-          execute_process(COMMAND sudo apt-get install libgtk-3-dev)
-          execute_process(COMMAND sudo apt-get install ninja-build)
-        elseif ("${{ runner.os }}" STREQUAL "macOS")
-          execute_process(COMMAND brew install fontconfig)
-          execute_process(COMMAND brew install ninja)
-        endif()
+        sudo apt-get update
+        sudo apt-get install -y \
+          libharfbuzz-dev \
+          libunibreak-dev \
+          fontconfig \
+          libgtkglext1-dev \
+          libgtk-3-dev \
+          ninja-build
+
+    - name: Install dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: brew install fontconfig ninja
+
+    - name: Bootstrap vcpkg (macOS)
+      if: runner.os == 'macOS'
+      run: lib/external/vcpkg/bootstrap-vcpkg.sh -disableMetrics
+
+    - name: Install dependencies (Windows)
+      if: runner.os == 'Windows'
+      run: choco install ninja
+      shell: cmd
+
     - name: Configure
       shell: cmake -P {0}
       run: |
         set(ENV{CC} ${{ matrix.config.cc }})
         set(ENV{CXX} ${{ matrix.config.cxx }})
-        # If the environment has boost_root defined, set BOOST_ROOT to it
-        if ( NOT "x${{ matrix.config.boost_root }}" STREQUAL "x")
-          set(ENV{BOOST_ROOT} $ENV{${{ matrix.config.boost_root }}})
-        endif()
 
-        # If we are on windows, run the environment script, parse it with cmake
-        # and set environment variables with it (required for Visual Studio)
-        if ("${{ runner.os }}" STREQUAL "Windows" AND NOT "x${{ matrix.config.environment_script }}" STREQUAL "x")
+        if ("${{ runner.os }}" STREQUAL "Windows")
           execute_process(
             COMMAND "${{ matrix.config.environment_script }}" && set
             OUTPUT_FILE environment_script_output.txt
@@ -71,26 +83,37 @@ jobs:
           endforeach()
         endif()
 
+        set(extra_args)
+        if ("${{ runner.os }}" STREQUAL "macOS")
+          # macos-latest runners are arm64; vcpkg must target the same
+          # triplet or it builds x64 libraries that fail to link.
+          list(APPEND extra_args
+            -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake
+            -DVCPKG_TARGET_TRIPLET=arm64-osx)
+        endif()
+
         execute_process(
           COMMAND ${CMAKE_COMMAND}
             -S .
             -B build
             -D CMAKE_BUILD_TYPE=$ENV{BUILD_TYPE}
+            -D ARTIST_SKIA=ON
+            -D ARTIST_BUILD_EXAMPLES=OFF
+            -D ARTIST_BUILD_TESTS=ON
             -G Ninja
             -D CMAKE_MAKE_PROGRAM=ninja
+            ${extra_args}
           RESULT_VARIABLE result
           ERROR_VARIABLE error_message
         )
-
         if (NOT result EQUAL 0)
-          message(FATAL_ERROR "Could not run with ${CMAKE_COMMAND}: Got ${error_message} - ${result}")
+          message(FATAL_ERROR "Configure failed: ${error_message} - ${result}")
         endif()
+
     - name: Build
       shell: cmake -P {0}
       run: |
-        # If we are on windows, run the environment script, parse it with cmake
-        # and set environment variables with it (required for Visual Studio)
-        if ("${{ runner.os }}" STREQUAL "Windows" AND NOT "x${{ matrix.config.environment_script }}" STREQUAL "x")
+        if ("${{ runner.os }}" STREQUAL "Windows")
           execute_process(
             COMMAND "${{ matrix.config.environment_script }}" && set
             OUTPUT_FILE environment_script_output.txt
@@ -108,9 +131,8 @@ jobs:
           RESULT_VARIABLE result
           ERROR_VARIABLE error_message
         )
-
         if (NOT result EQUAL 0)
-          message(FATAL_ERROR "Could not run with ${CMAKE_COMMAND}: Got ${error_message} - ${result}")
+          message(FATAL_ERROR "Build failed: ${error_message} - ${result}")
         endif()
 
     - name: Test
@@ -121,19 +143,43 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: test-results-${{ matrix.config.name }}
+        name: test-results-skia-${{ matrix.config.name }}
         path: build/test/results/
         if-no-files-found: ignore
 
+  ###########################################################################
+  # Cairo
+  ###########################################################################
   build-cairo:
-    name: "Ubuntu Latest GCC (Cairo)"
-    runs-on: ubuntu-latest
+    name: "Cairo (${{ matrix.config.name }})"
+    runs-on: ${{ matrix.config.os }}
+    env:
+      VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - name: "Windows MSVC"
+          os: windows-latest
+          cc: cl
+          cxx: cl
+          environment_script: "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+        - name: "macOS Clang"
+          os: macos-latest
+          cc: clang
+          cxx: clang++
+        - name: "Ubuntu GCC"
+          os: ubuntu-latest
+          cc: gcc
+          cxx: g++
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        submodules: 'recursive'
-    - name: Install Cairo dependencies
+        submodules: recursive
+
+    - name: Install dependencies (Ubuntu)
+      if: runner.os == 'Linux'
       run: |
         sudo apt-get update
         sudo apt-get install -y \
@@ -143,24 +189,130 @@ jobs:
           libharfbuzz-dev \
           pkg-config \
           ninja-build
-    - name: Configure (Cairo)
-      run: |
-        cmake -S . -B build-cairo \
-          -DARTIST_CAIRO=ON \
-          -DARTIST_BUILD_EXAMPLES=OFF \
-          -DARTIST_BUILD_TESTS=ON \
-          -DCMAKE_BUILD_TYPE=Release \
-          -G Ninja
-    - name: Build (Cairo)
-      run: cmake --build build-cairo
-    - name: Test (Cairo)
-      run: ctest --verbose --test-dir build-cairo
 
-    - name: Upload test results (Cairo)
+    - name: Install dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: brew install cairo fontconfig freetype harfbuzz ninja
+
+    - name: Bootstrap vcpkg (Windows)
+      if: runner.os == 'Windows'
+      run: lib\external\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+      shell: cmd
+
+    - name: Configure
+      shell: cmake -P {0}
+      run: |
+        set(ENV{CC} ${{ matrix.config.cc }})
+        set(ENV{CXX} ${{ matrix.config.cxx }})
+
+        if ("${{ runner.os }}" STREQUAL "Windows")
+          execute_process(
+            COMMAND "${{ matrix.config.environment_script }}" && set
+            OUTPUT_FILE environment_script_output.txt
+          )
+          file(STRINGS environment_script_output.txt output_lines)
+          foreach(line IN LISTS output_lines)
+            if (line MATCHES "^([a-zA-Z0-9_-]+)=(.*)$")
+              set(ENV{${CMAKE_MATCH_1}} "${CMAKE_MATCH_2}")
+            endif()
+          endforeach()
+        endif()
+
+        set(extra_args)
+        if ("${{ runner.os }}" STREQUAL "Windows")
+          list(APPEND extra_args
+            -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake)
+        endif()
+
+        execute_process(
+          COMMAND ${CMAKE_COMMAND}
+            -S .
+            -B build-cairo
+            -D CMAKE_BUILD_TYPE=$ENV{BUILD_TYPE}
+            -D ARTIST_CAIRO=ON
+            -D ARTIST_BUILD_EXAMPLES=OFF
+            -D ARTIST_BUILD_TESTS=ON
+            -G Ninja
+            -D CMAKE_MAKE_PROGRAM=ninja
+            ${extra_args}
+          RESULT_VARIABLE result
+          ERROR_VARIABLE error_message
+        )
+        if (NOT result EQUAL 0)
+          message(FATAL_ERROR "Configure failed: ${error_message} - ${result}")
+        endif()
+
+    - name: Build
+      shell: cmake -P {0}
+      run: |
+        if ("${{ runner.os }}" STREQUAL "Windows")
+          execute_process(
+            COMMAND "${{ matrix.config.environment_script }}" && set
+            OUTPUT_FILE environment_script_output.txt
+          )
+          file(STRINGS environment_script_output.txt output_lines)
+          foreach(line IN LISTS output_lines)
+            if (line MATCHES "^([a-zA-Z0-9_-]+)=(.*)$")
+              set(ENV{${CMAKE_MATCH_1}} "${CMAKE_MATCH_2}")
+            endif()
+          endforeach()
+        endif()
+
+        execute_process(
+          COMMAND ${CMAKE_COMMAND} --build build-cairo
+          RESULT_VARIABLE result
+          ERROR_VARIABLE error_message
+        )
+        if (NOT result EQUAL 0)
+          message(FATAL_ERROR "Build failed: ${error_message} - ${result}")
+        endif()
+
+    - name: Test
+      run: ctest --verbose --test-dir build-cairo
+      shell: bash
+
+    - name: Upload test results
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: test-results-ubuntu-cairo
+        name: test-results-cairo-${{ matrix.config.name }}
         path: build-cairo/test/results/
         if-no-files-found: ignore
 
+  ###########################################################################
+  # Quartz2D
+  ###########################################################################
+  build-quartz2d:
+    name: "Quartz2D (macOS Clang)"
+    runs-on: macos-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install dependencies
+      run: brew install ninja
+
+    - name: Configure
+      run: |
+        cmake -S . -B build-quartz2d \
+          -DARTIST_QUARTZ_2D=ON \
+          -DARTIST_BUILD_EXAMPLES=OFF \
+          -DARTIST_BUILD_TESTS=ON \
+          -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+          -G Ninja
+
+    - name: Build
+      run: cmake --build build-quartz2d
+
+    - name: Test
+      run: ctest --verbose --test-dir build-quartz2d
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-quartz2d
+        path: build-quartz2d/test/results/
+        if-no-files-found: ignore

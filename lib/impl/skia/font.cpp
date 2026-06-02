@@ -9,22 +9,43 @@
 #include <sstream>
 #include <SkFontMetrics.h>
 #include <SkFontMgr.h>
+#include <SkFontTypes.h>
 #include <infra/filesystem.hpp>
 #include <infra/support.hpp>
 
+#if !defined(__APPLE__) && !defined(_WIN32)
 # include <fontconfig/fontconfig.h>
-# include <map>
-# include <mutex>
+#endif
+#include <map>
+#include <mutex>
 
-# if defined(_WIN32)
+#if defined(__APPLE__)
+# include <ports/SkFontMgr_mac_ct.h>
+#elif defined(_WIN32)
 # include <Windows.h>
 # include "sysinfoapi.h"
 # include "tchar.h"
-# include <SkTypeface_win.h>
-# endif
+# include <ports/SkFontMgr_win_gdi.h>
+#else
+# include <ports/SkFontMgr_FontConfig.h>
+#endif
 
 namespace cycfi::artist
 {
+   namespace
+   {
+      sk_sp<SkFontMgr> get_font_mgr()
+      {
+#if defined(__APPLE__)
+         return SkFontMgr_New_CoreText(nullptr);
+#elif defined(_WIN32)
+         return SkFontMgr_New_GDI();
+#else
+         return SkFontMgr_New_FontConfig(nullptr);
+#endif
+      }
+   }
+
    namespace
    {
       inline void ltrim(std::string& s)
@@ -75,6 +96,7 @@ namespace cycfi::artist
 
       constexpr auto font_map_default_font_family = "";
 
+#if !defined(__APPLE__) && !defined(_WIN32)
       enum
       {
          fc_thin            = 0,
@@ -122,9 +144,58 @@ namespace cycfi::artist
       using fc_patern_ptr = std::unique_ptr<FcPattern, deleter<FcPattern, FcPatternDestroy>>;
       using fc_object_set_ptr = std::unique_ptr<FcObjectSet, deleter<FcObjectSet, FcObjectSetDestroy>>;
       using fc_font_set_ptr = std::unique_ptr<FcFontSet, deleter<FcFontSet, FcFontSetDestroy>>;
+#endif
 
       void init_font_map()
       {
+#if defined(__APPLE__)
+         // On macOS, fontconfig is unavailable. Scan the user fonts directory
+         // using Skia so we use the same bundled font files as other backends.
+         auto mgr = get_font_mgr();
+         auto user_fonts_path = get_user_fonts_directory();
+         auto [font_map, font_map_mutex] = get_font_map();
+
+         namespace fs = cycfi::fs;
+         if (fs::exists(user_fonts_path) && fs::is_directory(user_fonts_path))
+         {
+            for (auto const& entry : fs::directory_iterator(user_fonts_path))
+            {
+               auto path = entry.path();
+               auto ext = path.extension().string();
+               if (ext != ".ttf" && ext != ".otf" && ext != ".ttc")
+                  continue;
+
+               int face_count = 0;
+               // Count faces in the file by trying indices until we get null
+               do
+               {
+                  auto tf = sk_sp<SkTypeface>(mgr->makeFromFile(path.string().c_str(), face_count));
+                  if (!tf)
+                     break;
+
+                  SkString family_name;
+                  tf->getFamilyName(&family_name);
+                  std::string key = family_name.c_str();
+                  trim(key);
+
+                  auto sk_style = tf->fontStyle();
+                  font_entry fe;
+                  fe.file  = path.string();
+                  fe.index = face_count;
+                  // Map SkFontStyle weight (100-900) to artist 0-100 scale
+                  fe.weight  = uint8_t(sk_style.weight() / 10);
+                  // Map SkFontStyle slant: upright=0, italic=1, oblique=2
+                  fe.slant   = uint8_t(sk_style.slant() == SkFontStyle::kItalic_Slant ? 100 :
+                                       sk_style.slant() == SkFontStyle::kOblique_Slant ? 50 : 0);
+                  // Map SkFontStyle width (1-9) to artist 0-100 scale
+                  fe.stretch = uint8_t(sk_style.width() * 100 / 9);
+
+                  font_map[key].push_back(std::move(fe));
+                  ++face_count;
+               } while (true);
+            }
+         }
+#elif !defined(_WIN32)
          FcInit();
          FcConfig* config = FcConfigGetCurrent();
          auto user_fonts_path = get_user_fonts_directory();
@@ -173,6 +244,7 @@ namespace cycfi::artist
                font_map[key].push_back(std::move(entry));
             }
          }
+#endif
       }
 
       font_entry* match(font_map_type& font_map, font_descr descr)
@@ -243,7 +315,7 @@ namespace cycfi::artist
          }
          else
          {
-            auto face = SkTypeface::MakeFromFile(match_ptr->file.c_str(), match_ptr->index);
+            auto face = get_font_mgr()->makeFromFile(match_ptr->file.c_str(), match_ptr->index);
             _ptr = std::make_shared<SkFont>(face, descr._size);
             if (_ptr)
                match_ptr->cached_typeface = sk_ref_sp(_ptr->getTypeface());
@@ -263,14 +335,15 @@ namespace cycfi::artist
          SkFontStyle::kUpright_Slant
       );
 
-      auto default_face = SkTypeface::MakeFromName(nullptr, style);
+      auto mgr = get_font_mgr();
+      auto default_face = sk_sp<SkTypeface>(mgr->matchFamilyStyle(nullptr, style));
       std::istringstream str(std::string{descr._families});
       std::string family;
 
       while (getline(str, family, ','))
       {
          trim(family);
-         auto face = SkTypeface::MakeFromName(family.c_str(), style);
+         auto face = sk_sp<SkTypeface>(mgr->matchFamilyStyle(family.c_str(), style));
          if (face && face != default_face)
          {
             _ptr = std::make_shared<SkFont>(face, descr._size);

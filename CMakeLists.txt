@@ -6,6 +6,25 @@
 cmake_minimum_required(VERSION 3.15.0)
 include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 
+# When using vcpkg as a submodule, add installed packages to the prefix path
+# so find_package works regardless of whether manifest-mode auto-install ran.
+if (DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "lib/external/vcpkg")
+   if (NOT DEFINED VCPKG_TARGET_TRIPLET)
+      if (APPLE AND CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
+         set(VCPKG_TARGET_TRIPLET "arm64-osx")
+      elseif (APPLE)
+         set(VCPKG_TARGET_TRIPLET "x64-osx")
+      elseif (WIN32)
+         set(VCPKG_TARGET_TRIPLET "x64-windows")
+      else()
+         set(VCPKG_TARGET_TRIPLET "x64-linux")
+      endif()
+   endif()
+   list(APPEND CMAKE_PREFIX_PATH
+      "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}"
+   )
+endif()
+
 project(artist LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 

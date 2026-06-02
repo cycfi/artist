@@ -206,13 +206,11 @@ namespace cycfi::artist
             for (std::size_t j = 0; j != glyph_count; ++j)
                line_glyphs[j] = glyphs_info.glyphs[glyph_start + j].codepoint;
 
-            auto text_blob = SkTextBlob::MakeFromPosTextH(
-               line_glyphs.data()
-               , line_glyphs.size() * sizeof(SkGlyphID)
-               , positions.data(), 0
-               , *_font.impl()
-               , SkTextEncoding::kGlyphID
-            );
+            SkTextBlobBuilder builder;
+            auto run = builder.allocRunPosH(*_font.impl(), line_glyphs.size(), /*y=*/0);
+            std::copy(line_glyphs.begin(), line_glyphs.end(), run.glyphs);
+            std::copy(positions.data(), positions.data() + line_glyphs.size(), run.pos);
+            auto text_blob = builder.make();
 
             auto last_glyph = std::min<std::size_t>(glyph_count+1, positions.size());
             positions.erase(positions.begin()+last_glyph, positions.end());
@@ -372,7 +370,7 @@ namespace cycfi::artist
          }
       );
       if (j == l)
-         return is_last_row? _text.size() : npos;
+         return is_last_row? _text.size() : glyphs_info.glyphs[(i+1)->glyph_index].cluster;
       if (j != f)
       {
          // Check the x position is before the middle of the glyph
