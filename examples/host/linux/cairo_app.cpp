@@ -109,20 +109,24 @@ namespace
       wl_callback_destroy(cb);
       auto& state = *static_cast<app_state*>(data);
 
-      // Always request the next frame callback to keep the loop alive
+      // Request next callback before any commit so it's always armed
       auto* next = wl_surface_frame(state.surface);
       wl_callback_add_listener(next, &frame_listener, &state);
 
-      // Throttle: skip render if the compositor is firing faster than our target
+      // Throttle: if the compositor fires faster than our target, skip the
+      // expensive draw but still commit to arm the next frame callback.
       uint32_t const delta = time - state.last_frame_ms;
       if (state.last_frame_ms != 0 && delta < state.frame_interval)
+      {
+         wl_surface_commit(state.surface);
          return;
+      }
 
       // elapsed_ reflects actual frame-to-frame time, not just render cost
       elapsed_ = float(delta) / 1000.0f;
       state.last_frame_ms = time;
 
-      render(state);
+      render(state);  // render does attach + damage + commit
    }
 
    // -------------------------------------------------------------------------
