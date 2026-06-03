@@ -122,11 +122,8 @@ namespace
          return;
       }
 
-      // elapsed_ reflects actual frame-to-frame time, not just render cost
-      elapsed_ = float(delta) / 1000.0f;
       state.last_frame_ms = time;
-
-      render(state);  // render does attach + damage + commit
+      render(state);  // render does attach + damage + commit; measures elapsed_
    }
 
    // -------------------------------------------------------------------------
