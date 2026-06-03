@@ -63,8 +63,10 @@ namespace
    };
 
    // -------------------------------------------------------------------------
-   // Forward declaration for frame callback
+   // Forward declarations
    void frame_done(void* data, wl_callback* cb, uint32_t time);
+   void create_buffer(app_state& state);
+   void render(app_state& state);
 
    constexpr wl_callback_listener frame_listener = {
       .done = frame_done
