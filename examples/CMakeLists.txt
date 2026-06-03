@@ -9,6 +9,7 @@ if (UNIX AND NOT APPLE)
    find_package(PkgConfig REQUIRED)
    pkg_check_modules(wayland_client REQUIRED IMPORTED_TARGET wayland-client)
    pkg_check_modules(cairo_pkg      REQUIRED IMPORTED_TARGET cairo)
+   pkg_check_modules(libdecor       REQUIRED IMPORTED_TARGET libdecor-0)
 
    # Locate wayland-scanner and the protocol XML directory
    find_program(WAYLAND_SCANNER wayland-scanner REQUIRED)
@@ -177,7 +178,8 @@ function(add_example name)
       if (ARTIST_CAIRO)
          target_link_libraries(
             ${name}
-            wayland_xdg_shell
+            PkgConfig::libdecor
+            PkgConfig::wayland_client
             PkgConfig::cairo_pkg
          )
       else()
