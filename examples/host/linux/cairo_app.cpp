@@ -296,6 +296,14 @@ int run_app(
 
    libdecor_frame_set_title(state.frame, "Artist");
    libdecor_frame_set_app_id(state.frame, "org.cycfi.artist");
+
+   // Fixed-size window: remove resize and maximize
+   libdecor_frame_unset_capabilities(state.frame, LIBDECOR_ACTION_RESIZE);
+   int const w = int(state.size.x);
+   int const h = int(state.size.y);
+   libdecor_frame_set_min_content_size(state.frame, w, h);
+   libdecor_frame_set_max_content_size(state.frame, w, h);
+
    libdecor_frame_map(state.frame);
 
    // Pump until we get the configure event (sets configured = true)
