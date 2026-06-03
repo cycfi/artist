@@ -15,19 +15,20 @@ if (UNIX AND NOT APPLE)
 
    # Locate wayland-scanner and the protocol XML directory
    find_program(WAYLAND_SCANNER wayland-scanner REQUIRED)
+   # pkg_get_variable can be hidden by vcpkg; fall back to direct pkg-config call
    pkg_get_variable(WL_PROTOCOLS_DIR wayland-protocols pkgdatadir)
    if (NOT WL_PROTOCOLS_DIR)
-      find_path(WL_PROTOCOLS_DIR
-         NAMES stable/xdg-shell/xdg-shell.xml
-         PATHS
-            /usr/share/wayland-protocols
-            /usr/local/share/wayland-protocols
-         DOC "Wayland protocols XML directory"
+      execute_process(
+         COMMAND pkg-config --variable=pkgdatadir wayland-protocols
+         OUTPUT_VARIABLE WL_PROTOCOLS_DIR
+         OUTPUT_STRIP_TRAILING_WHITESPACE
+         ERROR_QUIET
       )
    endif()
    if (NOT WL_PROTOCOLS_DIR)
       message(FATAL_ERROR "Could not locate wayland-protocols XML directory")
    endif()
+   message(STATUS "Wayland protocols dir: ${WL_PROTOCOLS_DIR}")
 
    # Generate xdg-shell client header + private code into the build tree
    set(WL_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}/wayland-gen")
