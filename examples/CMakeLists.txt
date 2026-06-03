@@ -7,6 +7,27 @@ project(examples)
 
 if (UNIX AND NOT APPLE)
    find_package(PkgConfig REQUIRED)
+
+   # Linux host windowing backend. gtk3 is the long-standing default; wayland and
+   # x11 are native hosts (added, not replacing gtk3). Future siblings: gtk4, qt.
+   set(ARTIST_LINUX_HOST "gtk3" CACHE STRING "Linux host: gtk3, wayland, or x11")
+   set_property(CACHE ARTIST_LINUX_HOST PROPERTY STRINGS gtk3 wayland x11)
+endif()
+
+# ---------------------------------------------------------------------------
+# GTK3 host dependencies
+# ---------------------------------------------------------------------------
+if (UNIX AND NOT APPLE AND ARTIST_LINUX_HOST STREQUAL "gtk3")
+   pkg_check_modules(gtk3 REQUIRED IMPORTED_TARGET gtk+-3.0)
+   if (NOT ARTIST_CAIRO)
+      find_package(OpenGL REQUIRED COMPONENTS OpenGL)
+   endif()
+endif()
+
+# ---------------------------------------------------------------------------
+# Wayland host dependencies + protocol code generation
+# ---------------------------------------------------------------------------
+if (UNIX AND NOT APPLE AND ARTIST_LINUX_HOST STREQUAL "wayland")
    pkg_check_modules(wayland_client REQUIRED IMPORTED_TARGET wayland-client)
    pkg_check_modules(libdecor       REQUIRED IMPORTED_TARGET libdecor-0)
    if (ARTIST_CAIRO)
@@ -117,6 +138,21 @@ if (UNIX AND NOT APPLE)
    endif()
 endif()
 
+# ---------------------------------------------------------------------------
+# X11 host dependencies (native, no GTK / no PUGL)
+# ---------------------------------------------------------------------------
+if (UNIX AND NOT APPLE AND ARTIST_LINUX_HOST STREQUAL "x11")
+   pkg_check_modules(x11_pkg REQUIRED IMPORTED_TARGET x11)
+   if (ARTIST_CAIRO)
+      pkg_check_modules(cairo_xlib REQUIRED IMPORTED_TARGET cairo-xlib)
+   else()
+      find_package(OpenGL REQUIRED COMPONENTS OpenGL)
+      pkg_check_modules(egl_pkg REQUIRED IMPORTED_TARGET egl)
+   endif()
+   # NOTE: X11 host source files (host/linux/x11/) not yet implemented.
+   message(FATAL_ERROR "ARTIST_LINUX_HOST=x11 selected but the X11 host is not yet implemented")
+endif()
+
 file(
    GLOB artist_fonts ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/*.*
 )
@@ -210,46 +246,84 @@ function(add_example name)
 
    elseif (UNIX)
 
-      if (ARTIST_CAIRO)
-         set(LINUX_HOST host/linux/cairo_app.cpp)
-      else()
-         set(LINUX_HOST host/linux/skia_app.cpp)
-      endif()
+      # -------------------------------------------------------------------
+      # GTK3 host (default)
+      # -------------------------------------------------------------------
+      if (ARTIST_LINUX_HOST STREQUAL "gtk3")
 
-      add_executable(
-         ${name}
-         ${name}.cpp
-         ${LINUX_HOST}
-         print_elapsed.cpp
-      )
+         if (ARTIST_CAIRO)
+            set(LINUX_HOST host/linux/gtk3/cairo_app.cpp)
+         else()
+            set(LINUX_HOST host/linux/gtk3/skia_app.cpp)
+         endif()
 
-      target_include_directories(${name} PRIVATE "${WL_GEN_DIR}")
-
-      if (ARTIST_CAIRO)
-         target_link_libraries(
+         add_executable(
             ${name}
-            wayland_xdg_shell
-            PkgConfig::libdecor
-            PkgConfig::wayland_client
-            PkgConfig::cairo_pkg
+            ${name}.cpp
+            ${LINUX_HOST}
+            print_elapsed.cpp
          )
-      else()
-         target_link_libraries(
+
+         if (ARTIST_CAIRO)
+            target_link_libraries(${name} PkgConfig::gtk3)
+         else()
+            target_link_libraries(${name} PkgConfig::gtk3 OpenGL::GL)
+         endif()
+
+      # -------------------------------------------------------------------
+      # Wayland host (native, libdecor)
+      # -------------------------------------------------------------------
+      elseif (ARTIST_LINUX_HOST STREQUAL "wayland")
+
+         if (ARTIST_CAIRO)
+            set(LINUX_HOST host/linux/wayland/cairo_app.cpp)
+         else()
+            set(LINUX_HOST host/linux/wayland/skia_app.cpp)
+         endif()
+
+         add_executable(
             ${name}
-            wayland_xdg_shell
-            PkgConfig::libdecor
-            PkgConfig::wayland_client
-            PkgConfig::wayland_egl
-            PkgConfig::egl_pkg
-            OpenGL::GL
+            ${name}.cpp
+            ${LINUX_HOST}
+            print_elapsed.cpp
          )
-         # Skia statically bundles its own libpng, exporting png_* into the
-         # executable's dynamic symbol table. When libdecor dlopens its GTK
-         # plugin, the plugin's system libpng clashes with those symbols and
-         # libdecor rejects it ("conflicting symbol png_free"). Hide all
-         # static-library symbols from the dynamic table so the plugin's
-         # libpng resolves cleanly; Skia's own png_* stay resolved internally.
-         target_link_options(${name} PRIVATE -Wl,--exclude-libs,ALL)
+
+         target_include_directories(${name} PRIVATE "${WL_GEN_DIR}")
+
+         if (ARTIST_CAIRO)
+            target_link_libraries(
+               ${name}
+               wayland_xdg_shell
+               PkgConfig::libdecor
+               PkgConfig::wayland_client
+               PkgConfig::cairo_pkg
+            )
+         else()
+            target_link_libraries(
+               ${name}
+               wayland_xdg_shell
+               PkgConfig::libdecor
+               PkgConfig::wayland_client
+               PkgConfig::wayland_egl
+               PkgConfig::egl_pkg
+               OpenGL::GL
+            )
+            # Skia statically bundles its own libpng, exporting png_* into the
+            # executable's dynamic symbol table. When libdecor dlopens its GTK
+            # plugin, the plugin's system libpng clashes with those symbols and
+            # libdecor rejects it ("conflicting symbol png_free"). Hide all
+            # static-library symbols from the dynamic table so the plugin's
+            # libpng resolves cleanly; Skia's own png_* stay resolved internally.
+            target_link_options(${name} PRIVATE -Wl,--exclude-libs,ALL)
+         endif()
+
+      # -------------------------------------------------------------------
+      # X11 host (native, no GTK / no PUGL) — not yet implemented
+      # -------------------------------------------------------------------
+      elseif (ARTIST_LINUX_HOST STREQUAL "x11")
+
+         message(FATAL_ERROR "ARTIST_LINUX_HOST=x11 selected but the X11 host is not yet implemented")
+
       endif()
 
    endif()
