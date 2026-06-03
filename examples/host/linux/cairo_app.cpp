@@ -231,7 +231,7 @@ namespace
 
    void libdecor_frame_commit(libdecor_frame* /*frame*/, void* /*data*/) {}
 
-   constexpr libdecor_frame_interface frame_iface = {
+   libdecor_frame_interface frame_iface = {
       .configure     = libdecor_frame_configure,
       .close         = libdecor_frame_close,
       .commit        = libdecor_frame_commit,
@@ -244,7 +244,7 @@ namespace
       throw std::runtime_error(std::string("libdecor error: ") + msg);
    }
 
-   constexpr libdecor_interface decor_iface = {
+   libdecor_interface decor_iface = {
       .error = libdecor_error,
    };
 }
