@@ -6,8 +6,7 @@
 #include "../../app.hpp"
 #include <wayland-client.h>
 #include <wayland-egl.h>
-#include "xdg-shell-client-protocol.h"
-#include "xdg-decoration-unstable-v1-client-protocol.h"
+#include <libdecor.h>
 #include "fractional-scale-v1-client-protocol.h"
 #include "viewporter-client-protocol.h"
 #include <EGL/egl.h>
@@ -42,15 +41,13 @@ namespace
       wl_display*                     display      = nullptr;
       wl_registry*                    registry     = nullptr;
       wl_compositor*                  compositor   = nullptr;
-      xdg_wm_base*                    wm_base      = nullptr;
-      zxdg_decoration_manager_v1*     deco_manager = nullptr;
       wp_viewporter*                  viewporter   = nullptr;
       wp_fractional_scale_manager_v1* frac_manager = nullptr;
 
-      // Surfaces
+      // libdecor handles xdg-shell and decorations
+      libdecor*                       decor        = nullptr;
+      libdecor_frame*                 frame        = nullptr;
       wl_surface*                     surface      = nullptr;
-      xdg_surface*                    xdg_surf     = nullptr;
-      xdg_toplevel*                   toplevel     = nullptr;
       wp_viewport*                    viewport     = nullptr;
       wp_fractional_scale_v1*         frac_scale   = nullptr;
 
@@ -160,56 +157,6 @@ namespace
    };
 
    // -------------------------------------------------------------------------
-   // xdg_wm_base — must respond to ping
-   void wm_base_ping(void* /*data*/, xdg_wm_base* wm_base, uint32_t serial)
-   {
-      xdg_wm_base_pong(wm_base, serial);
-   }
-
-   constexpr xdg_wm_base_listener wm_base_listener = {
-      .ping = wm_base_ping
-   };
-
-   // -------------------------------------------------------------------------
-   // xdg_surface — ack configure then do first render
-   void xdg_surface_configure(void* data, xdg_surface* xdg_surf, uint32_t serial)
-   {
-      auto& state = *static_cast<app_state*>(data);
-      xdg_surface_ack_configure(xdg_surf, serial);
-
-      // Create EGL window + Skia on first configure, after xdg-surface is
-      // fully set up so server-side decorations are guaranteed to apply.
-      if (state.egl_window == nullptr)
-      {
-         init_egl_window(state);
-         init_skia(state);
-         create_skia_surface(state);
-      }
-
-      state.configured = true;
-      render(state);
-   }
-
-   constexpr xdg_surface_listener xdg_surface_lst = {
-      .configure = xdg_surface_configure
-   };
-
-   // -------------------------------------------------------------------------
-   // xdg_toplevel
-   void toplevel_configure(void* /*data*/, xdg_toplevel*,
-                           int32_t /*w*/, int32_t /*h*/, wl_array*) {}
-
-   void toplevel_close(void* data, xdg_toplevel*)
-   {
-      static_cast<app_state*>(data)->running = false;
-   }
-
-   constexpr xdg_toplevel_listener toplevel_listener = {
-      .configure = toplevel_configure,
-      .close     = toplevel_close
-   };
-
-   // -------------------------------------------------------------------------
    // wl_registry
    void registry_global(void* data, wl_registry* registry,
                         uint32_t name, const char* interface, uint32_t /*version*/)
@@ -219,15 +166,6 @@ namespace
       if (strcmp(interface, wl_compositor_interface.name) == 0)
          state.compositor = static_cast<wl_compositor*>(
             wl_registry_bind(registry, name, &wl_compositor_interface, 4));
-      else if (strcmp(interface, xdg_wm_base_interface.name) == 0)
-      {
-         state.wm_base = static_cast<xdg_wm_base*>(
-            wl_registry_bind(registry, name, &xdg_wm_base_interface, 1));
-         xdg_wm_base_add_listener(state.wm_base, &wm_base_listener, nullptr);
-      }
-      else if (strcmp(interface, zxdg_decoration_manager_v1_interface.name) == 0)
-         state.deco_manager = static_cast<zxdg_decoration_manager_v1*>(
-            wl_registry_bind(registry, name, &zxdg_decoration_manager_v1_interface, 1));
       else if (strcmp(interface, wp_viewporter_interface.name) == 0)
          state.viewporter = static_cast<wp_viewporter*>(
             wl_registry_bind(registry, name, &wp_viewporter_interface, 1));
@@ -276,7 +214,7 @@ namespace
    }
 
    // -------------------------------------------------------------------------
-   // EGL: create window surface — deferred to after xdg-surface is configured
+   // EGL: create window surface — deferred to first configure
    void init_egl_window(app_state& state)
    {
       int const w = int(std::ceil(state.size.x * state.scale));
@@ -332,6 +270,60 @@ namespace
       if (!state.skia_surface)
          throw std::runtime_error("SkSurfaces::WrapBackendRenderTarget failed");
    }
+
+   // -------------------------------------------------------------------------
+   // libdecor frame callbacks
+   void libdecor_frame_configure(
+      libdecor_frame*         frame,
+      libdecor_configuration* config,
+      void*                   data)
+   {
+      auto& state = *static_cast<app_state*>(data);
+
+      int w = int(state.size.x);
+      int h = int(state.size.y);
+      libdecor_configuration_get_content_size(config, frame, &w, &h);
+      state.size = {float(w), float(h)};
+
+      auto* st = libdecor_state_new(w, h);
+      libdecor_frame_commit(frame, st, config);
+      libdecor_state_free(st);
+
+      // Create EGL window + Skia on first configure
+      if (state.egl_window == nullptr)
+      {
+         init_egl_window(state);
+         init_skia(state);
+      }
+
+      create_skia_surface(state);
+      state.configured = true;
+      render(state);
+   }
+
+   void libdecor_frame_close(libdecor_frame* /*frame*/, void* data)
+   {
+      static_cast<app_state*>(data)->running = false;
+   }
+
+   void libdecor_frame_commit(libdecor_frame* /*frame*/, void* /*data*/) {}
+
+   libdecor_frame_interface frame_iface = {
+      .configure = libdecor_frame_configure,
+      .close     = libdecor_frame_close,
+      .commit    = libdecor_frame_commit,
+   };
+
+   // -------------------------------------------------------------------------
+   // libdecor error handler
+   void libdecor_error(libdecor* /*ctx*/, libdecor_error /*err*/, const char* msg)
+   {
+      throw std::runtime_error(std::string("libdecor error: ") + msg);
+   }
+
+   libdecor_interface decor_iface = {
+      .error = libdecor_error,
+   };
 }
 
 namespace cycfi::artist
@@ -371,16 +363,14 @@ int run_app(
    wl_display_roundtrip(state.display);
    wl_display_roundtrip(state.display);
 
-   if (!state.compositor || !state.wm_base)
+   if (!state.compositor)
       throw std::runtime_error("Missing required Wayland globals");
 
    // EGL display + config + context (window surface deferred to configure)
    init_egl(state);
 
-   // Surface chain
-   state.surface  = wl_compositor_create_surface(state.compositor);
-
-   // Fractional scale + viewport for HiDPI
+   // Surface + fractional scale + viewport
+   state.surface = wl_compositor_create_surface(state.compositor);
    if (state.frac_manager && state.viewporter)
    {
       state.frac_scale = wp_fractional_scale_manager_v1_get_fractional_scale(
@@ -390,38 +380,22 @@ int run_app(
       state.viewport = wp_viewporter_get_viewport(state.viewporter, state.surface);
    }
 
-   state.xdg_surf = xdg_wm_base_get_xdg_surface(state.wm_base, state.surface);
-   state.toplevel = xdg_surface_get_toplevel(state.xdg_surf);
+   // libdecor window
+   state.decor = libdecor_new(state.display, &decor_iface);
+   state.frame = libdecor_decorate(state.decor, state.surface, &frame_iface, &state);
 
-   xdg_surface_add_listener(state.xdg_surf, &xdg_surface_lst, &state);
-   xdg_toplevel_add_listener(state.toplevel, &toplevel_listener, &state);
+   libdecor_frame_set_title(state.frame, "Artist");
+   libdecor_frame_set_app_id(state.frame, "org.cycfi.artist");
+   libdecor_frame_unset_capabilities(state.frame, LIBDECOR_ACTION_RESIZE);
+   libdecor_frame_set_min_content_size(state.frame, int(state.size.x), int(state.size.y));
+   libdecor_frame_set_max_content_size(state.frame, int(state.size.x), int(state.size.y));
+   libdecor_frame_map(state.frame);
 
-   xdg_toplevel_set_title(state.toplevel, "Artist");
-   xdg_toplevel_set_app_id(state.toplevel, "org.cycfi.artist");
-
-   // Fixed-size window: remove resize and maximize
-   xdg_toplevel_set_min_size(state.toplevel, int(state.size.x), int(state.size.y));
-   xdg_toplevel_set_max_size(state.toplevel, int(state.size.x), int(state.size.y));
-
-   // Request server-side decorations (title bar, close/minimise buttons).
-   // GNOME 43+ supports this; falls back gracefully if unavailable.
-   if (state.deco_manager)
-   {
-      auto* deco = zxdg_decoration_manager_v1_get_toplevel_decoration(
-         state.deco_manager, state.toplevel);
-      zxdg_toplevel_decoration_v1_set_mode(
-         deco, ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
-   }
-
-   // Commit to trigger the configure event
-   wl_surface_commit(state.surface);
-   wl_display_roundtrip(state.display);
-
-   // Pump until fully configured
+   // Pump until configure
    while (!state.configured)
    {
-      if (wl_display_dispatch(state.display) < 0)
-         throw std::runtime_error("wl_display_dispatch failed during init");
+      if (libdecor_dispatch(state.decor, -1) < 0)
+         throw std::runtime_error("libdecor_dispatch failed during init");
    }
 
    if (animate)
@@ -432,8 +406,11 @@ int run_app(
    }
 
    // Main event loop
-   while (state.running && wl_display_dispatch(state.display) != -1)
-   {}
+   while (state.running)
+   {
+      if (libdecor_dispatch(state.decor, -1) < 0)
+         break;
+   }
 
    // Tear down
    state.skia_surface.reset();
@@ -451,10 +428,8 @@ int run_app(
    if (state.viewport)      wp_viewport_destroy(state.viewport);
    if (state.frac_manager)  wp_fractional_scale_manager_v1_destroy(state.frac_manager);
    if (state.viewporter)    wp_viewporter_destroy(state.viewporter);
-   if (state.toplevel)      xdg_toplevel_destroy(state.toplevel);
-   if (state.xdg_surf)      xdg_surface_destroy(state.xdg_surf);
-   if (state.deco_manager)  zxdg_decoration_manager_v1_destroy(state.deco_manager);
-   if (state.wm_base)       xdg_wm_base_destroy(state.wm_base);
+   libdecor_frame_unref(state.frame);
+   libdecor_unref(state.decor);
    if (state.surface)       wl_surface_destroy(state.surface);
    if (state.compositor)    wl_compositor_destroy(state.compositor);
    wl_registry_destroy(state.registry);

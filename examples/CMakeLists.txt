@@ -237,6 +237,7 @@ function(add_example name)
          target_link_libraries(
             ${name}
             wayland_xdg_shell
+            PkgConfig::libdecor
             PkgConfig::wayland_client
             PkgConfig::wayland_egl
             PkgConfig::egl_pkg
