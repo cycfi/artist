@@ -50,6 +50,10 @@ namespace
       bool           running      = true;
       bool           configured   = false;
       bool           buf_released = true;
+
+      // Frame timing
+      uint32_t       last_frame_ms  = 0;       // compositor timestamp of last render
+      uint32_t       frame_interval = 1000/60; // target: 60 fps
    };
 
    // -------------------------------------------------------------------------
@@ -100,12 +104,24 @@ namespace
 
    // -------------------------------------------------------------------------
    // wl_callback listener — drives the animation loop
-   void frame_done(void* data, wl_callback* cb, uint32_t /*time*/)
+   void frame_done(void* data, wl_callback* cb, uint32_t time)
    {
       wl_callback_destroy(cb);
       auto& state = *static_cast<app_state*>(data);
+
+      // Always request the next frame callback to keep the loop alive
       auto* next = wl_surface_frame(state.surface);
       wl_callback_add_listener(next, &frame_listener, &state);
+
+      // Throttle: skip render if the compositor is firing faster than our target
+      uint32_t const delta = time - state.last_frame_ms;
+      if (state.last_frame_ms != 0 && delta < state.frame_interval)
+         return;
+
+      // elapsed_ reflects actual frame-to-frame time, not just render cost
+      elapsed_ = float(delta) / 1000.0f;
+      state.last_frame_ms = time;
+
       render(state);
    }
 
