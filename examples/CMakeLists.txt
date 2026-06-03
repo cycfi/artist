@@ -149,8 +149,6 @@ if (UNIX AND NOT APPLE AND ARTIST_LINUX_HOST STREQUAL "x11")
       find_package(OpenGL REQUIRED COMPONENTS OpenGL)
       pkg_check_modules(egl_pkg REQUIRED IMPORTED_TARGET egl)
    endif()
-   # NOTE: X11 host source files (host/linux/x11/) not yet implemented.
-   message(FATAL_ERROR "ARTIST_LINUX_HOST=x11 selected but the X11 host is not yet implemented")
 endif()
 
 file(
@@ -318,11 +316,38 @@ function(add_example name)
          endif()
 
       # -------------------------------------------------------------------
-      # X11 host (native, no GTK / no PUGL) — not yet implemented
+      # X11 host (native, no GTK / no PUGL)
       # -------------------------------------------------------------------
       elseif (ARTIST_LINUX_HOST STREQUAL "x11")
 
-         message(FATAL_ERROR "ARTIST_LINUX_HOST=x11 selected but the X11 host is not yet implemented")
+         if (ARTIST_CAIRO)
+            set(LINUX_HOST host/linux/x11/cairo_app.cpp)
+         else()
+            set(LINUX_HOST host/linux/x11/skia_app.cpp)
+         endif()
+
+         add_executable(
+            ${name}
+            ${name}.cpp
+            ${LINUX_HOST}
+            print_elapsed.cpp
+         )
+
+         if (ARTIST_CAIRO)
+            target_link_libraries(
+               ${name}
+               PkgConfig::x11_pkg
+               PkgConfig::cairo_xlib
+            )
+         else()
+            target_link_libraries(
+               ${name}
+               PkgConfig::x11_pkg
+               PkgConfig::egl_pkg
+               OpenGL::GL
+            )
+            target_link_options(${name} PRIVATE -Wl,--exclude-libs,ALL)
+         endif()
 
       endif()
 
