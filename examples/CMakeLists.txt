@@ -243,6 +243,13 @@ function(add_example name)
             PkgConfig::egl_pkg
             OpenGL::GL
          )
+         # Skia statically bundles its own libpng, exporting png_* into the
+         # executable's dynamic symbol table. When libdecor dlopens its GTK
+         # plugin, the plugin's system libpng clashes with those symbols and
+         # libdecor rejects it ("conflicting symbol png_free"). Hide all
+         # static-library symbols from the dynamic table so the plugin's
+         # libpng resolves cleanly; Skia's own png_* stay resolved internally.
+         target_link_options(${name} PRIVATE -Wl,--exclude-libs,ALL)
       endif()
 
    endif()
