@@ -22,6 +22,10 @@ if (UNIX AND NOT APPLE)
    set(XDG_SHELL_HEADER "${WL_GEN_DIR}/xdg-shell-client-protocol.h")
    set(XDG_SHELL_SRC    "${WL_GEN_DIR}/xdg-shell-protocol.c")
 
+   set(XDG_DECO_XML    "${WL_PROTOCOLS_DIR}/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml")
+   set(XDG_DECO_HEADER "${WL_GEN_DIR}/xdg-decoration-unstable-v1-client-protocol.h")
+   set(XDG_DECO_SRC    "${WL_GEN_DIR}/xdg-decoration-unstable-v1-protocol.c")
+
    add_custom_command(
       OUTPUT  "${XDG_SHELL_HEADER}"
       COMMAND "${WAYLAND_SCANNER}" client-header "${XDG_SHELL_XML}" "${XDG_SHELL_HEADER}"
@@ -34,9 +38,24 @@ if (UNIX AND NOT APPLE)
       DEPENDS "${XDG_SHELL_XML}"
       COMMENT "Generating xdg-shell protocol code"
    )
+   add_custom_command(
+      OUTPUT  "${XDG_DECO_HEADER}"
+      COMMAND "${WAYLAND_SCANNER}" client-header "${XDG_DECO_XML}" "${XDG_DECO_HEADER}"
+      DEPENDS "${XDG_DECO_XML}"
+      COMMENT "Generating xdg-decoration client header"
+   )
+   add_custom_command(
+      OUTPUT  "${XDG_DECO_SRC}"
+      COMMAND "${WAYLAND_SCANNER}" private-code "${XDG_DECO_XML}" "${XDG_DECO_SRC}"
+      DEPENDS "${XDG_DECO_XML}"
+      COMMENT "Generating xdg-decoration protocol code"
+   )
 
    # Small static lib so the generated files are built once and shared
-   add_library(wayland_xdg_shell STATIC "${XDG_SHELL_SRC}" "${XDG_SHELL_HEADER}")
+   add_library(wayland_xdg_shell STATIC
+      "${XDG_SHELL_SRC}" "${XDG_SHELL_HEADER}"
+      "${XDG_DECO_SRC}"  "${XDG_DECO_HEADER}"
+   )
    target_include_directories(wayland_xdg_shell PUBLIC "${WL_GEN_DIR}")
    target_link_libraries(wayland_xdg_shell PUBLIC PkgConfig::wayland_client)
 

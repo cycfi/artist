@@ -6,6 +6,7 @@
 #include "../../app.hpp"
 #include <wayland-client.h>
 #include "xdg-shell-client-protocol.h"
+#include "xdg-decoration-unstable-v1-client-protocol.h"
 #include <cairo.h>
 #include <sys/mman.h>
 #include <fcntl.h>
@@ -22,12 +23,13 @@ namespace
    struct app_state
    {
       // Wayland globals
-      wl_display*      display      = nullptr;
-      wl_registry*     registry     = nullptr;
-      wl_compositor*   compositor   = nullptr;
-      wl_shm*          shm          = nullptr;
-      xdg_wm_base*     wm_base      = nullptr;
-      wl_output*       output       = nullptr;
+      wl_display*                    display      = nullptr;
+      wl_registry*                   registry     = nullptr;
+      wl_compositor*                 compositor   = nullptr;
+      wl_shm*                        shm          = nullptr;
+      xdg_wm_base*                   wm_base      = nullptr;
+      wl_output*                     output       = nullptr;
+      zxdg_decoration_manager_v1*    deco_manager = nullptr;
 
       // Surface objects
       wl_surface*      surface      = nullptr;
@@ -208,6 +210,11 @@ namespace
             wl_registry_bind(registry, name, &wl_output_interface, 2));
          wl_output_add_listener(state.output, &output_listener, &state);
       }
+      else if (strcmp(interface, zxdg_decoration_manager_v1_interface.name) == 0)
+      {
+         state.deco_manager = static_cast<zxdg_decoration_manager_v1*>(
+            wl_registry_bind(registry, name, &zxdg_decoration_manager_v1_interface, 1));
+      }
    }
 
    void registry_global_remove(void*, wl_registry*, uint32_t) {}
@@ -302,6 +309,16 @@ int run_app(
    xdg_toplevel_set_title(state.toplevel, "Artist");
    xdg_toplevel_set_app_id(state.toplevel, "org.cycfi.artist");
 
+   // Request server-side decorations (title bar, close button, etc.).
+   // Falls back gracefully if the compositor doesn't support the protocol.
+   if (state.deco_manager)
+   {
+      auto* deco = zxdg_decoration_manager_v1_get_toplevel_decoration(
+         state.deco_manager, state.toplevel);
+      zxdg_toplevel_decoration_v1_set_mode(
+         deco, ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
+   }
+
    // Initial commit triggers the configure event
    wl_surface_commit(state.surface);
    wl_display_roundtrip(state.display);
@@ -331,8 +348,9 @@ int run_app(
    if (state.toplevel)   xdg_toplevel_destroy(state.toplevel);
    if (state.xdg_surf)   xdg_surface_destroy(state.xdg_surf);
    if (state.surface)    wl_surface_destroy(state.surface);
-   if (state.output)     wl_output_destroy(state.output);
-   if (state.wm_base)    xdg_wm_base_destroy(state.wm_base);
+   if (state.output)       wl_output_destroy(state.output);
+   if (state.deco_manager) zxdg_decoration_manager_v1_destroy(state.deco_manager);
+   if (state.wm_base)      xdg_wm_base_destroy(state.wm_base);
    if (state.shm)        wl_shm_destroy(state.shm);
    if (state.compositor) wl_compositor_destroy(state.compositor);
    wl_registry_destroy(state.registry);
