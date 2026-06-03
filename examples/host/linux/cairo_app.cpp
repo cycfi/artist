@@ -6,7 +6,10 @@
 #include "../../app.hpp"
 #include <wayland-client.h>
 #include <libdecor.h>
+#include "fractional-scale-v1-client-protocol.h"
+#include "viewporter-client-protocol.h"
 #include <cairo.h>
+#include <cmath>
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -22,16 +25,19 @@ namespace
    struct app_state
    {
       // Wayland globals
-      wl_display*    display    = nullptr;
-      wl_registry*   registry   = nullptr;
-      wl_compositor* compositor = nullptr;
-      wl_shm*        shm        = nullptr;
-      wl_output*     output     = nullptr;
+      wl_display*                    display       = nullptr;
+      wl_registry*                   registry      = nullptr;
+      wl_compositor*                 compositor    = nullptr;
+      wl_shm*                        shm           = nullptr;
+      wp_viewporter*                 viewporter    = nullptr;
+      wp_fractional_scale_manager_v1* frac_manager = nullptr;
 
       // libdecor handles xdg-shell and decorations
-      libdecor*       decor   = nullptr;
-      libdecor_frame* frame   = nullptr;
-      wl_surface*     surface = nullptr;
+      libdecor*                      decor         = nullptr;
+      libdecor_frame*                frame         = nullptr;
+      wl_surface*                    surface       = nullptr;
+      wp_viewport*                   viewport      = nullptr;
+      wp_fractional_scale_v1*        frac_scale    = nullptr;
 
       // Shared-memory buffer
       wl_shm_pool*   pool         = nullptr;
@@ -42,7 +48,7 @@ namespace
 
       // App parameters
       extent         size         = {};
-      int            scale        = 1;
+      float          scale        = 1.0f;  // fractional scale (1/120ths → float)
       color          bkd          = colors::white;
       bool           animate      = false;
 
@@ -71,8 +77,8 @@ namespace
       if (!state.configured || !state.buf_released)
          return;
 
-      int const w = int(state.size.x) * state.scale;
-      int const h = int(state.size.y) * state.scale;
+      int const w = int(std::ceil(state.size.x * state.scale));
+      int const h = int(std::ceil(state.size.y * state.scale));
 
       auto start = std::chrono::steady_clock::now();
 
@@ -94,8 +100,13 @@ namespace
       auto stop = std::chrono::steady_clock::now();
       elapsed_ = std::chrono::duration<double>{stop - start}.count();
 
+      // viewport maps the physical buffer back to logical size, handling
+      // both integer and fractional scales without wl_surface_set_buffer_scale.
+      if (state.viewport)
+         wp_viewport_set_destination(state.viewport,
+            int(state.size.x), int(state.size.y));
+
       state.buf_released = false;
-      wl_surface_set_buffer_scale(state.surface, state.scale);
       wl_surface_attach(state.surface, state.buffer, 0, 0);
       wl_surface_damage_buffer(state.surface, 0, 0, w, h);
       wl_surface_commit(state.surface);
@@ -138,25 +149,27 @@ namespace
    };
 
    // -------------------------------------------------------------------------
-   // wl_output listener — reads integer HiDPI scale factor
-   void output_geometry(void*, wl_output*, int32_t, int32_t, int32_t, int32_t,
-                        int32_t, const char*, const char*, int32_t) {}
-   void output_mode(void*, wl_output*, uint32_t, int32_t, int32_t, int32_t) {}
-   void output_done(void*, wl_output*) {}
-   void output_scale(void* data, wl_output*, int32_t factor)
+   // wp_fractional_scale_v1 listener — preferred_scale is in 1/120ths units
+   // (120 = 1.0×, 180 = 1.5×, 240 = 2.0×, etc.)
+   void frac_scale_preferred(void* data, wp_fractional_scale_v1* /*frac*/,
+                             uint32_t scale_120)
    {
-      static_cast<app_state*>(data)->scale = factor;
+      auto& state = *static_cast<app_state*>(data);
+      state.scale = float(scale_120) / 120.0f;
+      // Recreate buffer at new physical size and redraw
+      if (state.configured)
+      {
+         create_buffer(state);
+         render(state);
+      }
    }
 
-   constexpr wl_output_listener output_listener = {
-      .geometry = output_geometry,
-      .mode     = output_mode,
-      .done     = output_done,
-      .scale    = output_scale
+   constexpr wp_fractional_scale_v1_listener frac_scale_listener = {
+      .preferred_scale = frac_scale_preferred
    };
 
    // -------------------------------------------------------------------------
-   // wl_registry listener — binds compositor, shm, output
+   // wl_registry listener — binds compositor, shm, viewporter, fractional scale
    void registry_global(void* data, wl_registry* registry,
                         uint32_t name, const char* interface, uint32_t /*version*/)
    {
@@ -168,12 +181,12 @@ namespace
       else if (strcmp(interface, wl_shm_interface.name) == 0)
          state.shm = static_cast<wl_shm*>(
             wl_registry_bind(registry, name, &wl_shm_interface, 1));
-      else if (strcmp(interface, wl_output_interface.name) == 0)
-      {
-         state.output = static_cast<wl_output*>(
-            wl_registry_bind(registry, name, &wl_output_interface, 2));
-         wl_output_add_listener(state.output, &output_listener, &state);
-      }
+      else if (strcmp(interface, wp_viewporter_interface.name) == 0)
+         state.viewporter = static_cast<wp_viewporter*>(
+            wl_registry_bind(registry, name, &wp_viewporter_interface, 1));
+      else if (strcmp(interface, wp_fractional_scale_manager_v1_interface.name) == 0)
+         state.frac_manager = static_cast<wp_fractional_scale_manager_v1*>(
+            wl_registry_bind(registry, name, &wp_fractional_scale_manager_v1_interface, 1));
    }
 
    void registry_global_remove(void*, wl_registry*, uint32_t) {}
@@ -187,8 +200,9 @@ namespace
    // Allocate a shared-memory buffer for the current logical size × scale
    void create_buffer(app_state& state)
    {
-      int const    w      = int(state.size.x) * state.scale;
-      int const    h      = int(state.size.y) * state.scale;
+      // Physical pixel size: round up to avoid sub-pixel gaps
+      int const    w      = int(std::ceil(state.size.x * state.scale));
+      int const    h      = int(std::ceil(state.size.y * state.scale));
       int const    stride = w * 4;
       size_t const size   = size_t(stride) * h;
 
@@ -309,7 +323,19 @@ int run_app(
    // libdecor manages xdg-shell and window decorations
    state.decor   = libdecor_new(state.display, &decor_iface);
    state.surface = wl_compositor_create_surface(state.compositor);
-   state.frame   = libdecor_decorate(state.decor, state.surface, &frame_iface, &state);
+
+   // Attach fractional scale + viewport for proper HiDPI support.
+   // Falls back gracefully to scale=1.0 if the compositor lacks the protocol.
+   if (state.frac_manager && state.viewporter)
+   {
+      state.frac_scale = wp_fractional_scale_manager_v1_get_fractional_scale(
+         state.frac_manager, state.surface);
+      wp_fractional_scale_v1_add_listener(
+         state.frac_scale, &frac_scale_listener, &state);
+      state.viewport = wp_viewporter_get_viewport(state.viewporter, state.surface);
+   }
+
+   state.frame = libdecor_decorate(state.decor, state.surface, &frame_iface, &state);
 
    libdecor_frame_set_title(state.frame, "Artist");
    libdecor_frame_set_app_id(state.frame, "org.cycfi.artist");
@@ -345,16 +371,19 @@ int run_app(
    }
 
    // Tear down
-   if (state.buffer)    wl_buffer_destroy(state.buffer);
-   if (state.pool)      wl_shm_pool_destroy(state.pool);
-   if (state.shm_data)  munmap(state.shm_data, state.shm_size);
-   if (state.shm_fd >= 0) close(state.shm_fd);
+   if (state.buffer)       wl_buffer_destroy(state.buffer);
+   if (state.pool)         wl_shm_pool_destroy(state.pool);
+   if (state.shm_data)     munmap(state.shm_data, state.shm_size);
+   if (state.shm_fd >= 0)  close(state.shm_fd);
+   if (state.frac_scale)   wp_fractional_scale_v1_destroy(state.frac_scale);
+   if (state.viewport)     wp_viewport_destroy(state.viewport);
+   if (state.frac_manager) wp_fractional_scale_manager_v1_destroy(state.frac_manager);
+   if (state.viewporter)   wp_viewporter_destroy(state.viewporter);
    libdecor_frame_unref(state.frame);
    libdecor_unref(state.decor);
-   if (state.surface)   wl_surface_destroy(state.surface);
-   if (state.output)    wl_output_destroy(state.output);
-   if (state.shm)       wl_shm_destroy(state.shm);
-   if (state.compositor) wl_compositor_destroy(state.compositor);
+   if (state.surface)      wl_surface_destroy(state.surface);
+   if (state.shm)          wl_shm_destroy(state.shm);
+   if (state.compositor)   wl_compositor_destroy(state.compositor);
    wl_registry_destroy(state.registry);
    wl_display_disconnect(state.display);
 

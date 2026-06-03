@@ -27,6 +27,14 @@ if (UNIX AND NOT APPLE)
    set(XDG_DECO_HEADER "${WL_GEN_DIR}/xdg-decoration-unstable-v1-client-protocol.h")
    set(XDG_DECO_SRC    "${WL_GEN_DIR}/xdg-decoration-unstable-v1-protocol.c")
 
+   set(FRAC_SCALE_XML    "${WL_PROTOCOLS_DIR}/staging/fractional-scale/fractional-scale-v1.xml")
+   set(FRAC_SCALE_HEADER "${WL_GEN_DIR}/fractional-scale-v1-client-protocol.h")
+   set(FRAC_SCALE_SRC    "${WL_GEN_DIR}/fractional-scale-v1-protocol.c")
+
+   set(VIEWPORTER_XML    "${WL_PROTOCOLS_DIR}/stable/viewporter/viewporter.xml")
+   set(VIEWPORTER_HEADER "${WL_GEN_DIR}/viewporter-client-protocol.h")
+   set(VIEWPORTER_SRC    "${WL_GEN_DIR}/viewporter-protocol.c")
+
    add_custom_command(
       OUTPUT  "${XDG_SHELL_HEADER}"
       COMMAND "${WAYLAND_SCANNER}" client-header "${XDG_SHELL_XML}" "${XDG_SHELL_HEADER}"
@@ -52,10 +60,37 @@ if (UNIX AND NOT APPLE)
       COMMENT "Generating xdg-decoration protocol code"
    )
 
+   add_custom_command(
+      OUTPUT  "${FRAC_SCALE_HEADER}"
+      COMMAND "${WAYLAND_SCANNER}" client-header "${FRAC_SCALE_XML}" "${FRAC_SCALE_HEADER}"
+      DEPENDS "${FRAC_SCALE_XML}"
+      COMMENT "Generating fractional-scale client header"
+   )
+   add_custom_command(
+      OUTPUT  "${FRAC_SCALE_SRC}"
+      COMMAND "${WAYLAND_SCANNER}" private-code "${FRAC_SCALE_XML}" "${FRAC_SCALE_SRC}"
+      DEPENDS "${FRAC_SCALE_XML}"
+      COMMENT "Generating fractional-scale protocol code"
+   )
+   add_custom_command(
+      OUTPUT  "${VIEWPORTER_HEADER}"
+      COMMAND "${WAYLAND_SCANNER}" client-header "${VIEWPORTER_XML}" "${VIEWPORTER_HEADER}"
+      DEPENDS "${VIEWPORTER_XML}"
+      COMMENT "Generating viewporter client header"
+   )
+   add_custom_command(
+      OUTPUT  "${VIEWPORTER_SRC}"
+      COMMAND "${WAYLAND_SCANNER}" private-code "${VIEWPORTER_XML}" "${VIEWPORTER_SRC}"
+      DEPENDS "${VIEWPORTER_XML}"
+      COMMENT "Generating viewporter protocol code"
+   )
+
    # Small static lib so the generated files are built once and shared
    add_library(wayland_xdg_shell STATIC
-      "${XDG_SHELL_SRC}" "${XDG_SHELL_HEADER}"
-      "${XDG_DECO_SRC}"  "${XDG_DECO_HEADER}"
+      "${XDG_SHELL_SRC}"    "${XDG_SHELL_HEADER}"
+      "${XDG_DECO_SRC}"     "${XDG_DECO_HEADER}"
+      "${FRAC_SCALE_SRC}"   "${FRAC_SCALE_HEADER}"
+      "${VIEWPORTER_SRC}"   "${VIEWPORTER_HEADER}"
    )
    target_include_directories(wayland_xdg_shell PUBLIC "${WL_GEN_DIR}")
    target_link_libraries(wayland_xdg_shell PUBLIC PkgConfig::wayland_client)
@@ -178,6 +213,7 @@ function(add_example name)
       if (ARTIST_CAIRO)
          target_link_libraries(
             ${name}
+            wayland_xdg_shell
             PkgConfig::libdecor
             PkgConfig::wayland_client
             PkgConfig::cairo_pkg
