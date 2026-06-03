@@ -82,6 +82,8 @@ namespace
    // -------------------------------------------------------------------------
    // Forward declarations
    void frame_done(void* data, wl_callback* cb, uint32_t time);
+   void init_egl_window(app_state& state);
+   void init_skia(app_state& state);
    void create_skia_surface(app_state& state);
    void render(app_state& state);
 
@@ -183,7 +185,7 @@ namespace
    };
 
    // -------------------------------------------------------------------------
-   // EGL initialisation
+   // EGL: initialise display + config + context (no window surface yet)
    void init_egl(app_state& state)
    {
       state.egl_display = eglGetDisplay((EGLNativeDisplayType)state.display);
@@ -213,7 +215,13 @@ namespace
          state.egl_display, state.egl_config, EGL_NO_CONTEXT, ctx_attribs);
       if (state.egl_context == EGL_NO_CONTEXT)
          throw std::runtime_error("eglCreateContext failed");
+   }
 
+   // -------------------------------------------------------------------------
+   // EGL: create window surface — called from configure, after libdecor has
+   // fully negotiated the xdg-surface so decorations are guaranteed to appear.
+   void init_egl_window(app_state& state)
+   {
       int const w = int(std::ceil(state.size.x * state.scale));
       int const h = int(std::ceil(state.size.y * state.scale));
       state.egl_window = wl_egl_window_create(state.surface, w, h);
@@ -288,6 +296,15 @@ namespace
       auto* st = libdecor_state_new(w, h);
       libdecor_frame_commit(frame, st, config);
       libdecor_state_free(st);
+
+      // Create EGL window surface and Skia context on first configure,
+      // after libdecor has fully negotiated the xdg-surface.
+      // This guarantees decorations are applied before any EGL buffer commits.
+      if (state.egl_window == nullptr)
+      {
+         init_egl_window(state);
+         init_skia(state);
+      }
 
       create_skia_surface(state);
       state.configured = true;
@@ -370,9 +387,10 @@ int run_app(
       state.viewport = wp_viewporter_get_viewport(state.viewporter, state.surface);
    }
 
-   // EGL + Skia (must happen after surface is created, before first render)
+   // EGL: initialise display + config + context.
+   // Window surface is deferred to the first configure callback so that
+   // libdecor's xdg-surface negotiation completes before any EGL buffer commits.
    init_egl(state);
-   init_skia(state);
 
    // libdecor window
    state.decor  = libdecor_new(state.display, &decor_iface);
