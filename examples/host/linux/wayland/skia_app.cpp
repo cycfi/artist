@@ -3,7 +3,7 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#include "../../app.hpp"
+#include "../../../app.hpp"
 #include <wayland-client.h>
 #include <wayland-egl.h>
 #include <libdecor.h>
