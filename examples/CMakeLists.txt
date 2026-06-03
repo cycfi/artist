@@ -7,9 +7,43 @@ project(examples)
 
 if (UNIX AND NOT APPLE)
    find_package(PkgConfig REQUIRED)
-   pkg_check_modules(gtk3 REQUIRED IMPORTED_TARGET gtk+-3.0)
+   pkg_check_modules(wayland_client REQUIRED IMPORTED_TARGET wayland-client)
+   pkg_check_modules(cairo_pkg      REQUIRED IMPORTED_TARGET cairo)
+
+   # Locate wayland-scanner and the protocol XML directory
+   find_program(WAYLAND_SCANNER wayland-scanner REQUIRED)
+   pkg_get_variable(WL_PROTOCOLS_DIR wayland-protocols pkgdatadir)
+
+   # Generate xdg-shell client header + private code into the build tree
+   set(WL_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}/wayland-gen")
+   file(MAKE_DIRECTORY "${WL_GEN_DIR}")
+
+   set(XDG_SHELL_XML    "${WL_PROTOCOLS_DIR}/stable/xdg-shell/xdg-shell.xml")
+   set(XDG_SHELL_HEADER "${WL_GEN_DIR}/xdg-shell-client-protocol.h")
+   set(XDG_SHELL_SRC    "${WL_GEN_DIR}/xdg-shell-protocol.c")
+
+   add_custom_command(
+      OUTPUT  "${XDG_SHELL_HEADER}"
+      COMMAND "${WAYLAND_SCANNER}" client-header "${XDG_SHELL_XML}" "${XDG_SHELL_HEADER}"
+      DEPENDS "${XDG_SHELL_XML}"
+      COMMENT "Generating xdg-shell client header"
+   )
+   add_custom_command(
+      OUTPUT  "${XDG_SHELL_SRC}"
+      COMMAND "${WAYLAND_SCANNER}" private-code "${XDG_SHELL_XML}" "${XDG_SHELL_SRC}"
+      DEPENDS "${XDG_SHELL_XML}"
+      COMMENT "Generating xdg-shell protocol code"
+   )
+
+   # Small static lib so the generated files are built once and shared
+   add_library(wayland_xdg_shell STATIC "${XDG_SHELL_SRC}" "${XDG_SHELL_HEADER}")
+   target_include_directories(wayland_xdg_shell PUBLIC "${WL_GEN_DIR}")
+   target_link_libraries(wayland_xdg_shell PUBLIC PkgConfig::wayland_client)
+
    if (NOT ARTIST_CAIRO)
       find_package(OpenGL REQUIRED COMPONENTS OpenGL)
+      pkg_check_modules(wayland_egl REQUIRED IMPORTED_TARGET wayland-egl)
+      pkg_check_modules(egl_pkg     REQUIRED IMPORTED_TARGET egl)
    endif()
 endif()
 
@@ -119,15 +153,20 @@ function(add_example name)
          print_elapsed.cpp
       )
 
+      target_include_directories(${name} PRIVATE "${WL_GEN_DIR}")
+
       if (ARTIST_CAIRO)
          target_link_libraries(
             ${name}
-            PkgConfig::gtk3
+            wayland_xdg_shell
+            PkgConfig::cairo_pkg
          )
       else()
          target_link_libraries(
             ${name}
-            PkgConfig::gtk3
+            wayland_xdg_shell
+            PkgConfig::wayland_egl
+            PkgConfig::egl_pkg
             OpenGL::GL
          )
       endif()
