@@ -1561,6 +1561,39 @@ TEST_CASE("Text Shaping")
    }
 }
 
+TEST_CASE("Word Selection")
+{
+   // word_break(i) marks a UAX-29 word boundary AFTER character i.  This
+   // reference selection mirrors the elements double-click handler: it returns
+   // the [start, end) word containing a click.  It verifies the boundary data
+   // drives correct whole-word selection across contractions, decimals,
+   // grouping separators and punctuation.
+   auto select = [](std::string const& txt, std::size_t click) -> std::string
+   {
+      text_layout tl{font_descr{"Open Sans", 14}, txt};
+      std::size_t n = txt.size();
+      auto is_wb = [&](std::size_t i)
+         { return tl.word_break(i) == text_layout::allow_break; };
+      std::size_t end = click;
+      while (end < n && !is_wb(end)) ++end;
+      if (end < n) ++end;                         // boundary is after char `end`
+      std::size_t start = click;
+      while (start > 0 && !is_wb(start - 1)) --start;
+      return txt.substr(start, end - start);
+   };
+
+   CHECK(select("To traverse the", 5)  == "traverse");  // mid-word
+   CHECK(select("To traverse the", 10) == "traverse");  // click last letter
+   CHECK(select("To traverse the", 0)  == "To");        // first word
+   CHECK(select("don't", 2)            == "don't");      // contraction kept
+   CHECK(select("3.14", 1)             == "3.14");       // decimal kept
+   CHECK(select("1,000", 3)            == "1,000");      // grouping kept
+   CHECK(select("foo,bar", 1)          == "foo");        // punctuation boundary
+   CHECK(select("foo,bar", 5)          == "bar");
+   CHECK(select("e-mail", 3)           == "mail");       // hyphen boundary
+   CHECK(select("resume", 2)           == "resume");
+}
+
 TEST_CASE("Path Equality")
 {
    // Identical paths are equal
