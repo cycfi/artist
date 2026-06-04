@@ -409,7 +409,7 @@ namespace cycfi::artist
    {
       if (index >= _breaks.size())
          return indeterminate;
-      return _breaks[index].line;
+      return _breaks[index].word;
    }
 
    ////////////////////////////////////////////////////////////////////////////
