@@ -53,6 +53,13 @@ namespace cycfi::artist
       info        _info;
       state_stack _stack;
 
+      // Inverse of the initial CTM captured at canvas construction.  The host
+      // hands us a context whose CTM may already encode a base transform (e.g.
+      // the GTK content-area / window-decoration offset).  device_to_user and
+      // user_to_device are computed relative to this baseline so that the view
+      // origin maps to the host drawing origin (matching the legacy canvas).
+      cairo_matrix_t _inv_affine;
+
       // Reusable scratch buffers for shadow rendering — never shrink, never
       // reallocate unless the shadow surface grows larger than a previous frame.
       struct shadow_scratch_t
@@ -114,6 +121,8 @@ namespace cycfi::artist
     : _context{context_}
     , _state{std::make_unique<canvas_state>()}
    {
+      cairo_get_matrix(_context, &_state->_inv_affine);
+      cairo_matrix_invert(&_state->_inv_affine);
    }
 
    canvas::~canvas()
@@ -147,15 +156,26 @@ namespace cycfi::artist
 
    point canvas::device_to_user(point p)
    {
+      // Map device->user relative to the initial CTM (see _inv_affine).
+      cairo_matrix_t affine;
+      cairo_get_matrix(_context, &affine);
+      cairo_matrix_t xaf;
+      cairo_matrix_multiply(&xaf, &affine, &_state->_inv_affine);
+      cairo_matrix_invert(&xaf);
       double x = p.x, y = p.y;
-      cairo_device_to_user(_context, &x, &y);
+      cairo_matrix_transform_point(&xaf, &x, &y);
       return {float(x), float(y)};
    }
 
    point canvas::user_to_device(point p)
    {
+      // Map user->device relative to the initial CTM (see _inv_affine).
+      cairo_matrix_t affine;
+      cairo_get_matrix(_context, &affine);
+      cairo_matrix_t xaf;
+      cairo_matrix_multiply(&xaf, &affine, &_state->_inv_affine);
       double x = p.x, y = p.y;
-      cairo_user_to_device(_context, &x, &y);
+      cairo_matrix_transform_point(&xaf, &x, &y);
       return {float(x), float(y)};
    }
 

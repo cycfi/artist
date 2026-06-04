@@ -1440,6 +1440,47 @@ TEST_CASE("Scale and Coordinate Conversion")
    }
 }
 
+TEST_CASE("Coordinate Conversion with Base Transform")
+{
+   // A host may hand the canvas a context whose CTM already encodes a base
+   // transform (e.g. the GTK content-area / window-decoration offset).
+   // device_to_user / user_to_device must be relative to that baseline so the
+   // view origin maps to the host drawing origin -- not shifted by the base
+   // offset.  (Regression: the Cairo backend used the absolute cairo_*_user
+   // conversions, shifting all content by the decoration offset.)
+   image pm{window_size};
+   {
+      offscreen_image ctx{pm};
+
+      // Establish a non-identity base transform on the context, then build the
+      // canvas that elements would draw through.  The constructor captures this
+      // as its baseline.
+      canvas base{ctx.context()};
+      base.translate({26.0f, 60.0f});
+
+      canvas pm_cnv{ctx.context()};
+
+      // The view origin (0,0) maps to the host drawing origin, relative to the
+      // captured baseline -- i.e. (0,0), not (26,60).
+      auto origin = pm_cnv.user_to_device({0.0f, 0.0f});
+      CHECK(origin.x == Approx(0.0f).margin(0.001));
+      CHECK(origin.y == Approx(0.0f).margin(0.001));
+
+      auto back = pm_cnv.device_to_user({0.0f, 0.0f});
+      CHECK(back.x == Approx(0.0f).margin(0.001));
+      CHECK(back.y == Approx(0.0f).margin(0.001));
+
+      // An arbitrary point is unaffected by the base offset and round-trips.
+      auto d = pm_cnv.user_to_device({40.0f, 70.0f});
+      CHECK(d.x == Approx(40.0f).margin(0.001));
+      CHECK(d.y == Approx(70.0f).margin(0.001));
+
+      auto u = pm_cnv.device_to_user(d);
+      CHECK(u.x == Approx(40.0f).margin(0.001));
+      CHECK(u.y == Approx(70.0f).margin(0.001));
+   }
+}
+
 TEST_CASE("Text Shaping")
 {
    image pm{window_size};
