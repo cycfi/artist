@@ -1,0 +1,52 @@
+= Backends
+
+Artist supports three rendering backends: https://skia.org/[Skia],
+https://apple.co/2SljYHw[Quartz-2D], and
+https://www.cairographics.org/[Cairo]. Only one backend is active per build,
+selected with a CMake option (see xref:setup.adoc[Setup and Installation]).
+
+== History
+
+Historically, the Artist library was the 2D vector graphics component for the
+https://cycfi.github.io/elements/[Elements Library], implemented using the
+https://www.cairographics.org/[Cairo 2D graphics library] as the sole backend.
+For a long time, Cairo's lack of support for path effects — needed for modern
+GUI applications — combined with a stalled development cadence (see the
+https://www.cairographics.org/roadmap/[Cairo Roadmap]) made it look likely
+that Cairo support would be dropped.
+
+Cairo has since been brought back as a fully supported Artist backend, with
+HarfBuzz-based text shaping, drop-shadow support, and live window hosts on
+macOS, Linux, and Windows. See xref:setup.adoc#_building_with_cairo[Building
+with Cairo] for its supported platforms and known limitations.
+
+Before Cairo, the precursor of the Artist library used
+https://github.com/memononen/nanovg[NanoVG]. It was then that the basic design
+principles took shape. Like Artist, the NanoVG API is modeled after the HTML5
+canvas API. NanoVG was dropped early on due to lack of support from its
+author,
+https://blog.johnnovak.net/2016/05/29/cross-platform-gui-trainwreck-2016-edition/#enter-nanovg[poor
+text rendering quality], and inferior rendering quality (in general) compared
+to the gold standard: Quartz-2D. The NanoVG project is no longer actively
+maintained.
+
+It was a good decision to isolate the NanoVG backend behind a clean-cut C++
+canvas API. NanoVG had a C interface to begin with, so it was a necessary
+step. But isolating it behind a well-defined API also meant it could be
+replaced at any time. Had application code been hard-coded to use NanoVG
+directly, it would have been locked to that specific library. Abstraction is
+the key. Libraries come and go: the king of the hill now may be superseded by
+a "better" library in the future. Case in point: Cairo.
+
+There is also a half-baked
+https://docs.microsoft.com/en-us/windows/win32/direct2d/direct2d-portal[Direct-2D]
+port on Windows, currently shelved. It works, except for the text layout
+part, which has its own text-layout engine. Direct-2D is painful to work with
+compared to other graphics libraries, and for lack of time it is, for now,
+indefinitely shelved (contributions welcome if anyone wants to continue where
+it stopped).
+
+A few graphics libraries have splendid support for text layout; some don't —
+in particular, Skia. For Skia, Artist uses the
+https://www.freedesktop.org/wiki/Software/HarfBuzz/[HarfBuzz] library for text
+layout.
