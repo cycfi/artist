@@ -1,0 +1,10 @@
+name: artist
+title: Artist 2D Canvas Library
+version: v1.0-dev
+start_page: index.adoc
+asciidoc:
+  attributes:
+    source-language: asciidoc@
+    table-caption: false
+nav:
+- modules/ROOT/nav.adoc
