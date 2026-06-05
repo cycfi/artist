@@ -1,0 +1,95 @@
+/*=============================================================================
+   Copyright (c) 2016-2026 Joel de Guzman
+
+   Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
+
+   Focused per-edit fuzz for text_layout_ex incremental updates (elements #370).
+   Narrow flow width forces paragraphs to wrap (multi-line), and after EVERY
+   random edit the incrementally-updated engine is compared to a freshly built
+   text_layout of the same text. Pinpoints incremental-update drift.
+=============================================================================*/
+#include "test_support.hpp"
+#include <artist/text_layout_ex.hpp>
+#include <iostream>
+#include <random>
+#include <string>
+
+namespace
+{
+   auto const fnt = font_descr{"Open Sans", 13};
+   constexpr float width = 120.0f;            // narrow -> wrapping
+}
+
+TEST_CASE("text_layout_ex incremental matches fresh build after each edit")
+{
+   std::u32string oracle =
+      U"The quick brown fox jumps over the lazy dog and keeps on running.\n"
+      U"Second paragraph is also fairly long so that it wraps onto lines.\n\n"
+      U"Third paragraph.\nshort\n";
+   auto ex = make_text_layout_ex(fnt, oracle);
+   ex.flow(width);
+
+   std::mt19937 rng(0xF0CA1);
+   auto rnd_text = [&](std::size_t n)
+   {
+      std::u32string s;
+      for (std::size_t i = 0; i < n; ++i)
+      {
+         unsigned r = rng() % 14;
+         s.push_back(r == 0 ? U'\n' : char32_t(U'a' + (r % 26)));
+      }
+      return s;
+   };
+
+   for (int op = 0; op < 4000; ++op)
+   {
+      std::size_t sz = oracle.size();
+      if ((rng() & 1) || sz == 0)
+      {
+         std::size_t pos = sz ? rng() % (sz + 1) : 0;
+         auto t = rnd_text(1 + rng() % 8);
+         ex.insert(pos, t);
+         oracle.insert(pos, t);
+      }
+      else
+      {
+         std::size_t pos = rng() % sz;
+         std::size_t len = 1 + rng() % std::min<std::size_t>(10, sz - pos);
+         ex.erase(pos, len);
+         oracle.erase(pos, len);
+      }
+
+      REQUIRE(ex.text() == oracle);
+
+      text_layout doc{fnt, oracle};
+      doc.flow(width);
+      if (ex.num_lines() != doc.num_lines())
+      {
+         // Find which paragraph has a stale line count.
+         std::cout << "DIVERGE op " << op << " ex=" << ex.num_lines()
+                   << " fresh=" << doc.num_lines() << "\n";
+         std::size_t start = 0;
+         std::size_t pi = 0;
+         for (std::size_t k = 0; k <= oracle.size(); ++k)
+         {
+            if (k == oracle.size() || oracle[k] == U'\n')
+            {
+               std::u32string ptext = oracle.substr(start, k - start);
+               text_layout pl{fnt, ptext};
+               pl.flow(width);
+               std::size_t fresh_lines = std::max<std::size_t>(1, pl.num_lines());
+               std::size_t ex_lines = ex.paragraph_lines(pi);
+               std::string s;
+               for (char32_t c : ptext) s += char(c < 128 ? c : '?');
+               std::cout << "  para " << pi << " ex_lines=" << ex_lines
+                         << " fresh=" << fresh_lines
+                         << (ex_lines != fresh_lines ? "  <<< MISMATCH" : "")
+                         << "  [" << s << "]\n";
+               start = k + 1;
+               ++pi;
+            }
+         }
+         REQUIRE(ex.num_lines() == doc.num_lines());
+      }
+   }
+}

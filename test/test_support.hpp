@@ -39,4 +39,9 @@ auto constexpr bkd_color = rgba(54, 52, 55, 255);
 void background(canvas& cnv);
 void compare_golden(image const& pm, std::string name);
 
+// Like compare_golden, but bootstraps: if the golden does not exist yet, save
+// the current render as the golden (first run) instead of failing; on later
+// runs, compare against it. Backend/platform-specific, like all goldens.
+void snapshot_golden(image const& pm, std::string name);
+
 #endif

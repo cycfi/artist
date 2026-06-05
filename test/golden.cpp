@@ -1,6 +1,7 @@
 #include "test_support.hpp"
 
 #include <iostream>
+#include <infra/filesystem.hpp>
 
 void background(canvas& cnv)
 {
@@ -266,5 +267,44 @@ void compare_golden(image const& pm, std::string name)
    CHECK(diff.mean  < 1.0);
    CHECK(diff.p95   < 3.0);
    CHECK(margin     < 0.0f);
+}
+
+void snapshot_golden(image const& pm, std::string name)
+{
+   // Bootstrap: on the first run no golden exists yet, so save this render as
+   // the golden and pass. On subsequent runs, compare against it. (Loading a
+   // missing PNG throws on some backends, so check existence first.)
+   // Unlike compare_golden this is size-agnostic: the image may be any size
+   // (e.g. a tall caret-following editing window, not the 640x480 canvas).
+   auto golden_path = get_golden_path() + name + ".png";
+   pm.save_png(get_results_path() + name + ".png");
+   if (!cycfi::fs::exists(golden_path))
+   {
+      pm.save_png(golden_path);
+      std::cout << "[golden created] " << name << "\n";
+      return;
+   }
+
+   auto golden = image(golden_path);
+   auto result = image(get_results_path() + name + ".png");
+   auto gs = golden.bitmap_size();
+   auto rs = result.bitmap_size();
+   CHECK(rs == gs);
+   if (!(rs == gs))
+      return;
+
+   auto a = golden.pixels();
+   auto b = result.pixels();
+   REQUIRE(a != nullptr);
+   REQUIRE(b != nullptr);
+
+   auto diff = compare_images(a, b, rs.x, rs.y);
+   float margin = check_tiles(a, b, rs.x, rs.y);
+   std::cout << std::fixed << std::setprecision(4)
+      << "ΔE  mean=" << diff.mean << "  p95=" << diff.p95
+      << "  tile_margin=" << margin << "  (" << name << ")\n";
+   CHECK(diff.mean < 1.0);
+   CHECK(diff.p95  < 3.0);
+   CHECK(margin    < 0.0f);
 }
 

@@ -67,6 +67,9 @@ namespace cycfi::artist
       size_type               num_lines() const;
       float                   height() const               { return num_lines() * _line_height; }
 
+      // Diagnostics.
+      size_type               paragraph_lines(size_type i) const { return _paras[i].lines; }
+
       point                   caret_point(size_type index) const;
       size_type               caret_index(point p) const;
 
