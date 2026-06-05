@@ -5,6 +5,17 @@
 ###############################################################################
 project(artist_test)
 
+# Themed test translation units (split from the former single main.cpp).
+# test_main.cpp provides the Catch main; the rest add TEST_CASEs.
+set(artist_test_sources
+   test_main.cpp
+   golden.cpp
+   shapes_test.cpp
+   composite_test.cpp
+   typography_test.cpp
+   geometry_test.cpp
+)
+
 file(
    GLOB artist_fonts ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/*.*
 )
@@ -14,14 +25,14 @@ if (APPLE)
    if (ARTIST_QUARTZ_2D)
       add_executable(
          artist_test MACOSX_BUNDLE
-         main.cpp
+         ${artist_test_sources}
          detail/osx_init.mm
          ${artist_fonts}
       )
    else()
       add_executable(
          artist_test MACOSX_BUNDLE
-         main.cpp
+         ${artist_test_sources}
          ${artist_fonts}
       )
    endif()
@@ -43,7 +54,7 @@ elseif (MSVC)
 
    add_executable(
       artist_test
-      main.cpp
+      ${artist_test_sources}
    )
    if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
       set_property(TARGET artist_test PROPERTY
@@ -59,7 +70,7 @@ elseif (UNIX)
 
    add_executable(
       artist_test
-      main.cpp
+      ${artist_test_sources}
    )
 
 endif()
