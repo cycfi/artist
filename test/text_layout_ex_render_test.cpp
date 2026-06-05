@@ -87,6 +87,44 @@ TEST_CASE("text_layout_ex line_break marks paragraph boundaries")
    CHECK(ex.line_break(5) != text_layout::must_break);
 }
 
+TEST_CASE("text_layout_ex caret_index hits the clicked row")
+{
+   // A click anywhere in a row's body must resolve to a caret on THAT row, not
+   // the row/paragraph above or below. This is the multi-paragraph hit-test the
+   // Elements editor relies on; blank paragraphs (their own one-line layout)
+   // are the tricky case.
+   auto const f = font_descr{"Open Sans", 14};
+   auto const m = font{f}.metrics();
+   float const line_height = m.ascent + m.descent + m.leading;
+
+   std::u32string const text =
+      U"the quick brown fox jumps over the lazy dog and runs on and on"
+      U"\n\n"                                    // blank paragraph
+      U"a second paragraph that also wraps across several lines when narrow"
+      U"\nshort line";
+
+   auto ex = make_text_layout_ex(f, text);
+   ex.flow(120);                                 // force wrapping
+
+   // For every character index, click the vertical centre of its row at the
+   // glyph's own x; the hit must land back on the same row (same row top y).
+   for (std::size_t i = 0; i <= text.size(); ++i)
+   {
+      auto cp = ex.caret_point(i);               // row top, glyph x
+      point click{cp.x, cp.y + line_height * 0.5f};
+      auto hit = ex.caret_index(click);
+      INFO("index " << i << " click=(" << click.x << "," << click.y << ")");
+      CHECK(ex.caret_point(hit).y == Approx(cp.y));
+   }
+
+   // Explicit blank-line case: clicking the body of the text line just below
+   // the blank paragraph must land in that text line, not the blank above.
+   std::size_t para3 = text.find(U"a second");
+   auto top = ex.caret_point(para3);
+   auto hit = ex.caret_index(point{top.x + 1.0f, top.y + line_height * 0.5f});
+   CHECK(ex.caret_point(hit).y == Approx(top.y));
+}
+
 TEST_CASE("text_layout_ex incremental edit equals full rebuild")
 {
    // After an incremental edit, the engine must equal a freshly-built engine

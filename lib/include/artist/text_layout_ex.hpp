@@ -290,8 +290,23 @@ namespace cycfi::artist
    typename basic_text_layout_ex<Layout>::size_type
    basic_text_layout_ex<Layout>::caret_index(point p) const
    {
+      // Select the paragraph whose vertical span contains p.y (a body
+      // coordinate, top-relative), then resolve the row within it.
+      //
+      // The per-paragraph layout's caret_index returns the first row whose top
+      // is >= the query y, so to land on visual row k the query must fall in
+      // ((k-1), k] * line_height -- the band just above the row, NOT the row's
+      // own body. A raw body click therefore overshoots by one row. Compute the
+      // visual row from the body y ourselves, then query at (row - 0.5) *
+      // line_height: centred in the correct selection band, robust to float
+      // rounding in the row offsets. p.x is preserved, so horizontal glyph
+      // resolution is unaffected.
       size_type pi = para_at_y(p.y);
-      point local{p.x, float(p.y - _paras[pi].y)};
+      double local_y = p.y - _paras[pi].y;
+      size_type row = (local_y <= 0)? 0 : size_type(local_y / _line_height);
+      if (row >= _paras[pi].lines)
+         row = _paras[pi].lines - 1;
+      point local{p.x, float((double(row) - 0.5) * _line_height)};
       size_type li = _paras[pi].layout.caret_index(local);
       return _px.start(pi) + li;
    }
