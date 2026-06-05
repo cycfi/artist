@@ -173,7 +173,7 @@ add_executable(paragraph_index_test paragraph_index_test.cpp)
 target_include_directories(paragraph_index_test PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../lib/include)
 add_test(NAME paragraph_index_test COMMAND paragraph_index_test)
 
-# text_layout_ex stitching test: uses a non-graphical fake paragraph layout but
+# text_layout_ex stitching test: uses a non-graphical mock paragraph layout but
 # includes text_layout.hpp, so it needs the artist + infra header paths.
 add_executable(text_layout_ex_test text_layout_ex_test.cpp)
 target_include_directories(text_layout_ex_test PRIVATE

@@ -8,7 +8,7 @@
 
    `basic_text_layout_ex<Layout>` is templated on the per-paragraph layout type
    (the production type is artist::text_layout). Here it is instantiated with
-   `fake_layout`: a trivial, deterministic, non-graphical stand-in that needs no
+   `mock_layout`: a trivial, deterministic, non-graphical stand-in that needs no
    fonts/shaping/backend. That lets the *structural* logic be tested as a plain
    standalone binary, fast and backend-free:
      - paragraph splice on insert/erase (split, merge, in-place edit),
@@ -17,11 +17,11 @@
      - incrementality (a build-counter proves only touched paragraphs rebuild).
 
    SCOPE / LIMITATION — read before trusting this:
-   A fake tests "does the code match my ASSUMPTIONS", not "does it match the
+   A mock tests "does the code match my ASSUMPTIONS", not "does it match the
    real text_layout". It is scaffolding, not verification. This bit us: an early
-   fake modelled num_lines() so that a paragraph's trailing '\n' added a line,
+   mock modelled num_lines() so that a paragraph's trailing '\n' added a line,
    which masked the fact that the REAL text_layout opens an extra empty line for
-   a trailing '\n' (a double-count bug); the fake also never modelled an empty
+   a trailing '\n' (a double-count bug); the mock also never modelled an empty
    paragraph reporting 0 lines. Both bugs passed here and were only caught by the
    real-backend equivalence tests in text_layout_ex_render_test.cpp.
 
@@ -42,11 +42,11 @@ static int failures = 0;
 #define CHECK(cond) do { if (!(cond)) { \
    std::cerr << "FAIL " << __LINE__ << ": " #cond "\n"; ++failures; } } while (0)
 
-// A non-graphical stand-in for a paragraph's text_layout.
+// A non-graphical stand-in (mock) for a paragraph's text_layout.
 //   num_lines() = 1 + number of '\n' in the paragraph text
 //   caret_point(i) = {i, 0}   (x = local index, y = 0 within the paragraph)
 //   caret_index({x,y}) = clamp(round(x), 0, size)
-struct fake_layout
+struct mock_layout
 {
    // The engine's word_break/line_break return Layout::break_enum; declaring
    // those members instantiates the type even though this stitching mock never
@@ -57,11 +57,11 @@ struct fake_layout
    float          width = 0;
    bool           justified = false;
 
-                  fake_layout() = default;
-   explicit       fake_layout(std::u32string_view s) : txt(s) {}
-                  fake_layout(fake_layout const&) = delete;   // mimic non_copyable
-                  fake_layout(fake_layout&&) = default;
-   fake_layout&   operator=(fake_layout&&) = default;
+                  mock_layout() = default;
+   explicit       mock_layout(std::u32string_view s) : txt(s) {}
+                  mock_layout(mock_layout const&) = delete;   // mimic non_copyable
+                  mock_layout(mock_layout&&) = default;
+   mock_layout&   operator=(mock_layout&&) = default;
 
    void           flow(float w, bool j) { width = w; justified = j; }
    std::size_t    num_lines() const
@@ -80,14 +80,14 @@ struct fake_layout
                   }
 };
 
-using ex_t = basic_text_layout_ex<fake_layout>;
+using ex_t = basic_text_layout_ex<mock_layout>;
 
 int main()
 {
    // --- build: one paragraph layout per paragraph; vertical stack ---
    {
       int builds = 0;
-      auto make = [&](std::u32string_view s) { ++builds; return fake_layout{s}; };
+      auto make = [&](std::u32string_view s) { ++builds; return mock_layout{s}; };
       ex_t ex(make, 10.0f, U"aa\nbb\ncc");
       ex.flow(100);
 
@@ -108,7 +108,7 @@ int main()
    // --- typing inside a paragraph rebuilds only that paragraph ---
    {
       int builds = 0;
-      auto make = [&](std::u32string_view s) { ++builds; return fake_layout{s}; };
+      auto make = [&](std::u32string_view s) { ++builds; return mock_layout{s}; };
       ex_t ex(make, 10.0f, U"aa\nbb\ncc");
       ex.flow(100);
       builds = 0;
@@ -123,7 +123,7 @@ int main()
    // --- inserting a newline splits one paragraph into two ---
    {
       int builds = 0;
-      auto make = [&](std::u32string_view s) { ++builds; return fake_layout{s}; };
+      auto make = [&](std::u32string_view s) { ++builds; return mock_layout{s}; };
       ex_t ex(make, 10.0f, U"aa\nbb\ncc");
       ex.flow(100);
       builds = 0;
@@ -140,7 +140,7 @@ int main()
    // --- erasing a newline merges two paragraphs into one ---
    {
       int builds = 0;
-      auto make = [&](std::u32string_view s) { ++builds; return fake_layout{s}; };
+      auto make = [&](std::u32string_view s) { ++builds; return mock_layout{s}; };
       ex_t ex(make, 10.0f, U"aa\nbb\ncc");
       ex.flow(100);
       builds = 0;

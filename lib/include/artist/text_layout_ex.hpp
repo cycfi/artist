@@ -29,7 +29,7 @@ namespace cycfi::artist
     *    Edits are incremental: only the paragraphs an edit touches are
     *    re-laid-out (via `paragraph_index`), and the rope buffer shares
     *    unchanged structure. Templated on the per-paragraph `Layout` so the
-    *    stitching can be tested with a non-graphical fake; the production
+    *    stitching can be tested with a non-graphical mock; the production
     *    instantiation is `text_layout_ex` over `artist::text_layout`.
     *
     *    `Layout` must provide: construction from `std::u32string_view`,
