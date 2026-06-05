@@ -76,10 +76,6 @@ namespace cycfi::artist
       size_type               caret_index(point p) const;
       size_type               caret_index(float x, float y) const { return caret_index(point{x, y}); }
 
-      // Word/line break queries over the whole document, delegated to the
-      // paragraph that owns `index`. Paragraph boundaries (hard '\n') are
-      // mandatory line breaks. The return type matches the per-paragraph
-      // Layout's break classification (e.g. text_run::break_enum).
       break_enum              word_break(size_type index) const;
       break_enum              line_break(size_type index) const;
 
@@ -320,6 +316,8 @@ namespace cycfi::artist
    typename Layout::break_enum
    basic_text_layout<Layout>::word_break(size_type index) const
    {
+      // Whole-document query: delegate to the paragraph that owns `index`,
+      // offset to that paragraph's local index.
       size_type pi = _px.index_at(index);
       return _paras[pi].layout.word_break(index - _px.start(pi));
    }
