@@ -15,6 +15,7 @@ set(artist_test_sources
    typography_test.cpp
    geometry_test.cpp
    text_layout_ex_render_test.cpp
+   text_edit_sim_test.cpp
 )
 
 file(
@@ -144,11 +145,18 @@ file(
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
 )
 
+# Copy text inputs (novel + source-code sample) to the binary dir
+file(
+  COPY text
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+)
+
 add_definitions(
    -DGOLDEN_PATH="${CMAKE_CURRENT_BINARY_DIR}/${GOLDEN_PATH}/"
    -DRESULTS_PATH="${CMAKE_CURRENT_BINARY_DIR}/results/"
    -DIMAGES_PATH="${CMAKE_CURRENT_BINARY_DIR}/images/"
    -DFONTS_PATH="${CMAKE_CURRENT_BINARY_DIR}/resources/fonts/"
+   -DTEXT_PATH="${CMAKE_CURRENT_BINARY_DIR}/text/"
 )
 
 include(CTest)
