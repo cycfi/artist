@@ -18,6 +18,7 @@ set(artist_test_sources
    text_edit_sim_test.cpp
    text_edit_code_test.cpp
    text_layout_fuzz_test.cpp
+   text_layout_bench_test.cpp
 )
 
 file(
