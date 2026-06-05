@@ -146,3 +146,7 @@ add_test(NAME artist_test COMMAND artist_test)
 add_executable(rope_test rope_test.cpp)
 target_include_directories(rope_test PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../lib/include)
 add_test(NAME rope_test COMMAND rope_test)
+
+add_executable(paragraph_index_test paragraph_index_test.cpp)
+target_include_directories(paragraph_index_test PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../lib/include)
+add_test(NAME paragraph_index_test COMMAND paragraph_index_test)
