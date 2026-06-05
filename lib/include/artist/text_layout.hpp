@@ -346,8 +346,25 @@ namespace cycfi::artist
    template <typename Layout>
    void basic_text_layout<Layout>::draw(canvas& cnv, point p, color c) const
    {
-      for (auto const& pa : _paras)
+      if (_paras.empty())
+         return;
+
+      // Viewport culling: draw only the paragraphs whose vertical span
+      // intersects the canvas's current clip (the scroller/port sets it to the
+      // visible viewport; an unclipped surface reports its full bounds). This
+      // makes drawing O(visible paragraphs) instead of O(document). Paragraph
+      // offsets (pa.y) are document-relative; p.y is where the document top is
+      // drawn, so the visible document-y band is [clip.top, clip.bottom) - p.y.
+      rect clip = cnv.clip_extent();
+      double top = double(clip.top) - p.y;
+      double bottom = double(clip.bottom) - p.y;
+      for (size_type i = para_at_y(top); i < _paras.size(); ++i)
+      {
+         auto const& pa = _paras[i];
+         if (double(pa.y) >= bottom)
+            break;
          pa.layout.draw(cnv, {p.x, float(p.y + pa.y)}, c);
+      }
    }
 
    //--------------------------------------------------------------------------
