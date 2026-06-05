@@ -212,7 +212,7 @@ set(ARTIST_HEADERS
    include/artist/point.hpp
    include/artist/rect.hpp
    include/artist/resources.hpp
-   include/artist/text_layout.hpp
+   include/artist/text_run.hpp
 )
 
 if (APPLE AND ARTIST_QUARTZ_2D)
@@ -220,7 +220,7 @@ if (APPLE AND ARTIST_QUARTZ_2D)
       impl/macos/quartz2d/canvas.mm
       impl/macos/quartz2d/image.mm
       impl/macos/quartz2d/font.mm
-      impl/macos/quartz2d/text_layout.mm
+      impl/macos/quartz2d/text_run.mm
       impl/macos/quartz2d/path.mm
    )
 endif()
@@ -231,7 +231,7 @@ if (ARTIST_SKIA)
       impl/skia/canvas.cpp
       impl/skia/image.cpp
       impl/skia/font.cpp
-      impl/skia/text_layout.cpp
+      impl/skia/text_run.cpp
       impl/skia/path.cpp
       impl/skia/detail/harfbuzz.cpp
    )
@@ -245,7 +245,7 @@ if (ARTIST_CAIRO)
       impl/cairo/path.cpp
       impl/cairo/image.cpp
       impl/cairo/font.cpp
-      impl/cairo/text_layout.cpp
+      impl/cairo/text_run.cpp
    )
 endif()
 

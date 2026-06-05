@@ -3,7 +3,7 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-// HB5: Cairo text_layout using HarfBuzz-shaped runs.
+// HB5: Cairo text_run using HarfBuzz-shaped runs.
 //
 // The entire text is shaped once in the impl constructor (UTF-32 input so that
 // HarfBuzz cluster values are UTF-32 code-point indices).  flow() re-uses the
@@ -17,7 +17,7 @@
 //
 #include "cairo_private.hpp"
 #include "cairo_text.hpp"
-#include <artist/text_layout.hpp>
+#include <artist/text_run.hpp>
 #include <artist/canvas.hpp>
 #include <infra/utf8_utils.hpp>
 #include <infra/support.hpp>
@@ -30,14 +30,14 @@
 namespace cycfi::artist
 {
    ////////////////////////////////////////////////////////////////////////////
-   class text_layout::impl
+   class text_run::impl
    {
    public:
 
       impl(font_descr const& fdesc, std::u32string_view utf32);
       ~impl() = default;
 
-      using break_enum = text_layout::break_enum;
+      using break_enum = text_run::break_enum;
 
       void        flow(get_line_info const& glf, flow_info finfo);
       void        draw(canvas& cnv, point p, color c) const;
@@ -85,7 +85,7 @@ namespace cycfi::artist
    };
 
    ////////////////////////////////////////////////////////////////////////////
-   std::size_t text_layout::impl::glyph_index(std::size_t utf32_idx) const
+   std::size_t text_run::impl::glyph_index(std::size_t utf32_idx) const
    {
       if (_glyphs.empty()) return npos;
       for (int i = int(std::min(utf32_idx, _glyphs.size()-1)); i >= 0; --i)
@@ -95,7 +95,7 @@ namespace cycfi::artist
    }
 
    ////////////////////////////////////////////////////////////////////////////
-   text_layout::impl::impl(font_descr const& fdesc, std::u32string_view utf32)
+   text_run::impl::impl(font_descr const& fdesc, std::u32string_view utf32)
     : _fdesc(fdesc)
     , _font(fdesc)
     , _text(utf32)
@@ -144,14 +144,15 @@ namespace cycfi::artist
    }
 
    ////////////////////////////////////////////////////////////////////////////
-   void text_layout::impl::flow(get_line_info const& glf, flow_info finfo)
+   void text_run::impl::flow(get_line_info const& glf, flow_info finfo)
    {
       _rows.clear();
       if (_glyphs.empty()) return;
 
       auto linfo = glf(0);
       float target = linfo.width;
-      float y = 0;
+      double y = 0;   // accumulate vertical position in double: line height sums
+                      // over thousands of rows, and float would drift ~0.2px.
       float x = 0;
       std::size_t glyph_start = 0;
       constexpr std::size_t NONE = std::size_t(-1);
@@ -197,7 +198,7 @@ namespace cycfi::artist
             }
 
             _rows.push_back(row_info{
-               glyph_start, n, linfo.offset, y, line_width,
+               glyph_start, n, linfo.offset, float(y), line_width,
                std::move(row_pos)});
 
             y += finfo.line_height;
@@ -265,7 +266,7 @@ namespace cycfi::artist
             ? positions[n-1] + _glyphs[glyph_start + n - 1].x_advance
             : 0;
          _rows.push_back(row_info{
-            glyph_start, n, linfo.offset, y, line_width,
+            glyph_start, n, linfo.offset, float(y), line_width,
             std::move(positions)});
       }
 
@@ -277,7 +278,7 @@ namespace cycfi::artist
    }
 
    ////////////////////////////////////////////////////////////////////////////
-   void text_layout::impl::draw(canvas& cnv, point p, color c) const
+   void text_run::impl::draw(canvas& cnv, point p, color c) const
    {
       if (_rows.empty()) return;
 
@@ -332,7 +333,7 @@ namespace cycfi::artist
    }
 
    ////////////////////////////////////////////////////////////////////////////
-   point text_layout::impl::caret_point(std::size_t index) const
+   point text_run::impl::caret_point(std::size_t index) const
    {
       if (_rows.empty())
          return {0, 0};
@@ -387,7 +388,7 @@ namespace cycfi::artist
    }
 
    ////////////////////////////////////////////////////////////////////////////
-   std::size_t text_layout::impl::caret_index(point p) const
+   std::size_t text_run::impl::caret_index(point p) const
    {
       if (_rows.empty()) return 0;
 
@@ -440,99 +441,99 @@ namespace cycfi::artist
    }
 
    ////////////////////////////////////////////////////////////////////////////
-   std::size_t text_layout::impl::num_lines() const
+   std::size_t text_run::impl::num_lines() const
    {
       return _rows.size();
    }
 
-   text_layout::break_enum text_layout::impl::line_break(std::size_t index) const
+   text_run::break_enum text_run::impl::line_break(std::size_t index) const
    {
       if (index >= _breaks.size()) return indeterminate;
       return _breaks[index].line;
    }
 
-   text_layout::break_enum text_layout::impl::word_break(std::size_t index) const
+   text_run::break_enum text_run::impl::word_break(std::size_t index) const
    {
       if (index >= _breaks.size()) return indeterminate;
       return _breaks[index].word;
    }
 
    ////////////////////////////////////////////////////////////////////////////
-   // text_layout public interface
+   // text_run public interface
    ////////////////////////////////////////////////////////////////////////////
 
-   text_layout::text_layout(font_descr font_, std::string_view utf8)
+   text_run::text_run(font_descr font_, std::string_view utf8)
     : _impl{std::make_unique<impl>(font_, to_utf32(utf8))}
    {
    }
 
-   text_layout::text_layout(font_descr font_, std::u32string_view utf32)
+   text_run::text_run(font_descr font_, std::u32string_view utf32)
     : _impl{std::make_unique<impl>(font_, utf32)}
    {
    }
 
-   text_layout::text_layout(text_layout&& rhs) noexcept
+   text_run::text_run(text_run&& rhs) noexcept
     : _impl{std::move(rhs._impl)}
    {
    }
 
-   text_layout::~text_layout()
+   text_run::~text_run()
    {
    }
 
-   void text_layout::text(std::string_view utf8)
+   void text_run::text(std::string_view utf8)
    {
       _impl = std::make_unique<impl>(_impl->get_font_descr(), to_utf32(utf8));
    }
 
-   void text_layout::text(std::u32string_view utf32)
+   void text_run::text(std::u32string_view utf32)
    {
       _impl = std::make_unique<impl>(_impl->get_font_descr(), utf32);
    }
 
-   std::u32string_view text_layout::text() const
+   std::u32string_view text_run::text() const
    {
       return _impl->get_text();
    }
 
-   void text_layout::flow(float width, bool justify)
+   void text_run::flow(float width, bool justify)
    {
       auto linfo_f = [width](float){ return line_info{0, width}; };
       float lh = _impl->get_font().line_height();
       flow(linfo_f, {justify, lh, lh});
    }
 
-   void text_layout::flow(get_line_info const& glf, flow_info finfo)
+   void text_run::flow(get_line_info const& glf, flow_info finfo)
    {
       _impl->flow(glf, finfo);
    }
 
-   void text_layout::draw(canvas& cnv, point p, color c) const
+   void text_run::draw(canvas& cnv, point p, color c) const
    {
       _impl->draw(cnv, p, c);
    }
 
-   std::size_t text_layout::num_lines() const
+   std::size_t text_run::num_lines() const
    {
       return _impl->num_lines();
    }
 
-   point text_layout::caret_point(std::size_t index) const
+   point text_run::caret_point(std::size_t index) const
    {
       return _impl->caret_point(index);
    }
 
-   std::size_t text_layout::caret_index(point p) const
+   std::size_t text_run::caret_index(point p) const
    {
       return _impl->caret_index(p);
    }
 
-   text_layout::break_enum text_layout::line_break(std::size_t index) const
+   text_run::break_enum text_run::line_break(std::size_t index) const
    {
       return _impl->line_break(index);
    }
 
-   text_layout::break_enum text_layout::word_break(std::size_t index) const
+   text_run::break_enum text_run::word_break(std::size_t index) const
    {
       return _impl->word_break(index);
    }

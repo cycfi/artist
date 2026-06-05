@@ -4,7 +4,7 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 
    Typography performance benchmark. A text box that continuously resizes,
-   forcing text_layout::flow() + draw() every frame.
+   forcing text_run::flow() + draw() every frame.
 =============================================================================*/
 #include "app.hpp"
 
@@ -53,7 +53,7 @@ void draw(canvas& cnv)
    cnv.stroke();
 
    // Reflow and draw every frame
-   auto tlayout = text_layout{font_descr{"Open Sans", 14}.italic(), text};
+   auto tlayout = text_run{font_descr{"Open Sans", 14}.italic(), text};
    tlayout.flow(box_width, true);
    tlayout.draw(cnv, {20, 30}, rgba(220, 220, 220, 200));
 

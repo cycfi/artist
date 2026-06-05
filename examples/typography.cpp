@@ -157,7 +157,7 @@ void typography(canvas& cnv)
       "⁠—Albert Einstein"
       ;
 
-   auto tlayout = text_layout{
+   auto tlayout = text_run{
       font_descr{"Open Sans", 12}.italic()
     , text
    };

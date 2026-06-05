@@ -12,7 +12,7 @@
 #include <artist/image.hpp>
 #include <artist/font.hpp>
 #include <artist/path.hpp>
-#include <artist/text_layout.hpp>
+#include <artist/text_run.hpp>
 #include <artist/affine_transform.hpp>
 
 #include <vector>
