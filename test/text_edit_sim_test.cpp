@@ -47,7 +47,12 @@ namespace
       REQUIRE(f.good());
       std::stringstream ss;
       ss << f.rdbuf();
-      return cycfi::to_utf32(ss.str());
+      std::string content = ss.str();
+      // Normalize CRLF/CR to LF: git may check the file out with CRLF on
+      // Windows, and a stray '\r' is a Unicode line break that would inflate
+      // per-paragraph line counts.
+      content.erase(std::remove(content.begin(), content.end(), '\r'), content.end());
+      return cycfi::to_utf32(content);
    }
 }
 

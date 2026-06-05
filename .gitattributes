@@ -1,0 +1,4 @@
+
+# Keep test text inputs LF on all platforms (CRLF would create phantom
+# line breaks in the per-paragraph text layout).
+test/text/*.txt text eol=lf
