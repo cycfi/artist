@@ -5,7 +5,7 @@
 =============================================================================*/
 #include <string_view>
 #include <string>
-#include <artist/text_layout.hpp>
+#include <artist/text_run.hpp>
 #include <artist/canvas.hpp>
 #include <infra/utf8_utils.hpp>
 #include <vector>
@@ -18,7 +18,7 @@
 
 namespace cycfi::artist
 {
-   class text_layout::impl : non_copyable
+   class text_run::impl : non_copyable
    {
    public:
 
@@ -36,7 +36,7 @@ namespace cycfi::artist
          std::vector<SkScalar>   positions;
       };
 
-      using break_enum = text_layout::break_enum;
+      using break_enum = text_run::break_enum;
 
       struct break_info
       {
@@ -69,7 +69,7 @@ namespace cycfi::artist
       std::vector<break_info>    _breaks;
    };
 
-   text_layout::impl::impl(font const& font_, std::u32string_view utf32)
+   text_run::impl::impl(font const& font_, std::u32string_view utf32)
     : _font{font_}
     , _hb_font(_font.impl()->getTypeface())
     , _text{utf32}
@@ -123,11 +123,11 @@ namespace cycfi::artist
       }
    }
 
-   text_layout::impl::~impl()
+   text_run::impl::~impl()
    {
    }
 
-   void text_layout::impl::flow(get_line_info const& glf, flow_info finfo)
+   void text_run::impl::flow(get_line_info const& glf, flow_info finfo)
    {
       if (_text.size() == 0)
          return;
@@ -142,7 +142,8 @@ namespace cycfi::artist
       std::vector<SkScalar> positions;
       positions.reserve(glyphs_info.count);
       auto linfo = glf(0);
-      float y = 0;
+      double y = 0;   // accumulate vertical position in double: line height sums
+                      // over thousands of rows, and float would drift ~0.2px.
       float x = 0;
       std::size_t glyph_start = 0;
 
@@ -223,7 +224,7 @@ namespace cycfi::artist
             positions.erase(positions.begin()+last_glyph, positions.end());
             _rows.push_back(
                row_info{
-                  point{linfo.offset, y}
+                  point{linfo.offset, float(y)}
                   , line_width
                   , finfo.line_height
                   , std::size_t(glyph_count)
@@ -269,12 +270,22 @@ namespace cycfi::artist
             || (glyph_idx == glyphs_info.count - 1
                 && _breaks[idx].line != must_break);
 
+         // True when the next glyph forces a hard break, i.e. this glyph is the
+         // last of its '\n'-delimited segment.  Such a final line is kept whole
+         // and allowed to slightly overflow -- exactly as the end-of-text line
+         // is -- so that wrapping a paragraph is independent of whether a hard
+         // break follows it (otherwise the last line is broken only when a '\n'
+         // follows, producing a phantom extra line).
+         bool next_is_hard_break =
+            (glyph_idx + 1 < glyphs_info.count)
+            && (_breaks[glyphs_info.glyphs[glyph_idx + 1].cluster].line == must_break);
+
          if (_breaks[idx].line == must_break || indeterminate_)
          {
             // We got a hard-break or we are at the end, so must break now
             new_line(idx, glyph_idx, true, indeterminate_, true);
          }
-         else if (x > linfo.width)
+         else if (x > linfo.width && !next_is_hard_break)
          {
             // The line exceeds the target width: break at the last allowed
             // opportunity within the row, scanning back from the overflowing
@@ -317,7 +328,7 @@ namespace cycfi::artist
       {
          _rows.push_back(
             row_info{
-               point{linfo.offset, y}
+               point{linfo.offset, float(y)}
                , 0                          // width
                , finfo.line_height
                , 0                          // glyph_count
@@ -335,7 +346,7 @@ namespace cycfi::artist
       }
    }
 
-   void  text_layout::impl::draw(canvas& cnv, point p, color c)
+   void  text_run::impl::draw(canvas& cnv, point p, color c)
    {
       _paint.setColor4f({c.red, c.green, c.blue, c.alpha}, nullptr);
       if (_rows.size() == 0)
@@ -358,7 +369,7 @@ namespace cycfi::artist
       }
    }
 
-   point text_layout::impl::caret_point(std::size_t index) const
+   point text_run::impl::caret_point(std::size_t index) const
    {
       if (_rows.size() == 0)
          return {0, 0};
@@ -399,7 +410,7 @@ namespace cycfi::artist
       return {row.pos.x + offset, row.pos.y};
    }
 
-   std::size_t text_layout::impl::caret_index(point p) const
+   std::size_t text_run::impl::caret_index(point p) const
    {
       if (_rows.size() == 0)
          return 0;
@@ -443,29 +454,29 @@ namespace cycfi::artist
       return glyphs_info.glyphs[index].cluster;
    }
 
-   std::size_t text_layout::impl::num_lines() const
+   std::size_t text_run::impl::num_lines() const
    {
       return _rows.size();
    }
 
-   class font& text_layout::impl::get_font()
+   class font& text_run::impl::get_font()
    {
       return _font;
    }
 
-   std::u32string_view text_layout::impl::get_text() const
+   std::u32string_view text_run::impl::get_text() const
    {
       return _text;
    }
 
-   text_layout::break_enum text_layout::impl::line_break(std::size_t index) const
+   text_run::break_enum text_run::impl::line_break(std::size_t index) const
    {
       if (index >= _breaks.size())
          return indeterminate;
       return _breaks[index].line;
    }
 
-   text_layout::break_enum text_layout::impl::word_break(std::size_t index) const
+   text_run::break_enum text_run::impl::word_break(std::size_t index) const
    {
       if (index >= _breaks.size())
          return indeterminate;
@@ -473,41 +484,41 @@ namespace cycfi::artist
    }
 
    ////////////////////////////////////////////////////////////////////////////
-   text_layout::text_layout(font_descr font_, std::string_view utf8)
+   text_run::text_run(font_descr font_, std::string_view utf8)
     : _impl{std::make_unique<impl>(font_, to_utf32(utf8))}
    {
    }
 
-   text_layout::text_layout(font_descr font_, std::u32string_view utf32)
+   text_run::text_run(font_descr font_, std::u32string_view utf32)
     : _impl{std::make_unique<impl>(font_, utf32)}
    {
    }
 
-   text_layout::~text_layout()
+   text_run::~text_run()
    {
    }
 
-   text_layout::text_layout(text_layout&& rhs) noexcept
+   text_run::text_run(text_run&& rhs) noexcept
     : _impl{std::move(rhs._impl)}
    {
    }
 
-   void text_layout::text(std::string_view utf8)
+   void text_run::text(std::string_view utf8)
    {
       _impl = std::make_unique<impl>(_impl->get_font(), to_utf32(utf8));
    }
 
-   void text_layout::text(std::u32string_view utf32)
+   void text_run::text(std::u32string_view utf32)
    {
       _impl = std::make_unique<impl>(_impl->get_font(), utf32);
    }
 
-   std::u32string_view text_layout::text() const
+   std::u32string_view text_run::text() const
    {
       return _impl->get_text();
    }
 
-   void text_layout::flow(float width, bool justify)
+   void text_run::flow(float width, bool justify)
    {
       auto line_info_f = [width](float /*y*/)
       {
@@ -518,37 +529,37 @@ namespace cycfi::artist
       flow(line_info_f, {justify, lh, lh});
    }
 
-   void text_layout::flow(get_line_info const& glf, flow_info finfo)
+   void text_run::flow(get_line_info const& glf, flow_info finfo)
    {
       _impl->flow(glf, finfo);
    }
 
-   void text_layout::draw(canvas& cnv, point p, color c) const
+   void text_run::draw(canvas& cnv, point p, color c) const
    {
       _impl->draw(cnv, p, c);
    }
 
-   std::size_t text_layout::num_lines() const
+   std::size_t text_run::num_lines() const
    {
       return _impl->num_lines();
    }
 
-   point text_layout::caret_point(std::size_t index) const
+   point text_run::caret_point(std::size_t index) const
    {
       return _impl->caret_point(index);
    }
 
-   std::size_t text_layout::caret_index(point p) const
+   std::size_t text_run::caret_index(point p) const
    {
       return _impl->caret_index(p);
    }
 
-   text_layout::break_enum text_layout::line_break(std::size_t index) const
+   text_run::break_enum text_run::line_break(std::size_t index) const
    {
       return _impl->line_break(index);
    }
 
-   text_layout::break_enum text_layout::word_break(std::size_t index) const
+   text_run::break_enum text_run::word_break(std::size_t index) const
    {
       return _impl->word_break(index);
    }

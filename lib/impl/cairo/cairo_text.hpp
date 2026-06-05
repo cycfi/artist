@@ -19,7 +19,7 @@ namespace cycfi::artist
    // codepoint : HarfBuzz glyph ID (== FreeType/Cairo glyph index for the
    //             same face — safe to pass directly to cairo_show_glyphs).
    // cluster   : UTF-32 source index of the first code point that produced
-   //             this glyph. Used by text_layout for break-opportunity lookup
+   //             this glyph. Used by text_run for break-opportunity lookup
    //             and caret mapping.
    // x_advance : horizontal pen advance after drawing this glyph, in pixels.
    // x_offset  : horizontal draw offset from the current pen position (kern,
@@ -52,7 +52,7 @@ namespace cycfi::artist
    // shape_text (UTF-32 overload) — shape a UTF-32 LTR run.
    //
    // Cluster values in the returned glyphs are UTF-32 code-point indices
-   // (0-based into utf32), suitable for direct lookup into text_layout's
+   // (0-based into utf32), suitable for direct lookup into text_run's
    // per-code-point break table.
    ////////////////////////////////////////////////////////////////////////////
    inline shaped_run shape_text(hb_font_t* hb_fnt, float font_size,
@@ -113,7 +113,7 @@ namespace cycfi::artist
    //
    // Cluster values are UTF-32 code-point indices, assigned by HarfBuzz from
    // the buffer's cluster tracking. They are preserved verbatim in shaped_glyph
-   // for use by text_layout's break-opportunity and caret-mapping logic.
+   // for use by text_run's break-opportunity and caret-mapping logic.
    ////////////////////////////////////////////////////////////////////////////
    inline shaped_run shape_text(hb_font_t* hb_fnt, float font_size,
                                 std::string_view utf8)
