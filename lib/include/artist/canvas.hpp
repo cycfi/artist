@@ -35,6 +35,12 @@ namespace cycfi::artist
 //#endif
 #elif defined(ARTIST_CAIRO)
    using canvas_impl = cairo_t;
+#else
+   // No backend selected: canvas is only ever held through a canvas_impl*, so
+   // an opaque forward declaration is enough to include this header (e.g. from
+   // non-graphical unit tests). The drawing methods are out-of-line and need a
+   // backend linked only if actually called.
+   struct canvas_impl;
 #endif
 
    class canvas
