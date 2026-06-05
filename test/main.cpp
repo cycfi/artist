@@ -1662,6 +1662,77 @@ TEST_CASE("Ligature at end of line")
    CHECK(start.y == end.y);            // single line
 }
 
+TEST_CASE("Ligature before a hard line break")
+{
+   // Issue cycfi/elements#384 (follow-up): a line ENDING in a ligature that is
+   // immediately followed by a hard line break (e.g. "...ffl\n") must consume
+   // the newline glyph, not draw it.  The end-of-text guard for trailing
+   // ligatures must not also keep a trailing newline glyph, which renders as a
+   // .notdef box at the right edge of the line.
+   //
+   // Detect it by rendering and scanning pixels: the first line of "Affl\nB"
+   // must not extend further right than "Affl" drawn alone.  A leftover newline
+   // box would push the rightmost inked pixel well past the ligature.
+
+   auto rightmost_ink_first_line =
+      [](char const* str) -> int
+      {
+         image img{300, 120};
+         {
+            offscreen_image offscr{img};
+            canvas cnv{offscr.context()};
+            cnv.add_rect(0, 0, 300, 120);
+            cnv.fill_style(colors::white);
+            cnv.fill();
+            text_layout tl{font_descr{"Open Sans", 40}, str};
+            tl.flow(290, false);
+            tl.draw(cnv, {5, 45}, colors::black);
+         }
+         auto sz = img.bitmap_size();
+         auto const* px = img.pixels();
+         int w = int(sz.x), band = std::min(int(sz.y), 50);  // first line only
+         int rightmost = -1;
+         for (int y = 0; y != band; ++y)
+            for (int x = 0; x != w; ++x)
+            {
+               // Any backend: white background is the max value in every
+               // channel; inked (black) text lowers them.  Treat a clearly
+               // non-white pixel as ink.
+               auto p = px[y * w + x];
+               unsigned b0 =  p        & 0xff;
+               unsigned b1 = (p >>  8) & 0xff;
+               unsigned b2 = (p >> 16) & 0xff;
+               if (b0 < 200 || b1 < 200 || b2 < 200)
+                  rightmost = std::max(rightmost, x);
+            }
+         return rightmost;
+      };
+
+   // The trailing newline must be the LAST glyph for the bug to bite (the user
+   // pressed Return at the very end).  "Affl\n" ends in the ffl ligature then a
+   // hard break that owns the final glyph.
+   int plain   = rightmost_ink_first_line("Affl");
+   int with_nl = rightmost_ink_first_line("Affl\n");
+
+   CHECK(plain > 0);                            // text actually rendered
+   CHECK(std::abs(with_nl - plain) <= 2);       // no extra newline box drawn
+
+   // Font-independent check: a trailing newline contributes no width to its
+   // line -- the newline glyph (a visible box in some fonts, a blank but
+   // advancing glyph in others) must be consumed, not kept.  The right edge of
+   // the line in "Affl\n" must equal the width of "Affl" alone; a kept newline
+   // glyph pushes it out by that glyph's advance even when it draws no ink.
+   {
+      text_layout a{font_descr{"Open Sans", 40}, "Affl"};
+      a.flow(290, false);
+      text_layout b{font_descr{"Open Sans", 40}, "Affl\n"};
+      b.flow(290, false);
+      auto a_end = a.caret_point(a.text().size()).x;
+      auto b_end = b.caret_point(b.text().size()).x;
+      CHECK(std::abs(b_end - a_end) <= 1.0f);
+   }
+}
+
 TEST_CASE("Path Equality")
 {
    // Identical paths are equal

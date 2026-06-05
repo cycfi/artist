@@ -260,9 +260,14 @@ namespace cycfi::artist
          // an earlier code point, so that marker carries no glyph.  Treat the
          // last glyph as the end-of-text boundary as well, otherwise the final
          // line is never flushed and the text disappears (elements #157).
+         //
+         // But only when it is not itself a hard break: a trailing newline owns
+         // the last glyph too, and that glyph must be consumed (dropped), not
+         // kept -- keeping it draws the newline's .notdef box at the line end.
          bool indeterminate_ =
             _breaks[idx].line == indeterminate
-            || glyph_idx == glyphs_info.count - 1;
+            || (glyph_idx == glyphs_info.count - 1
+                && _breaks[idx].line != must_break);
 
          if (_breaks[idx].line == must_break || indeterminate_)
          {
