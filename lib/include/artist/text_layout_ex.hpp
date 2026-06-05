@@ -323,12 +323,15 @@ namespace cycfi::artist
    typename Layout::break_enum
    basic_text_layout_ex<Layout>::line_break(size_type index) const
    {
-      size_type pi = _px.index_at(index);
-      size_type pstart = _px.start(pi);
-      // The start of any paragraph after the first is a hard '\n' boundary.
-      if (index == pstart && pi > 0)
+      // A hard line break is reported at the '\n' character's own index -- a
+      // mandatory break *after* that character -- matching libunibreak and the
+      // single text_layout. (The editor's word/line navigation relies on this
+      // convention: it lands on the newline, then steps forward onto the next
+      // line's first character.)
+      if (index < _buffer.size() && _buffer[index] == U'\n')
          return Layout::must_break;
-      return _paras[pi].layout.line_break(index - pstart);
+      size_type pi = _px.index_at(index);
+      return _paras[pi].layout.line_break(index - _px.start(pi));
    }
 
    template <typename Layout>

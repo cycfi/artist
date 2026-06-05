@@ -76,14 +76,16 @@ TEST_CASE("text_layout_ex line_break marks paragraph boundaries")
    auto ex = make_text_layout_ex(font_descr{"Open Sans", 14}, U"one\ntwo\nthree");
    ex.flow(1000);
 
-   // Paragraph starts (after each hard '\n') are mandatory line breaks; index 0
-   // is the document start and is not classified as a break here.
-   CHECK(ex.line_break(0) != text_layout::must_break);
-   CHECK(ex.line_break(4) == text_layout::must_break);   // start of "two"
-   CHECK(ex.line_break(8) == text_layout::must_break);   // start of "three"
+   // A hard break is reported at the '\n' character's own index (a mandatory
+   // break after it), matching libunibreak and the single text_layout.
+   // "one\ntwo\nthree": newlines at indices 3 and 7.
+   CHECK(ex.line_break(3) == text_layout::must_break);   // the '\n' after "one"
+   CHECK(ex.line_break(7) == text_layout::must_break);   // the '\n' after "two"
 
-   // A position inside a paragraph is not a mandatory break.
+   // The document start and positions inside a paragraph are not hard breaks.
+   CHECK(ex.line_break(0) != text_layout::must_break);
    CHECK(ex.line_break(1) != text_layout::must_break);
+   CHECK(ex.line_break(4) != text_layout::must_break);   // 't' of "two"
    CHECK(ex.line_break(5) != text_layout::must_break);
 }
 
