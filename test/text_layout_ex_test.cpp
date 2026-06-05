@@ -48,6 +48,11 @@ static int failures = 0;
 //   caret_index({x,y}) = clamp(round(x), 0, size)
 struct fake_layout
 {
+   // The engine's word_break/line_break return Layout::break_enum; declaring
+   // those members instantiates the type even though this stitching mock never
+   // calls them, so the mock must provide it.
+   using break_enum = cycfi::artist::text_layout::break_enum;
+
    std::u32string txt;
    float          width = 0;
    bool           justified = false;
