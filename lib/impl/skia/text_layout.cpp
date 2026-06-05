@@ -308,6 +308,25 @@ namespace cycfi::artist
                new_line(idx, glyph_idx, false, false, false);
          }
       }
+      // A trailing hard line break (text ending in '\n') leaves an empty final
+      // line.  The in-loop flush consumes the break glyph but emits no row for
+      // the empty line after it, so the caret cannot land there -- you would
+      // have to press Return twice.  Emit an explicit empty row for it, matching
+      // the Cairo backend.
+      if (_breaks.back().line == must_break)
+      {
+         _rows.push_back(
+            row_info{
+               point{linfo.offset, y}
+               , 0                          // width
+               , finfo.line_height
+               , 0                          // glyph_count
+               , std::size_t(glyphs_info.count)  // glyph_index (past the end)
+               , nullptr                    // no text blob
+               , std::vector<SkScalar>{}
+            }
+         );
+      }
       if (_rows.size())
       {
          auto& last = _rows.back();

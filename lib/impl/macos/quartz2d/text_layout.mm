@@ -188,6 +188,25 @@ namespace cycfi::artist
          ypos += finfo.line_height;
          l_info = glf(ypos);
       }
+
+      // A trailing hard line break (text ending in '\n') leaves an empty final
+      // line.  CTTypesetter folds the break into the preceding line and stops,
+      // emitting no row for the empty line after it, so the caret cannot land
+      // there -- you would have to press Return twice.  Emit an explicit empty
+      // row for it (a zero-length CTLine), matching the Cairo backend.
+      if (_breaks.back().line == must_break)
+      {
+         CTLineRef empty = CTTypesetterCreateLine(typesetter, CFRangeMake(length, 0));
+         _rows.emplace_back(
+            row_info{
+               point{l_info.offset, ypos}
+               , 0.0f
+               , finfo.line_height
+               , empty
+            }
+         );
+      }
+
       auto& last = _rows.back();
       last.pos.y += finfo.last_line_height - finfo.line_height;
       last.height = finfo.last_line_height;
