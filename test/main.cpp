@@ -1636,6 +1636,32 @@ TEST_CASE("CJK line wrapping")
    }
 }
 
+TEST_CASE("Ligature at end of line")
+{
+   // Issue cycfi/elements#384: a string that ENDS in a ligature (e.g. the "fi"
+   // of "wifi" shapes to a single glyph spanning two code points) made the whole
+   // text disappear on the Skia backend.
+   //
+   // End-of-text is detected from libunibreak's INDETERMINATE marker, which sits
+   // on the final code point.  When that code point is swallowed by a trailing
+   // ligature it carries no glyph, so the marker was never seen and the final
+   // line was never flushed -> num_lines() == 0 and nothing was drawn.
+
+   text_layout tl{font_descr{"Open Sans", 14}, "wifi"};
+   tl.flow(1000, false);               // wide: everything fits on one line
+
+   // The line must be flushed: non-empty text always produces at least one line.
+   CHECK(tl.num_lines() == 1);
+
+   // The flowed line must have positive extent (the text is actually laid out,
+   // not collapsed to nothing): the end-of-text caret sits to the right of the
+   // start-of-text caret.
+   auto start = tl.caret_point(0);
+   auto end   = tl.caret_point(tl.text().size());
+   CHECK(end.x > start.x);
+   CHECK(start.y == end.y);            // single line
+}
+
 TEST_CASE("Path Equality")
 {
    // Identical paths are equal

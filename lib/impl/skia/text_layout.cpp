@@ -254,7 +254,15 @@ namespace cycfi::artist
          positions.push_back(x + (glyphs_info.positions[glyph_idx].x_offset * scalex));
          x += glyphs_info.positions[glyph_idx].x_advance * scalex;
          auto idx = glyphs_info.glyphs[glyph_idx].cluster;
-         bool indeterminate_ = _breaks[idx].line == indeterminate;
+
+         // End of text: libunibreak marks the final code point INDETERMINATE,
+         // but when the string ends in a ligature the last glyph's cluster is
+         // an earlier code point, so that marker carries no glyph.  Treat the
+         // last glyph as the end-of-text boundary as well, otherwise the final
+         // line is never flushed and the text disappears (elements #157).
+         bool indeterminate_ =
+            _breaks[idx].line == indeterminate
+            || glyph_idx == glyphs_info.count - 1;
 
          if (_breaks[idx].line == must_break || indeterminate_)
          {
