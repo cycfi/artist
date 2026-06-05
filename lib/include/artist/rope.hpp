@@ -25,6 +25,13 @@ namespace cycfi::artist
     *    undo/redo and for sharing unchanged, already-shaped sub-spans across
     *    edits.
     *
+    *    Editing invariants maintained by every operation:
+    *    - no leaf exceeds `rope_max_leaf` elements (load and paste chunk;
+    *      single-character typing coalesces into the caret's leaf instead of
+    *      spawning a leaf per keystroke);
+    *    - the tree stays within a logarithmic depth bound (rebuild-on-threshold
+    *      balancing).
+    *
     *    The element type `T` is arbitrary: the text engine uses `char32_t` for
     *    the buffer and, later, a paragraph type for the document tree.
     */
@@ -50,6 +57,7 @@ namespace cycfi::artist
       bool                    empty() const                 { return size() == 0; }
       T                       operator[](size_type i) const;
 
+      // Editing: insert / erase / replace a range of elements.
       template <typename Iter>
       void                    insert(size_type pos, Iter first, Iter last);
       void                    insert(size_type pos, std::vector<T> const& seq);
@@ -57,10 +65,17 @@ namespace cycfi::artist
       template <typename Iter>
       void                    replace(size_type pos, size_type len, Iter first, Iter last);
 
+      // Reading: materialized slice, or zero-copy chunk-wise visit of [pos,pos+len).
+      std::vector<T>          substr(size_type pos, size_type len) const;
+      template <typename F>
+      void                    for_each(size_type pos, size_type len, F f) const;
       rope                    subrope(size_type pos, size_type len) const;
       std::vector<T>          flatten() const;
 
-      size_type               depth() const;                // for tests / balance
+      // Diagnostics / tests.
+      size_type               depth() const;
+      size_type               leaf_count() const;
+      size_type               max_leaf_size() const;
 
    private:
 
@@ -79,11 +94,16 @@ namespace cycfi::artist
       static bool          is_leaf(node_ptr const& n)    { return !n->left; }
 
       static node_ptr      make_leaf(std::vector<T> chunk);
+      static node_ptr      make_internal(node_ptr l, node_ptr r);
+      static node_ptr      build_balanced(std::vector<T> all);
       static node_ptr      concat(node_ptr l, node_ptr r);
+      static node_ptr      insert_into(node_ptr n, size_type pos, std::vector<T> const& seq);
       static std::pair<node_ptr, node_ptr>
                            split(node_ptr n, size_type pos);
       static void          collect(node_ptr const& n, std::vector<T>& out);
       static node_ptr      maybe_balance(node_ptr n);
+      template <typename F>
+      static void          visit(node_ptr const& n, size_type pos, size_type len, F& f);
 
       explicit             rope(node_ptr root) : _root(std::move(root)) {}
 
@@ -113,12 +133,49 @@ namespace cycfi::artist
    }
 
    template <typename T>
+   typename rope<T>::node_ptr rope<T>::make_internal(node_ptr l, node_ptr r)
+   {
+      auto n = std::make_shared<node>();
+      n->size = l->size + r->size;
+      n->depth = 1 + std::max(l->depth, r->depth);
+      n->left = std::move(l);
+      n->right = std::move(r);
+      return n;
+   }
+
+   // Build a balanced tree over `all`, chunked into <= rope_max_leaf leaves.
+   // Handles every size: empty -> null, small -> one leaf, large -> balanced.
+   template <typename T>
+   typename rope<T>::node_ptr rope<T>::build_balanced(std::vector<T> all)
+   {
+      if (all.empty())
+         return nullptr;
+
+      std::vector<node_ptr> leaves;
+      for (size_type i = 0; i < all.size(); i += detail::rope_max_leaf)
+      {
+         size_type end = std::min(i + detail::rope_max_leaf, all.size());
+         leaves.push_back(make_leaf(std::vector<T>(all.begin() + i, all.begin() + end)));
+      }
+      std::function<node_ptr(size_type, size_type)> build =
+         [&](size_type lo, size_type hi) -> node_ptr
+         {
+            if (hi - lo == 1)
+               return leaves[lo];
+            size_type mid = lo + (hi - lo) / 2;
+            return make_internal(build(lo, mid), build(mid, hi));
+         };
+      return build(0, leaves.size());
+   }
+
+   template <typename T>
    typename rope<T>::node_ptr rope<T>::concat(node_ptr l, node_ptr r)
    {
       if (!l) return r;
       if (!r) return l;
 
-      // Coalesce two small adjacent leaves to keep the tree shallow.
+      // Coalesce two small adjacent leaves to keep the tree shallow and avoid
+      // fragmentation from many small edits.
       if (is_leaf(l) && is_leaf(r) &&
          l->chunk.size() + r->chunk.size() <= detail::rope_max_leaf)
       {
@@ -128,13 +185,35 @@ namespace cycfi::artist
          merged.insert(merged.end(), r->chunk.begin(), r->chunk.end());
          return make_leaf(std::move(merged));
       }
+      return maybe_balance(make_internal(std::move(l), std::move(r)));
+   }
 
-      auto n = std::make_shared<node>();
-      n->left = std::move(l);
-      n->right = std::move(r);
-      n->size = n->left->size + n->right->size;
-      n->depth = 1 + std::max(n->left->depth, n->right->depth);
-      return maybe_balance(n);
+   // Insert `seq` at `pos` by descending to the leaf that contains `pos` and
+   // splicing in place.  Small inserts (typing) coalesce into that leaf; an
+   // overflowing leaf is re-chunked balanced.  This is the editor hot path.
+   template <typename T>
+   typename rope<T>::node_ptr
+   rope<T>::insert_into(node_ptr n, size_type pos, std::vector<T> const& seq)
+   {
+      if (!n)
+         return build_balanced(seq);
+
+      if (is_leaf(n))
+      {
+         std::vector<T> merged;
+         merged.reserve(n->chunk.size() + seq.size());
+         merged.insert(merged.end(), n->chunk.begin(), n->chunk.begin() + pos);
+         merged.insert(merged.end(), seq.begin(), seq.end());
+         merged.insert(merged.end(), n->chunk.begin() + pos, n->chunk.end());
+         if (merged.size() <= detail::rope_max_leaf)
+            return make_leaf(std::move(merged));
+         return build_balanced(std::move(merged));
+      }
+
+      size_type lsz = n->left->size;
+      if (pos <= lsz)
+         return concat(insert_into(n->left, pos, seq), n->right);
+      return concat(n->left, insert_into(n->right, pos - lsz, seq));
    }
 
    template <typename T>
@@ -198,47 +277,48 @@ namespace cycfi::artist
       std::vector<T> all;
       all.reserve(n->size);
       collect(n, all);
-
-      // Build a balanced tree of leaves over the flattened elements.
-      std::vector<node_ptr> leaves;
-      for (size_type i = 0; i < all.size(); i += detail::rope_max_leaf)
-      {
-         size_type end = std::min(i + detail::rope_max_leaf, all.size());
-         leaves.push_back(make_leaf(std::vector<T>(all.begin() + i, all.begin() + end)));
-      }
-      std::function<node_ptr(size_type, size_type)> build =
-         [&](size_type lo, size_type hi) -> node_ptr
-         {
-            if (lo >= hi) return nullptr;
-            if (hi - lo == 1) return leaves[lo];
-            size_type mid = lo + (hi - lo) / 2;
-            auto l = build(lo, mid);
-            auto r = build(mid, hi);
-            auto p = std::make_shared<node>();
-            p->left = l; p->right = r;
-            p->size = l->size + r->size;
-            p->depth = 1 + std::max(l->depth, r->depth);
-            return p;
-         };
-      auto res = build(0, leaves.size());
+      auto res = build_balanced(std::move(all));
       return res ? res : n;
    }
 
    template <typename T>
-   rope<T>::rope(std::vector<T> chunk)
+   template <typename F>
+   void rope<T>::visit(node_ptr const& n, size_type pos, size_type len, F& f)
    {
-      if (!chunk.empty())
-         _root = make_leaf(std::move(chunk));
+      if (!n || len == 0)
+         return;
+      if (is_leaf(n))
+      {
+         size_type from = std::min(pos, n->chunk.size());
+         size_type to = std::min(pos + len, n->chunk.size());
+         if (to > from)
+            f(n->chunk.data() + from, to - from);
+         return;
+      }
+      size_type lsz = n->left->size;
+      if (pos < lsz)
+      {
+         size_type left_len = std::min(len, lsz - pos);
+         visit(n->left, pos, left_len, f);
+         if (len > left_len)
+            visit(n->right, 0, len - left_len, f);
+      }
+      else
+      {
+         visit(n->right, pos - lsz, len, f);
+      }
    }
+
+   template <typename T>
+   rope<T>::rope(std::vector<T> chunk)
+    : _root(build_balanced(std::move(chunk)))
+   {}
 
    template <typename T>
    template <typename Iter>
    rope<T>::rope(Iter first, Iter last)
-   {
-      std::vector<T> chunk(first, last);
-      if (!chunk.empty())
-         _root = make_leaf(std::move(chunk));
-   }
+    : _root(build_balanced(std::vector<T>(first, last)))
+   {}
 
    template <typename T>
    typename rope<T>::size_type rope<T>::size() const
@@ -253,15 +333,35 @@ namespace cycfi::artist
    }
 
    template <typename T>
+   typename rope<T>::size_type rope<T>::leaf_count() const
+   {
+      std::function<size_type(node_ptr const&)> count =
+         [&](node_ptr const& n) -> size_type
+         {
+            if (!n) return 0;
+            if (is_leaf(n)) return 1;
+            return count(n->left) + count(n->right);
+         };
+      return count(_root);
+   }
+
+   template <typename T>
+   typename rope<T>::size_type rope<T>::max_leaf_size() const
+   {
+      std::function<size_type(node_ptr const&)> mx =
+         [&](node_ptr const& n) -> size_type
+         {
+            if (!n) return 0;
+            if (is_leaf(n)) return n->chunk.size();
+            return std::max(mx(n->left), mx(n->right));
+         };
+      return mx(_root);
+   }
+
+   template <typename T>
    T rope<T>::operator[](size_type i) const
    {
       node const* n = _root.get();
-      while (n && !n->left)
-      {
-         if (i < n->chunk.size())
-            return n->chunk[i];
-         break;  // out of range on a leaf
-      }
       while (n && n->left)
       {
          size_type lsz = n->left->size;
@@ -285,8 +385,7 @@ namespace cycfi::artist
          return;
       if (pos > size())
          pos = size();
-      auto [l, r] = split(_root, pos);
-      _root = concat(concat(l, make_leaf(std::move(seq))), r);
+      _root = insert_into(_root, pos, seq);
    }
 
    template <typename T>
@@ -313,6 +412,29 @@ namespace cycfi::artist
    {
       erase(pos, len);
       insert(pos, first, last);
+   }
+
+   template <typename T>
+   template <typename F>
+   void rope<T>::for_each(size_type pos, size_type len, F f) const
+   {
+      if (pos >= size())
+         return;
+      len = std::min(len, size() - pos);
+      visit(_root, pos, len, f);
+   }
+
+   template <typename T>
+   std::vector<T> rope<T>::substr(size_type pos, size_type len) const
+   {
+      std::vector<T> out;
+      if (pos < size())
+      {
+         out.reserve(std::min(len, size() - pos));
+         for_each(pos, len, [&](T const* p, size_type n)
+            { out.insert(out.end(), p, p + n); });
+      }
+      return out;
    }
 
    template <typename T>

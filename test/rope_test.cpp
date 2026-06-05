@@ -128,6 +128,7 @@ int main()
       auto fv = flat(r);
       std::u32string got(fv.begin(), fv.end());
       CHECK(got == oracle);
+      CHECK(r.max_leaf_size() <= 256);
       std::cout << "fuzz final size=" << r.size() << " depth=" << r.depth() << "\n";
    }
 
@@ -175,12 +176,83 @@ int main()
       std::cout << "stress size=" << r.size() << " depth=" << r.depth()
                 << " ideal~" << ideal << "\n";
       CHECK(r.depth() <= 3 * ideal + 8);
+      CHECK(r.max_leaf_size() <= 256);
 
       for (int k = 0; k < 2000; ++k)
       {
          std::size_t i = rng() % r.size();
          CHECK(r[i] == oracle[i]);
       }
+   }
+
+   // ======================================================================
+   // Text-editing use-case API + invariants
+   // ======================================================================
+
+   // Leaf invariant: no leaf ever exceeds rope_max_leaf (256). This must hold
+   // after construction, insert (incl. large paste), and erase.
+   {
+      // Load: constructing from large input must chunk, not make one giant leaf.
+      std::vector<char32_t> big(10000, U'x');
+      rope<char32_t> r(big.begin(), big.end());
+      CHECK(r.size() == 10000);
+      CHECK(r.max_leaf_size() <= 256);          // chunked on load
+      CHECK(r.leaf_count() >= 10000 / 256);     // really multiple leaves
+      CHECK(r.depth() > 1);
+
+      // Large paste must also chunk.
+      std::vector<char32_t> paste(5000, U'y');
+      r.insert(5000, paste.begin(), paste.end());
+      CHECK(r.size() == 15000);
+      CHECK(r.max_leaf_size() <= 256);
+   }
+
+   // Coalescing: sequential single-char typing into a LARGE document must not
+   // create one leaf per character.  Leaf count should stay ~ size/leaf, and
+   // every leaf must remain within the cap.
+   {
+      std::vector<char32_t> base(50000, U'.');
+      rope<char32_t> r(base.begin(), base.end());
+      std::u32string oracle(50000, U'.');
+      std::size_t caret = 25000;
+      for (int i = 0; i < 3000; ++i)            // type 3000 chars near the middle
+      {
+         char32_t ch = U"abcde"[i % 5];
+         r.insert(caret, &ch, &ch + 1);
+         oracle.insert(oracle.begin() + caret, ch);
+         ++caret;
+      }
+      auto fv = flat(r);
+      CHECK(std::u32string(fv.begin(), fv.end()) == oracle);
+      CHECK(r.max_leaf_size() <= 256);
+      // If each keystroke made its own leaf we'd have ~53000 leaves; coalescing
+      // must keep it near size/leaf.
+      std::cout << "typing leaf_count=" << r.leaf_count()
+                << " (size=" << r.size() << ")\n";
+      CHECK(r.leaf_count() <= r.size() / 64);
+   }
+
+   // substr: materialized slice (clipboard copy/cut, run text).
+   {
+      rope<char32_t> r(V("abc"));
+      auto x = V("123");
+      r.insert(1, x.begin(), x.end());          // "a123bc"
+      CHECK(r.substr(0, 6) == V("a123bc"));
+      CHECK(r.substr(1, 3) == V("123"));
+      CHECK(r.substr(4, 10) == V("bc"));        // clamp
+      CHECK(r.substr(100, 5).empty());          // out of range
+   }
+
+   // for_each: read a range without materializing; must equal substr.
+   {
+      std::vector<char32_t> base(2000);
+      for (std::size_t i = 0; i < base.size(); ++i) base[i] = U'a' + (i % 26);
+      rope<char32_t> r(base.begin(), base.end());
+      std::vector<char32_t> got;
+      r.for_each(100, 1500, [&](char32_t const* p, std::size_t n)
+         { got.insert(got.end(), p, p + n); });
+      CHECK(got == r.substr(100, 1500));
+      CHECK(got.size() == 1500);
    }
 
    if (failures == 0) std::cout << "ALL PASS\n";
