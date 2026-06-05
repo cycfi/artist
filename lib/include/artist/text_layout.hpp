@@ -54,7 +54,7 @@ namespace cycfi::artist
                               );
 
                               basic_text_layout(basic_text_layout&&) noexcept = default;
-      basic_text_layout&   operator=(basic_text_layout&&) noexcept = default;
+      basic_text_layout&      operator=(basic_text_layout&&) noexcept = default;
 
       void                    set_text(std::u32string_view text);
       std::u32string          text() const;
