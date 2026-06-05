@@ -3,10 +3,32 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 
-   Unit test for the multi-paragraph stitching of basic_text_layout_ex
-   (elements #370). Uses a non-graphical fake paragraph layout so the
-   stitching logic (paragraph splice on edits, vertical offsets, caret
-   index<->point mapping, incrementality) is tested without a backend.
+   Unit test for the multi-paragraph STITCHING of basic_text_layout_ex
+   (elements #370).
+
+   `basic_text_layout_ex<Layout>` is templated on the per-paragraph layout type
+   (the production type is artist::text_layout). Here it is instantiated with
+   `fake_layout`: a trivial, deterministic, non-graphical stand-in that needs no
+   fonts/shaping/backend. That lets the *structural* logic be tested as a plain
+   standalone binary, fast and backend-free:
+     - paragraph splice on insert/erase (split, merge, in-place edit),
+     - vertical-offset accumulation,
+     - caret index<->point mapping,
+     - incrementality (a build-counter proves only touched paragraphs rebuild).
+
+   SCOPE / LIMITATION — read before trusting this:
+   A fake tests "does the code match my ASSUMPTIONS", not "does it match the
+   real text_layout". It is scaffolding, not verification. This bit us: an early
+   fake modelled num_lines() so that a paragraph's trailing '\n' added a line,
+   which masked the fact that the REAL text_layout opens an extra empty line for
+   a trailing '\n' (a double-count bug); the fake also never modelled an empty
+   paragraph reporting 0 lines. Both bugs passed here and were only caught by the
+   real-backend equivalence tests in text_layout_ex_render_test.cpp.
+
+   Therefore: this file covers the splice/offset/incrementality machinery only.
+   Ground-truth correctness (shaping, line counts, caret geometry, and the
+   draw/rasterization path) lives in text_layout_ex_render_test.cpp, which runs
+   against the actual graphics backend. Keep the two in sync.
 =============================================================================*/
 #include <artist/text_layout_ex.hpp>
 #include <string>
