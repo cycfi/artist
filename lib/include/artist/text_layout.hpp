@@ -282,17 +282,13 @@ namespace cycfi::artist
    {
       if (_paras.empty())
          return 0;
-      // Last paragraph whose top y-offset is <= y.
-      size_type lo = 0, hi = _paras.size();
-      while (lo < hi)
-      {
-         size_type mid = lo + (hi - lo) / 2;
-         if (_paras[mid].y <= y)
-            lo = mid + 1;
-         else
-            hi = mid;
-      }
-      return (lo == 0) ? 0 : lo - 1;
+      // Last paragraph whose top y-offset is <= y: the one just before the
+      // first paragraph that starts past y.
+      auto it = std::upper_bound(
+         _paras.begin(), _paras.end(), y,
+         [](double yy, para const& p) { return yy < p.y; });
+      size_type i = size_type(it - _paras.begin());
+      return (i == 0) ? 0 : i - 1;
    }
 
    template <typename Layout>
