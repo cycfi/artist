@@ -1,0 +1,301 @@
+/*=============================================================================
+   Copyright (c) 2016-2026 Joel de Guzman
+
+   Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
+=============================================================================*/
+#if !defined(ARTIST_TEXT_LAYOUT_EX_JUNE_5_2026)
+#define ARTIST_TEXT_LAYOUT_EX_JUNE_5_2026
+
+#include <artist/text_layout.hpp>
+#include <artist/detail/paragraph_index.hpp>
+#include <artist/rope.hpp>
+#include <artist/point.hpp>
+#include <algorithm>
+#include <functional>
+#include <string>
+#include <string_view>
+#include <vector>
+
+namespace cycfi::artist
+{
+   class canvas;
+
+   /**
+    * \brief
+    *    Multi-paragraph text engine: a rope-backed document split into
+    *    paragraphs at hard '\n' breaks, with one paragraph layout per
+    *    paragraph stacked vertically.
+    *
+    *    Edits are incremental: only the paragraphs an edit touches are
+    *    re-laid-out (via `paragraph_index`), and the rope buffer shares
+    *    unchanged structure. Templated on the per-paragraph `Layout` so the
+    *    stitching can be tested with a non-graphical fake; the production
+    *    instantiation is `text_layout_ex` over `artist::text_layout`.
+    *
+    *    `Layout` must provide: construction from `std::u32string_view`,
+    *    `flow(float, bool)`, `num_lines()`, `caret_point(size_t)`,
+    *    `caret_index(point)`, and (only if `draw` is used) `draw(canvas&,
+    *    point, color)`.
+    */
+   template <typename Layout>
+   class basic_text_layout_ex
+   {
+   public:
+
+      using size_type = std::size_t;
+      using factory = std::function<Layout(std::u32string_view)>;
+
+                              basic_text_layout_ex(
+                                 factory make
+                               , float line_height
+                               , std::u32string_view text
+                              );
+
+                              basic_text_layout_ex(basic_text_layout_ex&&) noexcept = default;
+      basic_text_layout_ex&   operator=(basic_text_layout_ex&&) noexcept = default;
+
+      void                    set_text(std::u32string_view text);
+      std::u32string          text() const;
+      size_type               size() const                { return _buffer.size(); }
+      size_type               paragraph_count() const     { return _paras.size(); }
+
+      void                    insert(size_type pos, std::u32string_view text);
+      void                    erase(size_type pos, size_type len);
+      void                    replace(size_type pos, size_type len, std::u32string_view text);
+
+      void                    flow(float width, bool justify = false);
+      size_type               num_lines() const;
+      float                   height() const               { return num_lines() * _line_height; }
+
+      point                   caret_point(size_type index) const;
+      size_type               caret_index(point p) const;
+
+      void                    draw(canvas& cnv, point p, color c = colors::black) const;
+
+   private:
+
+      struct para
+      {
+         Layout      layout;
+         size_type   lines;
+         float       y;       // top of this paragraph, relative to the document
+      };
+
+      para                    make_para(size_type i) const;
+      void                    splice_rebuild(
+                                 detail::paragraph_index::changed_range ch, size_type old_count
+                              );
+      void                    recompute_offsets(size_type from);
+      size_type               para_at_y(float y) const;
+
+      factory                 _make;
+      float                   _line_height;
+      float                   _width = 0;
+      bool                    _justify = false;
+      rope<char32_t>          _buffer;
+      detail::paragraph_index _px;
+      std::vector<para>       _paras;
+   };
+
+   //--------------------------------------------------------------------------
+   // Implementation
+   //--------------------------------------------------------------------------
+
+   template <typename Layout>
+   basic_text_layout_ex<Layout>::basic_text_layout_ex(
+      factory make, float line_height, std::u32string_view text)
+    : _make(std::move(make))
+    , _line_height(line_height)
+   {
+      set_text(text);
+   }
+
+   template <typename Layout>
+   typename basic_text_layout_ex<Layout>::para
+   basic_text_layout_ex<Layout>::make_para(size_type i) const
+   {
+      auto txt = _buffer.substr(_px.start(i), _px.end(i) - _px.start(i));
+      Layout layout = _make(std::u32string_view(txt.data(), txt.size()));
+      if (_width > 0)
+         layout.flow(_width, _justify);
+      size_type lines = layout.num_lines();
+      return para{std::move(layout), lines, 0};
+   }
+
+   template <typename Layout>
+   void basic_text_layout_ex<Layout>::set_text(std::u32string_view text)
+   {
+      _buffer = rope<char32_t>(text.begin(), text.end());
+      _px.build(_buffer);
+      _paras.clear();
+      _paras.reserve(_px.count());
+      for (size_type i = 0; i != _px.count(); ++i)
+         _paras.push_back(make_para(i));
+      recompute_offsets(0);
+   }
+
+   template <typename Layout>
+   std::u32string basic_text_layout_ex<Layout>::text() const
+   {
+      auto v = _buffer.flatten();
+      return std::u32string(v.begin(), v.end());
+   }
+
+   template <typename Layout>
+   void basic_text_layout_ex<Layout>::recompute_offsets(size_type from)
+   {
+      float y = (from == 0)
+         ? 0.0f
+         : _paras[from - 1].y + _paras[from - 1].lines * _line_height;
+      for (size_type i = from; i != _paras.size(); ++i)
+      {
+         _paras[i].y = y;
+         y += _paras[i].lines * _line_height;
+      }
+   }
+
+   template <typename Layout>
+   void basic_text_layout_ex<Layout>::splice_rebuild(
+      detail::paragraph_index::changed_range ch, size_type old_count)
+   {
+      size_type new_count = _px.count();
+      long dpar = long(new_count) - long(old_count);
+      // The old paragraphs [ch.first .. pe] were replaced by the new
+      // [ch.first .. ch.last]; recover pe from the paragraph-count delta.
+      size_type pe = ch.last - dpar;
+
+      std::vector<para> fresh;
+      fresh.reserve(ch.last - ch.first + 1);
+      for (size_type i = ch.first; i <= ch.last; ++i)
+         fresh.push_back(make_para(i));
+
+      _paras.erase(_paras.begin() + ch.first, _paras.begin() + pe + 1);
+      _paras.insert(
+         _paras.begin() + ch.first
+       , std::make_move_iterator(fresh.begin())
+       , std::make_move_iterator(fresh.end())
+      );
+      recompute_offsets(ch.first);
+   }
+
+   template <typename Layout>
+   void basic_text_layout_ex<Layout>::insert(size_type pos, std::u32string_view text)
+   {
+      if (text.empty())
+         return;
+      if (pos > size())
+         pos = size();
+      size_type old_count = _paras.size();
+      _buffer.insert(pos, text.begin(), text.end());
+      auto ch = _px.update(_buffer, pos, 0, text.size());
+      splice_rebuild(ch, old_count);
+   }
+
+   template <typename Layout>
+   void basic_text_layout_ex<Layout>::erase(size_type pos, size_type len)
+   {
+      if (len == 0 || pos >= size())
+         return;
+      len = std::min(len, size() - pos);
+      size_type old_count = _paras.size();
+      _buffer.erase(pos, len);
+      auto ch = _px.update(_buffer, pos, len, 0);
+      splice_rebuild(ch, old_count);
+   }
+
+   template <typename Layout>
+   void basic_text_layout_ex<Layout>::replace(
+      size_type pos, size_type len, std::u32string_view text)
+   {
+      erase(pos, len);
+      insert(pos, text);
+   }
+
+   template <typename Layout>
+   void basic_text_layout_ex<Layout>::flow(float width, bool justify)
+   {
+      _width = width;
+      _justify = justify;
+      for (auto& p : _paras)
+      {
+         p.layout.flow(width, justify);
+         p.lines = p.layout.num_lines();
+      }
+      recompute_offsets(0);
+   }
+
+   template <typename Layout>
+   typename basic_text_layout_ex<Layout>::size_type
+   basic_text_layout_ex<Layout>::num_lines() const
+   {
+      size_type n = 0;
+      for (auto const& p : _paras)
+         n += p.lines;
+      return n;
+   }
+
+   template <typename Layout>
+   point basic_text_layout_ex<Layout>::caret_point(size_type index) const
+   {
+      size_type pi = _px.index_at(index);
+      size_type local = index - _px.start(pi);
+      point lp = _paras[pi].layout.caret_point(local);
+      return {lp.x, lp.y + _paras[pi].y};
+   }
+
+   template <typename Layout>
+   typename basic_text_layout_ex<Layout>::size_type
+   basic_text_layout_ex<Layout>::para_at_y(float y) const
+   {
+      if (_paras.empty())
+         return 0;
+      // Last paragraph whose top y-offset is <= y.
+      size_type lo = 0, hi = _paras.size();
+      while (lo < hi)
+      {
+         size_type mid = lo + (hi - lo) / 2;
+         if (_paras[mid].y <= y)
+            lo = mid + 1;
+         else
+            hi = mid;
+      }
+      return (lo == 0) ? 0 : lo - 1;
+   }
+
+   template <typename Layout>
+   typename basic_text_layout_ex<Layout>::size_type
+   basic_text_layout_ex<Layout>::caret_index(point p) const
+   {
+      size_type pi = para_at_y(p.y);
+      point local{p.x, p.y - _paras[pi].y};
+      size_type li = _paras[pi].layout.caret_index(local);
+      return _px.start(pi) + li;
+   }
+
+   template <typename Layout>
+   void basic_text_layout_ex<Layout>::draw(canvas& cnv, point p, color c) const
+   {
+      for (auto const& pa : _paras)
+         pa.layout.draw(cnv, {p.x, p.y + pa.y}, c);
+   }
+
+   //--------------------------------------------------------------------------
+   // Production instantiation over artist::text_layout.
+   //--------------------------------------------------------------------------
+   using text_layout_ex = basic_text_layout_ex<text_layout>;
+
+   // Build a text_layout_ex for a single font; line height is derived from the
+   // font metrics, and each paragraph is shaped by an artist::text_layout.
+   inline text_layout_ex make_text_layout_ex(font_descr f, std::u32string_view text)
+   {
+      auto m = font{f}.metrics();
+      float line_height = m.ascent + m.descent + m.leading;
+      return text_layout_ex(
+         [f](std::u32string_view s) { return text_layout{f, s}; }
+       , line_height
+       , text
+      );
+   }
+}
+
+#endif
