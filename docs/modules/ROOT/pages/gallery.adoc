@@ -1,0 +1,18 @@
+= Gallery
+
+It's always nice to have some pretty pictures. Click an image to open the
+high-resolution (HiDPI) version, or follow the links to play the video clips.
+
+[.gallery]
+image:https://cycfi.github.io/assets/img/artist/shapes.jpg[Shapes,150,link=https://cycfi.github.io/assets/img/artist/shapes.png]
+image:https://cycfi.github.io/assets/img/artist/tauri.jpg[Tau,150,link=https://cycfi.github.io/assets/img/artist/tauri.png]
+image:https://cycfi.github.io/assets/img/artist/paths.jpg[Paths,150,link=https://cycfi.github.io/assets/img/artist/paths.png]
+image:https://cycfi.github.io/assets/img/artist/typography.jpg[Typography,150,link=https://cycfi.github.io/assets/img/artist/typography.png]
+image:https://cycfi.github.io/assets/img/artist/composite_ops.jpg[Composite ops,150,link=https://cycfi.github.io/assets/img/artist/composite_ops.png]
+
+== Video clips
+
+* https://vimeo.com/413657459[Rain] —
+  image:https://cycfi.github.io/assets/img/artist/rain_video_thumb.jpg[Rain,150,link=https://vimeo.com/413657459]
+* https://vimeo.com/413797835[Space] —
+  image:https://cycfi.github.io/assets/img/artist/space_video_thumb.jpg[Space,150,link=https://vimeo.com/413797835]
