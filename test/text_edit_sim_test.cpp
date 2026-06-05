@@ -18,7 +18,7 @@
      - whole-document correctness (cheap, total): num_lines and a caret-geometry
        sweep over the entire document must match a freshly built text_layout of
        the same text -- catches incremental-update drift even when text matches.
-     - render correctness + goldens are EDIT-LOCAL: an 80-line caret-following
+     - render correctness + goldens are EDIT-LOCAL: a 60-line caret-following
        window (one editor screen, caret near the top third) is rendered; its
        text must be PIXEL-IDENTICAL to the same window of the ground-truth
        text_layout, and the window WITH the caret drawn is golden-snapshotted
@@ -85,8 +85,8 @@ TEST_CASE("text_layout_ex novel editing session reconstructs the original")
 
    std::mt19937 rng(0x0A11CE);
 
-   // Render an 80-line window of `layout`, scrolled so document-y `top_y` is at
-   // the top; optionally draw a caret at document point `caret`.
+   // Render a win_lines-tall window of `layout`, scrolled so document-y `top_y`
+   // is at the top; optionally draw a caret at document point `caret`.
    auto render_window =
       [&](auto const& layout, float top_y, std::optional<point> caret) -> image
       {
@@ -159,7 +159,7 @@ TEST_CASE("text_layout_ex novel editing session reconstructs the original")
       }
    };
 
-   // ---- edit-local snapshot: 80-line window following the caret ------------
+   // ---- edit-local snapshot: 60-line window following the caret ------------
    auto snapshot = [&](std::size_t caret_idx, std::string name)
    {
       float caret_y = ex.caret_point(caret_idx).y;
