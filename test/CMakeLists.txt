@@ -14,10 +14,10 @@ set(artist_test_sources
    composite_test.cpp
    typography_test.cpp
    geometry_test.cpp
-   text_layout_ex_render_test.cpp
+   text_layout_render_test.cpp
    text_edit_sim_test.cpp
    text_edit_code_test.cpp
-   text_layout_ex_fuzz_test.cpp
+   text_layout_fuzz_test.cpp
 )
 
 file(
@@ -173,12 +173,12 @@ add_executable(paragraph_index_test paragraph_index_test.cpp)
 target_include_directories(paragraph_index_test PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../lib/include)
 add_test(NAME paragraph_index_test COMMAND paragraph_index_test)
 
-# text_layout_ex stitching test: uses a non-graphical mock paragraph layout but
-# includes text_layout.hpp, so it needs the artist + infra header paths.
-add_executable(text_layout_ex_test text_layout_ex_test.cpp)
-target_include_directories(text_layout_ex_test PRIVATE
+# text_layout stitching test: uses a non-graphical mock paragraph layout but
+# includes text_run.hpp, so it needs the artist + infra header paths.
+add_executable(text_layout_test text_layout_test.cpp)
+target_include_directories(text_layout_test PRIVATE
    ${CMAKE_CURRENT_LIST_DIR}/../lib/include
    ${CMAKE_CURRENT_LIST_DIR}/../lib/infra/include
    ${CMAKE_CURRENT_LIST_DIR}/../lib/infra/external/filesystem/include
 )
-add_test(NAME text_layout_ex_test COMMAND text_layout_ex_test)
+add_test(NAME text_layout_test COMMAND text_layout_test)

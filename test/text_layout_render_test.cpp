@@ -3,24 +3,24 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 
-   Graphics-backed tests for text_layout_ex (elements #370): with real
-   text_layout shaping, a multi-paragraph text_layout_ex must be geometrically
-   equivalent to a single text_layout of the same text (which already handles
+   Graphics-backed tests for text_layout (elements #370): with real
+   text_run shaping, a multi-paragraph text_layout must be geometrically
+   equivalent to a single text_run of the same text (which already handles
    hard '\n' breaks). This verifies the per-paragraph stitching — vertical
    offsets and caret index<->point mapping — against ground truth.
 =============================================================================*/
 #include "test_support.hpp"
-#include <artist/text_layout_ex.hpp>
+#include <artist/text_layout.hpp>
 
 namespace
 {
-   // Compare text_layout_ex against a single text_layout of the same text.
+   // Compare text_layout against a single text_run of the same text.
    void check_equivalent(std::u32string_view text, float width)
    {
-      text_layout doc{font_descr{"Open Sans", 14}, text};
+      text_run doc{font_descr{"Open Sans", 14}, text};
       doc.flow(width);
 
-      auto ex = make_text_layout_ex(font_descr{"Open Sans", 14}, text);
+      auto ex = make_text_layout(font_descr{"Open Sans", 14}, text);
       ex.flow(width);
 
       INFO("text=\"" << cycfi::to_utf8(text) << "\" width=" << width);
@@ -39,7 +39,7 @@ namespace
       }
 
       // For text without hard breaks, the whole document is one paragraph, so
-      // word/line break classification must match the single text_layout
+      // word/line break classification must match the single text_run
       // exactly at every index.
       if (text.find(U'\n') == std::u32string_view::npos)
       {
@@ -53,7 +53,7 @@ namespace
    }
 }
 
-TEST_CASE("text_layout_ex matches text_layout (wide, no wrap)")
+TEST_CASE("text_layout matches text_run (wide, no wrap)")
 {
    check_equivalent(U"Hello, World", 1000);
    check_equivalent(U"one\ntwo\nthree", 1000);
@@ -61,7 +61,7 @@ TEST_CASE("text_layout_ex matches text_layout (wide, no wrap)")
    check_equivalent(U"trailing newline\n", 1000); // trailing empty paragraph
 }
 
-TEST_CASE("text_layout_ex matches text_layout (narrow, wrapping)")
+TEST_CASE("text_layout matches text_run (narrow, wrapping)")
 {
    // Wrapping happens within a paragraph; '\n' starts a new paragraph. Both
    // engines must produce identical line structure and caret geometry.
@@ -71,25 +71,25 @@ TEST_CASE("text_layout_ex matches text_layout (narrow, wrapping)")
    check_equivalent(std::u32string(para) + U"\n" + std::u32string(para), 120);
 }
 
-TEST_CASE("text_layout_ex line_break marks paragraph boundaries")
+TEST_CASE("text_layout line_break marks paragraph boundaries")
 {
-   auto ex = make_text_layout_ex(font_descr{"Open Sans", 14}, U"one\ntwo\nthree");
+   auto ex = make_text_layout(font_descr{"Open Sans", 14}, U"one\ntwo\nthree");
    ex.flow(1000);
 
    // A hard break is reported at the '\n' character's own index (a mandatory
-   // break after it), matching libunibreak and the single text_layout.
+   // break after it), matching libunibreak and the single text_run.
    // "one\ntwo\nthree": newlines at indices 3 and 7.
-   CHECK(ex.line_break(3) == text_layout::must_break);   // the '\n' after "one"
-   CHECK(ex.line_break(7) == text_layout::must_break);   // the '\n' after "two"
+   CHECK(ex.line_break(3) == text_run::must_break);   // the '\n' after "one"
+   CHECK(ex.line_break(7) == text_run::must_break);   // the '\n' after "two"
 
    // The document start and positions inside a paragraph are not hard breaks.
-   CHECK(ex.line_break(0) != text_layout::must_break);
-   CHECK(ex.line_break(1) != text_layout::must_break);
-   CHECK(ex.line_break(4) != text_layout::must_break);   // 't' of "two"
-   CHECK(ex.line_break(5) != text_layout::must_break);
+   CHECK(ex.line_break(0) != text_run::must_break);
+   CHECK(ex.line_break(1) != text_run::must_break);
+   CHECK(ex.line_break(4) != text_run::must_break);   // 't' of "two"
+   CHECK(ex.line_break(5) != text_run::must_break);
 }
 
-TEST_CASE("text_layout_ex caret_index hits the clicked row")
+TEST_CASE("text_layout caret_index hits the clicked row")
 {
    // A click anywhere in a row's body must resolve to a caret on THAT row, not
    // the row/paragraph above or below. This is the multi-paragraph hit-test the
@@ -105,7 +105,7 @@ TEST_CASE("text_layout_ex caret_index hits the clicked row")
       U"a second paragraph that also wraps across several lines when narrow"
       U"\nshort line";
 
-   auto ex = make_text_layout_ex(f, text);
+   auto ex = make_text_layout(f, text);
    ex.flow(120);                                 // force wrapping
 
    // For every character index, click the vertical centre of its row at the
@@ -127,11 +127,11 @@ TEST_CASE("text_layout_ex caret_index hits the clicked row")
    CHECK(ex.caret_point(hit).y == Approx(top.y));
 }
 
-TEST_CASE("text_layout_ex incremental edit equals full rebuild")
+TEST_CASE("text_layout incremental edit equals full rebuild")
 {
    // After an incremental edit, the engine must equal a freshly-built engine
    // over the resulting text (i.e. incrementality introduces no drift).
-   auto ex = make_text_layout_ex(font_descr{"Open Sans", 14}, U"one\ntwo\nthree");
+   auto ex = make_text_layout(font_descr{"Open Sans", 14}, U"one\ntwo\nthree");
    ex.flow(1000);
    ex.insert(4, U"XYZ");          // "one\nXYZtwo\nthree"
    ex.insert(0, U"start\n");      // "start\none\nXYZtwo\nthree"
@@ -140,7 +140,7 @@ TEST_CASE("text_layout_ex incremental edit equals full rebuild")
    std::u32string expected = U"one\nXYZtwo\nthree";
    CHECK(ex.text() == expected);
 
-   text_layout doc{font_descr{"Open Sans", 14}, expected};
+   text_run doc{font_descr{"Open Sans", 14}, expected};
    doc.flow(1000);
    CHECK(ex.num_lines() == doc.num_lines());
    for (std::size_t i = 0; i <= expected.size(); ++i)

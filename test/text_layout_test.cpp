@@ -3,11 +3,11 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 
-   Unit test for the multi-paragraph STITCHING of basic_text_layout_ex
+   Unit test for the multi-paragraph STITCHING of basic_text_layout
    (elements #370).
 
-   `basic_text_layout_ex<Layout>` is templated on the per-paragraph layout type
-   (the production type is artist::text_layout). Here it is instantiated with
+   `basic_text_layout<Layout>` is templated on the per-paragraph layout type
+   (the production type is artist::text_run). Here it is instantiated with
    `mock_layout`: a trivial, deterministic, non-graphical stand-in that needs no
    fonts/shaping/backend. That lets the *structural* logic be tested as a plain
    standalone binary, fast and backend-free:
@@ -18,31 +18,31 @@
 
    SCOPE / LIMITATION — read before trusting this:
    A mock tests "does the code match my ASSUMPTIONS", not "does it match the
-   real text_layout". It is scaffolding, not verification. This bit us: an early
+   real text_run". It is scaffolding, not verification. This bit us: an early
    mock modelled num_lines() so that a paragraph's trailing '\n' added a line,
-   which masked the fact that the REAL text_layout opens an extra empty line for
+   which masked the fact that the REAL text_run opens an extra empty line for
    a trailing '\n' (a double-count bug); the mock also never modelled an empty
    paragraph reporting 0 lines. Both bugs passed here and were only caught by the
-   real-backend equivalence tests in text_layout_ex_render_test.cpp.
+   real-backend equivalence tests in text_layout_render_test.cpp.
 
    Therefore: this file covers the splice/offset/incrementality machinery only.
    Ground-truth correctness (shaping, line counts, caret geometry, and the
-   draw/rasterization path) lives in text_layout_ex_render_test.cpp, which runs
+   draw/rasterization path) lives in text_layout_render_test.cpp, which runs
    against the actual graphics backend. Keep the two in sync.
 =============================================================================*/
-#include <artist/text_layout_ex.hpp>
+#include <artist/text_layout.hpp>
 #include <string>
 #include <vector>
 #include <iostream>
 
-using cycfi::artist::basic_text_layout_ex;
+using cycfi::artist::basic_text_layout;
 using cycfi::artist::point;
 
 static int failures = 0;
 #define CHECK(cond) do { if (!(cond)) { \
    std::cerr << "FAIL " << __LINE__ << ": " #cond "\n"; ++failures; } } while (0)
 
-// A non-graphical stand-in (mock) for a paragraph's text_layout.
+// A non-graphical stand-in (mock) for a paragraph's text_run.
 //   num_lines() = 1 + number of '\n' in the paragraph text
 //   caret_point(i) = {i, 0}   (x = local index, y = 0 within the paragraph)
 //   caret_index({x,y}) = clamp(round(x), 0, size)
@@ -51,7 +51,7 @@ struct mock_layout
    // The engine's word_break/line_break return Layout::break_enum; declaring
    // those members instantiates the type even though this stitching mock never
    // calls them, so the mock must provide it.
-   using break_enum = cycfi::artist::text_layout::break_enum;
+   using break_enum = cycfi::artist::text_run::break_enum;
 
    std::u32string txt;
    float          width = 0;
@@ -80,7 +80,7 @@ struct mock_layout
                   }
 };
 
-using ex_t = basic_text_layout_ex<mock_layout>;
+using ex_t = basic_text_layout<mock_layout>;
 
 int main()
 {

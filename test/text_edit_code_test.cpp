@@ -3,7 +3,7 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 
-   The source-code editing acid test for text_layout_ex (elements #370) -- the
+   The source-code editing acid test for text_layout (elements #370) -- the
    original #370 use case: scripts and configuration files. Unlike prose, code
    is edited with SOFT-WRAP OFF: every '\n'-delimited line is exactly one
    display line and long lines run off to the right (horizontal scroll), they
@@ -15,7 +15,7 @@
    lines, then the text copied out of the engine must equal the original.
 =============================================================================*/
 #include "test_support.hpp"
-#include <artist/text_layout_ex.hpp>
+#include <artist/text_layout.hpp>
 #include <fstream>
 #include <sstream>
 #include <random>
@@ -42,7 +42,7 @@ namespace
    }
 }
 
-TEST_CASE("text_layout_ex source-code editing (no soft-wrap)")
+TEST_CASE("text_layout source-code editing (no soft-wrap)")
 {
    auto fm = font{the_font}.metrics();
    float const ascent = fm.ascent;
@@ -56,14 +56,14 @@ TEST_CASE("text_layout_ex source-code editing (no soft-wrap)")
    std::size_t const source_lines = 1 + std::size_t(std::count(target.begin(), target.end(), U'\n'));
 
    std::u32string oracle = target;
-   auto ex = make_text_layout_ex(the_font, oracle);
+   auto ex = make_text_layout(the_font, oracle);
    ex.flow(no_wrap);
 
    // No soft-wrap: one display line per source line.
    CHECK(ex.num_lines() == source_lines);
    CHECK(ex.paragraph_count() == source_lines);
    {
-      text_layout doc{the_font, oracle};
+      text_run doc{the_font, oracle};
       doc.flow(no_wrap);
       CHECK(ex.num_lines() == doc.num_lines());
    }
@@ -117,11 +117,11 @@ TEST_CASE("text_layout_ex source-code editing (no soft-wrap)")
 
    auto check_layout_equiv = [&]()
    {
-      text_layout doc{the_font, oracle};
+      text_run doc{the_font, oracle};
       doc.flow(no_wrap);
       CHECK(ex.num_lines() == doc.num_lines());
 
-      auto fresh = make_text_layout_ex(the_font, oracle);
+      auto fresh = make_text_layout(the_font, oracle);
       fresh.flow(no_wrap);
       CHECK(ex.num_lines() == fresh.num_lines());
       std::size_t s = std::max<std::size_t>(1, oracle.size() / 600);
@@ -141,7 +141,7 @@ TEST_CASE("text_layout_ex source-code editing (no soft-wrap)")
       float top_y = std::max(0.0f, cp.y - (win_lines * line_height) / 3.0f);
       float top_x = std::max(0.0f, cp.x - win_w * 0.25f);
 
-      auto fresh = make_text_layout_ex(the_font, oracle);
+      auto fresh = make_text_layout(the_font, oracle);
       fresh.flow(no_wrap);
       auto ex_img = render_window(ex, top_x, top_y, std::nullopt);
       auto ref_img = render_window(fresh, top_x, top_y, std::nullopt);

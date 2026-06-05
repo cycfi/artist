@@ -3,7 +3,7 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 
-   The acid test for text_layout_ex (elements #370): a full editing session
+   The acid test for text_layout (elements #370): a full editing session
    against the real graphics backend over a novel-length document.
 
    Build strategy: load the whole text MINUS a block of paragraphs removed from
@@ -16,18 +16,18 @@
    Verification:
      - every step: engine text == oracle; paragraph_count == newline count + 1.
      - whole-document correctness (cheap, total): num_lines and a caret-geometry
-       sweep over the entire document must match a freshly built text_layout of
+       sweep over the entire document must match a freshly built text_run of
        the same text -- catches incremental-update drift even when text matches.
      - render correctness + goldens are EDIT-LOCAL: a 60-line caret-following
        window (one editor screen, caret near the top third) is rendered; its
        text must be PIXEL-IDENTICAL to the same window of the ground-truth
-       text_layout, and the window WITH the caret drawn is golden-snapshotted
+       text_run, and the window WITH the caret drawn is golden-snapshotted
        (saved first run, compared after).
 
    Inputs (test/text/, see SOURCE.md): alice.txt (prose, soft-wrap).
 =============================================================================*/
 #include "test_support.hpp"
-#include <artist/text_layout_ex.hpp>
+#include <artist/text_layout.hpp>
 #include <fstream>
 #include <sstream>
 #include <random>
@@ -56,7 +56,7 @@ namespace
    }
 }
 
-TEST_CASE("text_layout_ex novel editing session reconstructs the original")
+TEST_CASE("text_layout novel editing session reconstructs the original")
 {
    auto fm = font{the_font}.metrics();
    float const ascent = fm.ascent;
@@ -80,7 +80,7 @@ TEST_CASE("text_layout_ex novel editing session reconstructs the original")
    std::u32string initial = target.substr(0, gap_start) + target.substr(gap_end);
 
    std::u32string oracle = initial;
-   auto ex = make_text_layout_ex(the_font, oracle);
+   auto ex = make_text_layout(the_font, oracle);
    ex.flow(flow_width);
 
    std::mt19937 rng(0x0A11CE);
@@ -132,20 +132,20 @@ TEST_CASE("text_layout_ex novel editing session reconstructs the original")
    };
 
    // ---- whole-document layout equivalence -----------------------------------
-   //   - line COUNT vs the trusted single text_layout (integer, float-free):
+   //   - line COUNT vs the trusted single text_run (integer, float-free):
    //     catches layout-semantic drift such as the phantom-line bug.
-   //   - caret GEOMETRY vs a freshly-built text_layout_ex (same scheme): tests
+   //   - caret GEOMETRY vs a freshly-built text_layout (same scheme): tests
    //     incremental edits == full rebuild, and is robust on every backend. A
-   //     single giant text_layout drifts in float over thousands of rows, and on
+   //     single giant text_run drifts in float over thousands of rows, and on
    //     CoreText shapes a paragraph slightly differently in isolation, so it is
    //     not a sub-pixel-exact oracle at scale.
    auto check_layout_equiv = [&]()
    {
-      text_layout doc{the_font, oracle};
+      text_run doc{the_font, oracle};
       doc.flow(flow_width);
       CHECK(ex.num_lines() == doc.num_lines());
 
-      auto fresh = make_text_layout_ex(the_font, oracle);
+      auto fresh = make_text_layout(the_font, oracle);
       fresh.flow(flow_width);
       CHECK(ex.num_lines() == fresh.num_lines());
       std::size_t s = std::max<std::size_t>(1, oracle.size() / 600);
@@ -167,11 +167,11 @@ TEST_CASE("text_layout_ex novel editing session reconstructs the original")
       float top_y = std::max(0.0f, caret_y - third);
 
       // The incrementally-edited engine must render bit-identically to a freshly
-      // built text_layout_ex of the same text (same layout scheme => robust on
-      // every backend; comparing to a single text_layout pixel-for-pixel is
-      // sub-pixel fragile under anti-aliasing). Layout-vs-text_layout correctness
+      // built text_layout of the same text (same layout scheme => robust on
+      // every backend; comparing to a single text_run pixel-for-pixel is
+      // sub-pixel fragile under anti-aliasing). Layout-vs-text_run correctness
       // is covered by the integer num_lines and caret-geometry checks.
-      auto ref = make_text_layout_ex(the_font, oracle);
+      auto ref = make_text_layout(the_font, oracle);
       ref.flow(flow_width);
       auto ex_text = render_window(ex, top_y, std::nullopt);
       auto ref_text = render_window(ref, top_y, std::nullopt);

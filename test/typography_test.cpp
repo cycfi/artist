@@ -149,7 +149,7 @@ void typography(canvas& cnv)
       "⁠—Albert Einstein"
       ;
 
-   auto tlayout = text_layout{
+   auto tlayout = text_run{
       font_descr{"Open Sans", 12}.italic()
     , text
    };
@@ -287,16 +287,16 @@ TEST_CASE("Text Shaping")
       CHECK(mfi.size.x <= mf.size.x + mi.size.x + 1.0f);  // 1px tolerance
    }
 
-   // text_layout::num_lines() must reflect reflow width.
+   // text_run::num_lines() must reflect reflow width.
    // "Hello World" at Open Sans 14 fits on one line at 640px, two or more at 1px.
    {
       {
-         text_layout tl{font_descr{"Open Sans", 14}, "Hello World"};
+         text_run tl{font_descr{"Open Sans", 14}, "Hello World"};
          tl.flow(640, false);
          CHECK(tl.num_lines() == 1);
       }
       {
-         text_layout tl{font_descr{"Open Sans", 14}, "Hello World"};
+         text_run tl{font_descr{"Open Sans", 14}, "Hello World"};
          tl.flow(1, false);
          CHECK(tl.num_lines() >= 2);
       }
@@ -306,8 +306,8 @@ TEST_CASE("Text Shaping")
    {
       std::string const txt =
          "The quick brown fox jumps over the lazy dog";
-      text_layout wide {font_descr{"Open Sans", 14}, txt};
-      text_layout narrow{font_descr{"Open Sans", 14}, txt};
+      text_run wide {font_descr{"Open Sans", 14}, txt};
+      text_run narrow{font_descr{"Open Sans", 14}, txt};
       wide.flow(640, false);
       narrow.flow(100, false);
       CHECK(narrow.num_lines() >= wide.num_lines());
@@ -315,7 +315,7 @@ TEST_CASE("Text Shaping")
 
    // caret_point(0) is the start of the first glyph (x near 0, y >= 0).
    {
-      text_layout tl{font_descr{"Open Sans", 14}, "Hello"};
+      text_run tl{font_descr{"Open Sans", 14}, "Hello"};
       tl.flow(640, false);
       auto p = tl.caret_point(0);
       CHECK(p.x >= 0.0f);
@@ -325,7 +325,7 @@ TEST_CASE("Text Shaping")
    // caret_point advances monotonically left-to-right for simple ASCII.
    {
       std::string const txt = "Hello";
-      text_layout tl{font_descr{"Open Sans", 14}, txt};
+      text_run tl{font_descr{"Open Sans", 14}, txt};
       tl.flow(640, false);
       float prev_x = -1.0f;
       for (std::size_t i = 0; i < txt.size(); ++i)
@@ -346,10 +346,10 @@ TEST_CASE("Word Selection")
    // grouping separators and punctuation.
    auto select = [](std::string const& txt, std::size_t click) -> std::string
    {
-      text_layout tl{font_descr{"Open Sans", 14}, txt};
+      text_run tl{font_descr{"Open Sans", 14}, txt};
       std::size_t n = txt.size();
       auto is_wb = [&](std::size_t i)
-         { return tl.word_break(i) == text_layout::allow_break; };
+         { return tl.word_break(i) == text_run::allow_break; };
       std::size_t end = click;
       while (end < n && !is_wb(end)) ++end;
       if (end < n) ++end;                         // boundary is after char `end`
@@ -384,7 +384,7 @@ TEST_CASE("CJK line wrapping")
       cjk += "开放包容视野宽广";
    std::size_t const n = 64;
 
-   text_layout tl{font_descr{"Open Sans", 14}, cjk};
+   text_run tl{font_descr{"Open Sans", 14}, cjk};
    tl.flow(40, false);                 // narrow: force many wraps
 
    // It must actually wrap into multiple lines.
@@ -423,7 +423,7 @@ TEST_CASE("Ligature at end of line")
    // ligature it carries no glyph, so the marker was never seen and the final
    // line was never flushed -> num_lines() == 0 and nothing was drawn.
 
-   text_layout tl{font_descr{"Open Sans", 14}, "wifi"};
+   text_run tl{font_descr{"Open Sans", 14}, "wifi"};
    tl.flow(1000, false);               // wide: everything fits on one line
 
    // The line must be flushed: non-empty text always produces at least one line.
@@ -460,7 +460,7 @@ TEST_CASE("Ligature before a hard line break")
             cnv.add_rect(0, 0, 300, 120);
             cnv.fill_style(colors::white);
             cnv.fill();
-            text_layout tl{font_descr{"Open Sans", 40}, str};
+            text_run tl{font_descr{"Open Sans", 40}, str};
             tl.flow(290, false);
             tl.draw(cnv, {5, 45}, colors::black);
          }
@@ -505,9 +505,9 @@ TEST_CASE("Trailing newline opens an empty line")
    // (cycfi/elements#384 follow-up).  The end-of-text caret must sit below the
    // start, on a fresh line at the left.
 
-   text_layout one{font_descr{"Open Sans", 40}, "abc"};
+   text_run one{font_descr{"Open Sans", 40}, "abc"};
    one.flow(290, false);
-   text_layout two{font_descr{"Open Sans", 40}, "abc\n"};
+   text_run two{font_descr{"Open Sans", 40}, "abc\n"};
    two.flow(290, false);
 
    // The trailing newline adds a line.

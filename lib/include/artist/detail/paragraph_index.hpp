@@ -21,7 +21,7 @@ namespace cycfi::artist::detail
     *
     *    `update` maintains the partition incrementally after an edit and
     *    returns the inclusive range of paragraph indices that must be
-    *    re-laid-out, so the multi-paragraph engine (text_layout_ex) reshapes
+    *    re-laid-out, so the multi-paragraph engine (text_layout) reshapes
     *    only the paragraphs an edit actually touched instead of the whole
     *    document.
     *

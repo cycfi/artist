@@ -3,13 +3,13 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 
-   Focused per-edit fuzz for text_layout_ex incremental updates (elements #370).
+   Focused per-edit fuzz for text_layout incremental updates (elements #370).
    Narrow flow width forces paragraphs to wrap (multi-line), and after EVERY
    random edit the incrementally-updated engine is compared to a freshly built
-   text_layout of the same text. Pinpoints incremental-update drift.
+   text_run of the same text. Pinpoints incremental-update drift.
 =============================================================================*/
 #include "test_support.hpp"
-#include <artist/text_layout_ex.hpp>
+#include <artist/text_layout.hpp>
 #include <iostream>
 #include <random>
 #include <string>
@@ -20,13 +20,13 @@ namespace
    constexpr float width = 120.0f;            // narrow -> wrapping
 }
 
-TEST_CASE("text_layout_ex incremental matches fresh build after each edit")
+TEST_CASE("text_layout incremental matches fresh build after each edit")
 {
    std::u32string oracle =
       U"The quick brown fox jumps over the lazy dog and keeps on running.\n"
       U"Second paragraph is also fairly long so that it wraps onto lines.\n\n"
       U"Third paragraph.\nshort\n";
-   auto ex = make_text_layout_ex(fnt, oracle);
+   auto ex = make_text_layout(fnt, oracle);
    ex.flow(width);
 
    std::mt19937 rng(0xF0CA1);
@@ -62,7 +62,7 @@ TEST_CASE("text_layout_ex incremental matches fresh build after each edit")
       REQUIRE(ex.text() == oracle);
 
       // The empty document is the one intentional semantic difference: a single
-      // text_layout reports 0 lines, but text_layout_ex reports 1 (an editor
+      // text_run reports 0 lines, but text_layout reports 1 (an editor
       // always has at least one line for the caret). Skip that degenerate case.
       if (oracle.empty())
       {
@@ -70,7 +70,7 @@ TEST_CASE("text_layout_ex incremental matches fresh build after each edit")
          continue;
       }
 
-      text_layout doc{fnt, oracle};
+      text_run doc{fnt, oracle};
       doc.flow(width);
       INFO("op " << op << "  ex.num_lines=" << ex.num_lines()
            << "  fresh=" << doc.num_lines());

@@ -1,6 +1,6 @@
 # Test text inputs
 
-These files are inputs for the `text_layout_ex` editing-simulation test
+These files are inputs for the `text_layout` editing-simulation test
 (`test/text_edit_sim_test.cpp`). They are chosen to cover the two profiles the
 text editor must serve (cf. cycfi/elements#370): long soft-wrapping prose, and
 source/config files with many hard line breaks.

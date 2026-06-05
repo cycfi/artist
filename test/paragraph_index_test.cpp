@@ -4,7 +4,7 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 
    Unit test for cycfi::artist::detail::paragraph_index: the incremental
-   paragraph partition that lets text_layout_ex relayout only edited
+   paragraph partition that lets text_layout relayout only edited
    paragraphs (elements #370). Non-graphical.
 =============================================================================*/
 #include <artist/detail/paragraph_index.hpp>
