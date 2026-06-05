@@ -61,35 +61,19 @@ TEST_CASE("text_layout_ex incremental matches fresh build after each edit")
 
       REQUIRE(ex.text() == oracle);
 
+      // The empty document is the one intentional semantic difference: a single
+      // text_layout reports 0 lines, but text_layout_ex reports 1 (an editor
+      // always has at least one line for the caret). Skip that degenerate case.
+      if (oracle.empty())
+      {
+         CHECK(ex.num_lines() == 1);
+         continue;
+      }
+
       text_layout doc{fnt, oracle};
       doc.flow(width);
-      if (ex.num_lines() != doc.num_lines())
-      {
-         // Find which paragraph has a stale line count.
-         std::cout << "DIVERGE op " << op << " ex=" << ex.num_lines()
-                   << " fresh=" << doc.num_lines() << "\n";
-         std::size_t start = 0;
-         std::size_t pi = 0;
-         for (std::size_t k = 0; k <= oracle.size(); ++k)
-         {
-            if (k == oracle.size() || oracle[k] == U'\n')
-            {
-               std::u32string ptext = oracle.substr(start, k - start);
-               text_layout pl{fnt, ptext};
-               pl.flow(width);
-               std::size_t fresh_lines = std::max<std::size_t>(1, pl.num_lines());
-               std::size_t ex_lines = ex.paragraph_lines(pi);
-               std::string s;
-               for (char32_t c : ptext) s += char(c < 128 ? c : '?');
-               std::cout << "  para " << pi << " ex_lines=" << ex_lines
-                         << " fresh=" << fresh_lines
-                         << (ex_lines != fresh_lines ? "  <<< MISMATCH" : "")
-                         << "  [" << s << "]\n";
-               start = k + 1;
-               ++pi;
-            }
-         }
-         REQUIRE(ex.num_lines() == doc.num_lines());
-      }
+      INFO("op " << op << "  ex.num_lines=" << ex.num_lines()
+           << "  fresh=" << doc.num_lines());
+      CHECK(ex.num_lines() == doc.num_lines());
    }
 }

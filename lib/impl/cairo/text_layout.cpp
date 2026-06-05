@@ -151,7 +151,8 @@ namespace cycfi::artist
 
       auto linfo = glf(0);
       float target = linfo.width;
-      float y = 0;
+      double y = 0;   // accumulate vertical position in double: line height sums
+                      // over thousands of rows, and float would drift ~0.2px.
       float x = 0;
       std::size_t glyph_start = 0;
       constexpr std::size_t NONE = std::size_t(-1);
@@ -197,7 +198,7 @@ namespace cycfi::artist
             }
 
             _rows.push_back(row_info{
-               glyph_start, n, linfo.offset, y, line_width,
+               glyph_start, n, linfo.offset, float(y), line_width,
                std::move(row_pos)});
 
             y += finfo.line_height;
@@ -265,7 +266,7 @@ namespace cycfi::artist
             ? positions[n-1] + _glyphs[glyph_start + n - 1].x_advance
             : 0;
          _rows.push_back(row_info{
-            glyph_start, n, linfo.offset, y, line_width,
+            glyph_start, n, linfo.offset, float(y), line_width,
             std::move(positions)});
       }
 

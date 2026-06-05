@@ -142,7 +142,8 @@ namespace cycfi::artist
       std::vector<SkScalar> positions;
       positions.reserve(glyphs_info.count);
       auto linfo = glf(0);
-      float y = 0;
+      double y = 0;   // accumulate vertical position in double: line height sums
+                      // over thousands of rows, and float would drift ~0.2px.
       float x = 0;
       std::size_t glyph_start = 0;
 
@@ -223,7 +224,7 @@ namespace cycfi::artist
             positions.erase(positions.begin()+last_glyph, positions.end());
             _rows.push_back(
                row_info{
-                  point{linfo.offset, y}
+                  point{linfo.offset, float(y)}
                   , line_width
                   , finfo.line_height
                   , std::size_t(glyph_count)
@@ -269,12 +270,22 @@ namespace cycfi::artist
             || (glyph_idx == glyphs_info.count - 1
                 && _breaks[idx].line != must_break);
 
+         // True when the next glyph forces a hard break, i.e. this glyph is the
+         // last of its '\n'-delimited segment.  Such a final line is kept whole
+         // and allowed to slightly overflow -- exactly as the end-of-text line
+         // is -- so that wrapping a paragraph is independent of whether a hard
+         // break follows it (otherwise the last line is broken only when a '\n'
+         // follows, producing a phantom extra line).
+         bool next_is_hard_break =
+            (glyph_idx + 1 < glyphs_info.count)
+            && (_breaks[glyphs_info.glyphs[glyph_idx + 1].cluster].line == must_break);
+
          if (_breaks[idx].line == must_break || indeterminate_)
          {
             // We got a hard-break or we are at the end, so must break now
             new_line(idx, glyph_idx, true, indeterminate_, true);
          }
-         else if (x > linfo.width)
+         else if (x > linfo.width && !next_is_hard_break)
          {
             // The line exceeds the target width: break at the last allowed
             // opportunity within the row, scanning back from the overflowing
@@ -317,7 +328,7 @@ namespace cycfi::artist
       {
          _rows.push_back(
             row_info{
-               point{linfo.offset, y}
+               point{linfo.offset, float(y)}
                , 0                          // width
                , finfo.line_height
                , 0                          // glyph_count

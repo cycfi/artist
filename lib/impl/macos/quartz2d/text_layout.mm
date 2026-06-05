@@ -144,7 +144,8 @@ namespace cycfi::artist
       CFRelease(text);
 
       CFIndex start = 0;
-      float ypos = 0;
+      double ypos = 0;   // accumulate vertical position in double: line height
+                         // sums over thousands of rows; float would drift ~0.2px.
       auto l_info = glf(ypos);
 
       NSUInteger length = CFAttributedStringGetLength(attr_string);
@@ -178,7 +179,7 @@ namespace cycfi::artist
          }
          _rows.emplace_back(
             row_info{
-               point{l_info.offset, ypos}
+               point{l_info.offset, float(ypos)}
                , float(line_width)
                , finfo.line_height
                , line
@@ -199,7 +200,7 @@ namespace cycfi::artist
          CTLineRef empty = CTTypesetterCreateLine(typesetter, CFRangeMake(length, 0));
          _rows.emplace_back(
             row_info{
-               point{l_info.offset, ypos}
+               point{l_info.offset, float(ypos)}
                , 0.0f
                , finfo.line_height
                , empty

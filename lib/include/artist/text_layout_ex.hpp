@@ -47,7 +47,7 @@ namespace cycfi::artist
 
                               basic_text_layout_ex(
                                  factory make
-                               , float line_height
+                               , double line_height
                                , std::u32string_view text
                               );
 
@@ -65,7 +65,7 @@ namespace cycfi::artist
 
       void                    flow(float width, bool justify = false);
       size_type               num_lines() const;
-      float                   height() const               { return num_lines() * _line_height; }
+      double                  height() const               { return num_lines() * _line_height; }
 
       // Diagnostics.
       size_type               paragraph_lines(size_type i) const { return _paras[i].lines; }
@@ -81,7 +81,7 @@ namespace cycfi::artist
       {
          Layout      layout;
          size_type   lines;
-         float       y;       // top of this paragraph, relative to the document
+         double      y;       // top of this paragraph, relative to the document
       };
 
       para                    make_para(size_type i) const;
@@ -89,10 +89,10 @@ namespace cycfi::artist
                                  detail::paragraph_index::changed_range ch, size_type old_count
                               );
       void                    recompute_offsets(size_type from);
-      size_type               para_at_y(float y) const;
+      size_type               para_at_y(double y) const;
 
       factory                 _make;
-      float                   _line_height;
+      double                  _line_height;
       float                   _width = 0;
       bool                    _justify = false;
       rope<char32_t>          _buffer;
@@ -106,7 +106,7 @@ namespace cycfi::artist
 
    template <typename Layout>
    basic_text_layout_ex<Layout>::basic_text_layout_ex(
-      factory make, float line_height, std::u32string_view text)
+      factory make, double line_height, std::u32string_view text)
     : _make(std::move(make))
     , _line_height(line_height)
    {
@@ -157,8 +157,8 @@ namespace cycfi::artist
    template <typename Layout>
    void basic_text_layout_ex<Layout>::recompute_offsets(size_type from)
    {
-      float y = (from == 0)
-         ? 0.0f
+      double y = (from == 0)
+         ? 0.0
          : _paras[from - 1].y + _paras[from - 1].lines * _line_height;
       for (size_type i = from; i != _paras.size(); ++i)
       {
@@ -254,12 +254,12 @@ namespace cycfi::artist
       size_type pi = _px.index_at(index);
       size_type local = index - _px.start(pi);
       point lp = _paras[pi].layout.caret_point(local);
-      return {lp.x, lp.y + _paras[pi].y};
+      return {lp.x, float(lp.y + _paras[pi].y)};
    }
 
    template <typename Layout>
    typename basic_text_layout_ex<Layout>::size_type
-   basic_text_layout_ex<Layout>::para_at_y(float y) const
+   basic_text_layout_ex<Layout>::para_at_y(double y) const
    {
       if (_paras.empty())
          return 0;
@@ -281,7 +281,7 @@ namespace cycfi::artist
    basic_text_layout_ex<Layout>::caret_index(point p) const
    {
       size_type pi = para_at_y(p.y);
-      point local{p.x, p.y - _paras[pi].y};
+      point local{p.x, float(p.y - _paras[pi].y)};
       size_type li = _paras[pi].layout.caret_index(local);
       return _px.start(pi) + li;
    }
@@ -290,7 +290,7 @@ namespace cycfi::artist
    void basic_text_layout_ex<Layout>::draw(canvas& cnv, point p, color c) const
    {
       for (auto const& pa : _paras)
-         pa.layout.draw(cnv, {p.x, p.y + pa.y}, c);
+         pa.layout.draw(cnv, {p.x, float(p.y + pa.y)}, c);
    }
 
    //--------------------------------------------------------------------------
