@@ -45,6 +45,8 @@ namespace cycfi::artist
       using size_type = std::size_t;
       using factory = std::function<Layout(std::u32string_view)>;
 
+      static constexpr size_type npos = size_type(-1);
+
                               basic_text_layout_ex(
                                  factory make
                                , double line_height
@@ -72,6 +74,14 @@ namespace cycfi::artist
 
       point                   caret_point(size_type index) const;
       size_type               caret_index(point p) const;
+      size_type               caret_index(float x, float y) const { return caret_index(point{x, y}); }
+
+      // Word/line break queries over the whole document, delegated to the
+      // paragraph that owns `index`. Paragraph boundaries (hard '\n') are
+      // mandatory line breaks. The return type matches the per-paragraph
+      // Layout's break classification (e.g. text_layout::break_enum).
+      typename Layout::break_enum   word_break(size_type index) const;
+      typename Layout::break_enum   line_break(size_type index) const;
 
       void                    draw(canvas& cnv, point p, color c = colors::black) const;
 
@@ -284,6 +294,26 @@ namespace cycfi::artist
       point local{p.x, float(p.y - _paras[pi].y)};
       size_type li = _paras[pi].layout.caret_index(local);
       return _px.start(pi) + li;
+   }
+
+   template <typename Layout>
+   typename Layout::break_enum
+   basic_text_layout_ex<Layout>::word_break(size_type index) const
+   {
+      size_type pi = _px.index_at(index);
+      return _paras[pi].layout.word_break(index - _px.start(pi));
+   }
+
+   template <typename Layout>
+   typename Layout::break_enum
+   basic_text_layout_ex<Layout>::line_break(size_type index) const
+   {
+      size_type pi = _px.index_at(index);
+      size_type pstart = _px.start(pi);
+      // The start of any paragraph after the first is a hard '\n' boundary.
+      if (index == pstart && pi > 0)
+         return Layout::must_break;
+      return _paras[pi].layout.line_break(index - pstart);
    }
 
    template <typename Layout>

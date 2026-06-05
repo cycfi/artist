@@ -37,6 +37,19 @@ namespace
          CHECK(b.x == Approx(a.x).margin(0.01));
          CHECK(b.y == Approx(a.y).margin(0.01));
       }
+
+      // For text without hard breaks, the whole document is one paragraph, so
+      // word/line break classification must match the single text_layout
+      // exactly at every index.
+      if (text.find(U'\n') == std::u32string_view::npos)
+      {
+         for (std::size_t i = 0; i <= text.size(); ++i)
+         {
+            INFO("break index " << i);
+            CHECK(ex.word_break(i) == doc.word_break(i));
+            CHECK(ex.line_break(i) == doc.line_break(i));
+         }
+      }
    }
 }
 
@@ -56,6 +69,22 @@ TEST_CASE("text_layout_ex matches text_layout (narrow, wrapping)")
       U"the quick brown fox jumps over the lazy dog and keeps running along";
    check_equivalent(para, 120);
    check_equivalent(std::u32string(para) + U"\n" + std::u32string(para), 120);
+}
+
+TEST_CASE("text_layout_ex line_break marks paragraph boundaries")
+{
+   auto ex = make_text_layout_ex(font_descr{"Open Sans", 14}, U"one\ntwo\nthree");
+   ex.flow(1000);
+
+   // Paragraph starts (after each hard '\n') are mandatory line breaks; index 0
+   // is the document start and is not classified as a break here.
+   CHECK(ex.line_break(0) != text_layout::must_break);
+   CHECK(ex.line_break(4) == text_layout::must_break);   // start of "two"
+   CHECK(ex.line_break(8) == text_layout::must_break);   // start of "three"
+
+   // A position inside a paragraph is not a mandatory break.
+   CHECK(ex.line_break(1) != text_layout::must_break);
+   CHECK(ex.line_break(5) != text_layout::must_break);
 }
 
 TEST_CASE("text_layout_ex incremental edit equals full rebuild")
