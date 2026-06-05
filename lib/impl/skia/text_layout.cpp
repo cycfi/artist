@@ -192,15 +192,22 @@ namespace cycfi::artist
             return line_width;
          };
 
+      // Emit the row [glyph_start, boundary) where boundary == glyph at
+      // text_idx.  When consume is true the boundary glyph is dropped (a space
+      // or hard line break is absorbed by the break); when false it is kept for
+      // the next line (a break between non-space characters, e.g. CJK, must not
+      // lose a glyph).  glyph_idx is rewound so the loop resumes at the first
+      // glyph of the next line.
       auto new_line =
-         [&](std::size_t text_idx, std::size_t& glyph_idx, bool must_break, bool indeterminate)
+         [&](std::size_t text_idx, std::size_t& glyph_idx, bool must_break,
+             bool indeterminate, bool consume)
          {
-            glyph_idx = glyphs_info.glyph_index(text_idx);
-            auto glyph_count = glyph_idx - glyph_start;
+            auto boundary = glyphs_info.glyph_index(text_idx);
+            auto glyph_count = boundary - glyph_start;
             if (indeterminate)  // Is the last glyph indeterminate?
                ++glyph_count;
 
-            auto line_width = glyph_count? justify(glyph_idx, must_break) : 0;
+            auto line_width = glyph_count? justify(boundary, must_break) : 0;
 
             std::vector<SkGlyphID> line_glyphs(glyph_count);
             for (std::size_t j = 0; j != glyph_count; ++j)
@@ -227,7 +234,16 @@ namespace cycfi::artist
             );
 
             positions.clear();
-            glyph_start = glyph_idx + 1;
+            if (consume)
+            {
+               glyph_start = boundary + 1;   // drop the boundary glyph
+               glyph_idx = boundary;         // loop ++ resumes after it
+            }
+            else
+            {
+               glyph_start = boundary;       // keep the boundary glyph
+               glyph_idx = boundary - 1;     // loop ++ reprocesses it on the new line
+            }
             y += finfo.line_height;
             linfo = glf(y);
             x = 0;
@@ -243,28 +259,40 @@ namespace cycfi::artist
          if (_breaks[idx].line == must_break || indeterminate_)
          {
             // We got a hard-break or we are at the end, so must break now
-            new_line(idx, glyph_idx, true, indeterminate_);
+            new_line(idx, glyph_idx, true, indeterminate_, true);
          }
          else if (x > linfo.width)
          {
-            // We break the line when x exceeds the target width
-            std::size_t len = positions.size();
-            auto start_line = glyphs_info.glyphs[glyph_start].cluster;
-            auto end_line = glyphs_info.glyphs[glyph_start+len].cluster;
-            bool force_break = true;
-
-            for (int i = end_line-1; i >= static_cast<int>(start_line); --i)
+            // The line exceeds the target width: break at the last allowed
+            // opportunity within the row, scanning back from the overflowing
+            // glyph.
+            auto first = glyphs_info.glyphs[glyph_start].cluster;
+            bool broke = false;
+            for (int i = static_cast<int>(idx); i >= static_cast<int>(first); --i)
             {
-               if (_breaks[i].line == allow_break)
+               if (_breaks[i].line != allow_break)
+                  continue;
+               if (is_space(_text[i]))
                {
-                  new_line(i, glyph_idx, false, false);
-                  force_break = false;
+                  // Break at a space: the space is absorbed into the break.
+                  new_line(i, glyph_idx, false, false, true);
+                  broke = true;
+                  break;
+               }
+               else if (i < static_cast<int>(idx))
+               {
+                  // Break after a non-space char (e.g. CJK): keep char i on this
+                  // line.  The overflowing glyph itself is skipped here so that
+                  // it moves to the next line.
+                  new_line(i+1, glyph_idx, false, false, false);
+                  broke = true;
                   break;
                }
             }
-            // deal with the case where we have to forcefully break the line
-            if (force_break)
-               new_line(end_line, glyph_idx, false, false);
+            // No break opportunity: force-break before the overflowing glyph,
+            // unless it is alone on the line (which would make no progress).
+            if (!broke && glyph_idx > glyph_start)
+               new_line(idx, glyph_idx, false, false, false);
          }
       }
       if (_rows.size())

@@ -1594,6 +1594,48 @@ TEST_CASE("Word Selection")
    CHECK(select("resume", 2)           == "resume");
 }
 
+TEST_CASE("CJK line wrapping")
+{
+   // Issue cycfi/elements#430: CJK text without spaces that overflows the flow
+   // width must wrap WITHOUT dropping characters.  Each ideograph is its own
+   // line-break opportunity, so the break must keep the boundary glyph on the
+   // line (unlike a space, which is consumed).  This also exercises the
+   // force-break path, which previously read past the end of the glyph array.
+
+   // 8 ideographs (one codepoint each), repeated 8 times => 64 codepoints.
+   std::string cjk;
+   for (int i = 0; i != 8; ++i)
+      cjk += "开放包容视野宽广";
+   std::size_t const n = 64;
+
+   text_layout tl{font_descr{"Open Sans", 14}, cjk};
+   tl.flow(40, false);                 // narrow: force many wraps
+
+   // It must actually wrap into multiple lines.
+   CHECK(tl.num_lines() >= 2);
+
+   // Distinct row y-positions, in visual (top-to-bottom) order.
+   std::vector<float> rows;
+   for (std::size_t i = 0; i <= n; ++i)
+   {
+      float y = tl.caret_point(i).y;
+      if (rows.empty() || y > rows.back())
+         rows.push_back(y);
+   }
+   CHECK(rows.size() == tl.num_lines());
+
+   // No character may be dropped at a wrap: the lines must cover a contiguous
+   // run of characters (there is no whitespace between ideographs to consume).
+   // The index one past the right edge of each line must equal the index at the
+   // left edge of the next line, on every backend.
+   for (std::size_t r = 0; r + 1 < rows.size(); ++r)
+   {
+      auto right = tl.caret_index(1e6f, rows[r]);
+      auto left  = tl.caret_index(-1e6f, rows[r+1]);
+      CHECK(right == left);
+   }
+}
+
 TEST_CASE("Path Equality")
 {
    // Identical paths are equal

@@ -266,7 +266,17 @@ namespace cycfi::artist
          return rng.location;
 
       if (i != _rows.end()-1 && p.x >= (i->pos.x + i->width))
-         return rng.location + rng.length - 1;
+      {
+         // Return the index one past the last rendered character of the line.
+         // CTLine ranges include trailing consumed whitespace (a soft-wrap
+         // space or a hard newline), so step back over it; otherwise (e.g. CJK
+         // with no inter-character space) the boundary is the next line's first
+         // character.  This matches the Skia and Cairo backends.
+         auto end = rng.location + rng.length;
+         if (end > rng.location && is_space(_text[end - 1]))
+            --end;
+         return end;
+      }
 
       auto index = CTLineGetStringIndexForPosition(i->line, {p.x - i->pos.x, 0});
       return index;
