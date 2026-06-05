@@ -1,3 +1,14 @@
+// UNICODE must be defined before including Catch: on MSVC the Unicode charset
+// defines _UNICODE, which makes Catch emit a wmain entry point that calls its
+// wchar_t applyCommandLine overload -- and that overload is only declared when
+// UNICODE is defined. (The former single main.cpp set this before catch; the
+// split must do the same here.)
+#if defined(_WIN32)
+# ifndef UNICODE
+#  define UNICODE
+# endif
+#endif
+
 #define CATCH_CONFIG_MAIN
 #include <infra/catch.hpp>
 #include "test_support.hpp"
