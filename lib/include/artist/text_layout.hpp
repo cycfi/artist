@@ -27,23 +27,23 @@ namespace cycfi::artist
     *
     *    Edits are incremental: only the paragraphs an edit touches are
     *    re-laid-out (via `paragraph_index`), and the rope buffer shares
-    *    unchanged structure. Templated on the per-paragraph `Layout` so the
+    *    unchanged structure. Templated on the per-paragraph `TextRun` so the
     *    stitching can be tested with a non-graphical mock; the production
     *    instantiation is `text_layout` over `artist::text_run`.
     *
-    *    `Layout` must provide: construction from `std::u32string_view`,
+    *    `TextRun` must provide: construction from `std::u32string_view`,
     *    `flow(float, bool)`, `num_lines()`, `caret_point(size_t)`,
     *    `caret_index(point)`, and (only if `draw` is used) `draw(canvas&,
     *    point, color)`.
     */
-   template <typename Layout>
+   template <typename TextRun>
    class basic_text_layout
    {
    public:
 
       using size_type = std::size_t;
-      using factory = std::function<Layout(std::u32string_view)>;
-      using break_enum = typename Layout::break_enum;
+      using factory = std::function<TextRun(std::u32string_view)>;
+      using break_enum = typename TextRun::break_enum;
 
       static constexpr size_type npos = size_type(-1);
 
@@ -85,7 +85,7 @@ namespace cycfi::artist
 
       struct para
       {
-         Layout      layout;
+         TextRun      layout;
          size_type   lines;
          double      y;       // top of this paragraph, relative to the document
       };
@@ -110,8 +110,8 @@ namespace cycfi::artist
    // Implementation
    //--------------------------------------------------------------------------
 
-   template <typename Layout>
-   basic_text_layout<Layout>::basic_text_layout(
+   template <typename TextRun>
+   basic_text_layout<TextRun>::basic_text_layout(
       factory make, double line_height, std::u32string_view text)
     : _make(std::move(make))
     , _line_height(line_height)
@@ -119,9 +119,9 @@ namespace cycfi::artist
       set_text(text);
    }
 
-   template <typename Layout>
-   typename basic_text_layout<Layout>::para
-   basic_text_layout<Layout>::make_para(size_type i) const
+   template <typename TextRun>
+   typename basic_text_layout<TextRun>::para
+   basic_text_layout<TextRun>::make_para(size_type i) const
    {
       // Exclude the trailing '\n' separator from the shaped text: the
       // paragraph break itself provides the line advance, so handing the '\n'
@@ -131,7 +131,7 @@ namespace cycfi::artist
       if (e > s && _buffer[e - 1] == U'\n')
          --e;
       auto txt = _buffer.substr(s, e - s);
-      Layout layout = _make(std::u32string_view(txt.data(), txt.size()));
+      TextRun layout = _make(std::u32string_view(txt.data(), txt.size()));
       if (_width > 0)
          layout.flow(_width, _justify);
       // Every paragraph occupies at least one line: an empty paragraph (e.g. a
@@ -141,8 +141,8 @@ namespace cycfi::artist
       return para{std::move(layout), lines, 0};
    }
 
-   template <typename Layout>
-   void basic_text_layout<Layout>::set_text(std::u32string_view text)
+   template <typename TextRun>
+   void basic_text_layout<TextRun>::set_text(std::u32string_view text)
    {
       _buffer = rope<char32_t>(text.begin(), text.end());
       _px.build(_buffer);
@@ -153,15 +153,15 @@ namespace cycfi::artist
       recompute_offsets(0);
    }
 
-   template <typename Layout>
-   std::u32string basic_text_layout<Layout>::text() const
+   template <typename TextRun>
+   std::u32string basic_text_layout<TextRun>::text() const
    {
       auto v = _buffer.flatten();
       return std::u32string(v.begin(), v.end());
    }
 
-   template <typename Layout>
-   void basic_text_layout<Layout>::recompute_offsets(size_type from)
+   template <typename TextRun>
+   void basic_text_layout<TextRun>::recompute_offsets(size_type from)
    {
       double y = (from == 0)
          ? 0.0
@@ -173,8 +173,8 @@ namespace cycfi::artist
       }
    }
 
-   template <typename Layout>
-   void basic_text_layout<Layout>::splice_rebuild(
+   template <typename TextRun>
+   void basic_text_layout<TextRun>::splice_rebuild(
       detail::paragraph_index::changed_range ch, size_type old_count)
    {
       size_type new_count = _px.count();
@@ -183,7 +183,7 @@ namespace cycfi::artist
       // [ch.first .. ch.last]; recover pe from the paragraph-count delta.
       size_type pe = ch.last - dpar;
 
-      // Rebuild via move-construction only (the paragraph Layout, e.g.
+      // Rebuild via move-construction only (the paragraph TextRun, e.g.
       // text_run, is move-constructible but not move-assignable, so
       // vector insert/erase element shifts are unavailable).
       std::vector<para> updated;
@@ -198,8 +198,8 @@ namespace cycfi::artist
       recompute_offsets(ch.first);
    }
 
-   template <typename Layout>
-   void basic_text_layout<Layout>::insert(size_type pos, std::u32string_view text)
+   template <typename TextRun>
+   void basic_text_layout<TextRun>::insert(size_type pos, std::u32string_view text)
    {
       if (text.empty())
          return;
@@ -211,8 +211,8 @@ namespace cycfi::artist
       splice_rebuild(ch, old_count);
    }
 
-   template <typename Layout>
-   void basic_text_layout<Layout>::erase(size_type pos, size_type len)
+   template <typename TextRun>
+   void basic_text_layout<TextRun>::erase(size_type pos, size_type len)
    {
       if (len == 0 || pos >= size())
          return;
@@ -223,16 +223,16 @@ namespace cycfi::artist
       splice_rebuild(ch, old_count);
    }
 
-   template <typename Layout>
-   void basic_text_layout<Layout>::replace(
+   template <typename TextRun>
+   void basic_text_layout<TextRun>::replace(
       size_type pos, size_type len, std::u32string_view text)
    {
       erase(pos, len);
       insert(pos, text);
    }
 
-   template <typename Layout>
-   void basic_text_layout<Layout>::flow(float width, bool justify)
+   template <typename TextRun>
+   void basic_text_layout<TextRun>::flow(float width, bool justify)
    {
       // Already flowed at this width/justification: every paragraph is kept
       // shaped at _width (incremental edits reflow only the touched paragraph
@@ -253,9 +253,9 @@ namespace cycfi::artist
       recompute_offsets(0);
    }
 
-   template <typename Layout>
-   typename basic_text_layout<Layout>::size_type
-   basic_text_layout<Layout>::num_lines() const
+   template <typename TextRun>
+   typename basic_text_layout<TextRun>::size_type
+   basic_text_layout<TextRun>::num_lines() const
    {
       size_type n = 0;
       for (auto const& p : _paras)
@@ -263,8 +263,8 @@ namespace cycfi::artist
       return n;
    }
 
-   template <typename Layout>
-   point basic_text_layout<Layout>::caret_point(size_type index) const
+   template <typename TextRun>
+   point basic_text_layout<TextRun>::caret_point(size_type index) const
    {
       size_type pi = _px.index_at(index);
       size_type local = index - _px.start(pi);
@@ -272,9 +272,9 @@ namespace cycfi::artist
       return {lp.x, float(lp.y + _paras[pi].y)};
    }
 
-   template <typename Layout>
-   typename basic_text_layout<Layout>::size_type
-   basic_text_layout<Layout>::para_at_y(double y) const
+   template <typename TextRun>
+   typename basic_text_layout<TextRun>::size_type
+   basic_text_layout<TextRun>::para_at_y(double y) const
    {
       if (_paras.empty())
          return 0;
@@ -287,9 +287,9 @@ namespace cycfi::artist
       return (i == 0) ? 0 : i - 1;
    }
 
-   template <typename Layout>
-   typename basic_text_layout<Layout>::size_type
-   basic_text_layout<Layout>::caret_index(point p) const
+   template <typename TextRun>
+   typename basic_text_layout<TextRun>::size_type
+   basic_text_layout<TextRun>::caret_index(point p) const
    {
       // Select the paragraph whose vertical span contains p.y (a body
       // coordinate, top-relative), then resolve the row within it.
@@ -312,9 +312,9 @@ namespace cycfi::artist
       return _px.start(pi) + li;
    }
 
-   template <typename Layout>
-   typename Layout::break_enum
-   basic_text_layout<Layout>::word_break(size_type index) const
+   template <typename TextRun>
+   typename TextRun::break_enum
+   basic_text_layout<TextRun>::word_break(size_type index) const
    {
       // Whole-document query: delegate to the paragraph that owns `index`,
       // offset to that paragraph's local index.
@@ -322,9 +322,9 @@ namespace cycfi::artist
       return _paras[pi].layout.word_break(index - _px.start(pi));
    }
 
-   template <typename Layout>
-   typename Layout::break_enum
-   basic_text_layout<Layout>::line_break(size_type index) const
+   template <typename TextRun>
+   typename TextRun::break_enum
+   basic_text_layout<TextRun>::line_break(size_type index) const
    {
       // A hard line break is reported at the '\n' character's own index -- a
       // mandatory break *after* that character -- matching libunibreak and the
@@ -332,13 +332,13 @@ namespace cycfi::artist
       // convention: it lands on the newline, then steps forward onto the next
       // line's first character.)
       if (index < _buffer.size() && _buffer[index] == U'\n')
-         return Layout::must_break;
+         return TextRun::must_break;
       size_type pi = _px.index_at(index);
       return _paras[pi].layout.line_break(index - _px.start(pi));
    }
 
-   template <typename Layout>
-   void basic_text_layout<Layout>::draw(canvas& cnv, point p, color c) const
+   template <typename TextRun>
+   void basic_text_layout<TextRun>::draw(canvas& cnv, point p, color c) const
    {
       if (_paras.empty())
          return;
