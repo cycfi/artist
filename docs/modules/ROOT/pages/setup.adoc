@@ -1,0 +1,245 @@
+= Setup and Installation
+
+This guide covers building the Artist 2D Canvas Library from source on macOS,
+Windows, and Linux, across the three supported rendering backends: Skia,
+Cairo, and Quartz-2D.
+
+== Requirements
+
+[cols="1,3"]
+|===
+| A C++20 compiler  | Clang, GCC, or MSVC (Visual Studio 2022)
+| https://git-scm.com/[Git]    | with submodule support
+| https://cmake.org/[CMake]    | 3.21 or higher
+|===
+
+[NOTE]
+====
+CMake *3.21 or higher* is required. The top-level `CMakeLists.txt` declares a
+lower floor, but the bundled `CMakePresets.json` uses preset schema
+`"version": 3`, which CMake only understands from 3.21 onward. Older CMake
+versions will reject the presets.
+====
+
+The build is driven by https://vcpkg.io/[vcpkg] (vendored as a git submodule
+at `lib/external/vcpkg/`) together with CMake presets. The
+https://github.com/cycfi/infra/[Cycfi infra library] is also pulled in as a
+submodule. Both are fetched automatically when you clone with
+`--recurse-submodules`.
+
+== Getting the source
+
+Clone the repository together with its submodules:
+
+[source,sh]
+----
+git clone --recurse-submodules https://github.com/cycfi/artist.git
+cd artist
+----
+
+If you already cloned without `--recurse-submodules`, initialize them after
+the fact:
+
+[source,sh]
+----
+git submodule update --init --recursive
+----
+
+== Backends
+
+Artist supports three rendering backends. Only one backend is active per
+build, selected with a CMake option.
+
+[%header,cols="1,2,2,1"]
+|===
+| Backend   | Platform               | CMake option          | Default
+
+| Quartz-2D | macOS                  | `ARTIST_QUARTZ_2D=ON` | macOS
+| Skia      | macOS, Linux, Windows  | `ARTIST_SKIA=ON`      | Linux, Windows
+| Cairo     | macOS, Linux, Windows  | `ARTIST_CAIRO=ON`     | off
+|===
+
+Enabling one backend automatically disables the others.
+
+== Building with Skia
+
+Skia is the default backend on Linux and Windows, and is also available on
+macOS. The Skia binaries are large and slow to compile from source, so Artist
+ships with two CMake presets:
+
+[%header,cols="1,3"]
+|===
+| Preset     | What it does
+
+| `prebuilt` | Downloads a prebuilt Skia bundle from the Cloudflare R2 binary
+               cache (no Skia compile). This is the default and the fast path.
+| `source`   | Builds Skia and its dependencies from source through the vcpkg
+               toolchain. Use this when the prebuilt bundle is unavailable or
+               incompatible with your toolchain.
+|===
+
+=== One-time vcpkg bootstrap
+
+Bootstrap the bundled vcpkg once (already done implicitly if you let CMake
+fetch submodules):
+
+[source,sh]
+----
+lib/external/vcpkg/bootstrap-vcpkg.sh -disableMetrics    # macOS / Linux
+----
+
+[source,bat]
+----
+lib\external\vcpkg\bootstrap-vcpkg.bat -disableMetrics   :: Windows
+----
+
+=== Configure and build with presets
+
+[source,sh]
+----
+# Fast path: download the prebuilt Skia bundle from the R2 cache
+cmake --preset prebuilt
+cmake --build build
+
+# Or build Skia from source via vcpkg
+cmake --preset source
+cmake --build build-source
+----
+
+The `prebuilt` preset writes to `build/`; the `source` preset writes to
+`build-source/`. Both default to a Release build with tests enabled.
+
+=== Configure manually (without presets)
+
+If you prefer to drive CMake directly, pass the vcpkg toolchain file:
+
+[source,sh]
+----
+cmake -S . -B build-skia -DARTIST_SKIA=ON \
+  -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake \
+  -DARTIST_BUILD_EXAMPLES=ON -DARTIST_BUILD_TESTS=ON
+cmake --build build-skia
+----
+
+== Building with Cairo
+
+Cairo is an optional backend, disabled by default. On macOS and Linux it uses
+the system Cairo (installed via the platform package manager); on Windows its
+dependency tree is built through the bundled vcpkg.
+
+=== Linux
+
+[source,sh]
+----
+sudo apt-get install -y \
+  libcairo2-dev \
+  libfontconfig1-dev \
+  libfreetype6-dev \
+  libharfbuzz-dev \
+  pkg-config
+
+cmake -S . -B build-cairo -DARTIST_CAIRO=ON
+cmake --build build-cairo
+----
+
+=== macOS (Homebrew)
+
+[source,sh]
+----
+brew install cairo fontconfig freetype harfbuzz ninja
+
+cmake -S . -B build-cairo -DARTIST_CAIRO=ON
+cmake --build build-cairo
+----
+
+=== Windows
+
+Dependencies are managed through the bundled vcpkg submodule — no separate
+installation is needed. Bootstrap vcpkg once, then pass the toolchain file:
+
+[source,bat]
+----
+lib\external\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+
+cmake -S . -B build-cairo -DARTIST_CAIRO=ON ^
+  -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake
+cmake --build build-cairo
+----
+
+vcpkg will build cairo, freetype, fontconfig, and harfbuzz from source on the
+first run (~15–20 min). Subsequent builds reuse the cached `vcpkg_installed/`
+directory.
+
+=== Cairo: supported platforms and known limitations
+
+*Supported:*
+
+* Offscreen image surfaces on macOS, Linux, and Windows.
+* Live window rendering on macOS, Linux/GTK, and Windows/Win32.
+* Visual test suite with goldens for macOS, Linux, and Windows.
+
+*Known limitations:*
+
+* `shadow_style` is implemented via a software Gaussian blur (SIMD-accelerated
+  where available); there is no GPU-accelerated path.
+* The `darker` composite op approximates the W3C PlusDarker formula; no exact
+  Cairo equivalent exists.
+* Text rendering uses HarfBuzz for shaping, FreeType for rasterization, and
+  Fontconfig for font selection. Deferred: font fallback, bidirectional text,
+  and complex script segmentation.
+
+== Building with Quartz-2D (macOS)
+
+Quartz-2D is the default backend on macOS and has no external dependencies
+beyond the system frameworks and Ninja:
+
+[source,sh]
+----
+brew install ninja
+
+cmake -S . -B build-quartz2d -DARTIST_QUARTZ_2D=ON \
+  -DARTIST_BUILD_EXAMPLES=ON -DARTIST_BUILD_TESTS=ON -G Ninja
+cmake --build build-quartz2d
+----
+
+== Windows toolchain notes
+
+Artist is built and tested on Windows with *Visual Studio 2022*. To use the
+Visual Studio generator explicitly:
+
+[source,bat]
+----
+cmake -S . -B build -G"Visual Studio 17 2022" -DARTIST_SKIA=ON ^
+  -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake
+cmake --build build --config Release
+----
+
+[NOTE]
+====
+Visual Studio 2019 is *not* supported — it produces linker errors against the
+current dependencies. Use Visual Studio 2022 (generator `Visual Studio 17
+2022`).
+====
+
+== Running the tests
+
+Each backend's build tree contains the test suite. Run it with `ctest`:
+
+[source,sh]
+----
+ctest --verbose --test-dir build            # Skia (prebuilt preset)
+ctest --verbose --test-dir build-cairo      # Cairo
+ctest --verbose --test-dir build-quartz2d   # Quartz-2D
+----
+
+== Building and running the examples
+
+Pass `-DARTIST_BUILD_EXAMPLES=ON` when configuring (the presets build tests
+but not examples by default). After building, the example applications are
+produced under the build tree's `examples/` directory.
+
+Each example is contained in a single source file, plus a platform-specific
+driver that sets up the application and a window for viewing the graphics.
+The examples are provided as starting points for learning how to use the
+library — feel free to inspect and modify them. Each one demonstrates a
+different aspect of Artist.
