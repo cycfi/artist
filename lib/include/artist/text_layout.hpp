@@ -238,6 +238,15 @@ namespace cycfi::artist
    template <typename Layout>
    void basic_text_layout<Layout>::flow(float width, bool justify)
    {
+      // Already flowed at this width/justification: every paragraph is kept
+      // shaped at _width (incremental edits reflow only the touched paragraph
+      // in make_para), so re-flowing the whole document would be pure waste.
+      // This is what keeps per-keystroke editing O(1) instead of
+      // O(paragraphs) -- the editor calls flow() on every edit to refresh its
+      // height.
+      if (width == _width && justify == _justify && !_paras.empty())
+         return;
+
       _width = width;
       _justify = justify;
       for (auto& p : _paras)
