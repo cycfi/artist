@@ -1,0 +1,66 @@
+= Artist 2D Canvas Library
+
+== Introduction
+
+The Artist 2D Canvas Library is an abstraction layer with an API inspired by
+the HTML5 canvas API. The library presents a lean API modeled after the
+https://www.w3.org/TR/2dcontext/[HTML Canvas 2D Context specification]. The
+API is a not-so-thin layer above various 2D platform-specific and
+cross-platform 2D "backend" graphics libraries, such as
+https://skia.org/[Skia], https://apple.co/2SljYHw[Quartz-2D], and
+https://cairographics.org/[Cairo].
+
+The Artist library goes beyond the basic HTML5 canvas API with extensions for
+dealing with text layout and mechanisms for text editing, fonts and font
+management, path creation and manipulation, and image capture and offscreen
+graphics.
+
+The library is Open Source and released under the very liberal
+https://opensource.org/licenses/MIT[MIT License].
+
+== Backends
+
+Artist supports three rendering backends. Only one backend is active per
+build.
+
+[%header,cols="1,2,2,1"]
+|===
+| Backend   | Platform               | CMake option          | Default
+
+| Quartz-2D | macOS                  | `ARTIST_QUARTZ_2D=ON` | macOS
+| Skia      | macOS, Linux, Windows  | `ARTIST_SKIA=ON`      | Linux, Windows
+| Cairo     | macOS, Linux, Windows  | `ARTIST_CAIRO=ON`     | off
+|===
+
+See xref:setup.adoc[Setup and Installation] for build instructions covering
+each backend and platform.
+
+== Table of Contents
+
+.Show Table of Contents
+[%collapsible]
+====
+include::../nav.adoc[]
+====
+
+== The Author
+
+image:joel.jpg[alt="Joel de Guzman", width=150, role=left] Joel got into
+electronics and programming in the 80s because almost everything in music,
+his first love, is becoming electronic and digital. Since then, he builds his
+own guitars, effect boxes and synths. He enjoys playing distortion-laden rock
+guitar, composes and produces his own music in his home studio.
+
+Joel de Guzman is the principal architect and engineer at
+https://www.cycfi.com/[Cycfi Research]. He is a software engineer specializing
+in advanced C++ and an advocate of Open Source. He has authored a number of
+highly successful Open Source projects such as
+http://tinyurl.com/ydhotlaf[Boost.Spirit], http://tinyurl.com/y6vkeo5t[Boost.Phoenix]
+and http://tinyurl.com/ybn5oq9v[Boost.Fusion]. These libraries are all part of
+the http://tinyurl.com/jubgged[Boost Libraries], a well respected,
+peer-reviewed, Open Source, collaborative development effort.
+
+'''
+
+_Copyright (c) 2014-2026 Joel de Guzman. All rights reserved._
+_Distributed under the https://opensource.org/licenses/MIT[MIT License]_
