@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Foundation :: Artist Docs</title>
+    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0-dev/foundation.html">
+    <meta name="generator" content="Antora 3.1.15">
+    <link rel="stylesheet" href="../../_/css/site.css">
+<meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
+<link rel="icon" type="image/png" sizes="16x16" href="https://cycfi.com/assets/icons/favicon-16x16.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="https://cycfi.com/assets/icons/favicon-32x32.png"/>
+<link rel="icon" type="image/png" sizes="96x96" href="https://cycfi.com/assets/icons/favicon-96x96.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="https://cycfi.com/assets/icons/android-chrome-192x192.png"/>
+<link rel="icon" type="image/png" sizes="256x256" href="https://cycfi.com/assets/icons/android-chrome-256x256.png"/>
+<link rel="apple-touch-icon" type="image/png" href="https://cycfi.com/assets/icons/apple-touch-icon.png"/>
+
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <!--  Cycfi Logo -->
+      <a class="m-nav__logo" href="https://www.cycfi.com">
+        <svg version="1.1" x="0px" y="0px" width="200" viewBox="0 0 600 100" style="padding-top: 15;" xmlns="http://www.w3.org/2000/svg">
+          <g transform="matrix(2.55, 0, 0, 2.62, -464.010406, -1042.918213)" fill="#202020">
+            <path d="M234.37,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.7-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-3.5-0.04-4.6,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.59,0.66-0.76,1.35c-0.14,0.84-0.18,1.03-0.19,1.43l-0.14,3.91 c-0.01,0.39,0.04,0.84,0.09,1.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h33.85 c0.8,0,1.45,0.67,1.42,1.47L234.37,431.65z"/>
+            <path d="M276.06,433.02H257.9c-0.8,0-1.45-0.67-1.42-1.47l0.15-4.18c0.03-0.76,0.65-1.37,1.42-1.37h14.16 c1.91,0,3.52,0,4.61-0.12c1.23-0.13,1.75-0.25,2.17-0.71c0.36-0.39,0.4-2.52,0.4-2.52h-27.92c-11.11,0-13.26-5.13-13.1-9.44 l0.12-3.38c0.03-0.76,0.65-1.37,1.42-1.37h8.43c0.8,0,1.45,0.67,1.42,1.47l-0.05,1.36c-0.02,0.46-0.01,2.03,0.11,2.51 c0.1,0.42,0.44,0.82,0.78,1.07c0.47,0.35,0.83,0.42,1.64,0.54c0.9,0.14,2.09,0.21,3.54,0.21h24.09l0.21-5.8 c0.03-0.76,0.65-1.37,1.42-1.37h8.46c0.8,0,1.45,0.67,1.42,1.47l-0.49,13.57c-0.06,1.58-0.46,3.96-1.12,5.07 c-0.68,1.15-1.71,2.08-3.04,2.76c-1.23,0.63-2.76,1.07-4.56,1.32C280.44,432.9,278.4,433.02,276.06,433.02L276.06,433.02z"/>
+            <path d="M401.95,431.55l0.78-21.72c0.03-0.76,0.65-1.37,1.42-1.37h8.59c0.8,0,1.45,0.67,1.42,1.47l-0.78,21.72 c-0.03,0.76-0.65,1.37-1.42,1.37h-8.59C402.56,433.02,401.92,432.35,401.95,431.55z"/>
+            <path d="M346.77,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.71-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-2.47-0.04-3.58,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.58,0.66-0.76,1.35c-0.14,0.84-0.22,2.03-0.23,2.43l-0.07,1.91 c-0.01,0.39,0.01,1.84,0.06,2.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h32.83 c0.8,0,1.45,0.67,1.42,1.47L346.77,431.65z"/>
+            <path d="M386.2,425.88l-24.93-0.03l-0.21,5.8c-0.03,0.76-0.65,1.37-1.42,1.37h-8.46c-0.8,0-1.45-0.67-1.42-1.47 l0.49-13.57c0.06-1.58,0.46-3.96,1.12-5.07c0.68-1.15,1.71-2.08,3.04-2.76c1.23-0.63,2.76-1.07,4.56-1.32 c1.7-0.24,3.75-0.36,6.08-0.36l0,0h33.68c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.18c-0.03,0.76-0.65,1.37-1.42,1.37H368.9 c-1.91,0-3.52,0-4.61,0.12c-1.23,0.13-1.75,0.25-2.17,0.71c-0.36,0.39-0.4,2.52-0.4,2.52h24.63c0.8,0,1.45,0.67,1.42,1.47 l-0.15,4.22C387.59,425.28,386.96,425.88,386.2,425.88z"/>
+          </g>
+        </svg>
+      </a>
+      <a class="navbar-item" href="https://www.cycfi.com">Artist Docs</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="artist" data-version="v1.0-dev">
+  <aside class="nav">
+    <div class="panels">
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs">
+        </div>
+      </div>
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="index.html">Artist 2D Canvas Library</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="setup.html">Setup and Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="backends.html">Backends</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="gallery.html">Gallery</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="canvas.html">Canvas</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="foundation.html">Foundation</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Artist 2D Canvas Library</span>
+    <span class="version">v1.0-dev</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="index.html">Artist 2D Canvas Library</a></div>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="index.html">v1.0-dev</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Artist 2D Canvas Library</a></li>
+    <li>Reference</li>
+    <li><a href="foundation.html">Foundation</a></li>
+  </ul>
+</nav>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Foundation</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Foundation classes provide support for the Artist library, especially for
+the <code>canvas</code> class.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_point"><a class="anchor" href="#_point"></a>point</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The point indicates position in the 2D cartesian coordinate space,
+represented by the <code>x</code> and <code>y</code> coordinates:</p>
+</div>
+<div class="sect2">
+<h3 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">struct point
+{
+               point();
+               point(float x, float y);
+               point(point const&amp;) = default;
+   point&amp;      operator=(point const &amp;) = default;
+
+   bool        operator==(point const&amp; other) const;
+   bool        operator!=(point const&amp; other) const;
+
+   point       move(float dx, float dy) const;
+   point       move_to(float x, float y) const;
+   point       reflect(point p) const;
+
+   float       x;
+   float       y;
+};</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h3>
+<div class="sect3">
+<h4 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>x</code>, <code>y</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scalar coordinates.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>dx</code>, <code>dy</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Relative scalar coordinates.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>p</code>, <code>p2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>point</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_constructors_and_assignment"><a class="anchor" href="#_constructors_and_assignment"></a>Constructors and assignment</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Default constructor [1].
+point{}
+
+// Constructor [2].
+point{ x, y }
+
+// Copy constructor. [3]
+point{ p }
+
+// Assignment [4]
+p = p2</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_semantics"><a class="anchor" href="#_semantics"></a>Semantics</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Default construct a <code>point</code> with initial values <code>{ 0, 0 }</code></p>
+</li>
+<li>
+<p>Construct a <code>point</code> given initial values <code>x</code>, and <code>y</code>.</p>
+</li>
+<li>
+<p>Copy construct a <code>point `, `p</code>.</p>
+</li>
+<li>
+<p>Assign <code>p2</code>, to <code>p</code>.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_equality"><a class="anchor" href="#_equality"></a>Equality</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Equality [1]
+p == p2
+
+// Non-equality [2]
+p != p2</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_semantics_2"><a class="anchor" href="#_semantics_2"></a>Semantics</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Returns <code>true</code> if <code>p2</code>, is equal to <code>p</code>.</p>
+</li>
+<li>
+<p>Returns <code>true</code> if <code>p2</code>, is not equal to <code>p</code>.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_transformation"><a class="anchor" href="#_transformation"></a>Transformation</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Move [1]
+p.move(dx, dy)
+
+// Move To [2]
+p.move_to(x, y)
+
+// Reflection [3]
+p.reflect(p2)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_semantics_3"><a class="anchor" href="#_semantics_3"></a>Semantics</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Move <code>p</code> <code>dx</code> and <code>dy</code> distance relative to <code>p</code>. Non-mutating. Returns the
+moved instance of <code>point</code>.</p>
+</li>
+<li>
+<p>Move <code>p</code> to absolute coordinates <code>x</code> and <code>y</code>. Non-mutating. Returns the
+moved instance of <code>point</code>.</p>
+</li>
+<li>
+<p>Reflect a <code>point</code>, <code>p</code>, at 180 degree rotation of point, <code>point</code>.
+Non-mutating. Returns the reflected instance of <code>point</code>.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_member_access"><a class="anchor" href="#_member_access"></a>Member access</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">p.x
+p.y</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_semantics_4"><a class="anchor" href="#_semantics_4"></a>Semantics</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Direct access to members <code>x</code> and <code>y</code>.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_extent"><a class="anchor" href="#_extent"></a>extent</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>extent</code> struct is a specialization of <code>point</code> but deletes the members
+<code>move</code>, <code>move_to</code>, and <code>reflect</code>. <code>extent</code> is intended for specifying
+2-dimensional sizes.</p>
+</div>
+<div class="sect2">
+<h3 id="_declaration_2"><a class="anchor" href="#_declaration_2"></a>Declaration</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">struct extent : point
+{
+   using point::point;
+
+               extent(point p);
+
+   point       move(float dx, float dy) const = delete;
+   point       move_to(float x, float y) const = delete;
+   point       reflect(point p) const = delete;
+};</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_rect"><a class="anchor" href="#_rect"></a>rect</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>rect</code> struct represents a 2-dimensional rectangle specified by the
+<code>left</code>, <code>top</code>, <code>right</code>, and <code>bottom</code> coordinates.</p>
+</div>
+<div class="sect2">
+<h3 id="_declaration_3"><a class="anchor" href="#_declaration_3"></a>Declaration</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">struct rect
+{
+               rect();
+               rect(float left, float top, float right, float bottom);
+               rect(point origin, float right, float bottom)
+
+               rect(point top_left, point bottom_right);
+               rect(float left, float top, extent size);
+               rect(point origin, extent size);
+
+               rect(rect const&amp;) = default;
+   rect&amp;       operator=(rect const&amp;) = default;
+
+   bool        operator==(rect const&amp; other) const;
+   bool        operator!=(rect const&amp; other) const;
+
+   bool        is_empty() const;
+   bool        includes(point p) const;
+   bool        includes(rect const&amp; other) const;
+
+   float       width() const;
+   void        width(float w);
+   float       height() const;
+   void        height(float h);
+   extent      size() const;
+
+   point       top_left() const;
+   point       bottom_right() const;
+   point       top_right() const;
+   point       bottom_left() const;
+
+   rect        move(float dx, float dy) const;
+   rect        move_to(float x, float y) const;
+   rect        inset(float x = 1.0, float y = 1.0) const;
+
+   float       left;
+   float       top;
+   float       right;
+   float       bottom;
+};</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_free_functions"><a class="anchor" href="#_free_functions"></a>Free Functions</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">bool           is_valid(rect const&amp; r);
+bool           is_same_size(rect const&amp; a, rect const&amp; b);
+bool           intersects(rect const&amp; a, rect const&amp; b);
+
+point          center_point(rect const&amp; r);
+float          area(rect const&amp; r);
+rect           union_(rect const&amp; a, rect const&amp; b);
+rect           intersection(rect const&amp; a, rect const&amp; b);
+
+rect           center(rect const&amp; r, rect const&amp; encl);
+rect           center_h(rect const&amp; r, rect const&amp; encl);
+rect           center_v(rect const&amp; r, rect const&amp; encl);
+rect           align(rect const&amp; r, rect const&amp; encl, float x, float y);
+rect           align_h(rect const&amp; r, rect const&amp; encl, float x);
+rect           align_v(rect const&amp; r, rect const&amp; encl, float y);</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions_2"><a class="anchor" href="#_expressions_2"></a>Expressions</h3>
+<div class="sect3">
+<h4 id="_notation_2"><a class="anchor" href="#_notation_2"></a>Notation</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>left</code>, <code>top</code>, <code>right</code>, <code>bottom</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scalar coordinates.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>x</code>, <code>y</code>, <code>w</code>, <code>h</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scalar coordinates.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>dx</code>, <code>dy</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Relative scalar coordinates.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>origin</code>, <code>top_left</code>, <code>bottom_right</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>point</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>size</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>extent</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r</code>, <code>r2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>rect</code>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_constructors_and_assignment_2"><a class="anchor" href="#_constructors_and_assignment_2"></a>Constructors and assignment</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Default constructor [1].
+rect{}
+
+// Constructor [2].
+rect{ left, top, right, bottom }
+
+// Constructor [3].
+rect{ origin, right, bottom }
+
+// Constructor [4].
+rect{ top_left, bottom_right }
+
+// Constructor [5].
+rect{ left, top, size }
+
+// Constructor [6].
+rect{ origin, size }
+
+// Copy constructor [7].
+rect{ r }
+
+// Assignment [8]
+r = r2</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_semantics_5"><a class="anchor" href="#_semantics_5"></a>Semantics</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Default construct a <code>rect</code> with initial values <code>{ 0, 0, 0, 0 }</code></p>
+</li>
+<li>
+<p>Construct a <code>rect</code> given initial values <code>left</code>, <code>top</code>, <code>right</code>, and <code>bottom</code>.</p>
+</li>
+<li>
+<p>Construct a <code>rect</code> given <code>origin</code> (point), <code>right</code> and bottom`.</p>
+</li>
+<li>
+<p>Construct a <code>rect</code> given <code>top_left</code>, <code>bottom_right</code> points.</p>
+</li>
+<li>
+<p>Construct a <code>rect</code> given <code>left</code>, <code>top</code>, and <code>size</code> (extent).</p>
+</li>
+<li>
+<p>Construct a <code>rect</code> given <code>origin</code>, and <code>size</code> (extent).</p>
+</li>
+<li>
+<p>Copy construct a <code>rect `, `r</code>.</p>
+</li>
+<li>
+<p>Assign <code>r2</code> to <code>r</code>.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_equality_2"><a class="anchor" href="#_equality_2"></a>Equality</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Equality [1]
+r == r2
+
+// Non-equality [2]
+r != r2</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_semantics_6"><a class="anchor" href="#_semantics_6"></a>Semantics</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Returns <code>true</code> if a <code>r2</code> is equal <code>r</code>.</p>
+</li>
+<li>
+<p>Returns <code>true</code> if a <code>r2</code> is not equal to <code>r</code>.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_query"><a class="anchor" href="#_query"></a>Query</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Check for empty rectangle [1]
+r.empty()
+
+// Check for inclusion [2]
+r.includes(p)
+r.includes(r2)
+
+// Get the width and height [3]
+r.width()
+r.height()
+
+// Get the size [4]
+r.size()
+
+// Get the rectangle corners [5]
+r.top_left()
+r.bottom_right()
+r.top_right()
+r.bottom_left()</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_semantics_7"><a class="anchor" href="#_semantics_7"></a>Semantics</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Returns <code>true</code> if <code>r</code> is empty. Equivalent to <code>r.size() == extent{ 0, 0 }</code>.</p>
+</li>
+<li>
+<p>Inclusion:</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>Returns true if <code>p</code> is inside <code>r</code>.</p>
+</li>
+<li>
+<p>Returns true if <code>r2</code> is completely inside <code>r</code>.</p>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>Returns the width and height of the <code>r</code>. Returns a scalar value.</p>
+</li>
+<li>
+<p>Get the size of <code>r</code>. Returns an instance of <code>extent</code>.</p>
+</li>
+<li>
+<p>Get the top-left, bottom-right, top-right, and bottom-left corners or
+rectangle, <code>r</code>. Returns an instance of <code>point</code>.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_mutation"><a class="anchor" href="#_mutation"></a>Mutation</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Set the width and height [1]
+r.height(w)
+r.width(h)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_semantics_8"><a class="anchor" href="#_semantics_8"></a>Semantics</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Sets the width and height of <code>r</code> to <code>w</code> and <code>h</code>, respectively.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_transformation_2"><a class="anchor" href="#_transformation_2"></a>Transformation</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Move [1]
+r.move(dx, dy)
+
+// Move To [2]
+r.move_to(x, y)
+
+// Inset [3]
+r.inset(x, y)
+r.inset(xy)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_semantics_9"><a class="anchor" href="#_semantics_9"></a>Semantics</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Move origin of <code>r</code> by <code>dx</code> and <code>dy</code> distance. Non-mutating. Returns the
+moved instance of <code>rect</code>.</p>
+</li>
+<li>
+<p>Move origin of <code>r</code> to absolute coordinates <code>x</code> and <code>y</code>. Non-mutating.
+Returns the moved instance of <code>rect</code>.</p>
+</li>
+<li>
+<p>Inset <code>r</code> by <code>x</code> and <code>y</code> (in each dimension), or by <code>xy</code> (in both x and y
+dimensions). The rect <code>r</code> is shrunk if <code>x</code>, <code>y</code> or <code>xy</code> are positive,
+otherwise, expanded if negative. Non-mutating. Returns the inset instance
+of <code>rect</code>.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_free_query_functions"><a class="anchor" href="#_free_query_functions"></a>Free Query Functions</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Check for validity [1]
+is_valid(r)
+
+// Check for size equality [2]
+is_same_size(r, r2)
+
+// Check for intersection [3]
+intersects(r, r2)
+
+// Compute the center point [4]
+center_point(r)
+
+// Compute the area [5]
+area(r)
+
+// Compute the union of two rectangles [6]
+union_(r, r2)
+
+// Compute the intersection of two rectangles [7]
+intersection(r, r2)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_semantics_10"><a class="anchor" href="#_semantics_10"></a>Semantics</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Return <code>true</code> if <code>r</code> is a valid rectangle (left &#8656; right &amp;&amp; top &#8656;
+bottom).</p>
+</li>
+<li>
+<p>Return <code>true</code> if <code>r</code> and <code>r2</code> have the same size. Equivalent to <code>r.size()
+== r2.size()</code>.</p>
+</li>
+<li>
+<p>Return <code>true</code> if <code>r</code> intersects with <code>r2</code>.</p>
+</li>
+<li>
+<p>Returns the center point of <code>r</code>. returns an instance of <code>point</code>.</p>
+</li>
+<li>
+<p>Returns the area of <code>r</code>. Equivalent to <code>r.width() * r.height()</code>. Returns
+a scalar value.</p>
+</li>
+<li>
+<p>Compute the union of two rectangles. Returns an instance of <code>rect</code>.</p>
+</li>
+<li>
+<p>Compute the intersection of two rectangles. Returns an instance of
+<code>rect</code>.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_free_transformation_functions"><a class="anchor" href="#_free_transformation_functions"></a>Free Transformation Functions</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Center a rectangle [1]
+center(r, r2)
+center_h(r, r2)
+center_v(r, r2)
+
+// Align a rectangle [2]
+align(r, r2, x, y)
+align_h(r, r2, x)
+align_v(r, r2, y)</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_semantics_11"><a class="anchor" href="#_semantics_11"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Center <code>r</code> in <code>r2</code>. Returns an instance of <code>rect</code>.</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p><code>center</code>: In both dimensions</p>
+</li>
+<li>
+<p><code>center_h</code>: Horizontally</p>
+</li>
+<li>
+<p><code>center_v</code>: Vertically</p>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>Align <code>r</code> in <code>r2</code>. Given scalar <code>x</code> and <code>y</code> values, 0.0 aligns <code>r</code> to the
+left or top, 1.0 aligns <code>r</code> to the right or bottom, 0.5 aligns <code>r</code> center
+or middle. Returns an instance of <code>rect</code>.</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p><code>align</code>: In both dimensions by <code>x</code> and <code>y</code>, where <code>x</code> and <code>y</code> are
+fractional values from 0.0 to 1.0.</p>
+</li>
+<li>
+<p><code>align_h</code>: Horizontally by <code>x</code>, where <code>x</code> is a fractional value from
+0.0 to 1.0.</p>
+</li>
+<li>
+<p><code>align_v</code>: Vertically by <code>y</code>, where <code>y</code> is a fractional value from 0.0
+to 1.0.</p>
+</li>
+</ol>
+</div>
+</li>
+</ol>
+</div>
+<div class="sect3">
+<h4 id="_member_access_2"><a class="anchor" href="#_member_access_2"></a>Member Access</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Member access [1]
+r.left
+r.top
+r.right
+r.bottom</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_semantic"><a class="anchor" href="#_semantic"></a>Semantic</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Direct access to members <code>left</code>, <code>top</code>, <code>right</code>, and <code>bottom</code></p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_circle"><a class="anchor" href="#_circle"></a>circle</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The circle is represented by a center point and radius:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">struct circle
+{
+               circle();
+               circle(float cx, float cy, float radius);
+               circle(point c, float radius);
+               circle(rect const&amp; r);
+               circle(circle const&amp;) = default;
+   circle&amp;     operator=(circle const&amp;) = default;
+
+   rect        bounds() const;
+   bool        operator==(circle const&amp; other) const;
+   bool        operator!=(circle const&amp; other) const;
+
+   point       center() const;
+   circle      inset(float x) const;
+   circle      move(float dx, float dy) const;
+   circle      move_to(float x, float y) const;
+
+   float       cx;
+   float       cy;
+   float       radius;
+};</code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions_3"><a class="anchor" href="#_expressions_3"></a>Expressions</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Default constructor [1].
+circle{}
+
+// Constructor [2].
+circle{ x, y, radius }
+
+// Copy constructor. [3]
+circle{ c }
+
+// Assignment [4]
+c = c2
+
+// Equality [5]
+c == c2
+
+// Non-equality [6]
+c != c2
+
+// Bounds [7]
+c.bounds()
+
+// Get the center [8]
+c.center()
+
+// Inset [9]
+c.inset(x)
+
+// Move [10]
+c.move(dx, dy)
+
+// Move To [11]
+c.move_to(x, y)
+
+// Member access [12]
+c.cx
+c.cy
+c.radius</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_notation_3"><a class="anchor" href="#_notation_3"></a>Notation</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>x</code>, <code>y</code>, <code>radius</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scalar coordinates.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>dx</code>, <code>dy</code>, <code>radius</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scalar coordinates.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c</code>, <code>c2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>circle</code>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_semantics_12"><a class="anchor" href="#_semantics_12"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Default construct a <code>circle</code> with initial values <code>{ 0, 0, 0 }</code></p>
+</li>
+<li>
+<p>Construct a <code>circle</code> given initial values <code>x</code>, <code>y</code>, and <code>radius</code>.</p>
+</li>
+<li>
+<p>Copy construct a <code>circle</code>, <code>c</code>.</p>
+</li>
+<li>
+<p>Assign <code>c2</code> to <code>c</code>.</p>
+</li>
+<li>
+<p>Returns <code>true</code> if a <code>c2</code> is equal <code>c</code>.</p>
+</li>
+<li>
+<p>Returns <code>true</code> if a <code>c2</code> is not equal to <code>c</code>.</p>
+</li>
+<li>
+<p>Get the bounds: smallest <code>rect</code> that encloses <code>c</code>. Returns an instance of
+<code>rect</code>.</p>
+</li>
+<li>
+<p>Get the center of <code>c</code>. Returns an instance of <code>point</code>.</p>
+</li>
+<li>
+<p>Inset <code>c</code> by <code>x</code>.</p>
+</li>
+<li>
+<p>Move center of <code>c</code> by <code>dx</code> and <code>dy</code> distance. Returns the moved instance
+of <code>circle</code>.</p>
+</li>
+<li>
+<p>Move center of <code>c</code> to absolute coordinates <code>x</code> and <code>y</code>. Returns the
+moved instance of <code>circle</code>.</p>
+</li>
+<li>
+<p>Direct access to members <code>cx</code>, <code>cy</code>, and <code>radius</code></p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_color"><a class="anchor" href="#_color"></a>color</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Color is represented by <code>red</code>, <code>green</code>, <code>blue</code>, and <code>alpha</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">struct color
+{
+               color();
+               color(float red, float green, float blue, float alpha = 1.0f);
+
+   color       opacity(float alpha_) const;
+   color       level(float amount) const;
+
+   float       red   = 0.0f;
+   float       green = 0.0f;
+   float       blue  = 0.0f;
+   float       alpha = 0.0f;
+};</code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_free_functions_2"><a class="anchor" href="#_free_functions_2"></a>Free Functions</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">bool     operator==(color const&amp; a, color const&amp; b);
+bool     operator!=(color const&amp; a, color const&amp; b);
+color    rgb(std::uint32_t rgb);
+color    rgba(std::uint32_t rgba);
+color    rgb(std::uint8_t r, std::uint8_t g, std::uint8_t b);
+color    rgba(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a);
+color    hsl(float h, float sl, float l);</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions_4"><a class="anchor" href="#_expressions_4"></a>Expressions</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Default constructor [1].
+color{}
+
+// Constructor [2].
+color{ red, green, blue, alpha }
+
+// Copy constructor. [3]
+color{ c }
+
+// Assignment [4]
+c = c2
+
+// Equality [5]
+c == c2
+
+// Non-equality [6]
+c != c2
+
+// Opacity
+opacity(val) [7]
+
+// Linear level
+level(amount) [8]
+
+// RGB and RGBA from uint32_t [9]
+rgb(urgb);
+rgba(urgb);
+
+// RGB and RGBA from uint8_t reg, green, blue, and alpha components [10]
+rgb(ured, ugreen, ublue);
+rgba(ured, ugreen, ublue, ualpha);
+
+// RGB from HSL [11]
+hsl(h, sl, l);</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_notation_4"><a class="anchor" href="#_notation_4"></a>Notation</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>red</code>, <code>red</code>, <code>red</code>, <code>alpha</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scalar values.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>val</code>, <code>amount</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scalar values.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c</code>, <code>c2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>color</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>urgb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of `std::uint32_t</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ured</code>, <code>ugreen</code>, <code>ublue</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of `std::uint8_t</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_semantics_13"><a class="anchor" href="#_semantics_13"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Default construct a <code>color</code> with initial values <code>{ 0, 0, 0, 0 }</code></p>
+</li>
+<li>
+<p>Construct a <code>color</code> given initial values <code>red</code>, <code>green</code>, <code>blue</code>, and
+<code>alpha</code>. The floating point values range from 0.0 to 1.0.</p>
+</li>
+<li>
+<p>Copy construct a <code>color</code>, <code>c</code>.</p>
+</li>
+<li>
+<p>Assign <code>c2</code> to <code>c</code>.</p>
+</li>
+<li>
+<p>Returns <code>true</code> if a <code>c2</code> is equal <code>c</code>.</p>
+</li>
+<li>
+<p>Returns <code>true</code> if a <code>c2</code> is not equal to <code>c</code>.</p>
+</li>
+<li>
+<p>Sets the opacity (alpha) to <code>val</code>. Returns an instance of <code>color</code>.</p>
+</li>
+<li>
+<p>Multiplies all color components by <code>amount</code>. Returns an instance of <code>color</code>.</p>
+</li>
+<li>
+<p>Create an RGB or RGBA color from a <code>uint32_t</code> or the form rrggbb or
+rrggbbaa respectively, typically with using hex literals (e.g.
+0xffffffff).</p>
+</li>
+<li>
+<p>Create an RGB or RGBA color from <code>uint8_t</code> reg, green, blue, and alpha
+components, where each component range from <code>0</code> to <code>255</code>.</p>
+</li>
+<li>
+<p>Create an RBB color from HSL.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_predefined_colors"><a class="anchor" href="#_predefined_colors"></a>Predefined Colors</h3>
+<div class="paragraph">
+<p>Namespace <code>cycfi::artist::colors</code> contains some predefined colors, including
+256 levels of grays. You normally use the colors, by hoisting the namespace
+into your own namespace:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">namespace colors = cycfi::artist::colors;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The colors provided are from CSS: <a href="https://css-tricks.com/snippets/css/named-colors-and-hex-equivalents/">Named Colors and Hex Equivalents</a></p>
+</div>
+<div class="sect3">
+<h4 id="_the_colors"><a class="anchor" href="#_the_colors"></a>The colors</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">alice_blue,
+antique_white,
+aquamarine,
+azure,
+beige,
+bisque,
+black,
+blanched_almond,
+blue,
+blue_violet,
+brown,
+burly_wood,
+cadet_blue,
+chartreuse,
+chocolate,
+coral,
+cornflower_blue,
+corn_silk,
+cyan,
+dark_goldenrod,
+dark_green,
+dark_khaki,
+dark_olive_green,
+dark_orange,
+dark_orchid,
+dark_salmon,
+dark_sea_green,
+dark_slate_blue,
+dark_slate_gray,
+dark_turquoise,
+dark_violet,
+deep_pink,
+deep_sky_blue,
+dim_gray,
+dodger_blue,
+firebrick,
+floral_white,
+forest_green,
+gains_boro,
+ghost_white,
+gold,
+goldenrod,
+green,
+green_yellow,
+honeydew,
+hot_pink,
+indian_red,
+ivory,
+khaki,
+lavender,
+lavender_blush,
+lawn_green,
+lemon_chiffon,
+light_blue,
+light_coral,
+light_cyan,
+light_goldenrod,
+light_goldenrod_yellow,
+light_gray,
+light_pink,
+light_salmon,
+light_sea_green,
+light_sky_blue,
+light_slate_blue,
+light_slate_gray,
+light_steel_blue,
+light_yellow,
+lime_green,
+linen,
+magenta,
+maroon,
+medium_aquamarine,
+medium_blue,
+medium_forest_green,
+medium_goldenrod,
+medium_orchid,
+medium_purple,
+medium_sea_green,
+medium_slate_blue,
+medium_spring_green,
+medium_turquoise,
+medium_violet_red,
+midnight_blue,
+mint_cream,
+misty_rose,
+moccasin,
+navajo_white,
+navy,
+navy_blue,
+old_lace,
+olive_drab,
+orange,
+orange_red,
+orchid,
+pale_goldenrod,
+pale_green,
+pale_turquoise,
+pale_violet_red,
+papaya_whip,
+peach_puff,
+peru,
+pink,
+plum,
+powder_blue,
+purple,
+red,
+rosy_brown,
+royal_blue,
+saddle_brown,
+salmon,
+sandy_brown,
+sea_green,
+sea_shell,
+sienna,
+sky_blue,
+slate_blue,
+slate_gray,
+snow,
+spring_green,
+steel_blue,
+tan,
+thistle,
+tomato,
+turquoise,
+violet,
+violet_red,
+wheat,
+white,
+white_smoke,
+yellow,
+yellow_green
+
+// greys
+gray[0] ... gray[255]
+auto grey = gray; // Synonym</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_font_descr"><a class="anchor" href="#_font_descr"></a>font_descr</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>font_desr</code> is a lightweight class that describes a font, including its
+weight (e.g. bold), slant (e.g. italic), and stretch (e.g. condensed).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">namespace font_constants
+{
+   enum weight_enum
+   {
+      thin              = 10,
+      extra_light       = 20,
+      light             = 30,
+      weight_normal     = 40,
+      medium            = 50,
+      semi_bold         = 60,
+      bold              = 70,
+      extra_bold        = 80,
+      black             = 90,
+      extra_black       = 95,
+   };
+
+   enum slant_enum
+   {
+      slant_normal      = 0,
+      italic            = 90,
+      oblique           = 100
+   };
+
+   enum stretch_enum
+   {
+      ultra_condensed   = 25,
+      extra_condensed   = 31,
+      condensed         = 38,
+      semi_condensed    = 44,
+      stretch_normal    = 50,
+      semi_expanded     = 57,
+      expanded          = 63,
+      extra_expanded    = 75,
+      ultra_expanded    = 100
+   };
+}
+
+struct font_descr
+{
+   font_descr           normal() const;
+   font_descr           size(float size_) const;
+
+   font_descr           weight(font_constants::weight_enum w) const;
+   font_descr           thin() const;
+   font_descr           extra_light() const;
+   font_descr           light() const;
+   font_descr           weight_normal() const;
+   font_descr           medium() const;
+   font_descr           semi_bold() const;
+   font_descr           bold() const;
+   font_descr           extra_bold() const;
+   font_descr           black() const;
+   font_descr           extra_black() const;
+
+   font_descr           style(font_constants::slant_enum s) const;
+   font_descr           slant_normal() const;
+   font_descr           italic() const;
+   font_descr           oblique() const;
+
+   font_descr           stretch(font_constants::stretch_enum s) const;
+   font_descr           ultra_condensed() const;
+   font_descr           extra_condensed() const;
+   font_descr           condensed() const;
+   font_descr           semi_condensed() const;
+   font_descr           stretch_normal() const;
+   font_descr           semi_expanded() const;
+   font_descr           expanded() const;
+   font_descr           extra_expanded() const;
+   font_descr           ultra_expanded() const;
+
+   using slant_enum = font_constants::slant_enum;
+
+   std::string_view     _families;
+   float                _size = 12;
+   uint8_t              _weight = font_constants::weight_normal;
+   slant_enum           _slant = font_constants::slant_normal;
+   uint8_t              _stretch = font_constants::stretch_normal;
+};</code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions_5"><a class="anchor" href="#_expressions_5"></a>Expressions</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Constructors [1].
+font_descr{}
+font_descr{ families }
+font_descr{ families, sz }
+font_descr{ families, sz, wt }
+font_descr{ families, sz, wt, sl }
+font_descr{ families, sz, wt, sl, str }
+
+// Normal [2]
+f.normal()
+
+// Sized [3]
+f.size(size)
+
+// Weight [4]
+f.weight(wt)
+f.thin()
+f.extra_light()
+f.light()
+f.weight_normal()
+f.medium()
+f.semi_bold()
+f.bold()
+f.extra_bold()
+f.black()
+f.extra_black()
+
+// Slant [5]
+f.style(sl)
+f.slant_normal()
+f.italic()
+f.oblique()
+
+// Stretch [6]
+f.stretch(str)
+f.ultra_condensed()
+f.extra_condensed()
+f.condensed()
+f.semi_condensed()
+f.stretch_normal()
+f.semi_expanded()
+f.expanded()
+f.extra_expanded()
+f.ultra_expanded()
+
+// Member access [7]
+f._families
+f._size
+f._weight
+f._slant
+f._stretch</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_notation_5"><a class="anchor" href="#_notation_5"></a>Notation</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>families</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Comma separated list of font families to search for.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>sz</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A scalar value.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>wt</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A <code>weight_enum</code> (see <code>font_constants</code> above) or a scalar value.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>sl</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A <code>slant_enum</code> (see <code>font_constants</code> above) or a scalar value.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>str</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A <code>stretch_enum</code> (see <code>font_constants</code> above) or a scalar value.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>f</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An instance of <code>font_descr</code>.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p><code>families</code> is a comma separated list of font families to
+search for. Given a <code>font_descr</code>, the <code>font</code> class will search the system
+for a match, iterating over the list of font families, and will load first
+available font that matches the font descriptor.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_semantics_14"><a class="anchor" href="#_semantics_14"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Constructors for the <code>font_descr</code> struct given initial values.</p>
+</li>
+<li>
+<p>Returns a copy of the <code>font_desr</code>, <code>f</code>, with default values. Returns
+instance of <code>font_descr</code>.</p>
+</li>
+<li>
+<p>Returns a copy of the <code>font_desr</code>, <code>f</code>, with the given font size. Returns
+instance of <code>font_descr</code>.</p>
+</li>
+<li>
+<p>Returns a copy of the <code>font_desr</code>, <code>f</code>, with the given font weight.
+Returns instance of <code>font_descr</code>.</p>
+</li>
+<li>
+<p>Returns a copy of the <code>font_desr</code>, <code>f</code>, with the given font slant. Returns
+instance of <code>font_descr</code>.</p>
+</li>
+<li>
+<p>Returns a copy of the <code>font_desr</code>, <code>f</code>, with the given font stretch.
+Returns instance of <code>font_descr</code>.</p>
+</li>
+<li>
+<p>Direct access to members.</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The syntax allows for concatenation. For example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">font_descr{ "Open Sans", 14 }.bold().italic()</code></pre>
+</div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_font"><a class="anchor" href="#_font"></a>font</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The font loads a system or application font given a font descriptor.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">class font
+{
+public:
+                        font();
+                        font(font_descr descr);
+                        font(font const&amp; rhs);
+                        font(font&amp;&amp; rhs) noexcept;
+                        ~font();
+
+   font&amp;                operator=(font const&amp; rhs);
+   font&amp;                operator=(font&amp;&amp; rhs) noexcept;
+   explicit             operator bool() const;
+   font_impl_ptr        impl() const;
+
+   struct metrics_info
+   {
+      float             ascent;
+      float             descent;
+      float             leading;
+   };
+
+   metrics_info         metrics() const;
+   float                line_height() const;
+   float                measure_text(std::string_view str) const;
+};</code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions_6"><a class="anchor" href="#_expressions_6"></a>Expressions</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Default constructor [1].
+font{}
+
+// Constructor [2].
+font{ fd }
+
+// Copy constructor. [3]
+font{ f }
+
+// Assignment [4]
+f = f2
+
+// Validity Check [5]
+bool(f)
+
+// Access to font handle [6]
+f.impl()
+
+// Font metrics [7]
+f.metrics()
+f.line_height()
+
+// Measuring text [8]
+f.measure_text(str)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_notation_6"><a class="anchor" href="#_notation_6"></a>Notation</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>f</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>font</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>str</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>std::string_view</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_semantics_15"><a class="anchor" href="#_semantics_15"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Default construct a <code>font</code>. The default constructed font is invalid.</p>
+</li>
+<li>
+<p>Construct a <code>point</code> given a font descriptor <code>font_descr</code>, <code>fd</code>.</p>
+</li>
+<li>
+<p>Copy construct a <code>font</code>, <code>f</code>.</p>
+</li>
+<li>
+<p>Assign <code>f2</code>, to <code>f</code>.</p>
+</li>
+<li>
+<p>Check if a <code>f</code> is valid. Returns <code>true</code> if <code>f</code> is valid.</p>
+</li>
+<li>
+<p>Get the backend-specific font handle.</p>
+</li>
+<li>
+<p>Get the font metrics (<code>ascent</code>, <code>descent</code>, <code>leading</code> and the
+<code>line_height</code>).</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>f.metrics()</code> returns an instance of <code>font::metrics_info</code>.</p>
+</li>
+<li>
+<p><code>f.line_height()</code> returns a scalar value.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Measure the length the given string, <code>str</code>, will occupy when drawn using
+the font <code>f</code>. This does not take into account the `canvas&#8217; transformation
+matrix. Returns a scalar value.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_resources"><a class="anchor" href="#_resources"></a>resources</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Resources (e.g. images) that are identified by file names can be absolute or
+relative paths. For relative paths, a vector of paths is searched, in the
+order they appear in the vector. Platform code provides the initial paths as
+appropriate. Applications may add additional paths as needed, using the
+add_search_path function. search_first=true puts the path at the top of the
+vector and will be searched first.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">void        add_search_path(fs::path const&amp; path, bool search_first = false);
+fs::path    find_file(fs::path const&amp; file);
+fs::path    app_data_path();</code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions_7"><a class="anchor" href="#_expressions_7"></a>Expressions</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Add a search path [1]
+add_search_path(path)
+add_search_path(path, true)
+
+// Search for a file [2]
+find_file(path)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_notation_7"><a class="anchor" href="#_notation_7"></a>Notation</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>path</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>std::filesystem::path</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_semantics_16"><a class="anchor" href="#_semantics_16"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Add a directory search path. This path, and all paths added via
+<code>add_search_path</code>,  will be used when searching for a resource file. The
+second variant, with the second argument, specifies if the directory
+search path will be pushed into the end (default <code>false</code>) or pushed to the
+front (second argument is <code>true</code>) of the list. If <code>true</code>, the directory
+search path will be searched first.</p>
+</li>
+<li>
+<p>Find a resource file by searching the list of directory search paths.
+Returns an empty path if file is not found. returns an instance of
+<code>std::filesystem::path</code>.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script src="../../_/js/vendor/lunr.js"></script>
+<script src="../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../.." data-snippet-length="100" data-stylesheet="../../_/css/search.css"></script>
+<script async src="../../search-index.js"></script>
+  </body>
+</html>

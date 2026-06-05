@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Artist 2D Canvas Library :: Artist Docs</title>
-    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0-dev/index.html">
+    <title>Gallery :: Artist Docs</title>
+    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0-dev/gallery.html">
     <meta name="generator" content="Antora 3.1.15">
     <link rel="stylesheet" href="../../_/css/site.css">
 <meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
@@ -51,7 +51,7 @@
     <div class="panels">
       <div class="navbar-item search hide-for-print">
         <div id="search-field" class="field">
-          <input id="search-input" type="text" placeholder="Search the docs" autofocus>
+          <input id="search-input" type="text" placeholder="Search the docs">
         </div>
       </div>
 <div class="nav-panel-menu is-active" data-panel="menu">
@@ -61,7 +61,7 @@
 <ul class="nav-list">
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
-  <li class="nav-item is-current-page" data-depth="1">
+  <li class="nav-item" data-depth="1">
     <a class="nav-link" href="index.html">Introduction</a>
   </li>
   <li class="nav-item" data-depth="1">
@@ -70,7 +70,7 @@
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="backends.html">Backends</a>
   </li>
-  <li class="nav-item" data-depth="1">
+  <li class="nav-item is-current-page" data-depth="1">
     <a class="nav-link" href="gallery.html">Gallery</a>
   </li>
   <li class="nav-item" data-depth="1">
@@ -112,11 +112,11 @@
 <main class="article">
 <div class="toolbar" role="navigation">
 <button class="nav-toggle"></button>
-  <a href="index.html" class="home-link is-current"></a>
+  <a href="index.html" class="home-link"></a>
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="index.html">Artist 2D Canvas Library</a></li>
-    <li><a href="index.html">Introduction</a></li>
+    <li><a href="gallery.html">Gallery</a></li>
   </ul>
 </nav>
 </div>
@@ -125,143 +125,36 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Artist 2D Canvas Library</h1>
-<div class="sect1">
-<h2 id="_introduction"><a class="anchor" href="#_introduction"></a>Introduction</h2>
+<h1 class="page">Gallery</h1>
+<div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>The Artist 2D Canvas Library is an abstraction layer with an API inspired by
-the HTML5 canvas API. The library presents a lean API modeled after the
-<a href="https://www.w3.org/TR/2dcontext/">HTML Canvas 2D Context specification</a>. The
-API is a not-so-thin layer above various 2D platform-specific and
-cross-platform 2D "backend" graphics libraries, such as
-<a href="https://skia.org/">Skia</a>, <a href="https://apple.co/2SljYHw">Quartz-2D</a>, and
-<a href="https://cairographics.org/">Cairo</a>.</p>
+<p>It&#8217;s always nice to have some pretty pictures. Click an image to open the
+high-resolution (HiDPI) version, or follow the links to play the video clips.</p>
 </div>
-<div class="paragraph">
-<p>The Artist library goes beyond the basic HTML5 canvas API with extensions for
-dealing with text layout and mechanisms for text editing, fonts and font
-management, path creation and manipulation, and image capture and offscreen
-graphics.</p>
-</div>
-<div class="paragraph">
-<p>The library is Open Source and released under the very liberal
-<a href="https://opensource.org/licenses/MIT">MIT License</a>.</p>
+<div class="paragraph gallery">
+<p><span class="image"><a class="image" href="https://cycfi.github.io/assets/img/artist/shapes.png"><img src="https://cycfi.github.io/assets/img/artist/shapes.jpg" alt="Shapes" width="150"></a></span>
+<span class="image"><a class="image" href="https://cycfi.github.io/assets/img/artist/tauri.png"><img src="https://cycfi.github.io/assets/img/artist/tauri.jpg" alt="Tau" width="150"></a></span>
+<span class="image"><a class="image" href="https://cycfi.github.io/assets/img/artist/paths.png"><img src="https://cycfi.github.io/assets/img/artist/paths.jpg" alt="Paths" width="150"></a></span>
+<span class="image"><a class="image" href="https://cycfi.github.io/assets/img/artist/typography.png"><img src="https://cycfi.github.io/assets/img/artist/typography.jpg" alt="Typography" width="150"></a></span>
+<span class="image"><a class="image" href="https://cycfi.github.io/assets/img/artist/composite_ops.png"><img src="https://cycfi.github.io/assets/img/artist/composite_ops.jpg" alt="Composite ops" width="150"></a></span></p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_backends"><a class="anchor" href="#_backends"></a>Backends</h2>
+<h2 id="_video_clips"><a class="anchor" href="#_video_clips"></a>Video clips</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>Artist supports three rendering backends. Only one backend is active per
-build.</p>
-</div>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 16.6666%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 16.6668%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Backend</th>
-<th class="tableblock halign-left valign-top">Platform</th>
-<th class="tableblock halign-left valign-top">CMake option</th>
-<th class="tableblock halign-left valign-top">Default</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Quartz-2D</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">macOS</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ARTIST_QUARTZ_2D=ON</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">macOS</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Skia</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">macOS, Linux, Windows</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ARTIST_SKIA=ON</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Linux, Windows</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Cairo</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">macOS, Linux, Windows</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ARTIST_CAIRO=ON</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">off</p></td>
-</tr>
-</tbody>
-</table>
-<div class="paragraph">
-<p>See <a href="setup.html" class="xref page">Setup and Installation</a> for build instructions covering
-each backend and platform.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_table_of_contents"><a class="anchor" href="#_table_of_contents"></a>Table of Contents</h2>
-<div class="sectionbody">
-<details>
-<summary class="title">Show Table of Contents</summary>
-<div class="content">
 <div class="ulist">
 <ul>
 <li>
-<p><a href="#">Introduction</a></p>
+<p><a href="https://vimeo.com/413657459">Rain</a> —
+<span class="image"><a class="image" href="https://vimeo.com/413657459"><img src="https://cycfi.github.io/assets/img/artist/rain_video_thumb.jpg" alt="Rain" width="150"></a></span></p>
 </li>
 <li>
-<p><a href="setup.html" class="xref page">Setup and Installation</a></p>
-</li>
-<li>
-<p><a href="backends.html" class="xref page">Backends</a></p>
-</li>
-<li>
-<p><a href="gallery.html" class="xref page">Gallery</a></p>
-</li>
-<li>
-<p>Reference</p>
-<div class="ulist">
-<ul>
-<li>
-<p><a href="canvas.html" class="xref page">Canvas</a></p>
-</li>
-<li>
-<p><a href="foundation.html" class="xref page">Foundation</a></p>
+<p><a href="https://vimeo.com/413797835">Space</a> —
+<span class="image"><a class="image" href="https://vimeo.com/413797835"><img src="https://cycfi.github.io/assets/img/artist/space_video_thumb.jpg" alt="Space" width="150"></a></span></p>
 </li>
 </ul>
-</div>
-</li>
-</ul>
-</div>
-</div>
-</details>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_the_author"><a class="anchor" href="#_the_author"></a>The Author</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p><span class="image left"><img src="_images/joel.jpg" alt="Joel de Guzman" width="150"></span> Joel got into
-electronics and programming in the 80s because almost everything in music,
-his first love, is becoming electronic and digital. Since then, he builds his
-own guitars, effect boxes and synths. He enjoys playing distortion-laden rock
-guitar, composes and produces his own music in his home studio.</p>
-</div>
-<div class="paragraph">
-<p>Joel de Guzman is the principal architect and engineer at
-<a href="https://www.cycfi.com/">Cycfi Research</a>. He is a software engineer specializing
-in advanced C++ and an advocate of Open Source. He has authored a number of
-highly successful Open Source projects such as
-<a href="http://tinyurl.com/ydhotlaf">Boost.Spirit</a>, <a href="http://tinyurl.com/y6vkeo5t">Boost.Phoenix</a>
-and <a href="http://tinyurl.com/ybn5oq9v">Boost.Fusion</a>. These libraries are all part of
-the <a href="http://tinyurl.com/jubgged">Boost Libraries</a>, a well respected,
-peer-reviewed, Open Source, collaborative development effort.</p>
-</div>
-<hr>
-<div class="paragraph">
-<p><em>Copyright (c) 2014-2026 Joel de Guzman. All rights reserved.</em>
-<em>Distributed under the <a href="https://opensource.org/licenses/MIT">MIT License</a></em></p>
 </div>
 </div>
 </div>

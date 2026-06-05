@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Canvas :: Artist Docs</title>
+    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0-dev/canvas.html">
+    <meta name="generator" content="Antora 3.1.15">
+    <link rel="stylesheet" href="../../_/css/site.css">
+<meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
+<link rel="icon" type="image/png" sizes="16x16" href="https://cycfi.com/assets/icons/favicon-16x16.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="https://cycfi.com/assets/icons/favicon-32x32.png"/>
+<link rel="icon" type="image/png" sizes="96x96" href="https://cycfi.com/assets/icons/favicon-96x96.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="https://cycfi.com/assets/icons/android-chrome-192x192.png"/>
+<link rel="icon" type="image/png" sizes="256x256" href="https://cycfi.com/assets/icons/android-chrome-256x256.png"/>
+<link rel="apple-touch-icon" type="image/png" href="https://cycfi.com/assets/icons/apple-touch-icon.png"/>
+
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <!--  Cycfi Logo -->
+      <a class="m-nav__logo" href="https://www.cycfi.com">
+        <svg version="1.1" x="0px" y="0px" width="200" viewBox="0 0 600 100" style="padding-top: 15;" xmlns="http://www.w3.org/2000/svg">
+          <g transform="matrix(2.55, 0, 0, 2.62, -464.010406, -1042.918213)" fill="#202020">
+            <path d="M234.37,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.7-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-3.5-0.04-4.6,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.59,0.66-0.76,1.35c-0.14,0.84-0.18,1.03-0.19,1.43l-0.14,3.91 c-0.01,0.39,0.04,0.84,0.09,1.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h33.85 c0.8,0,1.45,0.67,1.42,1.47L234.37,431.65z"/>
+            <path d="M276.06,433.02H257.9c-0.8,0-1.45-0.67-1.42-1.47l0.15-4.18c0.03-0.76,0.65-1.37,1.42-1.37h14.16 c1.91,0,3.52,0,4.61-0.12c1.23-0.13,1.75-0.25,2.17-0.71c0.36-0.39,0.4-2.52,0.4-2.52h-27.92c-11.11,0-13.26-5.13-13.1-9.44 l0.12-3.38c0.03-0.76,0.65-1.37,1.42-1.37h8.43c0.8,0,1.45,0.67,1.42,1.47l-0.05,1.36c-0.02,0.46-0.01,2.03,0.11,2.51 c0.1,0.42,0.44,0.82,0.78,1.07c0.47,0.35,0.83,0.42,1.64,0.54c0.9,0.14,2.09,0.21,3.54,0.21h24.09l0.21-5.8 c0.03-0.76,0.65-1.37,1.42-1.37h8.46c0.8,0,1.45,0.67,1.42,1.47l-0.49,13.57c-0.06,1.58-0.46,3.96-1.12,5.07 c-0.68,1.15-1.71,2.08-3.04,2.76c-1.23,0.63-2.76,1.07-4.56,1.32C280.44,432.9,278.4,433.02,276.06,433.02L276.06,433.02z"/>
+            <path d="M401.95,431.55l0.78-21.72c0.03-0.76,0.65-1.37,1.42-1.37h8.59c0.8,0,1.45,0.67,1.42,1.47l-0.78,21.72 c-0.03,0.76-0.65,1.37-1.42,1.37h-8.59C402.56,433.02,401.92,432.35,401.95,431.55z"/>
+            <path d="M346.77,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.71-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-2.47-0.04-3.58,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.58,0.66-0.76,1.35c-0.14,0.84-0.22,2.03-0.23,2.43l-0.07,1.91 c-0.01,0.39,0.01,1.84,0.06,2.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h32.83 c0.8,0,1.45,0.67,1.42,1.47L346.77,431.65z"/>
+            <path d="M386.2,425.88l-24.93-0.03l-0.21,5.8c-0.03,0.76-0.65,1.37-1.42,1.37h-8.46c-0.8,0-1.45-0.67-1.42-1.47 l0.49-13.57c0.06-1.58,0.46-3.96,1.12-5.07c0.68-1.15,1.71-2.08,3.04-2.76c1.23-0.63,2.76-1.07,4.56-1.32 c1.7-0.24,3.75-0.36,6.08-0.36l0,0h33.68c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.18c-0.03,0.76-0.65,1.37-1.42,1.37H368.9 c-1.91,0-3.52,0-4.61,0.12c-1.23,0.13-1.75,0.25-2.17,0.71c-0.36,0.39-0.4,2.52-0.4,2.52h24.63c0.8,0,1.45,0.67,1.42,1.47 l-0.15,4.22C387.59,425.28,386.96,425.88,386.2,425.88z"/>
+          </g>
+        </svg>
+      </a>
+      <a class="navbar-item" href="https://www.cycfi.com">Artist Docs</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="artist" data-version="v1.0-dev">
+  <aside class="nav">
+    <div class="panels">
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs">
+        </div>
+      </div>
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="index.html">Artist 2D Canvas Library</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="setup.html">Setup and Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="backends.html">Backends</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="gallery.html">Gallery</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="canvas.html">Canvas</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="foundation.html">Foundation</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Artist 2D Canvas Library</span>
+    <span class="version">v1.0-dev</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="index.html">Artist 2D Canvas Library</a></div>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="index.html">v1.0-dev</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Artist 2D Canvas Library</a></li>
+    <li>Reference</li>
+    <li><a href="canvas.html">Canvas</a></li>
+  </ul>
+</nav>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Canvas</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The canvas API is a derivative of and in line with the spirit the HTML5
+canvas API, but using a slightly different syntax and naming convention
+following standard c++ style (e.g. using lower-case and underscores as word
+separators instead of camelCase).</p>
+</div>
+<div class="paragraph">
+<p>The canvas API is built on top of <a href="foundation.html" class="xref page">Foundation classes</a> such as
+points and rectangles and some more drawable classes included in the page,
+such as paths and images. The <code>path</code> encapsulates compound (multiple contour)
+geometric paths consisting of straight line segments, quadratic curves, and
+cubic curves.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_path"><a class="anchor" href="#_path"></a>path</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>path</code> is the basic building block for a lot of drawing tasks that
+involve the <code>canvas</code>. The path is a mathematical description of shapes, that
+include lines, rectangles, cubic and quadratic curves, circles, arcs, etc.
+Each shape in the path is constructed using a set of primitives that
+represent instructions on how the path is formed.</p>
+</div>
+<div class="paragraph">
+<p>For efficiency, it is advisable to construct a <code>path</code> once and draw it
+multiple times. Graphics backends, especially those that involve the GPU, are
+optimized for immutable paths that are created outside the UI draw function.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">class path
+{
+public:
+                     path();
+                     ~path();
+
+                     path(rect const&amp; r);
+                     path(rect const&amp; r, float radius);
+                     path(circle const&amp; c);
+                     path(std::string_view svg_def);
+                     path(path const&amp; rhs);
+                     path(path&amp;&amp; rhs);
+
+   path&amp;             operator=(path const&amp; rhs);
+   path&amp;             operator=(path&amp;&amp; rhs);
+
+   bool              operator==(path const&amp; rhs) const;
+   bool              operator!=(path const&amp; rhs) const;
+   bool              is_empty() const;
+   bool              includes(point p) const;
+   bool              includes(float x, float y) const;
+   rect              bounds() const;
+
+   void              close();
+
+   void              add_rect(rect const&amp; r);
+   void              add_round_rect(rect const&amp; r, float radius);
+   void              add_circle(circle const&amp; c);
+
+   void              add_rect(float x, float y, float width, float height);
+   void              add_round_rect(
+                        float x, float y,
+                        float width, float height,
+                        float radius
+                     );
+   void              add_circle(float cx, float cy, float radius);
+
+   void              move_to(point p);
+   void              line_to(point p);
+   void              arc_to(point p1, point p2, float radius);
+   void              arc(
+                        point p, float radius,
+                        float start_angle, float end_angle,
+                        bool ccw = false
+                     );
+
+   void              quadratic_curve_to(point cp, point end);
+   void              bezier_curve_to(point cp1, point cp2, point end);
+
+   void              move_to(float x, float y);
+   void              line_to(float x, float y);
+   void              arc_to(
+                        float x1, float y1,
+                        float x2, float y2,
+                        float radius
+                     );
+   void              arc(
+                        float x, float y, float radius,
+                        float start_angle, float end_angle,
+                        bool ccw = false
+                     );
+
+   void              quadratic_curve_to(float cpx, float cpy, float x, float y);
+   void              bezier_curve_to(
+                        float cp1x, float cp1y,
+                        float cp2x, float cp2y,
+                        float x, float y
+                     );
+
+   enum fill_rule_enum
+   {
+      fill_winding,
+      fill_odd_even
+   };
+
+   void              fill_rule(fill_rule_enum rule);
+
+   path_impl*        impl();
+   path_impl const*  impl() const;
+};</code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Default constructor [1].
+path{}
+
+// Constructors [2].
+path{ r }
+path{ r, radius }
+path{ c }
+path{ svg_def }
+
+// Copy constructor. [3]
+path{ p }
+
+// Assignment [4]
+p = p2
+
+// Equality [5]
+p == p2
+
+// Non-equality [6]
+p != p2
+
+// Check for empty path [7]
+p.empty()
+
+// Check for inclusion [8]
+p.includes(pt)
+p.includes(x, y)
+
+// Get the path bounds [9]
+p.bounds()
+
+// Close path [10]
+p.close()
+
+// Add rectangle [11]
+p.add_rect(r)
+p.add_rect(x, y, width height)
+
+// Add rounded rectangle [12]
+p.add_round_rect(r, radius)
+p.add_round_rect(x, y, width height, radius)
+
+// Add circle [13]
+p.add_circle(c)
+p.add_circle(cx, cy, radius)
+
+// Move current point [14]
+p.move_to(pt)
+p.move_to(x, y)
+
+// Add an arc [15]
+p.arc_to(pt1, pt2, radius)
+p.arc_to(x1, y1, x2, y2, radius)
+
+// Add an arc [16]
+p.arc(pt, radius, start_angle, end_angle, ccw)
+p.arc(pt, radius, start_angle, end_angle)
+p.arc(x, y, radius, start_angle, end_angle, ccw)
+p.arc(x, y, radius, start_angle, end_angle)
+
+// Add a quadratic Bézier curve [17]
+p.quadratic_curve_to(cp, end)
+p.quadratic_curve_to(cpx, cpy, x, y)
+
+// Add a cubic Bézier curve [18]
+p.bezier_curve_to(cp1, cp2, end)
+p.bezier_curve_to(cp1x, cp1y, cp2x, cp2y, x, y)
+
+// Set the fill-rule [19]
+p.fill_rule(fr)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>rect</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>pt</code>, <code>pt1</code>, <code>pt2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>point</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cp</code>, <code>cp1</code>, <code>cp2</code>, <code>end</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>point</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>x</code>, <code>y</code>, <code>width</code>, <code>height</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scalar values.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>radius</code>, <code>x1</code>, <code>y1</code>, <code>x2</code>, <code>y2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scalar values.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cpx</code>, <code>cpy</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scalar values.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>start_angle</code>, <code>end_angle</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scalar values.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ccw</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A Boolean value.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>circle</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>svg_def</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>std::string_view</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>p</code>, <code>p2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>path</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fr</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>path::fill_rule_enum</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_semantics"><a class="anchor" href="#_semantics"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Default construct a <code>path</code>.</p>
+</li>
+<li>
+<p>Construct a <code>path</code>:</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>A rectangle from a <code>rect</code>, <code>r</code>.</p>
+</li>
+<li>
+<p>A rounded-rectangle from a <code>rect</code>, <code>r</code>, and <code>radius</code>.</p>
+</li>
+<li>
+<p>A circle from a <code>circle</code>, <code>c</code>.</p>
+</li>
+<li>
+<p>A complex path from a string view that conforms to the syntax of an
+<a href="https://www.w3.org/TR/SVG11/paths.html#PathElement">SVG path element</a>.</p>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>Copy construct a <code>path `, `p</code>.</p>
+</li>
+<li>
+<p>Assign <code>p2</code>, to <code>p</code>.</p>
+</li>
+<li>
+<p>Returns <code>true</code> if a <code>p2</code>, is equal to <code>p</code>.</p>
+</li>
+<li>
+<p>Returns <code>true</code> if <code>p2</code>, is not equal to a <code>p</code>.</p>
+</li>
+<li>
+<p>Returns <code>true</code> if <code>p</code> is empty.</p>
+</li>
+<li>
+<p>Returns <code>true</code> if point <code>pt</code> (or <code>x, y</code>) is inside <code>p</code>.</p>
+</li>
+<li>
+<p>Get the smallest rectangle that encapsulates the path, <code>p</code>.</p>
+</li>
+<li>
+<p>Close the current shape.</p>
+</li>
+<li>
+<p>Add rectangle, <code>r</code> (or <code>x, y, width height</code>), to the current path.</p>
+</li>
+<li>
+<p>Add rounded rectangle, <code>r, radius</code> (or <code>x, y, width, height, radius`</code>) to
+the current path.</p>
+</li>
+<li>
+<p>Add circle, <code>c</code> (or <code>cx, cy, radius</code>) to the current path.</p>
+</li>
+<li>
+<p>Move the current point to <code>pt</code> (or <code>x, y</code>).</p>
+</li>
+<li>
+<p>Add an arc, to the current path, between two tangents <code>pt1</code> and <code>pt2</code> (or
+<code>x1, y1, x2, y2</code>) with the given <code>radius</code>.</p>
+</li>
+<li>
+<p>Add an arc, to the current path, given a center point, <code>pt</code> (or <code>x, y</code>),
+<code>start_angle</code> (in radians) and an <code>end_angle</code> and a <code>bool</code> flag, <code>ccw</code>,
+that specifies whether counterclockwise (flag is <code>false</code>) or clockwise
+(flag is 'true`). The default is <code>false</code> (clockwise).</p>
+</li>
+<li>
+<p>Add a quadratic Bézier curve to the current path using the specified
+control point, <code>cp</code> (or <code>cpx, cpy</code>) and ending point`end` (or <code>x, y</code>).
+The starting point for the curve is the current point.</p>
+</li>
+<li>
+<p>Add a cubic Bézier curve to the current path using the specified control
+points <code>cp1</code> and <code>cp2</code> (or <code>cp1x, cp1y</code> and <code>cp2x, cp2y</code>) and ending
+point`end` (or <code>x, y</code>). The starting point for the curve is the current
+point.</p>
+</li>
+<li>
+<p>Set the path&#8217;s fill rule to <code>fr</code> (which can be <code>path::fill_winding</code> or
+<code>path::fill_odd_even</code>).</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script src="../../_/js/vendor/lunr.js"></script>
+<script src="../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../.." data-snippet-length="100" data-stylesheet="../../_/css/search.css"></script>
+<script async src="../../search-index.js"></script>
+  </body>
+</html>

@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Artist 2D Canvas Library :: Artist Docs</title>
-    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0-dev/index.html">
+    <title>Backends :: Artist Docs</title>
+    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0-dev/backends.html">
     <meta name="generator" content="Antora 3.1.15">
     <link rel="stylesheet" href="../../_/css/site.css">
 <meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
@@ -51,7 +51,7 @@
     <div class="panels">
       <div class="navbar-item search hide-for-print">
         <div id="search-field" class="field">
-          <input id="search-input" type="text" placeholder="Search the docs" autofocus>
+          <input id="search-input" type="text" placeholder="Search the docs">
         </div>
       </div>
 <div class="nav-panel-menu is-active" data-panel="menu">
@@ -61,13 +61,13 @@
 <ul class="nav-list">
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
-  <li class="nav-item is-current-page" data-depth="1">
+  <li class="nav-item" data-depth="1">
     <a class="nav-link" href="index.html">Introduction</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="setup.html">Setup and Installation</a>
   </li>
-  <li class="nav-item" data-depth="1">
+  <li class="nav-item is-current-page" data-depth="1">
     <a class="nav-link" href="backends.html">Backends</a>
   </li>
   <li class="nav-item" data-depth="1">
@@ -112,11 +112,11 @@
 <main class="article">
 <div class="toolbar" role="navigation">
 <button class="nav-toggle"></button>
-  <a href="index.html" class="home-link is-current"></a>
+  <a href="index.html" class="home-link"></a>
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="index.html">Artist 2D Canvas Library</a></li>
-    <li><a href="index.html">Introduction</a></li>
+    <li><a href="backends.html">Backends</a></li>
   </ul>
 </nav>
 </div>
@@ -125,143 +125,69 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Artist 2D Canvas Library</h1>
-<div class="sect1">
-<h2 id="_introduction"><a class="anchor" href="#_introduction"></a>Introduction</h2>
+<h1 class="page">Backends</h1>
+<div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>The Artist 2D Canvas Library is an abstraction layer with an API inspired by
-the HTML5 canvas API. The library presents a lean API modeled after the
-<a href="https://www.w3.org/TR/2dcontext/">HTML Canvas 2D Context specification</a>. The
-API is a not-so-thin layer above various 2D platform-specific and
-cross-platform 2D "backend" graphics libraries, such as
-<a href="https://skia.org/">Skia</a>, <a href="https://apple.co/2SljYHw">Quartz-2D</a>, and
-<a href="https://cairographics.org/">Cairo</a>.</p>
-</div>
-<div class="paragraph">
-<p>The Artist library goes beyond the basic HTML5 canvas API with extensions for
-dealing with text layout and mechanisms for text editing, fonts and font
-management, path creation and manipulation, and image capture and offscreen
-graphics.</p>
-</div>
-<div class="paragraph">
-<p>The library is Open Source and released under the very liberal
-<a href="https://opensource.org/licenses/MIT">MIT License</a>.</p>
+<p>Artist supports three rendering backends: <a href="https://skia.org/">Skia</a>,
+<a href="https://apple.co/2SljYHw">Quartz-2D</a>, and
+<a href="https://www.cairographics.org/">Cairo</a>. Only one backend is active per build,
+selected with a CMake option (see <a href="setup.html" class="xref page">Setup and Installation</a>).</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_backends"><a class="anchor" href="#_backends"></a>Backends</h2>
+<h2 id="_history"><a class="anchor" href="#_history"></a>History</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Artist supports three rendering backends. Only one backend is active per
-build.</p>
-</div>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 16.6666%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 16.6668%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Backend</th>
-<th class="tableblock halign-left valign-top">Platform</th>
-<th class="tableblock halign-left valign-top">CMake option</th>
-<th class="tableblock halign-left valign-top">Default</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Quartz-2D</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">macOS</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ARTIST_QUARTZ_2D=ON</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">macOS</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Skia</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">macOS, Linux, Windows</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ARTIST_SKIA=ON</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Linux, Windows</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Cairo</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">macOS, Linux, Windows</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ARTIST_CAIRO=ON</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">off</p></td>
-</tr>
-</tbody>
-</table>
-<div class="paragraph">
-<p>See <a href="setup.html" class="xref page">Setup and Installation</a> for build instructions covering
-each backend and platform.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_table_of_contents"><a class="anchor" href="#_table_of_contents"></a>Table of Contents</h2>
-<div class="sectionbody">
-<details>
-<summary class="title">Show Table of Contents</summary>
-<div class="content">
-<div class="ulist">
-<ul>
-<li>
-<p><a href="#">Introduction</a></p>
-</li>
-<li>
-<p><a href="setup.html" class="xref page">Setup and Installation</a></p>
-</li>
-<li>
-<p><a href="backends.html" class="xref page">Backends</a></p>
-</li>
-<li>
-<p><a href="gallery.html" class="xref page">Gallery</a></p>
-</li>
-<li>
-<p>Reference</p>
-<div class="ulist">
-<ul>
-<li>
-<p><a href="canvas.html" class="xref page">Canvas</a></p>
-</li>
-<li>
-<p><a href="foundation.html" class="xref page">Foundation</a></p>
-</li>
-</ul>
-</div>
-</li>
-</ul>
-</div>
-</div>
-</details>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_the_author"><a class="anchor" href="#_the_author"></a>The Author</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p><span class="image left"><img src="_images/joel.jpg" alt="Joel de Guzman" width="150"></span> Joel got into
-electronics and programming in the 80s because almost everything in music,
-his first love, is becoming electronic and digital. Since then, he builds his
-own guitars, effect boxes and synths. He enjoys playing distortion-laden rock
-guitar, composes and produces his own music in his home studio.</p>
+<p>Historically, the Artist library was the 2D vector graphics component for the
+<a href="https://cycfi.github.io/elements/">Elements Library</a>, implemented using the
+<a href="https://www.cairographics.org/">Cairo 2D graphics library</a> as the sole backend.
+For a long time, Cairo&#8217;s lack of support for path effects — needed for modern
+GUI applications — combined with a stalled development cadence (see the
+<a href="https://www.cairographics.org/roadmap/">Cairo Roadmap</a>) made it look likely
+that Cairo support would be dropped.</p>
 </div>
 <div class="paragraph">
-<p>Joel de Guzman is the principal architect and engineer at
-<a href="https://www.cycfi.com/">Cycfi Research</a>. He is a software engineer specializing
-in advanced C++ and an advocate of Open Source. He has authored a number of
-highly successful Open Source projects such as
-<a href="http://tinyurl.com/ydhotlaf">Boost.Spirit</a>, <a href="http://tinyurl.com/y6vkeo5t">Boost.Phoenix</a>
-and <a href="http://tinyurl.com/ybn5oq9v">Boost.Fusion</a>. These libraries are all part of
-the <a href="http://tinyurl.com/jubgged">Boost Libraries</a>, a well respected,
-peer-reviewed, Open Source, collaborative development effort.</p>
+<p>Cairo has since been brought back as a fully supported Artist backend, with
+HarfBuzz-based text shaping, drop-shadow support, and live window hosts on
+macOS, Linux, and Windows. See <a href="setup.html#_building_with_cairo" class="xref page">Building
+with Cairo</a> for its supported platforms and known limitations.</p>
 </div>
-<hr>
 <div class="paragraph">
-<p><em>Copyright (c) 2014-2026 Joel de Guzman. All rights reserved.</em>
-<em>Distributed under the <a href="https://opensource.org/licenses/MIT">MIT License</a></em></p>
+<p>Before Cairo, the precursor of the Artist library used
+<a href="https://github.com/memononen/nanovg">NanoVG</a>. It was then that the basic design
+principles took shape. Like Artist, the NanoVG API is modeled after the HTML5
+canvas API. NanoVG was dropped early on due to lack of support from its
+author,
+<a href="https://blog.johnnovak.net/2016/05/29/cross-platform-gui-trainwreck-2016-edition/#enter-nanovg">poor
+text rendering quality</a>, and inferior rendering quality (in general) compared
+to the gold standard: Quartz-2D. The NanoVG project is no longer actively
+maintained.</p>
+</div>
+<div class="paragraph">
+<p>It was a good decision to isolate the NanoVG backend behind a clean-cut C++
+canvas API. NanoVG had a C interface to begin with, so it was a necessary
+step. But isolating it behind a well-defined API also meant it could be
+replaced at any time. Had application code been hard-coded to use NanoVG
+directly, it would have been locked to that specific library. Abstraction is
+the key. Libraries come and go: the king of the hill now may be superseded by
+a "better" library in the future. Case in point: Cairo.</p>
+</div>
+<div class="paragraph">
+<p>There is also a half-baked
+<a href="https://docs.microsoft.com/en-us/windows/win32/direct2d/direct2d-portal">Direct-2D</a>
+port on Windows, currently shelved. It works, except for the text layout
+part, which has its own text-layout engine. Direct-2D is painful to work with
+compared to other graphics libraries, and for lack of time it is, for now,
+indefinitely shelved (contributions welcome if anyone wants to continue where
+it stopped).</p>
+</div>
+<div class="paragraph">
+<p>A few graphics libraries have splendid support for text layout; some don&#8217;t —
+in particular, Skia. For Skia, Artist uses the
+<a href="https://www.freedesktop.org/wiki/Software/HarfBuzz/">HarfBuzz</a> library for text
+layout.</p>
 </div>
 </div>
 </div>
