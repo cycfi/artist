@@ -141,3 +141,8 @@ add_definitions(
 
 include(CTest)
 add_test(NAME artist_test COMMAND artist_test)
+
+# Non-graphical unit tests (no window / graphics backend required).
+add_executable(rope_test rope_test.cpp)
+target_include_directories(rope_test PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../lib/include)
+add_test(NAME rope_test COMMAND rope_test)
