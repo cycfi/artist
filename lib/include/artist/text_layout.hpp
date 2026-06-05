@@ -18,8 +18,6 @@
 
 namespace cycfi::artist
 {
-   class canvas;
-
    /**
     * \brief
     *    Multi-paragraph text engine: a rope-backed document split into
@@ -83,7 +81,14 @@ namespace cycfi::artist
       typename Layout::break_enum   word_break(size_type index) const;
       typename Layout::break_enum   line_break(size_type index) const;
 
-      void                    draw(canvas& cnv, point p, color c = colors::black) const;
+      // Templated on the canvas type so the body's canvas access
+      // (clip_extent) stays dependent -- it is then only parsed/checked when
+      // draw is actually instantiated (in a graphical TU where canvas is
+      // complete), keeping this header usable by non-graphical callers (e.g.
+      // the mock-layout stitching test) that never draw. Cnv is always the
+      // production artist::canvas.
+      template <typename Cnv>
+      void                    draw(Cnv& cnv, point p, color c = colors::black) const;
 
    private:
 
@@ -340,7 +345,8 @@ namespace cycfi::artist
    }
 
    template <typename Layout>
-   void basic_text_layout<Layout>::draw(canvas& cnv, point p, color c) const
+   template <typename Cnv>
+   void basic_text_layout<Layout>::draw(Cnv& cnv, point p, color c) const
    {
       if (_paras.empty())
          return;
