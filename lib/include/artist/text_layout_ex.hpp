@@ -114,11 +114,21 @@ namespace cycfi::artist
    typename basic_text_layout_ex<Layout>::para
    basic_text_layout_ex<Layout>::make_para(size_type i) const
    {
-      auto txt = _buffer.substr(_px.start(i), _px.end(i) - _px.start(i));
+      // Exclude the trailing '\n' separator from the shaped text: the
+      // paragraph break itself provides the line advance, so handing the '\n'
+      // to the layout (which would open an extra empty line) double-counts.
+      auto s = _px.start(i);
+      auto e = _px.end(i);
+      if (e > s && _buffer[e - 1] == U'\n')
+         --e;
+      auto txt = _buffer.substr(s, e - s);
       Layout layout = _make(std::u32string_view(txt.data(), txt.size()));
       if (_width > 0)
          layout.flow(_width, _justify);
-      size_type lines = layout.num_lines();
+      // Every paragraph occupies at least one line: an empty paragraph (e.g. a
+      // bare '\n' or the empty final paragraph after a trailing newline) is
+      // still a visible blank line.
+      size_type lines = std::max<size_type>(1, layout.num_lines());
       return para{std::move(layout), lines, 0};
    }
 
@@ -164,17 +174,18 @@ namespace cycfi::artist
       // [ch.first .. ch.last]; recover pe from the paragraph-count delta.
       size_type pe = ch.last - dpar;
 
-      std::vector<para> fresh;
-      fresh.reserve(ch.last - ch.first + 1);
+      // Rebuild via move-construction only (the paragraph Layout, e.g.
+      // text_layout, is move-constructible but not move-assignable, so
+      // vector insert/erase element shifts are unavailable).
+      std::vector<para> updated;
+      updated.reserve(new_count);
+      for (size_type i = 0; i < ch.first; ++i)
+         updated.push_back(std::move(_paras[i]));
       for (size_type i = ch.first; i <= ch.last; ++i)
-         fresh.push_back(make_para(i));
-
-      _paras.erase(_paras.begin() + ch.first, _paras.begin() + pe + 1);
-      _paras.insert(
-         _paras.begin() + ch.first
-       , std::make_move_iterator(fresh.begin())
-       , std::make_move_iterator(fresh.end())
-      );
+         updated.push_back(make_para(i));
+      for (size_type i = pe + 1; i < old_count; ++i)
+         updated.push_back(std::move(_paras[i]));
+      _paras = std::move(updated);
       recompute_offsets(ch.first);
    }
 
@@ -219,7 +230,7 @@ namespace cycfi::artist
       for (auto& p : _paras)
       {
          p.layout.flow(width, justify);
-         p.lines = p.layout.num_lines();
+         p.lines = std::max<size_type>(1, p.layout.num_lines());
       }
       recompute_offsets(0);
    }

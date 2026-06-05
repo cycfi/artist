@@ -14,6 +14,7 @@ set(artist_test_sources
    composite_test.cpp
    typography_test.cpp
    geometry_test.cpp
+   text_layout_ex_render_test.cpp
 )
 
 file(

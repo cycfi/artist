@@ -67,15 +67,15 @@ int main()
       CHECK(builds == 3);                    // one build per paragraph
       CHECK(ex.paragraph_count() == 3);
       CHECK(ex.text() == U"aa\nbb\ncc");
-      CHECK(ex.num_lines() == 5);            // 2 + 2 + 1
-      CHECK(ex.height() == 50.0f);           // 5 lines * 10
+      CHECK(ex.num_lines() == 3);            // 1 + 1 + 1 (trailing '\n' stripped)
+      CHECK(ex.height() == 30.0f);           // 3 lines * 10
 
       auto p0 = ex.caret_point(0);  CHECK(p0.x == 0 && p0.y == 0);   // para 0
-      auto p3 = ex.caret_point(3);  CHECK(p3.x == 0 && p3.y == 20);  // para 1 start
-      auto p7 = ex.caret_point(7);  CHECK(p7.x == 1 && p7.y == 40);  // inside para 2
+      auto p3 = ex.caret_point(3);  CHECK(p3.x == 0 && p3.y == 10);  // para 1 start
+      auto p7 = ex.caret_point(7);  CHECK(p7.x == 1 && p7.y == 20);  // inside para 2
 
-      CHECK(ex.caret_index({1, 40}) == 7);   // point -> index round trip
-      CHECK(ex.caret_index({0, 20}) == 3);
+      CHECK(ex.caret_index({1, 20}) == 7);   // point -> index round trip
+      CHECK(ex.caret_index({0, 10}) == 3);
    }
 
    // --- typing inside a paragraph rebuilds only that paragraph ---
@@ -90,7 +90,7 @@ int main()
       CHECK(builds == 1);                    // ONLY paragraph 1 rebuilt
       CHECK(ex.paragraph_count() == 3);
       CHECK(ex.text() == U"aa\nXbb\ncc");
-      CHECK(ex.num_lines() == 5);
+      CHECK(ex.num_lines() == 3);
    }
 
    // --- inserting a newline splits one paragraph into two ---
@@ -107,7 +107,7 @@ int main()
       CHECK(ex.text() == U"a\na\nbb\ncc");
       // offsets must be consistent after the split
       CHECK(ex.caret_point(0).y == 0);
-      CHECK(ex.caret_point(2).y == 20);      // second "a\n"
+      CHECK(ex.caret_point(2).y == 10);      // second "a"
    }
 
    // --- erasing a newline merges two paragraphs into one ---
@@ -122,7 +122,7 @@ int main()
       CHECK(builds == 1);                    // one merged paragraph built
       CHECK(ex.paragraph_count() == 2);
       CHECK(ex.text() == U"aabb\ncc");
-      CHECK(ex.num_lines() == 3);            // "aabb\n"(2) + "cc"(1)
+      CHECK(ex.num_lines() == 2);            // "aabb"(1) + "cc"(1)
    }
 
    if (failures == 0) std::cout << "ALL PASS\n";
