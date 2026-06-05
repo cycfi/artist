@@ -1,0 +1,7 @@
+* xref:index.adoc[Introduction]
+* xref:setup.adoc[Setup and Installation]
+* xref:backends.adoc[Backends]
+* xref:gallery.adoc[Gallery]
+* Reference
+** xref:canvas.adoc[Canvas]
+** xref:foundation.adoc[Foundation]

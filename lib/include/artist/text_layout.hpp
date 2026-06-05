@@ -1,86 +1,382 @@
 /*=============================================================================
-   Copyright (c) 2016-2023 Joel de Guzman
+   Copyright (c) 2016-2026 Joel de Guzman
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#if !defined(ARTIST_TEXT_LAYOUT_MARCH_17_2020)
-#define ARTIST_TEXT_LAYOUT_MARCH_17_2020
+#if !defined(ARTIST_TEXT_LAYOUT_JUNE_5_2026)
+#define ARTIST_TEXT_LAYOUT_JUNE_5_2026
 
-#include <string_view>
-#include <artist/font.hpp>
-#include <artist/rect.hpp>
-#include <artist/color.hpp>
-#include <infra/utf8_utils.hpp>
-#include <infra/support.hpp>
+#include <artist/text_run.hpp>
+#include <artist/detail/paragraph_index.hpp>
+#include <artist/rope.hpp>
+#include <artist/point.hpp>
+#include <artist/canvas.hpp>   // draw() culls against canvas::clip_extent()
+#include <algorithm>
 #include <functional>
 #include <string>
+#include <string_view>
+#include <vector>
 
 namespace cycfi::artist
 {
-   class canvas;
-   class text_layout;
-
-   class text_layout : non_copyable
+   /**
+    * \brief
+    *    Multi-paragraph text engine: a rope-backed document split into
+    *    paragraphs at hard '\n' breaks, with one paragraph layout per
+    *    paragraph stacked vertically.
+    *
+    *    Edits are incremental: only the paragraphs an edit touches are
+    *    re-laid-out (via `paragraph_index`), and the rope buffer shares
+    *    unchanged structure. Templated on the per-paragraph `TextRun` so the
+    *    stitching can be tested with a non-graphical mock; the production
+    *    instantiation is `text_layout` over `artist::text_run`.
+    *
+    *    `TextRun` must provide: construction from `std::u32string_view`,
+    *    `flow(float, bool)`, `num_lines()`, `caret_point(size_t)`,
+    *    `caret_index(point)`, and (only if `draw` is used) `draw(canvas&,
+    *    point, color)`.
+    */
+   template <typename TextRun>
+   class basic_text_layout
    {
    public:
-                           text_layout(font_descr font_, std::string_view utf8);
-                           text_layout(font_descr font_, std::u32string_view utf32);
-                           text_layout(text_layout&& rhs) noexcept;
-                           ~text_layout();
 
-      struct line_info
-      {
-         float    offset;
-         float    width;
-      };
+      using size_type = std::size_t;
+      using factory = std::function<TextRun(std::u32string_view)>;
+      using break_enum = typename TextRun::break_enum;
 
-      struct flow_info
-      {
-         bool     justify;
-         float    line_height;
-         float    last_line_height;
-      };
+      static constexpr size_type npos = size_type(-1);
 
-      enum break_enum { indeterminate, must_break, allow_break, no_break };
+                              basic_text_layout(
+                                 factory make
+                               , double line_height
+                               , std::u32string_view text
+                              );
 
-      using get_line_info = std::function<line_info(float y)>;
-      static constexpr auto npos = std::size_t(-1);
+                              basic_text_layout(basic_text_layout&&) noexcept = default;
+      basic_text_layout&      operator=(basic_text_layout&&) noexcept = default;
 
-      void                    text(std::string_view utf8);
-      void                    text(std::u32string_view utf32);
-      std::u32string_view     text() const;
+      void                    set_text(std::u32string_view text);
+      std::u32string          text() const;
+      size_type               size() const                { return _buffer.size(); }
+      size_type               paragraph_count() const     { return _paras.size(); }
+
+      void                    insert(size_type pos, std::u32string_view text);
+      void                    erase(size_type pos, size_type len);
+      void                    replace(size_type pos, size_type len, std::u32string_view text);
 
       void                    flow(float width, bool justify = false);
-      void                    flow(get_line_info const& glf, flow_info finfo);
-      void                    draw(canvas& cnv, point p, color c = colors::black) const;
-      void                    draw(canvas& cnv, float x, float y, color c = colors::black) const;
+      size_type               num_lines() const;
+      double                  height() const               { return num_lines() * _line_height; }
 
-      std::size_t             num_lines() const;
-      point                   caret_point(std::size_t index) const;
-      std::size_t             caret_index(float x, float y) const;
-      std::size_t             caret_index(point p) const;
-      break_enum              line_break(std::size_t index) const;
-      break_enum              word_break(std::size_t index) const;
+      // Diagnostics.
+      size_type               paragraph_lines(size_type i) const { return _paras[i].lines; }
+
+      point                   caret_point(size_type index) const;
+      size_type               caret_index(point p) const;
+      size_type               caret_index(float x, float y) const { return caret_index(point{x, y}); }
+
+      break_enum              word_break(size_type index) const;
+      break_enum              line_break(size_type index) const;
+
+      void                    draw(canvas& cnv, point p, color c = colors::black) const;
 
    private:
 
-      class impl;
-      using impl_ptr = std::unique_ptr<impl>;
+      struct para
+      {
+         TextRun      layout;
+         size_type   lines;
+         double      y;       // top of this paragraph, relative to the document
+      };
 
-      impl_ptr             _impl;
+      para                    make_para(size_type i) const;
+      void                    splice_rebuild(
+                                 detail::paragraph_index::changed_range ch, size_type old_count
+                              );
+      void                    recompute_offsets(size_type from);
+      size_type               para_at_y(double y) const;
+
+      factory                 _make;
+      double                  _line_height;
+      float                   _width = 0;
+      bool                    _justify = false;
+      rope<char32_t>          _buffer;
+      detail::paragraph_index _px;
+      std::vector<para>       _paras;
    };
 
-   ////////////////////////////////////////////////////////////////////////////
-   // Inlines
-   ////////////////////////////////////////////////////////////////////////////
-   inline void text_layout::draw(canvas& cnv, float x, float y, color c) const
+   //--------------------------------------------------------------------------
+   // Implementation
+   //--------------------------------------------------------------------------
+
+   template <typename TextRun>
+   basic_text_layout<TextRun>::basic_text_layout(
+      factory make, double line_height, std::u32string_view text)
+    : _make(std::move(make))
+    , _line_height(line_height)
    {
-      draw(cnv, {x, y}, c);
+      set_text(text);
    }
 
-   inline std::size_t text_layout::caret_index(float x, float y) const
+   template <typename TextRun>
+   typename basic_text_layout<TextRun>::para
+   basic_text_layout<TextRun>::make_para(size_type i) const
    {
-      return caret_index({x, y});
+      // Exclude the trailing '\n' separator from the shaped text: the
+      // paragraph break itself provides the line advance, so handing the '\n'
+      // to the layout (which would open an extra empty line) double-counts.
+      auto s = _px.start(i);
+      auto e = _px.end(i);
+      if (e > s && _buffer[e - 1] == U'\n')
+         --e;
+      auto txt = _buffer.substr(s, e - s);
+      TextRun layout = _make(std::u32string_view(txt.data(), txt.size()));
+      if (_width > 0)
+         layout.flow(_width, _justify);
+      // Every paragraph occupies at least one line: an empty paragraph (e.g. a
+      // bare '\n' or the empty final paragraph after a trailing newline) is
+      // still a visible blank line.
+      size_type lines = std::max<size_type>(1, layout.num_lines());
+      return para{std::move(layout), lines, 0};
+   }
+
+   template <typename TextRun>
+   void basic_text_layout<TextRun>::set_text(std::u32string_view text)
+   {
+      _buffer = rope<char32_t>(text.begin(), text.end());
+      _px.build(_buffer);
+      _paras.clear();
+      _paras.reserve(_px.count());
+      for (size_type i = 0; i != _px.count(); ++i)
+         _paras.push_back(make_para(i));
+      recompute_offsets(0);
+   }
+
+   template <typename TextRun>
+   std::u32string basic_text_layout<TextRun>::text() const
+   {
+      auto v = _buffer.flatten();
+      return std::u32string(v.begin(), v.end());
+   }
+
+   template <typename TextRun>
+   void basic_text_layout<TextRun>::recompute_offsets(size_type from)
+   {
+      double y = (from == 0)
+         ? 0.0
+         : _paras[from - 1].y + _paras[from - 1].lines * _line_height;
+      for (size_type i = from; i != _paras.size(); ++i)
+      {
+         _paras[i].y = y;
+         y += _paras[i].lines * _line_height;
+      }
+   }
+
+   template <typename TextRun>
+   void basic_text_layout<TextRun>::splice_rebuild(
+      detail::paragraph_index::changed_range ch, size_type old_count)
+   {
+      size_type new_count = _px.count();
+      long dpar = long(new_count) - long(old_count);
+      // The old paragraphs [ch.first .. pe] were replaced by the new
+      // [ch.first .. ch.last]; recover pe from the paragraph-count delta.
+      size_type pe = ch.last - dpar;
+
+      // Rebuild via move-construction only (the paragraph TextRun, e.g.
+      // text_run, is move-constructible but not move-assignable, so
+      // vector insert/erase element shifts are unavailable).
+      std::vector<para> updated;
+      updated.reserve(new_count);
+      for (size_type i = 0; i < ch.first; ++i)
+         updated.push_back(std::move(_paras[i]));
+      for (size_type i = ch.first; i <= ch.last; ++i)
+         updated.push_back(make_para(i));
+      for (size_type i = pe + 1; i < old_count; ++i)
+         updated.push_back(std::move(_paras[i]));
+      _paras = std::move(updated);
+      recompute_offsets(ch.first);
+   }
+
+   template <typename TextRun>
+   void basic_text_layout<TextRun>::insert(size_type pos, std::u32string_view text)
+   {
+      if (text.empty())
+         return;
+      if (pos > size())
+         pos = size();
+      size_type old_count = _paras.size();
+      _buffer.insert(pos, text.begin(), text.end());
+      auto ch = _px.update(_buffer, pos, 0, text.size());
+      splice_rebuild(ch, old_count);
+   }
+
+   template <typename TextRun>
+   void basic_text_layout<TextRun>::erase(size_type pos, size_type len)
+   {
+      if (len == 0 || pos >= size())
+         return;
+      len = std::min(len, size() - pos);
+      size_type old_count = _paras.size();
+      _buffer.erase(pos, len);
+      auto ch = _px.update(_buffer, pos, len, 0);
+      splice_rebuild(ch, old_count);
+   }
+
+   template <typename TextRun>
+   void basic_text_layout<TextRun>::replace(
+      size_type pos, size_type len, std::u32string_view text)
+   {
+      erase(pos, len);
+      insert(pos, text);
+   }
+
+   template <typename TextRun>
+   void basic_text_layout<TextRun>::flow(float width, bool justify)
+   {
+      // Already flowed at this width/justification: every paragraph is kept
+      // shaped at _width (incremental edits reflow only the touched paragraph
+      // in make_para), so re-flowing the whole document would be pure waste.
+      // This is what keeps per-keystroke editing O(1) instead of
+      // O(paragraphs) -- the editor calls flow() on every edit to refresh its
+      // height.
+      if (width == _width && justify == _justify && !_paras.empty())
+         return;
+
+      _width = width;
+      _justify = justify;
+      for (auto& p : _paras)
+      {
+         p.layout.flow(width, justify);
+         p.lines = std::max<size_type>(1, p.layout.num_lines());
+      }
+      recompute_offsets(0);
+   }
+
+   template <typename TextRun>
+   typename basic_text_layout<TextRun>::size_type
+   basic_text_layout<TextRun>::num_lines() const
+   {
+      size_type n = 0;
+      for (auto const& p : _paras)
+         n += p.lines;
+      return n;
+   }
+
+   template <typename TextRun>
+   point basic_text_layout<TextRun>::caret_point(size_type index) const
+   {
+      size_type pi = _px.index_at(index);
+      size_type local = index - _px.start(pi);
+      point lp = _paras[pi].layout.caret_point(local);
+      return {lp.x, float(lp.y + _paras[pi].y)};
+   }
+
+   template <typename TextRun>
+   typename basic_text_layout<TextRun>::size_type
+   basic_text_layout<TextRun>::para_at_y(double y) const
+   {
+      if (_paras.empty())
+         return 0;
+      // Last paragraph whose top y-offset is <= y: the one just before the
+      // first paragraph that starts past y.
+      auto it = std::upper_bound(
+         _paras.begin(), _paras.end(), y,
+         [](double yy, para const& p) { return yy < p.y; });
+      size_type i = size_type(it - _paras.begin());
+      return (i == 0) ? 0 : i - 1;
+   }
+
+   template <typename TextRun>
+   typename basic_text_layout<TextRun>::size_type
+   basic_text_layout<TextRun>::caret_index(point p) const
+   {
+      // Select the paragraph whose vertical span contains p.y (a body
+      // coordinate, top-relative), then resolve the row within it.
+      //
+      // The per-paragraph layout's caret_index returns the first row whose top
+      // is >= the query y, so to land on visual row k the query must fall in
+      // ((k-1), k] * line_height -- the band just above the row, NOT the row's
+      // own body. A raw body click therefore overshoots by one row. Compute the
+      // visual row from the body y ourselves, then query at (row - 0.5) *
+      // line_height: centred in the correct selection band, robust to float
+      // rounding in the row offsets. p.x is preserved, so horizontal glyph
+      // resolution is unaffected.
+      size_type pi = para_at_y(p.y);
+      double local_y = p.y - _paras[pi].y;
+      size_type row = (local_y <= 0)? 0 : size_type(local_y / _line_height);
+      if (row >= _paras[pi].lines)
+         row = _paras[pi].lines - 1;
+      point local{p.x, float((double(row) - 0.5) * _line_height)};
+      size_type li = _paras[pi].layout.caret_index(local);
+      return _px.start(pi) + li;
+   }
+
+   template <typename TextRun>
+   typename TextRun::break_enum
+   basic_text_layout<TextRun>::word_break(size_type index) const
+   {
+      // Whole-document query: delegate to the paragraph that owns `index`,
+      // offset to that paragraph's local index.
+      size_type pi = _px.index_at(index);
+      return _paras[pi].layout.word_break(index - _px.start(pi));
+   }
+
+   template <typename TextRun>
+   typename TextRun::break_enum
+   basic_text_layout<TextRun>::line_break(size_type index) const
+   {
+      // A hard line break is reported at the '\n' character's own index -- a
+      // mandatory break *after* that character -- matching libunibreak and the
+      // single text_run. (The editor's word/line navigation relies on this
+      // convention: it lands on the newline, then steps forward onto the next
+      // line's first character.)
+      if (index < _buffer.size() && _buffer[index] == U'\n')
+         return TextRun::must_break;
+      size_type pi = _px.index_at(index);
+      return _paras[pi].layout.line_break(index - _px.start(pi));
+   }
+
+   template <typename TextRun>
+   void basic_text_layout<TextRun>::draw(canvas& cnv, point p, color c) const
+   {
+      if (_paras.empty())
+         return;
+
+      // Viewport culling: draw only the paragraphs whose vertical span
+      // intersects the canvas's current clip (the scroller/port sets it to the
+      // visible viewport; an unclipped surface reports its full bounds). This
+      // makes drawing O(visible paragraphs) instead of O(document). Paragraph
+      // offsets (pa.y) are document-relative; p.y is where the document top is
+      // drawn, so the visible document-y band is [clip.top, clip.bottom) - p.y.
+      rect clip = cnv.clip_extent();
+      double top = double(clip.top) - p.y;
+      double bottom = double(clip.bottom) - p.y;
+      for (size_type i = para_at_y(top); i < _paras.size(); ++i)
+      {
+         auto const& pa = _paras[i];
+         if (double(pa.y) >= bottom)
+            break;
+         pa.layout.draw(cnv, {p.x, float(p.y + pa.y)}, c);
+      }
+   }
+
+   //--------------------------------------------------------------------------
+   // Production instantiation over artist::text_run.
+   //--------------------------------------------------------------------------
+   using text_layout = basic_text_layout<text_run>;
+
+   // Build a text_layout for a single font; line height is derived from the
+   // font metrics, and each paragraph is shaped by an artist::text_run.
+   inline text_layout make_text_layout(font_descr f, std::u32string_view text)
+   {
+      auto m = font{f}.metrics();
+      float line_height = m.ascent + m.descent + m.leading;
+      return text_layout(
+         [f](std::u32string_view s) { return text_run{f, s}; }
+       , line_height
+       , text
+      );
    }
 }
 

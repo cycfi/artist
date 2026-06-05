@@ -4,7 +4,7 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
 #include <string_view>
-#include <artist/text_layout.hpp>
+#include <artist/text_run.hpp>
 #include <artist/canvas.hpp>
 #include <infra/utf8_utils.hpp>
 #include "osx_utils.hpp"
@@ -15,7 +15,7 @@
 
 namespace cycfi::artist
 {
-   class text_layout::impl
+   class text_run::impl
    {
    public:
 
@@ -30,7 +30,7 @@ namespace cycfi::artist
          CTLineRef            line;
       };
 
-      using break_enum = text_layout::break_enum;
+      using break_enum = text_run::break_enum;
 
       struct break_info
       {
@@ -62,7 +62,7 @@ namespace cycfi::artist
       std::vector<break_info> _breaks;
    };
 
-   text_layout::impl::impl(font const& font_, std::u32string_view utf32)
+   text_run::impl::impl(font const& font_, std::u32string_view utf32)
     : _font{font_}
     , _text{utf32}
     , _breaks{utf32.size(), break_info{}}
@@ -109,19 +109,19 @@ namespace cycfi::artist
       }
    }
 
-   text_layout::impl::~impl()
+   text_run::impl::~impl()
    {
       clear_rows();
    }
 
-   void text_layout::impl::clear_rows()
+   void text_run::impl::clear_rows()
    {
       for (auto& line : _rows)
          CFRelease(line.line);
       _rows.clear();
    }
 
-   void text_layout::impl::flow(get_line_info const& glf, flow_info finfo)
+   void text_run::impl::flow(get_line_info const& glf, flow_info finfo)
    {
       if (_text.size() == 0)
          return;
@@ -144,7 +144,8 @@ namespace cycfi::artist
       CFRelease(text);
 
       CFIndex start = 0;
-      float ypos = 0;
+      double ypos = 0;   // accumulate vertical position in double: line height
+                         // sums over thousands of rows; float would drift ~0.2px.
       auto l_info = glf(ypos);
 
       NSUInteger length = CFAttributedStringGetLength(attr_string);
@@ -178,7 +179,7 @@ namespace cycfi::artist
          }
          _rows.emplace_back(
             row_info{
-               point{l_info.offset, ypos}
+               point{l_info.offset, float(ypos)}
                , float(line_width)
                , finfo.line_height
                , line
@@ -188,6 +189,25 @@ namespace cycfi::artist
          ypos += finfo.line_height;
          l_info = glf(ypos);
       }
+
+      // A trailing hard line break (text ending in '\n') leaves an empty final
+      // line.  CTTypesetter folds the break into the preceding line and stops,
+      // emitting no row for the empty line after it, so the caret cannot land
+      // there -- you would have to press Return twice.  Emit an explicit empty
+      // row for it (a zero-length CTLine), matching the Cairo backend.
+      if (_breaks.back().line == must_break)
+      {
+         CTLineRef empty = CTTypesetterCreateLine(typesetter, CFRangeMake(length, 0));
+         _rows.emplace_back(
+            row_info{
+               point{l_info.offset, float(ypos)}
+               , 0.0f
+               , finfo.line_height
+               , empty
+            }
+         );
+      }
+
       auto& last = _rows.back();
       last.pos.y += finfo.last_line_height - finfo.line_height;
       last.height = finfo.last_line_height;
@@ -196,7 +216,7 @@ namespace cycfi::artist
       CFRelease(font_attributes);
    }
 
-   void text_layout::impl::draw(canvas& cnv, point p, color c)
+   void text_run::impl::draw(canvas& cnv, point p, color c)
    {
       if (_rows.size() == 0)
          return;
@@ -211,7 +231,7 @@ namespace cycfi::artist
       }
    }
 
-   point text_layout::impl::caret_point(std::size_t index) const
+   point text_run::impl::caret_point(std::size_t index) const
    {
       if (_rows.size() == 0)
          return {0, 0};
@@ -246,7 +266,7 @@ namespace cycfi::artist
       return {float(row.pos.x + offset), row.pos.y};
    }
 
-   std::size_t text_layout::impl::caret_index(point p) const
+   std::size_t text_run::impl::caret_index(point p) const
    {
       if (_rows.size() == 0)
          return 0;
@@ -266,77 +286,87 @@ namespace cycfi::artist
          return rng.location;
 
       if (i != _rows.end()-1 && p.x >= (i->pos.x + i->width))
-         return rng.location + rng.length - 1;
+      {
+         // Return the index one past the last rendered character of the line.
+         // CTLine ranges include trailing consumed whitespace (a soft-wrap
+         // space or a hard newline), so step back over it; otherwise (e.g. CJK
+         // with no inter-character space) the boundary is the next line's first
+         // character.  This matches the Skia and Cairo backends.
+         auto end = rng.location + rng.length;
+         if (end > rng.location && is_space(_text[end - 1]))
+            --end;
+         return end;
+      }
 
       auto index = CTLineGetStringIndexForPosition(i->line, {p.x - i->pos.x, 0});
       return index;
    }
 
-   std::size_t text_layout::impl::num_lines() const
+   std::size_t text_run::impl::num_lines() const
    {
       return _rows.size();
    }
 
-   class font& text_layout::impl::get_font()
+   class font& text_run::impl::get_font()
    {
       return _font;
    }
 
-   std::u32string const& text_layout::impl::get_text() const
+   std::u32string const& text_run::impl::get_text() const
    {
       return _text;
    }
 
-   text_layout::break_enum text_layout::impl::line_break(std::size_t index) const
+   text_run::break_enum text_run::impl::line_break(std::size_t index) const
    {
       if (index >= _breaks.size())
          return indeterminate;
       return _breaks[index].line;
    }
 
-   text_layout::break_enum text_layout::impl::word_break(std::size_t index) const
+   text_run::break_enum text_run::impl::word_break(std::size_t index) const
    {
       if (index >= _breaks.size())
          return indeterminate;
-      return _breaks[index].line;
+      return _breaks[index].word;
    }
 
    ////////////////////////////////////////////////////////////////////////////
-   text_layout::text_layout(font_descr font_, std::string_view utf8)
+   text_run::text_run(font_descr font_, std::string_view utf8)
     : _impl{std::make_unique<impl>(font_, to_utf32(utf8))}
    {
    }
 
-   text_layout::text_layout(font_descr font_, std::u32string_view utf32)
+   text_run::text_run(font_descr font_, std::u32string_view utf32)
     : _impl{std::make_unique<impl>(font_, utf32)}
    {
    }
 
-   text_layout::~text_layout()
+   text_run::~text_run()
    {
    }
 
-   text_layout::text_layout(text_layout&& rhs) noexcept
+   text_run::text_run(text_run&& rhs) noexcept
     : _impl{std::move(rhs._impl)}
    {
    }
 
-   void text_layout::text(std::string_view utf8)
+   void text_run::text(std::string_view utf8)
    {
       _impl = std::make_unique<impl>(_impl->get_font(), to_utf32(utf8));
    }
 
-   void text_layout::text(std::u32string_view utf32)
+   void text_run::text(std::u32string_view utf32)
    {
       _impl = std::make_unique<impl>(_impl->get_font(), utf32);
    }
 
-   std::u32string_view text_layout::text() const
+   std::u32string_view text_run::text() const
    {
       return _impl->get_text();
    }
 
-   void text_layout::flow(float width, bool justify)
+   void text_run::flow(float width, bool justify)
    {
       auto line_info_f = [width](float y)
       {
@@ -347,37 +377,37 @@ namespace cycfi::artist
       _impl->flow(line_info_f, {justify, lh, lh});
    }
 
-   void text_layout::flow(get_line_info const& glf, flow_info finfo)
+   void text_run::flow(get_line_info const& glf, flow_info finfo)
    {
       _impl->flow(glf, finfo);
    }
 
-   void text_layout::draw(canvas& cnv, point p, color c) const
+   void text_run::draw(canvas& cnv, point p, color c) const
    {
       _impl->draw(cnv, p, c);
    }
 
-   std::size_t text_layout::num_lines() const
+   std::size_t text_run::num_lines() const
    {
       return _impl->num_lines();
    }
 
-   point text_layout::caret_point(std::size_t index) const
+   point text_run::caret_point(std::size_t index) const
    {
       return _impl->caret_point(index);
    }
 
-   std::size_t text_layout::caret_index(point p) const
+   std::size_t text_run::caret_index(point p) const
    {
       return _impl->caret_index(p);
    }
 
-   text_layout::break_enum text_layout::line_break(std::size_t index) const
+   text_run::break_enum text_run::line_break(std::size_t index) const
    {
       return _impl->line_break(index);
    }
 
-   text_layout::break_enum text_layout::word_break(std::size_t index) const
+   text_run::break_enum text_run::word_break(std::size_t index) const
    {
       return _impl->word_break(index);
    }

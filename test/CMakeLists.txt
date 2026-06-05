@@ -5,6 +5,22 @@
 ###############################################################################
 project(artist_test)
 
+# Themed test translation units (split from the former single main.cpp).
+# test_main.cpp provides the Catch main; the rest add TEST_CASEs.
+set(artist_test_sources
+   test_main.cpp
+   golden.cpp
+   shapes_test.cpp
+   composite_test.cpp
+   typography_test.cpp
+   geometry_test.cpp
+   text_layout_render_test.cpp
+   text_edit_sim_test.cpp
+   text_edit_code_test.cpp
+   text_layout_fuzz_test.cpp
+   text_layout_bench_test.cpp
+)
+
 file(
    GLOB artist_fonts ${CMAKE_CURRENT_LIST_DIR}/../resources/fonts/*.*
 )
@@ -14,14 +30,14 @@ if (APPLE)
    if (ARTIST_QUARTZ_2D)
       add_executable(
          artist_test MACOSX_BUNDLE
-         main.cpp
+         ${artist_test_sources}
          detail/osx_init.mm
          ${artist_fonts}
       )
    else()
       add_executable(
          artist_test MACOSX_BUNDLE
-         main.cpp
+         ${artist_test_sources}
          ${artist_fonts}
       )
    endif()
@@ -43,7 +59,7 @@ elseif (MSVC)
 
    add_executable(
       artist_test
-      main.cpp
+      ${artist_test_sources}
    )
    if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
       set_property(TARGET artist_test PROPERTY
@@ -59,7 +75,7 @@ elseif (UNIX)
 
    add_executable(
       artist_test
-      main.cpp
+      ${artist_test_sources}
    )
 
 endif()
@@ -132,12 +148,38 @@ file(
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
 )
 
+# Copy text inputs (novel + source-code sample) to the binary dir
+file(
+  COPY text
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+)
+
 add_definitions(
    -DGOLDEN_PATH="${CMAKE_CURRENT_BINARY_DIR}/${GOLDEN_PATH}/"
    -DRESULTS_PATH="${CMAKE_CURRENT_BINARY_DIR}/results/"
    -DIMAGES_PATH="${CMAKE_CURRENT_BINARY_DIR}/images/"
    -DFONTS_PATH="${CMAKE_CURRENT_BINARY_DIR}/resources/fonts/"
+   -DTEXT_PATH="${CMAKE_CURRENT_BINARY_DIR}/text/"
 )
 
 include(CTest)
 add_test(NAME artist_test COMMAND artist_test)
+
+# Non-graphical unit tests (no window / graphics backend required).
+add_executable(rope_test rope_test.cpp)
+target_include_directories(rope_test PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../lib/include)
+add_test(NAME rope_test COMMAND rope_test)
+
+add_executable(paragraph_index_test paragraph_index_test.cpp)
+target_include_directories(paragraph_index_test PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../lib/include)
+add_test(NAME paragraph_index_test COMMAND paragraph_index_test)
+
+# text_layout stitching test: uses a non-graphical mock paragraph layout but
+# includes text_run.hpp, so it needs the artist + infra header paths.
+add_executable(text_layout_test text_layout_test.cpp)
+target_include_directories(text_layout_test PRIVATE
+   ${CMAKE_CURRENT_LIST_DIR}/../lib/include
+   ${CMAKE_CURRENT_LIST_DIR}/../lib/infra/include
+   ${CMAKE_CURRENT_LIST_DIR}/../lib/infra/external/filesystem/include
+)
+add_test(NAME text_layout_test COMMAND text_layout_test)

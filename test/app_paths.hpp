@@ -29,4 +29,9 @@ inline std::string get_results_path()
    return RESULTS_PATH;
 }
 
+inline std::string get_text_path()
+{
+   return TEXT_PATH;
+}
+
 #endif
