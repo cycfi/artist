@@ -231,8 +231,12 @@ namespace cycfi::artist
          {
             if (last_allow != NONE)
             {
-               // Soft wrap: break at last_allow (typically a space glyph).
-               // Carry glyphs after it with fresh positions for the new line.
+               // Soft wrap: break at last_allow.  If it is a space, absorb it
+               // into the break; otherwise (e.g. a CJK character, which is its
+               // own break opportunity) keep it on this line so no glyph is
+               // dropped.  Carry glyphs after it with fresh positions.
+               bool space = is_space(_text[_glyphs[last_allow].cluster]);
+               std::size_t visible_end = space ? last_allow : last_allow + 1;
                std::vector<float> carry;
                float cx = 0;
                for (std::size_t k = last_allow + 1; k <= g; ++k)
@@ -240,7 +244,7 @@ namespace cycfi::artist
                   carry.push_back(cx + _glyphs[k].x_offset);
                   cx += _glyphs[k].x_advance;
                }
-               flush_row(last_allow, last_allow + 1, false);
+               flush_row(visible_end, last_allow + 1, false);
                positions = std::move(carry);
                x = cx;
             }
