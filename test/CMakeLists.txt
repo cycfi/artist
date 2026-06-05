@@ -16,6 +16,7 @@ set(artist_test_sources
    geometry_test.cpp
    text_layout_ex_render_test.cpp
    text_edit_sim_test.cpp
+   text_edit_code_test.cpp
    text_layout_ex_fuzz_test.cpp
 )
 
