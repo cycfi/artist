@@ -43,6 +43,7 @@ namespace cycfi::artist
 
       using size_type = std::size_t;
       using factory = std::function<Layout(std::u32string_view)>;
+      using break_enum = typename Layout::break_enum;
 
       static constexpr size_type npos = size_type(-1);
 
@@ -79,8 +80,8 @@ namespace cycfi::artist
       // paragraph that owns `index`. Paragraph boundaries (hard '\n') are
       // mandatory line breaks. The return type matches the per-paragraph
       // Layout's break classification (e.g. text_run::break_enum).
-      typename Layout::break_enum   word_break(size_type index) const;
-      typename Layout::break_enum   line_break(size_type index) const;
+      break_enum              word_break(size_type index) const;
+      break_enum              line_break(size_type index) const;
 
       void                    draw(canvas& cnv, point p, color c = colors::black) const;
 
