@@ -27,6 +27,7 @@
 #include <thread>
 #include <cmath>
 #include <cstdlib>
+#include <cstdio>
 #include <stdexcept>
 
 using namespace cycfi::artist;
@@ -54,6 +55,14 @@ namespace
       color         bkd     = colors::white;
       bool          animate = false;
       bool          running = true;
+
+      // Resize handling: ConfigureNotify events during a drag are coalesced —
+      // we record the latest pending physical size and apply it once per loop
+      // iteration (recreate surface + redraw), rather than per event.
+      int           pend_w  = 0;
+      int           pend_h  = 0;
+      bool          needs_resize = false;
+      bool          resize_log   = false;   // ARTIST_RESIZE_LOG: print resize ms
    };
 
    // -------------------------------------------------------------------------
@@ -127,6 +136,33 @@ namespace
    }
 
    // -------------------------------------------------------------------------
+   // Apply a coalesced resize: update the logical size from the latest pending
+   // physical size, recreate the Skia surface, and redraw immediately so the
+   // window content tracks the drag. Skips work when the size is unchanged.
+   void apply_resize(app_state& state)
+   {
+      state.needs_resize = false;
+
+      int const cur_w = int(std::lround(state.size.x * state.scale));
+      int const cur_h = int(std::lround(state.size.y * state.scale));
+      if (state.skia_surface && state.pend_w == cur_w && state.pend_h == cur_h)
+         return;
+
+      state.size = extent{float(state.pend_w / state.scale), float(state.pend_h / state.scale)};
+
+      auto const t0 = std::chrono::steady_clock::now();
+      create_skia_surface(state);
+      render(state);                  // immediate redraw — responsiveness
+      auto const t1 = std::chrono::steady_clock::now();
+
+      if (state.resize_log)
+      {
+         double const ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+         std::fprintf(stderr, "[resize] %dx%d  %.2f ms\n", state.pend_w, state.pend_h, ms);
+      }
+   }
+
+   // -------------------------------------------------------------------------
    // Dispatch a single X11 event
    void dispatch(app_state& state, XEvent& ev)
    {
@@ -138,8 +174,11 @@ namespace
             break;
 
          case ConfigureNotify:
-            // Fixed-size window; recreate surface if the size somehow changed.
-            create_skia_surface(state);
+            // Record the latest size; the main loop coalesces a drag burst and
+            // applies it once (see apply_resize) instead of per event.
+            state.pend_w = ev.xconfigure.width;
+            state.pend_h = ev.xconfigure.height;
+            state.needs_resize = true;
             break;
 
          case ClientMessage:
@@ -277,17 +316,19 @@ int run_app(
    init_egl_and_window(state, w, h);
 
    // Window title
-   XStoreName(state.display, state.window, "Artist");
+   XStoreName(state.display, state.window, "Artist (x11 skia)");
 
-   // Fixed-size window: pin min == max
+   // Resizable window with a sane minimum (was previously pinned min == max).
    if (XSizeHints* hints = XAllocSizeHints())
    {
-      hints->flags      = PMinSize | PMaxSize;
-      hints->min_width  = hints->max_width  = w;
-      hints->min_height = hints->max_height = h;
+      hints->flags      = PMinSize;
+      hints->min_width  = 100;
+      hints->min_height = 100;
       XSetWMNormalHints(state.display, state.window, hints);
       XFree(hints);
    }
+
+   state.resize_log = std::getenv("ARTIST_RESIZE_LOG") != nullptr;
 
    state.wm_delete = XInternAtom(state.display, "WM_DELETE_WINDOW", False);
    XSetWMProtocols(state.display, state.window, &state.wm_delete, 1);
@@ -297,6 +338,20 @@ int run_app(
    init_skia(state);
    create_skia_surface(state);
 
+   // Automated resize benchmark (ARTIST_RESIZE_BENCH): sweep sizes + redraw,
+   // no user interaction, print stats, then exit.
+   if (std::getenv("ARTIST_RESIZE_BENCH"))
+   {
+      eglSwapInterval(state.egl_display, 0);   // don't block on vsync
+      state.resize_log = false;
+      run_resize_bench("x11 skia", [&](int w, int h)
+      {
+         state.pend_w = w; state.pend_h = h;
+         apply_resize(state);
+      });
+      state.running = false;
+   }
+
    // Event loop
    using clock = std::chrono::steady_clock;
    auto next_frame = clock::now();
@@ -304,20 +359,29 @@ int run_app(
 
    while (state.running)
    {
+      // Drain all pending events first so a resize-drag burst collapses into a
+      // single apply_resize at the final size (coalescing).
+      while (XPending(state.display))
+      {
+         XEvent ev;
+         XNextEvent(state.display, &ev);
+         dispatch(state, ev);
+      }
+      if (state.needs_resize)
+         apply_resize(state);
+
+      if (!state.running)
+         break;
+
       if (state.animate)
       {
-         while (XPending(state.display))
-         {
-            XEvent ev;
-            XNextEvent(state.display, &ev);
-            dispatch(state, ev);
-         }
          render(state);
          next_frame += frame_interval;
          std::this_thread::sleep_until(next_frame);
       }
       else
       {
+         // Idle (0% CPU) until the next event: resize, expose, or close.
          XEvent ev;
          XNextEvent(state.display, &ev);
          dispatch(state, ev);

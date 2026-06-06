@@ -15,9 +15,14 @@ float y = 100;
 
 void draw(canvas& cnv)
 {
+   // Reflow to the current window: the box grows/bounces to the live bounds.
+   auto const bounds = cnv.clip_extent();
+   float const cw = bounds.width();
+   float const ch = bounds.height();
+
    cnv.save();
    cnv.fill_style(colors::white);
-   cnv.add_rect({0, 0, window_size});
+   cnv.add_rect(bounds);
    cnv.fill();
 
    cnv.fill_style(colors::black);
@@ -28,13 +33,13 @@ void draw(canvas& cnv)
    x += x_incr;
    y += y_incr;
 
-   if (x > 600 || x < 100)
+   if (x > cw - 40 || x < 100)
       x_incr = -x_incr;
-   if (y > 440 || y < 100)
+   if (y > ch - 40 || y < 100)
       y_incr = -y_incr;
 
    cnv.restore();
-   print_elapsed(cnv, window_size, colors::white, colors::black);
+   print_elapsed(cnv, {cw, ch}, colors::white, colors::black);
 }
 
 int main(int argc, char const* argv[])
