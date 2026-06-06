@@ -58,7 +58,6 @@ namespace
       bool           running      = true;
       bool           configured   = false;
       bool           buf_released = true;
-      bool           resize_log   = false;   // ARTIST_RESIZE_LOG
 
       // Resize coalescing: a drag delivers a burst of configure events; we
       // record the latest requested size and apply it once per dispatch cycle.
@@ -76,8 +75,10 @@ namespace
    };
 
    // -------------------------------------------------------------------------
-   // Forward declaration for frame callback
+   // Forward declarations
    void frame_done(void* data, wl_callback* cb, uint32_t time);
+   void create_buffer(app_state& state);
+   void render(app_state& state);
 
    constexpr wl_callback_listener frame_listener = {
       .done = frame_done
@@ -106,20 +107,6 @@ namespace
       auto  cnv = canvas{cr};
       draw(cnv);
       cairo_destroy(cr);
-
-      // Dev-only: dump the Nth rendered frame to PNG for headless verification
-      // (ARTIST_DUMP_FRAME=path). Lets us confirm rendering without a
-      // compositor screenshot, which GNOME 50 blocks non-interactively.
-      if (char const* dump = std::getenv("ARTIST_DUMP_FRAME"))
-      {
-         static int frame_no = 0;
-         if (++frame_no == 90)   // ~1.5s in, animation well underway
-         {
-            cairo_surface_flush(surf);
-            cairo_surface_write_to_png(surf, dump);
-            std::fprintf(stderr, "[dump] wrote frame %d to %s\n", frame_no, dump);
-         }
-      }
       cairo_surface_destroy(surf);
 
       auto stop = std::chrono::steady_clock::now();
@@ -183,9 +170,6 @@ namespace
    {
       auto& state = *static_cast<app_state*>(data);
       float new_scale = float(scale_120) / 120.0f;
-      if (state.resize_log)
-         std::fprintf(stderr, "[scale] preferred_scale=%u -> %.4f (was %.4f)\n",
-            scale_120, new_scale, state.scale);
 
       // Ignore spurious scale decrease before window is fully configured.
       if (!state.configured && new_scale < state.scale)
@@ -239,10 +223,6 @@ namespace
       int const    h      = int(std::ceil(state.size.y * state.scale));
       int const    stride = w * 4;
       size_t const size   = size_t(stride) * h;
-
-      if (state.resize_log)
-         std::fprintf(stderr, "[cairo] create buffer: logical=%.0fx%.0f  scale=%.4f  physical=%dx%d\n",
-            state.size.x, state.size.y, state.scale, w, h);
 
       if (state.buffer)    { wl_buffer_destroy(state.buffer);        state.buffer   = nullptr; }
       if (state.pool)      { wl_shm_pool_destroy(state.pool);        state.pool     = nullptr; }
@@ -304,8 +284,6 @@ namespace
             state.first_resize_done = true;
             if (w < int(state.size.x * 0.6f))
             {
-               if (state.resize_log)
-                  std::fprintf(stderr, "[libdecor] suppressed spurious first-resize: content=%dx%d\n", w, h);
                auto* st = libdecor_state_new(int(state.size.x), int(state.size.y));
                libdecor_frame_commit(frame, st, config);
                libdecor_state_free(st);
@@ -313,10 +291,6 @@ namespace
             }
          }
       }
-
-      if (state.resize_log)
-         std::fprintf(stderr, "[libdecor] configure: content=%dx%d  scale=%.4f\n",
-            w, h, state.scale);
 
       auto* st = libdecor_state_new(w, h);
       libdecor_frame_commit(frame, st, config);
@@ -377,7 +351,6 @@ int run_app(
    state.size    = window_size;
    state.bkd     = background_color;
    state.animate = animate;
-   state.resize_log = std::getenv("ARTIST_RESIZE_LOG") != nullptr;
 
    state.display = wl_display_connect(nullptr);
    if (!state.display)
@@ -418,19 +391,6 @@ int run_app(
          throw std::runtime_error("libdecor_dispatch failed during init");
    }
 
-   // Automated resize benchmark (ARTIST_RESIZE_BENCH)
-   if (std::getenv("ARTIST_RESIZE_BENCH"))
-   {
-      run_resize_bench("wayland cairo", [&](int w, int h)
-      {
-         state.size = {float(w / state.scale), float(h / state.scale)};
-         state.buf_released = true;
-         create_buffer(state);
-         render(state);
-      });
-      state.running = false;
-   }
-
    if (animate)
    {
       // The initial configure already rendered and committed a frame (leaving
@@ -455,15 +415,9 @@ int run_app(
          if (int(state.size.x) != state.pend_w || int(state.size.y) != state.pend_h)
          {
             state.size = {float(state.pend_w), float(state.pend_h)};
-            auto const t0 = std::chrono::steady_clock::now();
             state.buf_released = true;
             create_buffer(state);
             render(state);
-            auto const t1 = std::chrono::steady_clock::now();
-            if (state.resize_log)
-               std::fprintf(stderr, "[resize] %dx%d  %.2f ms\n",
-                  state.pend_w, state.pend_h,
-                  std::chrono::duration<double, std::milli>(t1 - t0).count());
          }
       }
    }
