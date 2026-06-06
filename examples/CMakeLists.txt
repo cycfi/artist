@@ -18,7 +18,17 @@ endif()
 # GTK3 host dependencies
 # ---------------------------------------------------------------------------
 if (UNIX AND NOT APPLE AND ARTIST_LINUX_HOST STREQUAL "gtk3")
+   # GTK3 is a system library. When Skia is active, vcpkg prepends its own
+   # harfbuzz (14.x) to PKG_CONFIG_PATH. Ubuntu's pango.pc requires harfbuzz
+   # at the exact system version (= 12.3.2), so the vcpkg harfbuzz causes the
+   # gtk3 search to fail with a version-mismatch error.
+   # Fix: override PKG_CONFIG_LIBDIR to the standard system paths, which takes
+   # precedence over PKG_CONFIG_PATH and hides vcpkg's pkgconfig entries.
+   set(_saved_pkg_config_libdir "$ENV{PKG_CONFIG_LIBDIR}")
+   set(ENV{PKG_CONFIG_LIBDIR}
+      "/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig")
    pkg_check_modules(gtk3 REQUIRED IMPORTED_TARGET gtk+-3.0)
+   set(ENV{PKG_CONFIG_LIBDIR} "${_saved_pkg_config_libdir}")
    if (NOT ARTIST_CAIRO)
       find_package(OpenGL REQUIRED COMPONENTS OpenGL)
    endif()
