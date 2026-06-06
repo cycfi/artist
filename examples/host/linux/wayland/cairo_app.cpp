@@ -3,7 +3,7 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#include "../../app.hpp"
+#include "../../../app.hpp"
 #include <wayland-client.h>
 #include <libdecor.h>
 #include "fractional-scale-v1-client-protocol.h"
