@@ -17,6 +17,7 @@ float y = 0;
 
 void draw(canvas& cnv)
 {
+   scale_to_fit(cnv, {window_size.x, window_size.y}, colors::black);
    cnv.translate(x, y);
    cnv.draw(space);
    x += x_incr;

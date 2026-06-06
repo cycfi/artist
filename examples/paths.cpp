@@ -11,6 +11,7 @@ constexpr auto window_size = extent{640, 420};
 
 void draw(canvas& cnv)
 {
+   scale_to_fit(cnv, {window_size.x, window_size.y}, colors::gray[10]);
    auto stroke_fill =
       [&](path const& p, color fill_c, color stroke_c)
       {
