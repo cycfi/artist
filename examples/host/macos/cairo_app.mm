@@ -133,6 +133,14 @@ namespace cycfi::artist
    return YES;
 }
 
+// Redraw the whole view as the window resizes so the example reflows live. The
+// Cairo surface is recreated at self.bounds each drawRect:, so it tracks size.
+- (void) setFrameSize : (NSSize) newSize
+{
+   [super setFrameSize : newSize];
+   [self setNeedsDisplay : YES];
+}
+
 - (void) on_tick : (id) sender
 {
    [self setNeedsDisplay : YES];
@@ -162,6 +170,7 @@ public:
          [[NSWindow alloc]
             initWithContentRect : NSMakeRect(0, 0, window_size.x, window_size.y)
                       styleMask : NSWindowStyleMaskTitled | NSWindowStyleMaskClosable
+                                | NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable
                         backing : NSBackingStoreBuffered
                           defer : NO
          ];

@@ -213,14 +213,17 @@ namespace cycfi::artist
       [self render];
 }
 
-- (void) viewDidEndLiveResize
+// Resize the Metal drawable to match the new view size and re-render at every
+// step of a live drag, so the example reflows immediately instead of stretching
+// the old drawable until the drag ends.
+- (void) setFrameSize : (NSSize) newSize
 {
-   [super viewDidEndLiveResize];
-   _metal_layer.drawableSize = CGSizeMake(
-      self.bounds.size.width  * _scale,
-      self.bounds.size.height * _scale
-   );
-   [self render];
+   [super setFrameSize : newSize];
+   if (_gr_context)
+   {
+      _metal_layer.drawableSize = CGSizeMake(newSize.width * _scale, newSize.height * _scale);
+      [self render];
+   }
 }
 
 -(BOOL) isFlipped
@@ -257,6 +260,7 @@ public:
          [[NSWindow alloc]
             initWithContentRect : NSMakeRect(0, 0, window_size.x, window_size.y)
                       styleMask : NSWindowStyleMaskTitled | NSWindowStyleMaskClosable
+                                | NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable
                         backing : NSBackingStoreBuffered
                           defer : NO
          ];

@@ -97,6 +97,14 @@ namespace cycfi::artist
       [&]()
       {
          auto cg_ctx = NSGraphicsContext.currentContext.CGContext;
+
+         // Clip to the real view bounds so the canvas clip_extent() reports the
+         // true logical window size. AppKit hands drawRect: a context whose clip
+         // extends over the title-bar strip (e.g. 640x512 for a 640x480 view),
+         // which would push reflowed content (FPS readout, bounce bounds) off
+         // screen. Reflow examples depend on clip_extent() == view size.
+         CGContextClipToRect(cg_ctx, CGRectMake(0, 0, self.bounds.size.width, self.bounds.size.height));
+
          auto cnv = canvas{(canvas_impl*) cg_ctx};
          draw(cnv);
       };
@@ -110,6 +118,14 @@ namespace cycfi::artist
 -(BOOL) isFlipped
 {
    return YES;
+}
+
+// Redraw the whole view as the window resizes so example content reflows live
+// (matches the other hosts: resizable window + redraw at the new size).
+- (void) setFrameSize : (NSSize) newSize
+{
+   [super setFrameSize : newSize];
+   [self setNeedsDisplay : YES];
 }
 
 - (void) on_tick : (id) sender
@@ -141,6 +157,7 @@ public:
          [[NSWindow alloc]
             initWithContentRect : NSMakeRect(0, 0, window_size.x, window_size.y)
                       styleMask : NSWindowStyleMaskTitled | NSWindowStyleMaskClosable
+                                | NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable
                         backing : NSBackingStoreBuffered
                           defer : NO
          ];
