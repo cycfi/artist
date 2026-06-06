@@ -62,7 +62,6 @@ namespace
       int           pend_w  = 0;
       int           pend_h  = 0;
       bool          needs_resize = false;
-      bool          resize_log   = false;   // ARTIST_RESIZE_LOG: print resize ms
    };
 
    // -------------------------------------------------------------------------
@@ -150,16 +149,8 @@ namespace
 
       state.size = extent{float(state.pend_w / state.scale), float(state.pend_h / state.scale)};
 
-      auto const t0 = std::chrono::steady_clock::now();
       create_skia_surface(state);
       render(state);                  // immediate redraw — responsiveness
-      auto const t1 = std::chrono::steady_clock::now();
-
-      if (state.resize_log)
-      {
-         double const ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
-         std::fprintf(stderr, "[resize] %dx%d  %.2f ms\n", state.pend_w, state.pend_h, ms);
-      }
    }
 
    // -------------------------------------------------------------------------
@@ -328,8 +319,6 @@ int run_app(
       XFree(hints);
    }
 
-   state.resize_log = std::getenv("ARTIST_RESIZE_LOG") != nullptr;
-
    state.wm_delete = XInternAtom(state.display, "WM_DELETE_WINDOW", False);
    XSetWMProtocols(state.display, state.window, &state.wm_delete, 1);
 
@@ -337,20 +326,6 @@ int run_app(
 
    init_skia(state);
    create_skia_surface(state);
-
-   // Automated resize benchmark (ARTIST_RESIZE_BENCH): sweep sizes + redraw,
-   // no user interaction, print stats, then exit.
-   if (std::getenv("ARTIST_RESIZE_BENCH"))
-   {
-      eglSwapInterval(state.egl_display, 0);   // don't block on vsync
-      state.resize_log = false;
-      run_resize_bench("x11 skia", [&](int w, int h)
-      {
-         state.pend_w = w; state.pend_h = h;
-         apply_resize(state);
-      });
-      state.running = false;
-   }
 
    // Event loop
    using clock = std::chrono::steady_clock;

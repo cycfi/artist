@@ -74,7 +74,6 @@ namespace
       // State flags
       bool                            running      = true;
       bool                            configured   = false;
-      bool                            resize_log   = false;   // ARTIST_RESIZE_LOG
 
       // Startup sequencing: GNOME emits scale=2, configure, scale=1 (spurious),
       // scale=2, configure before the window is stable. Track configure count
@@ -162,19 +161,11 @@ namespace
    {
       auto& state = *static_cast<app_state*>(data);
       float new_scale = float(scale_120) / 120.0f;
-      if (state.resize_log)
-         std::fprintf(stderr, "[scale] preferred_scale=%u -> %.4f (was %.4f)\n",
-            scale_120, new_scale, state.scale);
 
       // GNOME emits: scale=2, configure, scale=1 (spurious), scale=2, configure.
       // Ignore scale decreases until the window has seen at least 2 configures.
       if (state.configure_count < 2 && new_scale < state.scale)
-      {
-         if (state.resize_log)
-            std::fprintf(stderr, "[scale] ignoring spurious decrease (configure_count=%d)\n",
-               state.configure_count);
          return;
-      }
 
       state.scale = new_scale;
       if (state.configured)
@@ -260,6 +251,16 @@ namespace
       if (!eglMakeCurrent(state.egl_display, state.egl_surface,
                           state.egl_surface, state.egl_context))
          throw std::runtime_error("eglMakeCurrent failed");
+
+      // Pre-fill both EGL buffers (front + back) with the app background color.
+      // Without this, the compositor briefly shows the uninitialized buffer
+      // contents before the first draw() call completes, causing a visible flicker.
+      glClearColor(state.bkd.red, state.bkd.green, state.bkd.blue, 1.0f);
+      for (int i = 0; i < 2; ++i)
+      {
+         glClear(GL_COLOR_BUFFER_BIT);
+         eglSwapBuffers(state.egl_display, state.egl_surface);
+      }
    }
 
    // -------------------------------------------------------------------------
@@ -284,10 +285,6 @@ namespace
 
       int const w = int(std::ceil(state.size.x * state.scale));
       int const h = int(std::ceil(state.size.y * state.scale));
-
-      if (state.resize_log)
-         std::fprintf(stderr, "[skia] create surface: logical=%.0fx%.0f  scale=%.4f  physical=%dx%d\n",
-            state.size.x, state.size.y, state.scale, w, h);
 
       wl_egl_window_resize(state.egl_window, w, h, 0, 0);
 
@@ -355,8 +352,6 @@ namespace
             state.first_resize_done = true;
             if (w < int(state.size.x * 0.6f))
             {
-               if (state.resize_log)
-                  std::fprintf(stderr, "[libdecor] suppressed spurious first-resize: content=%dx%d\n", w, h);
                auto* st = libdecor_state_new(int(state.size.x), int(state.size.y));
                libdecor_frame_commit(frame, st, config);
                libdecor_state_free(st);
@@ -364,10 +359,6 @@ namespace
             }
          }
       }
-
-      if (state.resize_log)
-         std::fprintf(stderr, "[libdecor] configure: content=%dx%d  scale=%.4f\n",
-            w, h, state.scale);
 
       auto* st = libdecor_state_new(w, h);
       libdecor_frame_commit(frame, st, config);
@@ -430,7 +421,6 @@ int run_app(
    state.size    = window_size;
    state.bkd     = background_color;
    state.animate = animate;
-   state.resize_log = std::getenv("ARTIST_RESIZE_LOG") != nullptr;
 
    state.display = wl_display_connect(nullptr);
    if (!state.display)
@@ -477,21 +467,6 @@ int run_app(
          throw std::runtime_error("libdecor_dispatch failed during init");
    }
 
-   // Automated resize benchmark (ARTIST_RESIZE_BENCH): sweep sizes + redraw,
-   // no user interaction, print stats, then exit.
-   if (std::getenv("ARTIST_RESIZE_BENCH"))
-   {
-      eglSwapInterval(state.egl_display, 0);   // don't block on vsync
-      state.resize_log = false;
-      run_resize_bench("wayland skia", [&](int w, int h)
-      {
-         state.size = {float(w / state.scale), float(h / state.scale)};
-         create_skia_surface(state);
-         render(state);
-      });
-      state.running = false;
-   }
-
    if (animate)
    {
       auto* cb = wl_surface_frame(state.surface);
@@ -514,14 +489,8 @@ int run_app(
          if (int(state.size.x) != state.pend_w || int(state.size.y) != state.pend_h)
          {
             state.size = {float(state.pend_w), float(state.pend_h)};
-            auto const t0 = std::chrono::steady_clock::now();
             create_skia_surface(state);
             render(state);
-            auto const t1 = std::chrono::steady_clock::now();
-            if (state.resize_log)
-               std::fprintf(stderr, "[resize] %dx%d  %.2f ms\n",
-                  state.pend_w, state.pend_h,
-                  std::chrono::duration<double, std::milli>(t1 - t0).count());
          }
       }
    }
