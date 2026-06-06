@@ -28,6 +28,8 @@
 #include <chrono>
 #include <cstring>
 #include <cmath>
+#include <cstdlib>
+#include <cstdio>
 #include <stdexcept>
 
 using namespace cycfi::artist;
@@ -72,6 +74,25 @@ namespace
       // State flags
       bool                            running      = true;
       bool                            configured   = false;
+      bool                            resize_log   = false;   // ARTIST_RESIZE_LOG
+
+      // Startup sequencing: GNOME emits scale=2, configure, scale=1 (spurious),
+      // scale=2, configure before the window is stable. Track configure count
+      // so we can ignore the spurious scale decrease during startup.
+      int                             configure_count = 0;
+
+      // First-resize workaround: libdecor on HiDPI GNOME reports the cursor grab
+      // position as the content size on the very first resize configure. We
+      // record the grab origin and apply a delta correction to all subsequent
+      // events until the raw value grows past the pre-resize size.
+      bool                            first_resize_done  = false;
+
+      // Resize coalescing: a drag delivers a burst of configure events; we
+      // record the latest requested size and apply it once per dispatch cycle
+      // (in the main loop) rather than rendering every intermediate size.
+      int                             pend_w       = 0;
+      int                             pend_h       = 0;
+      bool                            needs_resize = false;
 
       // Frame timing (throttle)
       uint32_t                        last_frame_ms  = 0;
@@ -110,10 +131,6 @@ namespace
       auto stop = std::chrono::steady_clock::now();
       elapsed_ = std::chrono::duration<double>{stop - start}.count();
 
-      if (state.viewport)
-         wp_viewport_set_destination(state.viewport,
-            int(state.size.x), int(state.size.y));
-
       eglSwapBuffers(state.egl_display, state.egl_surface);
    }
 
@@ -144,7 +161,22 @@ namespace
                              uint32_t scale_120)
    {
       auto& state = *static_cast<app_state*>(data);
-      state.scale = float(scale_120) / 120.0f;
+      float new_scale = float(scale_120) / 120.0f;
+      if (state.resize_log)
+         std::fprintf(stderr, "[scale] preferred_scale=%u -> %.4f (was %.4f)\n",
+            scale_120, new_scale, state.scale);
+
+      // GNOME emits: scale=2, configure, scale=1 (spurious), scale=2, configure.
+      // Ignore scale decreases until the window has seen at least 2 configures.
+      if (state.configure_count < 2 && new_scale < state.scale)
+      {
+         if (state.resize_log)
+            std::fprintf(stderr, "[scale] ignoring spurious decrease (configure_count=%d)\n",
+               state.configure_count);
+         return;
+      }
+
+      state.scale = new_scale;
       if (state.configured)
       {
          create_skia_surface(state);
@@ -253,7 +285,16 @@ namespace
       int const w = int(std::ceil(state.size.x * state.scale));
       int const h = int(std::ceil(state.size.y * state.scale));
 
+      if (state.resize_log)
+         std::fprintf(stderr, "[skia] create surface: logical=%.0fx%.0f  scale=%.4f  physical=%dx%d\n",
+            state.size.x, state.size.y, state.scale, w, h);
+
       wl_egl_window_resize(state.egl_window, w, h, 0, 0);
+
+      // Tell the compositor to display this physical-pixel buffer at logical size.
+      if (state.viewport)
+         wp_viewport_set_destination(state.viewport,
+            int(state.size.x), int(state.size.y));
 
       GrGLint buffer = 0;
       glGetIntegerv(GL_FRAMEBUFFER_BINDING, &buffer);
@@ -283,22 +324,58 @@ namespace
       int w = int(state.size.x);
       int h = int(state.size.y);
       libdecor_configuration_get_content_size(config, frame, &w, &h);
-      state.size = {float(w), float(h)};
+
+      state.configure_count++;
+
+      // First configure: create EGL window + Skia + do the initial render inline.
+      if (state.egl_window == nullptr)
+      {
+         state.size = {float(w), float(h)};
+         auto* st = libdecor_state_new(w, h);
+         libdecor_frame_commit(frame, st, config);
+         libdecor_state_free(st);
+         init_egl_window(state);
+         init_skia(state);
+         create_skia_surface(state);
+         render(state);
+         state.configured = true;
+         return;
+      }
+
+      // Known GNOME 46 HiDPI bug: libdecor reports the cursor grab position
+      // (roughly half the window size) as the content size on the very first
+      // resize configure. Detect it, ack with the current size so the frame
+      // doesn't shrink, and skip the resize. Subsequent events are normal.
+      // Only consume the guard on a genuine size change — startup emits a
+      // same-size re-configure that must not trigger the guard.
+      if (!state.first_resize_done)
+      {
+         if (w != int(state.size.x) || h != int(state.size.y))
+         {
+            state.first_resize_done = true;
+            if (w < int(state.size.x * 0.6f))
+            {
+               if (state.resize_log)
+                  std::fprintf(stderr, "[libdecor] suppressed spurious first-resize: content=%dx%d\n", w, h);
+               auto* st = libdecor_state_new(int(state.size.x), int(state.size.y));
+               libdecor_frame_commit(frame, st, config);
+               libdecor_state_free(st);
+               return;
+            }
+         }
+      }
+
+      if (state.resize_log)
+         std::fprintf(stderr, "[libdecor] configure: content=%dx%d  scale=%.4f\n",
+            w, h, state.scale);
 
       auto* st = libdecor_state_new(w, h);
       libdecor_frame_commit(frame, st, config);
       libdecor_state_free(st);
 
-      // Create EGL window + Skia on first configure
-      if (state.egl_window == nullptr)
-      {
-         init_egl_window(state);
-         init_skia(state);
-      }
-
-      create_skia_surface(state);
-      state.configured = true;
-      render(state);
+      state.pend_w = w;
+      state.pend_h = h;
+      state.needs_resize = true;
    }
 
    void libdecor_frame_close(libdecor_frame* /*frame*/, void* data)
@@ -353,6 +430,7 @@ int run_app(
    state.size    = window_size;
    state.bkd     = background_color;
    state.animate = animate;
+   state.resize_log = std::getenv("ARTIST_RESIZE_LOG") != nullptr;
 
    state.display = wl_display_connect(nullptr);
    if (!state.display)
@@ -369,26 +447,27 @@ int run_app(
    // EGL display + config + context (window surface deferred to configure)
    init_egl(state);
 
-   // Surface + fractional scale + viewport
+   // Surface + viewport + fractional scale.
+   // We use wp_viewport_set_destination to tell the compositor the logical
+   // display size; wl_surface_set_buffer_scale is unreliable with EGL surfaces.
    state.surface = wl_compositor_create_surface(state.compositor);
-   if (state.frac_manager && state.viewporter)
+   if (state.viewporter)
+      state.viewport = wp_viewporter_get_viewport(state.viewporter, state.surface);
+   if (state.frac_manager)
    {
       state.frac_scale = wp_fractional_scale_manager_v1_get_fractional_scale(
          state.frac_manager, state.surface);
       wp_fractional_scale_v1_add_listener(
          state.frac_scale, &frac_scale_listener, &state);
-      state.viewport = wp_viewporter_get_viewport(state.viewporter, state.surface);
    }
 
    // libdecor window
    state.decor = libdecor_new(state.display, &decor_iface);
    state.frame = libdecor_decorate(state.decor, state.surface, &frame_iface, &state);
 
-   libdecor_frame_set_title(state.frame, "Artist");
+   libdecor_frame_set_title(state.frame, "Artist (wayland skia)");
    libdecor_frame_set_app_id(state.frame, "org.cycfi.artist");
-   libdecor_frame_unset_capabilities(state.frame, LIBDECOR_ACTION_RESIZE);
-   libdecor_frame_set_min_content_size(state.frame, int(state.size.x), int(state.size.y));
-   libdecor_frame_set_max_content_size(state.frame, int(state.size.x), int(state.size.y));
+   libdecor_frame_set_min_content_size(state.frame, 100, 100);
    libdecor_frame_map(state.frame);
 
    // Pump until configure
@@ -396,6 +475,21 @@ int run_app(
    {
       if (libdecor_dispatch(state.decor, -1) < 0)
          throw std::runtime_error("libdecor_dispatch failed during init");
+   }
+
+   // Automated resize benchmark (ARTIST_RESIZE_BENCH): sweep sizes + redraw,
+   // no user interaction, print stats, then exit.
+   if (std::getenv("ARTIST_RESIZE_BENCH"))
+   {
+      eglSwapInterval(state.egl_display, 0);   // don't block on vsync
+      state.resize_log = false;
+      run_resize_bench("wayland skia", [&](int w, int h)
+      {
+         state.size = {float(w / state.scale), float(h / state.scale)};
+         create_skia_surface(state);
+         render(state);
+      });
+      state.running = false;
    }
 
    if (animate)
@@ -410,6 +504,26 @@ int run_app(
    {
       if (libdecor_dispatch(state.decor, -1) < 0)
          break;
+
+      // Apply the coalesced resize: a drag delivers many configure events in a
+      // single dispatch; render only the final size once, so the window tracks
+      // the cursor instead of lagging through intermediate sizes.
+      if (state.needs_resize)
+      {
+         state.needs_resize = false;
+         if (int(state.size.x) != state.pend_w || int(state.size.y) != state.pend_h)
+         {
+            state.size = {float(state.pend_w), float(state.pend_h)};
+            auto const t0 = std::chrono::steady_clock::now();
+            create_skia_surface(state);
+            render(state);
+            auto const t1 = std::chrono::steady_clock::now();
+            if (state.resize_log)
+               std::fprintf(stderr, "[resize] %dx%d  %.2f ms\n",
+                  state.pend_w, state.pend_h,
+                  std::chrono::duration<double, std::milli>(t1 - t0).count());
+         }
+      }
    }
 
    // Tear down
@@ -424,10 +538,9 @@ int run_app(
       wl_egl_window_destroy(state.egl_window);
    if (state.egl_display != EGL_NO_DISPLAY)
       eglTerminate(state.egl_display);
-   if (state.frac_scale)    wp_fractional_scale_v1_destroy(state.frac_scale);
    if (state.viewport)      wp_viewport_destroy(state.viewport);
+   if (state.frac_scale)    wp_fractional_scale_v1_destroy(state.frac_scale);
    if (state.frac_manager)  wp_fractional_scale_manager_v1_destroy(state.frac_manager);
-   if (state.viewporter)    wp_viewporter_destroy(state.viewporter);
    libdecor_frame_unref(state.frame);
    libdecor_unref(state.decor);
    if (state.surface)       wl_surface_destroy(state.surface);

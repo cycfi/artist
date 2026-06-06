@@ -15,6 +15,8 @@
 #include <unistd.h>
 #include <chrono>
 #include <cstring>
+#include <cstdlib>
+#include <cstdio>
 #include <stdexcept>
 
 using namespace cycfi::artist;
@@ -56,10 +58,21 @@ namespace
       bool           running      = true;
       bool           configured   = false;
       bool           buf_released = true;
+      bool           resize_log   = false;   // ARTIST_RESIZE_LOG
+
+      // Resize coalescing: a drag delivers a burst of configure events; we
+      // record the latest requested size and apply it once per dispatch cycle.
+      int            pend_w            = 0;
+      int            pend_h            = 0;
+      bool           needs_resize      = false;
+
+      // Known GNOME 46 HiDPI bug: libdecor reports the cursor grab position as
+      // content size on the very first resize configure. Suppressed on detection.
+      bool           first_resize_done = false;
 
       // Frame timing
-      uint32_t       last_frame_ms  = 0;       // compositor timestamp of last render
-      uint32_t       frame_interval = 1000/60; // target: 60 fps
+      uint32_t       last_frame_ms  = 0;
+      uint32_t       frame_interval = 1000/60;
    };
 
    // -------------------------------------------------------------------------
@@ -87,21 +100,34 @@ namespace
          CAIRO_FORMAT_ARGB32,
          w, h, w * 4
       );
-      // Device scale lets draw() use logical coordinates while rendering
-      // at full physical resolution on HiDPI displays.
       cairo_surface_set_device_scale(surf, state.scale, state.scale);
 
       auto* cr  = cairo_create(surf);
       auto  cnv = canvas{cr};
       draw(cnv);
       cairo_destroy(cr);
+
+      // Dev-only: dump the Nth rendered frame to PNG for headless verification
+      // (ARTIST_DUMP_FRAME=path). Lets us confirm rendering without a
+      // compositor screenshot, which GNOME 50 blocks non-interactively.
+      if (char const* dump = std::getenv("ARTIST_DUMP_FRAME"))
+      {
+         static int frame_no = 0;
+         if (++frame_no == 90)   // ~1.5s in, animation well underway
+         {
+            cairo_surface_flush(surf);
+            cairo_surface_write_to_png(surf, dump);
+            std::fprintf(stderr, "[dump] wrote frame %d to %s\n", frame_no, dump);
+         }
+      }
       cairo_surface_destroy(surf);
 
       auto stop = std::chrono::steady_clock::now();
       elapsed_ = std::chrono::duration<double>{stop - start}.count();
 
-      // viewport maps the physical buffer back to logical size, handling
-      // both integer and fractional scales without wl_surface_set_buffer_scale.
+      // Use wp_viewport_set_destination to declare the logical display size.
+      // wl_surface_set_buffer_scale only supports integers and breaks at
+      // fractional scales (e.g. 1.5×); viewport works for any scale factor.
       if (state.viewport)
          wp_viewport_set_destination(state.viewport,
             int(state.size.x), int(state.size.y));
@@ -120,21 +146,23 @@ namespace
       wl_callback_destroy(cb);
       auto& state = *static_cast<app_state*>(data);
 
-      // Request next callback before any commit so it's always armed
       auto* next = wl_surface_frame(state.surface);
       wl_callback_add_listener(next, &frame_listener, &state);
 
-      // Throttle: if the compositor fires faster than our target, skip the
-      // expensive draw but still commit to arm the next frame callback.
       uint32_t const delta = time - state.last_frame_ms;
-      if (state.last_frame_ms != 0 && delta < state.frame_interval)
+      bool const too_early = (state.last_frame_ms != 0 && delta < state.frame_interval);
+
+      // If the buffer hasn't been released yet or it's too early to render,
+      // commit without drawing to keep the frame-callback chain alive.
+      if (too_early || !state.buf_released)
       {
          wl_surface_commit(state.surface);
+         wl_display_flush(state.display);
          return;
       }
 
       state.last_frame_ms = time;
-      render(state);  // render does attach + damage + commit; measures elapsed_
+      render(state);
    }
 
    // -------------------------------------------------------------------------
@@ -149,14 +177,21 @@ namespace
    };
 
    // -------------------------------------------------------------------------
-   // wp_fractional_scale_v1 listener — preferred_scale is in 1/120ths units
-   // (120 = 1.0×, 180 = 1.5×, 240 = 2.0×, etc.)
+   // wp_fractional_scale_v1 listener
    void frac_scale_preferred(void* data, wp_fractional_scale_v1* /*frac*/,
                              uint32_t scale_120)
    {
       auto& state = *static_cast<app_state*>(data);
-      state.scale = float(scale_120) / 120.0f;
-      // Recreate buffer at new physical size and redraw
+      float new_scale = float(scale_120) / 120.0f;
+      if (state.resize_log)
+         std::fprintf(stderr, "[scale] preferred_scale=%u -> %.4f (was %.4f)\n",
+            scale_120, new_scale, state.scale);
+
+      // Ignore spurious scale decrease before window is fully configured.
+      if (!state.configured && new_scale < state.scale)
+         return;
+
+      state.scale = new_scale;
       if (state.configured)
       {
          create_buffer(state);
@@ -169,7 +204,7 @@ namespace
    };
 
    // -------------------------------------------------------------------------
-   // wl_registry listener — binds compositor, shm, viewporter, fractional scale
+   // wl_registry listener
    void registry_global(void* data, wl_registry* registry,
                         uint32_t name, const char* interface, uint32_t /*version*/)
    {
@@ -200,11 +235,14 @@ namespace
    // Allocate a shared-memory buffer for the current logical size × scale
    void create_buffer(app_state& state)
    {
-      // Physical pixel size: round up to avoid sub-pixel gaps
       int const    w      = int(std::ceil(state.size.x * state.scale));
       int const    h      = int(std::ceil(state.size.y * state.scale));
       int const    stride = w * 4;
       size_t const size   = size_t(stride) * h;
+
+      if (state.resize_log)
+         std::fprintf(stderr, "[cairo] create buffer: logical=%.0fx%.0f  scale=%.4f  physical=%dx%d\n",
+            state.size.x, state.size.y, state.scale, w, h);
 
       if (state.buffer)    { wl_buffer_destroy(state.buffer);        state.buffer   = nullptr; }
       if (state.pool)      { wl_shm_pool_destroy(state.pool);        state.pool     = nullptr; }
@@ -239,20 +277,54 @@ namespace
    {
       auto& state = *static_cast<app_state*>(data);
 
-      // Use compositor-suggested size if provided, otherwise keep requested size
       int w = int(state.size.x);
       int h = int(state.size.y);
       libdecor_configuration_get_content_size(config, frame, &w, &h);
 
-      state.size = {float(w), float(h)};
+      // First configure: create the buffer + do the initial render inline.
+      if (!state.configured)
+      {
+         state.size = {float(w), float(h)};
+         auto* st = libdecor_state_new(w, h);
+         libdecor_frame_commit(frame, st, config);
+         libdecor_state_free(st);
+         create_buffer(state);
+         state.configured = true;
+         render(state);
+         return;
+      }
+
+      // Known GNOME 46 HiDPI bug: libdecor reports the cursor grab position
+      // (roughly half the window size) as the content size on the very first
+      // resize configure. Ack with the current size so the frame doesn't shrink.
+      if (!state.first_resize_done)
+      {
+         if (w != int(state.size.x) || h != int(state.size.y))
+         {
+            state.first_resize_done = true;
+            if (w < int(state.size.x * 0.6f))
+            {
+               if (state.resize_log)
+                  std::fprintf(stderr, "[libdecor] suppressed spurious first-resize: content=%dx%d\n", w, h);
+               auto* st = libdecor_state_new(int(state.size.x), int(state.size.y));
+               libdecor_frame_commit(frame, st, config);
+               libdecor_state_free(st);
+               return;
+            }
+         }
+      }
+
+      if (state.resize_log)
+         std::fprintf(stderr, "[libdecor] configure: content=%dx%d  scale=%.4f\n",
+            w, h, state.scale);
 
       auto* st = libdecor_state_new(w, h);
       libdecor_frame_commit(frame, st, config);
       libdecor_state_free(st);
 
-      create_buffer(state);
-      state.configured = true;
-      render(state);
+      state.pend_w = w;
+      state.pend_h = h;
+      state.needs_resize = true;
    }
 
    void libdecor_frame_close(libdecor_frame* /*frame*/, void* data)
@@ -268,8 +340,6 @@ namespace
       .commit        = libdecor_frame_commit,
    };
 
-   // -------------------------------------------------------------------------
-   // libdecor context error handler
    void libdecor_error(libdecor* /*context*/, libdecor_error error, const char* msg)
    {
       throw std::runtime_error(std::string("libdecor error: ") + msg);
@@ -307,6 +377,7 @@ int run_app(
    state.size    = window_size;
    state.bkd     = background_color;
    state.animate = animate;
+   state.resize_log = std::getenv("ARTIST_RESIZE_LOG") != nullptr;
 
    state.display = wl_display_connect(nullptr);
    if (!state.display)
@@ -314,53 +385,62 @@ int run_app(
 
    state.registry = wl_display_get_registry(state.display);
    wl_registry_add_listener(state.registry, &registry_listener, &state);
-   wl_display_roundtrip(state.display);  // receive globals
-   wl_display_roundtrip(state.display);  // receive output scale
+   wl_display_roundtrip(state.display);
+   wl_display_roundtrip(state.display);
 
    if (!state.compositor || !state.shm)
       throw std::runtime_error("Missing required Wayland globals");
 
-   // libdecor manages xdg-shell and window decorations
-   state.decor   = libdecor_new(state.display, &decor_iface);
    state.surface = wl_compositor_create_surface(state.compositor);
+   if (state.viewporter)
+      state.viewport = wp_viewporter_get_viewport(state.viewporter, state.surface);
 
-   // Attach fractional scale + viewport for proper HiDPI support.
-   // Falls back gracefully to scale=1.0 if the compositor lacks the protocol.
-   if (state.frac_manager && state.viewporter)
+   // Fractional scale for preferred_scale events.
+   if (state.frac_manager)
    {
       state.frac_scale = wp_fractional_scale_manager_v1_get_fractional_scale(
          state.frac_manager, state.surface);
       wp_fractional_scale_v1_add_listener(
          state.frac_scale, &frac_scale_listener, &state);
-      state.viewport = wp_viewporter_get_viewport(state.viewporter, state.surface);
    }
 
-   state.frame = libdecor_decorate(state.decor, state.surface, &frame_iface, &state);
+   state.decor   = libdecor_new(state.display, &decor_iface);
+   state.frame   = libdecor_decorate(state.decor, state.surface, &frame_iface, &state);
 
-   libdecor_frame_set_title(state.frame, "Artist");
+   libdecor_frame_set_title(state.frame, "Artist (wayland cairo)");
    libdecor_frame_set_app_id(state.frame, "org.cycfi.artist");
-
-   // Fixed-size window: remove resize and maximize
-   libdecor_frame_unset_capabilities(state.frame, LIBDECOR_ACTION_RESIZE);
-   int const w = int(state.size.x);
-   int const h = int(state.size.y);
-   libdecor_frame_set_min_content_size(state.frame, w, h);
-   libdecor_frame_set_max_content_size(state.frame, w, h);
-
+   libdecor_frame_set_min_content_size(state.frame, 100, 100);
    libdecor_frame_map(state.frame);
 
-   // Pump until we get the configure event (sets configured = true)
    while (!state.configured)
    {
       if (libdecor_dispatch(state.decor, -1) < 0)
          throw std::runtime_error("libdecor_dispatch failed during init");
    }
 
+   // Automated resize benchmark (ARTIST_RESIZE_BENCH)
+   if (std::getenv("ARTIST_RESIZE_BENCH"))
+   {
+      run_resize_bench("wayland cairo", [&](int w, int h)
+      {
+         state.size = {float(w / state.scale), float(h / state.scale)};
+         state.buf_released = true;
+         create_buffer(state);
+         render(state);
+      });
+      state.running = false;
+   }
+
    if (animate)
    {
+      // The initial configure already rendered and committed a frame (leaving
+      // buf_released == false). Arm the first frame callback and commit so the
+      // animation chain starts; calling render() here would no-op on the busy
+      // buffer and the callback would never fire.
       auto* cb = wl_surface_frame(state.surface);
       wl_callback_add_listener(cb, &frame_listener, &state);
-      render(state);
+      wl_surface_commit(state.surface);
+      wl_display_flush(state.display);
    }
 
    // Main event loop
@@ -368,6 +448,24 @@ int run_app(
    {
       if (libdecor_dispatch(state.decor, -1) < 0)
          break;
+
+      if (state.needs_resize)
+      {
+         state.needs_resize = false;
+         if (int(state.size.x) != state.pend_w || int(state.size.y) != state.pend_h)
+         {
+            state.size = {float(state.pend_w), float(state.pend_h)};
+            auto const t0 = std::chrono::steady_clock::now();
+            state.buf_released = true;
+            create_buffer(state);
+            render(state);
+            auto const t1 = std::chrono::steady_clock::now();
+            if (state.resize_log)
+               std::fprintf(stderr, "[resize] %dx%d  %.2f ms\n",
+                  state.pend_w, state.pend_h,
+                  std::chrono::duration<double, std::milli>(t1 - t0).count());
+         }
+      }
    }
 
    // Tear down
@@ -375,10 +473,9 @@ int run_app(
    if (state.pool)         wl_shm_pool_destroy(state.pool);
    if (state.shm_data)     munmap(state.shm_data, state.shm_size);
    if (state.shm_fd >= 0)  close(state.shm_fd);
-   if (state.frac_scale)   wp_fractional_scale_v1_destroy(state.frac_scale);
    if (state.viewport)     wp_viewport_destroy(state.viewport);
+   if (state.frac_scale)   wp_fractional_scale_v1_destroy(state.frac_scale);
    if (state.frac_manager) wp_fractional_scale_manager_v1_destroy(state.frac_manager);
-   if (state.viewporter)   wp_viewporter_destroy(state.viewporter);
    libdecor_frame_unref(state.frame);
    libdecor_unref(state.decor);
    if (state.surface)      wl_surface_destroy(state.surface);
