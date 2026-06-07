@@ -128,6 +128,10 @@ jobs:
         # Exit 0 = clean shutdown, 124 = killed by timeout (both are success).
         # Any crash (SIGSEGV → 139, SIGABRT → 134, etc.) fails the job.
         # Use || to prevent set -e from firing on timeout's 124 exit code.
+        # Skia uses EGL/GL — force Mesa software rendering so Xvfb runners
+        # without a GPU still get a working OpenGL context.
+        [ "${{ matrix.backend }}" = "skia" ] && \
+          export LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe || true
         for bin in $(find build-hosts/examples -maxdepth 1 -type f -executable); do
           echo "--- smoke: $bin"
           xvfb-run --auto-servernum -- timeout 3 "$bin" \
@@ -146,6 +150,9 @@ jobs:
         # Give weston a moment to bind the socket before clients connect.
         sleep 1
         export WAYLAND_DISPLAY=ci-wayland
+        # Skia uses EGL/GL — force Mesa software rendering (no GPU on CI).
+        [ "${{ matrix.backend }}" = "skia" ] && \
+          export LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe || true
         FAILED=0
         for bin in $(find build-hosts/examples -maxdepth 1 -type f -executable); do
           echo "--- smoke: $bin"
@@ -352,6 +359,8 @@ jobs:
         # macOS ships gtimeout from brew coreutils; Linux/Windows use timeout.
         TOUT=$(command -v gtimeout 2>/dev/null || echo timeout)
         if [ "$RUNNER_OS" = "Linux" ]; then
+          # GTK3+Skia uses GtkGLArea (EGL/GL) — force Mesa software rendering.
+          export LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe
           for bin in $(find build/examples -maxdepth 1 -type f -executable 2>/dev/null); do
             echo "--- smoke: $bin"
             xvfb-run --auto-servernum -- $TOUT 3 "$bin" \

@@ -48,11 +48,11 @@ char const* mode_name(canvas::composite_op_enum mode)
    return "";
 }
 
-image dest{"dest.png"};
-image src{"src.png"};
-
 void composite_draw(canvas& cnv, point p, canvas::composite_op_enum mode)
 {
+   // Static locals: initialized on first call, after init_paths() has run.
+   static image dest{"dest.png"};
+   static image src{"src.png"};
    {
       auto save = cnv.new_state();
       cnv.add_rect({p.x, p.y, p.x + xsize, p.y + ysize});
