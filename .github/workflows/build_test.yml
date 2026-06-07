@@ -240,7 +240,8 @@ jobs:
           autoconf \
           autoconf-archive \
           automake \
-          libtool
+          libtool \
+          xvfb
 
     - name: Install dependencies (macOS)
       if: runner.os == 'macOS'
@@ -303,7 +304,7 @@ jobs:
             -B build
             -D CMAKE_BUILD_TYPE=$ENV{BUILD_TYPE}
             -D ARTIST_SKIA=ON
-            -D ARTIST_BUILD_EXAMPLES=OFF
+            -D ARTIST_BUILD_EXAMPLES=ON
             -D ARTIST_BUILD_TESTS=ON
             -G Ninja
             -D CMAKE_MAKE_PROGRAM=ninja
@@ -343,6 +344,32 @@ jobs:
     - name: Test
       run: ctest --verbose --test-dir build
       shell: bash
+
+    - name: Smoke test examples
+      shell: bash
+      run: |
+        # Run each example for 3 seconds. Exit 0 = clean, 124 = killed by timeout — both pass.
+        # A crash (SIGSEGV → 139, abort → 134, etc.) is a non-zero, non-124 code and fails.
+        smoke() {
+          echo "--- smoke: $1"
+          timeout 3 "$1"
+          local code=$?
+          [ $code -eq 0 ] || [ $code -eq 124 ] || exit $code
+        }
+        if [ "$RUNNER_OS" = "Linux" ]; then
+          for bin in $(find build/examples -maxdepth 1 -type f -executable 2>/dev/null); do
+            xvfb-run --auto-servernum -- smoke "$bin"
+          done
+        elif [ "$RUNNER_OS" = "macOS" ]; then
+          for app in build/examples/*.app; do
+            name=$(basename "${app%.app}")
+            smoke "$app/Contents/MacOS/$name"
+          done
+        else
+          for exe in $(find build/examples -maxdepth 2 -name "*.exe" 2>/dev/null); do
+            smoke "$exe"
+          done
+        fi
 
     - name: Upload test results
       if: always()
@@ -404,8 +431,10 @@ jobs:
           libfontconfig1-dev \
           libfreetype6-dev \
           libharfbuzz-dev \
+          libgtk-3-dev \
           pkg-config \
-          ninja-build
+          ninja-build \
+          xvfb
 
     - name: Install dependencies (macOS)
       if: runner.os == 'macOS'
@@ -447,7 +476,7 @@ jobs:
             -B build-cairo
             -D CMAKE_BUILD_TYPE=$ENV{BUILD_TYPE}
             -D ARTIST_CAIRO=ON
-            -D ARTIST_BUILD_EXAMPLES=OFF
+            -D ARTIST_BUILD_EXAMPLES=ON
             -D ARTIST_BUILD_TESTS=ON
             -G Ninja
             -D CMAKE_MAKE_PROGRAM=ninja
@@ -488,6 +517,30 @@ jobs:
       run: ctest --verbose --test-dir build-cairo
       shell: bash
 
+    - name: Smoke test examples
+      shell: bash
+      run: |
+        smoke() {
+          echo "--- smoke: $1"
+          timeout 3 "$1"
+          local code=$?
+          [ $code -eq 0 ] || [ $code -eq 124 ] || exit $code
+        }
+        if [ "$RUNNER_OS" = "Linux" ]; then
+          for bin in $(find build-cairo/examples -maxdepth 1 -type f -executable 2>/dev/null); do
+            xvfb-run --auto-servernum -- smoke "$bin"
+          done
+        elif [ "$RUNNER_OS" = "macOS" ]; then
+          for app in build-cairo/examples/*.app; do
+            name=$(basename "${app%.app}")
+            smoke "$app/Contents/MacOS/$name"
+          done
+        else
+          for exe in $(find build-cairo/examples -maxdepth 2 -name "*.exe" 2>/dev/null); do
+            smoke "$exe"
+          done
+        fi
+
     - name: Upload test results
       if: always()
       uses: actions/upload-artifact@v4
@@ -519,7 +572,7 @@ jobs:
       run: |
         cmake -S . -B build-quartz2d \
           -DARTIST_QUARTZ_2D=ON \
-          -DARTIST_BUILD_EXAMPLES=OFF \
+          -DARTIST_BUILD_EXAMPLES=ON \
           -DARTIST_BUILD_TESTS=ON \
           -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
           -G Ninja
@@ -529,6 +582,18 @@ jobs:
 
     - name: Test
       run: ctest --verbose --test-dir build-quartz2d
+
+    - name: Smoke test examples
+      shell: bash
+      run: |
+        for app in build-quartz2d/examples/*.app; do
+          name=$(basename "${app%.app}")
+          bin="$app/Contents/MacOS/$name"
+          echo "--- smoke: $bin"
+          timeout 3 "$bin"
+          code=$?
+          [ $code -eq 0 ] || [ $code -eq 124 ] || exit $code
+        done
 
     - name: Upload test results
       if: always()
