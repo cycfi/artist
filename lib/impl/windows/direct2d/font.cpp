@@ -8,8 +8,11 @@
 =============================================================================*/
 #include <artist/font.hpp>
 #include "font_impl.hpp"
+#include <dwrite_3.h>
+#include <infra/filesystem.hpp>
 #include <sstream>
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 
 namespace cycfi::artist
@@ -49,6 +52,78 @@ namespace cycfi::artist
          }
          return out;
       }
+
+      // Process-wide custom font collection built from the font files in
+      // get_user_fonts_directory(). DirectWrite only exposes *system* fonts by
+      // default, but Artist's tests/examples ship their fonts (Open Sans, …) as
+      // .ttf in resources/fonts (the other backends load those files too). Read
+      // them into a collection so font_descr family names resolve to the bundled
+      // faces. Returns nullptr if there are none. (Mirrors skia/font.cpp.)
+      IDWriteFontCollection* custom_font_collection()
+      {
+         static IDWriteFontCollection* coll = []() -> IDWriteFontCollection*
+         {
+            IDWriteFactory3* f3 = nullptr;
+            if (FAILED(dwrite_factory()->QueryInterface(
+                  __uuidof(IDWriteFactory3), reinterpret_cast<void**>(&f3))) || !f3)
+               return nullptr;
+
+            IDWriteFontSetBuilder* builder0 = nullptr;
+            IDWriteFontSetBuilder1* builder = nullptr;
+            if (FAILED(f3->CreateFontSetBuilder(&builder0)) || !builder0 ||
+                FAILED(builder0->QueryInterface(
+                  __uuidof(IDWriteFontSetBuilder1), reinterpret_cast<void**>(&builder))))
+            {
+               if (builder0) builder0->Release();
+               f3->Release();
+               return nullptr;
+            }
+
+            fs::path dir;
+            try { dir = get_user_fonts_directory(); } catch (...) {}
+
+            int added = 0;
+            std::error_code ec;
+            if (!dir.empty() && fs::exists(dir, ec) && fs::is_directory(dir, ec))
+            {
+               for (auto const& e : fs::directory_iterator(dir, ec))
+               {
+                  if (!e.is_regular_file(ec))
+                     continue;
+                  std::string ext = e.path().extension().string();
+                  for (auto& ch : ext) ch = char(std::tolower((unsigned char)ch));
+                  if (ext != ".ttf" && ext != ".otf" && ext != ".ttc")
+                     continue;
+                  IDWriteFontFile* file = nullptr;
+                  std::wstring wp = e.path().wstring();
+                  if (SUCCEEDED(f3->CreateFontFileReference(wp.c_str(), nullptr, &file)) && file)
+                  {
+                     if (SUCCEEDED(builder->AddFontFile(file)))
+                        ++added;
+                     file->Release();
+                  }
+               }
+            }
+
+            IDWriteFontCollection* result = nullptr;
+            if (added)
+            {
+               IDWriteFontSet* set = nullptr;
+               if (SUCCEEDED(builder0->CreateFontSet(&set)) && set)
+               {
+                  IDWriteFontCollection1* c1 = nullptr;
+                  if (SUCCEEDED(f3->CreateFontCollectionFromFontSet(set, &c1)) && c1)
+                     result = c1;   // IDWriteFontCollection1 : IDWriteFontCollection
+                  set->Release();
+               }
+            }
+            builder->Release();
+            builder0->Release();
+            f3->Release();
+            return result;
+         }();
+         return coll;
+      }
    }
 
    namespace
@@ -84,15 +159,22 @@ namespace cycfi::artist
          return DWRITE_FONT_STRETCH_NORMAL;
       }
 
-      // Resolve a font face for metrics (and confirm the family).
+      // Resolve a font face for metrics (and confirm the family). `coll` is the
+      // collection the text format uses (custom bundled fonts, or nullptr for
+      // the system collection).
       void resolve(
-         std::wstring const& family
+         IDWriteFontCollection* coll
+       , std::wstring const& family
        , DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STYLE style, DWRITE_FONT_STRETCH stretch
        , IDWriteFontFace** face_out)
       {
-         IDWriteFontCollection* coll = nullptr;
-         if (FAILED(d2d::dwrite_factory()->GetSystemFontCollection(&coll)))
-            return;
+         IDWriteFontCollection* sys = nullptr;
+         if (!coll)
+         {
+            if (FAILED(d2d::dwrite_factory()->GetSystemFontCollection(&sys)))
+               return;
+            coll = sys;
+         }
          UINT32 index = 0;
          BOOL exists = FALSE;
          coll->FindFamilyName(family.c_str(), &index, &exists);
@@ -110,7 +192,8 @@ namespace cycfi::artist
             }
             d2d::release(fam);
          }
-         d2d::release(coll);
+         if (sys)
+            d2d::release(sys);
       }
    }
 
@@ -135,12 +218,25 @@ namespace cycfi::artist
       std::wstring wfamily = d2d::to_utf16(std::string_view{first});
 
       _ptr->size = descr._size;
+
+      // Prefer the bundled (custom) collection when it has this family; else use
+      // the system collection (nullptr => system in CreateTextFormat).
+      IDWriteFontCollection* coll = nullptr;
+      if (auto custom = d2d::custom_font_collection())
+      {
+         UINT32 idx = 0;
+         BOOL ex = FALSE;
+         custom->FindFamilyName(wfamily.c_str(), &idx, &ex);
+         if (ex)
+            coll = custom;
+      }
+
       d2d::dwrite_factory()->CreateTextFormat(
-         wfamily.c_str(), nullptr, weight, style, stretch,
+         wfamily.c_str(), coll, weight, style, stretch,
          descr._size, L"en-us", &_ptr->format
       );
 
-      resolve(wfamily, weight, style, stretch, &_ptr->face);
+      resolve(coll, wfamily, weight, style, stretch, &_ptr->face);
       if (_ptr->face)
       {
          DWRITE_FONT_METRICS fm{};
