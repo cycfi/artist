@@ -57,6 +57,20 @@ namespace cycfi::artist::d2d
       return *maker.ptr;
    }
 
+   IDWriteFactory* dwrite_factory()
+   {
+      static IDWriteFactory* f = []
+      {
+         IDWriteFactory* p = nullptr;
+         DWriteCreateFactory(
+            DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory),
+            reinterpret_cast<IUnknown**>(&p)
+         );
+         return p;
+      }();
+      return f;
+   }
+
    ////////////////////////////////////////////////////////////////////////////
    // Brushes
    ////////////////////////////////////////////////////////////////////////////
