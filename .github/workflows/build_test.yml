@@ -134,7 +134,9 @@ jobs:
           export LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe || true
         for bin in $(find build-hosts/examples -maxdepth 1 -type f -executable); do
           echo "--- smoke: $bin"
-          xvfb-run --auto-servernum -- timeout 3 "$bin" \
+          # Run from the binary's own directory so init_paths() finds resources/.
+          dir=$(dirname "$bin"); name=$(basename "$bin")
+          (cd "$dir" && xvfb-run --auto-servernum -- timeout 3 "./$name") \
             || { code=$?; [ $code -eq 124 ] || exit $code; }
         done
 
@@ -156,7 +158,8 @@ jobs:
         FAILED=0
         for bin in $(find build-hosts/examples -maxdepth 1 -type f -executable); do
           echo "--- smoke: $bin"
-          timeout 3 "$bin" \
+          dir=$(dirname "$bin"); name=$(basename "$bin")
+          (cd "$dir" && timeout 3 "./$name") \
             || { code=$?; [ $code -eq 124 ] || FAILED=$code; }
         done
         kill "$WESTON_PID" 2>/dev/null || true
@@ -363,20 +366,23 @@ jobs:
           export LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe
           for bin in $(find build/examples -maxdepth 1 -type f -executable 2>/dev/null); do
             echo "--- smoke: $bin"
-            xvfb-run --auto-servernum -- $TOUT 3 "$bin" \
+            dir=$(dirname "$bin"); name=$(basename "$bin")
+            (cd "$dir" && xvfb-run --auto-servernum -- $TOUT 3 "./$name") \
               || { code=$?; [ $code -eq 124 ] || exit $code; }
           done
         elif [ "$RUNNER_OS" = "macOS" ]; then
           for app in build/examples/*.app; do
-            bin="$app/Contents/MacOS/$(basename "${app%.app}")"
+            name=$(basename "${app%.app}")
+            bin="$app/Contents/MacOS/$name"
             echo "--- smoke: $bin"
-            $TOUT 3 "$bin" \
+            (cd "$app/Contents/MacOS" && $TOUT 3 "./$name") \
               || { code=$?; [ $code -eq 124 ] || exit $code; }
           done
         else
           for exe in $(find build/examples -maxdepth 2 -name "*.exe" 2>/dev/null); do
             echo "--- smoke: $exe"
-            $TOUT 3 "$exe" \
+            dir=$(dirname "$exe"); name=$(basename "$exe")
+            (cd "$dir" && $TOUT 3 "./$name") \
               || { code=$?; [ $code -eq 124 ] || exit $code; }
           done
         fi
@@ -534,20 +540,22 @@ jobs:
         if [ "$RUNNER_OS" = "Linux" ]; then
           for bin in $(find build-cairo/examples -maxdepth 1 -type f -executable 2>/dev/null); do
             echo "--- smoke: $bin"
-            xvfb-run --auto-servernum -- $TOUT 3 "$bin" \
+            dir=$(dirname "$bin"); name=$(basename "$bin")
+            (cd "$dir" && xvfb-run --auto-servernum -- $TOUT 3 "./$name") \
               || { code=$?; [ $code -eq 124 ] || exit $code; }
           done
         elif [ "$RUNNER_OS" = "macOS" ]; then
           for app in build-cairo/examples/*.app; do
-            bin="$app/Contents/MacOS/$(basename "${app%.app}")"
-            echo "--- smoke: $bin"
-            $TOUT 3 "$bin" \
+            name=$(basename "${app%.app}")
+            echo "--- smoke: $app"
+            (cd "$app/Contents/MacOS" && $TOUT 3 "./$name") \
               || { code=$?; [ $code -eq 124 ] || exit $code; }
           done
         else
           for exe in $(find build-cairo/examples -maxdepth 2 -name "*.exe" 2>/dev/null); do
             echo "--- smoke: $exe"
-            $TOUT 3 "$exe" \
+            dir=$(dirname "$exe"); name=$(basename "$exe")
+            (cd "$dir" && $TOUT 3 "./$name") \
               || { code=$?; [ $code -eq 124 ] || exit $code; }
           done
         fi
@@ -599,9 +607,9 @@ jobs:
       run: |
         TOUT=$(command -v gtimeout 2>/dev/null || echo timeout)
         for app in build-quartz2d/examples/*.app; do
-          bin="$app/Contents/MacOS/$(basename "${app%.app}")"
-          echo "--- smoke: $bin"
-          $TOUT 3 "$bin" \
+          name=$(basename "${app%.app}")
+          echo "--- smoke: $app"
+          (cd "$app/Contents/MacOS" && $TOUT 3 "./$name") \
             || { code=$?; [ $code -eq 124 ] || exit $code; }
         done
 
