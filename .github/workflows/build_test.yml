@@ -379,6 +379,10 @@ jobs:
               || { code=$?; [ $code -eq 124 ] || exit $code; }
           done
         else
+          # On Windows, vcpkg dynamic DLLs live in vcpkg_installed/x64-windows/bin.
+          # Add them to PATH so the runtime loader can find Skia, etc.
+          VCPKG_BIN=$(cygpath -u "$(pwd)/build/vcpkg_installed/x64-windows/bin" 2>/dev/null || true)
+          [ -d "$VCPKG_BIN" ] && export PATH="$VCPKG_BIN:$PATH" || true
           for exe in $(find build/examples -maxdepth 2 -name "*.exe" 2>/dev/null); do
             echo "--- smoke: $exe"
             dir=$(dirname "$exe"); name=$(basename "$exe")
@@ -552,6 +556,8 @@ jobs:
               || { code=$?; [ $code -eq 124 ] || exit $code; }
           done
         else
+          VCPKG_BIN=$(cygpath -u "$(pwd)/build-cairo/vcpkg_installed/x64-windows/bin" 2>/dev/null || true)
+          [ -d "$VCPKG_BIN" ] && export PATH="$VCPKG_BIN:$PATH" || true
           for exe in $(find build-cairo/examples -maxdepth 2 -name "*.exe" 2>/dev/null); do
             echo "--- smoke: $exe"
             dir=$(dirname "$exe"); name=$(basename "$exe")
