@@ -102,6 +102,20 @@ if (MSVC AND ARTIST_DIRECT2D)
    add_compile_options(/EHsc)
 endif()
 
+# The MSVC v14.39 (VS 17.9) optimizer miscompiles the Direct2D backend: a plain
+# /O2 build emitted spurious geometry on the per-corner round-rect path (the
+# "shapes2 / Drawing2" artifact). This is a compiler codegen bug, not Artist —
+# clang-cl and MSVC v14.44 (VS 17.14) both render correctly, Debug and ASan are
+# clean, and the implicated locals are properly initialized. Require a known-good
+# toolset (MSVC_VERSION 1944 == v14.44) rather than ship a silently wrong build.
+if (MSVC AND ARTIST_DIRECT2D AND MSVC_VERSION LESS 1944)
+   message(FATAL_ERROR
+      "The Direct2D backend requires the MSVC v14.44 toolset (Visual Studio "
+      "17.14) or newer. Toolsets up to v14.39 miscompile it under /O2 (the "
+      "Drawing2 codegen bug). Detected MSVC_VERSION=${MSVC_VERSION}. Update the "
+      "\"MSVC v143\" C++ build tools, or build with clang-cl.")
+endif()
+
 if (APPLE)
    if (NOT CMAKE_OSX_ARCHITECTURES)
       set(CMAKE_OSX_ARCHITECTURES ${CMAKE_SYSTEM_PROCESSOR})
