@@ -46,6 +46,7 @@ namespace cycfi::artist::d2d
       _geometry_gens.clear();
       _path_gens.clear();
       _path_gens_state = path_ended;
+      _ops.clear();
    }
 
    void path_impl::absorb(path_impl const& other)
@@ -150,6 +151,7 @@ namespace cycfi::artist::d2d
 
    void path_impl::move_to(point p)
    {
+      _ops.push_back({path_op::move_op, {p.x, p.y, 0, 0, 0, 0}});
       close_sub_path_if_open();
       _path_gens_state = path_started;
       _path_gens.push_back(
@@ -165,6 +167,7 @@ namespace cycfi::artist::d2d
 
    void path_impl::line_to(point p)
    {
+      _ops.push_back({path_op::line_op, {p.x, p.y, 0, 0, 0, 0}});
       if (_path_gens_state == path_ended)
       {
          move_to(p);
@@ -185,6 +188,8 @@ namespace cycfi::artist::d2d
     , bool ccw
    )
    {
+      _ops.push_back({path_op::arc_op,
+         {p.x, p.y, radius, start_angle, end_angle, ccw? 1.0f : 0.0f}});
       // A non-positive radius is a degenerate corner (callers pass e.g. -1 to
       // mean "sharp"). A D2D arc segment with a <=0 size is invalid and fails
       // GeometrySink::Close, so collapse it to a point.
@@ -229,6 +234,7 @@ namespace cycfi::artist::d2d
 
    void path_impl::arc_to(point p1, point p2, float radius)
    {
+      _ops.push_back({path_op::arc_to_op, {p1.x, p1.y, p2.x, p2.y, radius, 0}});
       // Adapted from http://code.google.com/p/fxcanvas/
       if (radius == 0)
       {
@@ -273,6 +279,7 @@ namespace cycfi::artist::d2d
 
    void path_impl::quadratic_curve_to(point cp, point end)
    {
+      _ops.push_back({path_op::quad_op, {cp.x, cp.y, end.x, end.y, 0, 0}});
       if (_path_gens_state == path_ended)
          move_to({cp.x, cp.y});
 
@@ -291,6 +298,7 @@ namespace cycfi::artist::d2d
 
    void path_impl::bezier_curve_to(point cp1, point cp2, point end)
    {
+      _ops.push_back({path_op::bezier_op, {cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y}});
       if (_path_gens_state == path_ended)
          move_to({cp1.x, cp1.y});
 

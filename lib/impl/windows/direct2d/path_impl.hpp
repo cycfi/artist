@@ -17,6 +17,30 @@
 
 namespace cycfi::artist::d2d
 {
+   // A structural record of each path-building operation. The geometry/path
+   // generators are std::functions (not comparable), so path::operator== compares
+   // these op logs (plus the fill mode) instead.
+   struct path_op
+   {
+      enum kind
+      {
+         rect_op, round_rect_op, circle_op,
+         move_op, line_op, arc_op, arc_to_op, quad_op, bezier_op, close_op
+      };
+      kind  op;
+      float p[6];
+
+      bool operator==(path_op const& o) const
+      {
+         if (op != o.op)
+            return false;
+         for (int i = 0; i != 6; ++i)
+            if (p[i] != o.p[i])
+               return false;
+         return true;
+      }
+   };
+
    struct path_impl
    {
    public:
@@ -50,6 +74,7 @@ namespace cycfi::artist::d2d
                             , _path_gens_state(rhs._path_gens_state)
                             , _start(rhs._start)
                             , _cp(rhs._cp)
+                            , _ops(rhs._ops)
                            {}
 
       path_impl&           operator=(path_impl const& rhs)
@@ -63,8 +88,15 @@ namespace cycfi::artist::d2d
                                  _path_gens_state = rhs._path_gens_state;
                                  _start = rhs._start;
                                  _cp = rhs._cp;
+                                 _ops = rhs._ops;
                               }
                               return *this;
+                           }
+
+      // Structural equality: same op sequence and same fill rule.
+      bool                 equals(path_impl const& rhs) const
+                           {
+                              return _mode == rhs._mode && _ops == rhs._ops;
                            }
 
       bool                 empty() const;
@@ -139,6 +171,7 @@ namespace cycfi::artist::d2d
       path_gen_state       _path_gens_state = path_ended;
       point                _start;
       point                _cp;
+      std::vector<path_op> _ops;   // structural log for operator==
    };
 
    ////////////////////////////////////////////////////////////////////////////
@@ -180,16 +213,19 @@ namespace cycfi::artist::d2d
 
    inline void path_impl::add(rect r)
    {
+      _ops.push_back({path_op::rect_op, {r.left, r.top, r.right, r.bottom, 0, 0}});
       add_gen([=](auto){ return make_rect(r); });
    }
 
    inline void path_impl::add(rect r, float radius)
    {
+      _ops.push_back({path_op::round_rect_op, {r.left, r.top, r.right, r.bottom, radius, 0}});
       add_gen([=](auto){ return make_round_rect(r, radius); });
    }
 
    inline void path_impl::add(circle c)
    {
+      _ops.push_back({path_op::circle_op, {c.cx, c.cy, c.radius, 0, 0, 0}});
       add_gen([=](auto){ return make_circle(c); });
    }
 
@@ -201,6 +237,7 @@ namespace cycfi::artist::d2d
 
    inline void path_impl::close_path()
    {
+      _ops.push_back({path_op::close_op, {0, 0, 0, 0, 0, 0}});
       end_path(true);
    }
 
