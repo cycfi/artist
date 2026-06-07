@@ -65,6 +65,7 @@ public:
 
    void           render();
    void           on_resize(int w_px, int h_px);
+   void           on_dpi_changed(unsigned dpi, RECT const* suggested);
 
 private:
 
@@ -263,6 +264,15 @@ LRESULT CALLBACK handle_event(
             win->on_resize(LOWORD(lParam), HIWORD(lParam));
          break;
 
+      case WM_DPICHANGED:
+         // Moved to a monitor with a different scale factor. Update the scale and
+         // adopt Windows' suggested rect; the WM_SIZE that follows recreates the
+         // surface at the new resolution.
+         if (win)
+            win->on_dpi_changed(
+               HIWORD(wParam), reinterpret_cast<RECT const*>(lParam));
+         break;
+
       case WM_KEYDOWN:
          if (wParam == VK_ESCAPE)
          {
@@ -344,6 +354,19 @@ void window::on_resize(int w_px, int h_px)
    render();
 }
 
+void window::on_dpi_changed(unsigned dpi, RECT const* suggested)
+{
+   _scale = dpi / 96.0f;
+   if (suggested)
+      SetWindowPos(
+         WND, nullptr,
+         suggested->left, suggested->top,
+         suggested->right - suggested->left,
+         suggested->bottom - suggested->top,
+         SWP_NOZORDER | SWP_NOACTIVATE);
+   // The WM_SIZE from the move recreates the surface at the new scale.
+}
+
 namespace cycfi::artist
 {
    void add_relative_paths(const fs::path& base, const fs::path& rel_path)
@@ -379,7 +402,10 @@ int run_app(
  , bool animate
 )
 {
-   SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE);
+   // Per-monitor-v2: render at the real pixel resolution and handle DPI changes
+   // (WM_DPICHANGED) ourselves so Windows never bitmap-stretches the window.
+   // System-DPI awareness (the old call) left 4K/scaled displays pixelated.
+   SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
    window win{window_size, bkd, animate};
 
    MSG msg = {};
