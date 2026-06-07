@@ -32,6 +32,7 @@ public:
 
 private:
 
+   void        make_offscreen_dc(HDC hdc, int w, int h);
    ATOM        registerClass(HINSTANCE hInstance);
 
    extent      _size;
@@ -45,11 +46,6 @@ private:
 };
 
 static window* g_window = nullptr;
-
-namespace
-{
-   void make_offscreen_dc(HDC hdc, window* win, HWND hwnd, int w, int h);
-}
 
 void window::render(HWND hwnd)
 {
@@ -66,7 +62,7 @@ void window::render(HWND hwnd)
    int win_height = r.bottom - r.top;
 
    if (hdc != _hdc || win_width != int(_size.x * _scale) || win_height != int(_size.y * _scale))
-      make_offscreen_dc(hdc, this, hwnd, win_width, win_height);
+      make_offscreen_dc(hdc, win_width, win_height);
 
    HANDLE hold = SelectObject(_offscreen_hdc, _offscreen_buff);
 
@@ -92,19 +88,18 @@ void window::render(HWND hwnd)
    EndPaint(hwnd, &ps);
 }
 
+void window::make_offscreen_dc(HDC hdc, int w, int h)
+{
+   if (_offscreen_buff) DeleteObject(_offscreen_buff);
+   if (_offscreen_hdc)  DeleteDC(_offscreen_hdc);
+
+   _hdc            = hdc;
+   _offscreen_hdc  = CreateCompatibleDC(hdc);
+   _offscreen_buff = CreateCompatibleBitmap(hdc, w, h);
+}
+
 namespace
 {
-   void make_offscreen_dc(HDC hdc, window* win, HWND hwnd, int w, int h)
-   {
-      (void)hwnd;
-      if (win->_offscreen_buff) DeleteObject(win->_offscreen_buff);
-      if (win->_offscreen_hdc)  DeleteDC(win->_offscreen_hdc);
-
-      win->_hdc            = hdc;
-      win->_offscreen_hdc  = CreateCompatibleDC(hdc);
-      win->_offscreen_buff = CreateCompatibleBitmap(hdc, w, h);
-   }
-
    LRESULT CALLBACK handle_event(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
    {
       switch (message)

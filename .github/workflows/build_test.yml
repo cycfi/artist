@@ -67,7 +67,7 @@ jobs:
       if: matrix.backend == 'skia'
       run: |
         sudo apt-get install -y \
-          libharfbuzz-dev libunibreak-dev fontconfig \
+          libharfbuzz-dev libunibreak-dev libfontconfig1-dev \
           libgl1-mesa-dev libglu1-mesa-dev \
           autoconf autoconf-archive automake libtool
 
@@ -127,12 +127,11 @@ jobs:
         # Run each example for up to 3 seconds under a virtual framebuffer.
         # Exit 0 = clean shutdown, 124 = killed by timeout (both are success).
         # Any crash (SIGSEGV → 139, SIGABRT → 134, etc.) fails the job.
+        # Use || to prevent set -e from firing on timeout's 124 exit code.
         for bin in $(find build-hosts/examples -maxdepth 1 -type f -executable); do
           echo "--- smoke: $bin"
-          xvfb-run --auto-servernum -- timeout 3 "$bin"
-          code=$?
-          # 124 = timeout (binary was still running — that is a pass)
-          [ $code -eq 0 ] || [ $code -eq 124 ] || exit $code
+          xvfb-run --auto-servernum -- timeout 3 "$bin" \
+            || { code=$?; [ $code -eq 124 ] || exit $code; }
         done
 
     - name: Smoke test — Wayland host (weston headless)
@@ -150,9 +149,8 @@ jobs:
         FAILED=0
         for bin in $(find build-hosts/examples -maxdepth 1 -type f -executable); do
           echo "--- smoke: $bin"
-          timeout 3 "$bin"
-          code=$?
-          [ $code -eq 0 ] || [ $code -eq 124 ] || FAILED=$code
+          timeout 3 "$bin" \
+            || { code=$?; [ $code -eq 124 ] || FAILED=$code; }
         done
         kill "$WESTON_PID" 2>/dev/null || true
         exit $FAILED
@@ -245,7 +243,7 @@ jobs:
 
     - name: Install dependencies (macOS)
       if: runner.os == 'macOS'
-      run: brew install fontconfig ninja
+      run: brew install fontconfig ninja coreutils
 
     - name: Bootstrap vcpkg (macOS)
       if: runner.os == 'macOS'
@@ -350,24 +348,27 @@ jobs:
       run: |
         # Run each example for 3 seconds. Exit 0 = clean, 124 = killed by timeout — both pass.
         # A crash (SIGSEGV → 139, abort → 134, etc.) is a non-zero, non-124 code and fails.
-        smoke() {
-          echo "--- smoke: $1"
-          timeout 3 "$1"
-          local code=$?
-          [ $code -eq 0 ] || [ $code -eq 124 ] || exit $code
-        }
+        # Use || to prevent set -e from firing on timeout's 124 exit code.
+        # macOS ships gtimeout from brew coreutils; Linux/Windows use timeout.
+        TOUT=$(command -v gtimeout 2>/dev/null || echo timeout)
         if [ "$RUNNER_OS" = "Linux" ]; then
           for bin in $(find build/examples -maxdepth 1 -type f -executable 2>/dev/null); do
-            xvfb-run --auto-servernum -- smoke "$bin"
+            echo "--- smoke: $bin"
+            xvfb-run --auto-servernum -- $TOUT 3 "$bin" \
+              || { code=$?; [ $code -eq 124 ] || exit $code; }
           done
         elif [ "$RUNNER_OS" = "macOS" ]; then
           for app in build/examples/*.app; do
-            name=$(basename "${app%.app}")
-            smoke "$app/Contents/MacOS/$name"
+            bin="$app/Contents/MacOS/$(basename "${app%.app}")"
+            echo "--- smoke: $bin"
+            $TOUT 3 "$bin" \
+              || { code=$?; [ $code -eq 124 ] || exit $code; }
           done
         else
           for exe in $(find build/examples -maxdepth 2 -name "*.exe" 2>/dev/null); do
-            smoke "$exe"
+            echo "--- smoke: $exe"
+            $TOUT 3 "$exe" \
+              || { code=$?; [ $code -eq 124 ] || exit $code; }
           done
         fi
 
@@ -438,7 +439,7 @@ jobs:
 
     - name: Install dependencies (macOS)
       if: runner.os == 'macOS'
-      run: brew install cairo fontconfig freetype harfbuzz ninja
+      run: brew install cairo fontconfig freetype harfbuzz ninja coreutils
 
     - name: Bootstrap vcpkg (Windows)
       if: runner.os == 'Windows'
@@ -520,24 +521,25 @@ jobs:
     - name: Smoke test examples
       shell: bash
       run: |
-        smoke() {
-          echo "--- smoke: $1"
-          timeout 3 "$1"
-          local code=$?
-          [ $code -eq 0 ] || [ $code -eq 124 ] || exit $code
-        }
+        TOUT=$(command -v gtimeout 2>/dev/null || echo timeout)
         if [ "$RUNNER_OS" = "Linux" ]; then
           for bin in $(find build-cairo/examples -maxdepth 1 -type f -executable 2>/dev/null); do
-            xvfb-run --auto-servernum -- smoke "$bin"
+            echo "--- smoke: $bin"
+            xvfb-run --auto-servernum -- $TOUT 3 "$bin" \
+              || { code=$?; [ $code -eq 124 ] || exit $code; }
           done
         elif [ "$RUNNER_OS" = "macOS" ]; then
           for app in build-cairo/examples/*.app; do
-            name=$(basename "${app%.app}")
-            smoke "$app/Contents/MacOS/$name"
+            bin="$app/Contents/MacOS/$(basename "${app%.app}")"
+            echo "--- smoke: $bin"
+            $TOUT 3 "$bin" \
+              || { code=$?; [ $code -eq 124 ] || exit $code; }
           done
         else
           for exe in $(find build-cairo/examples -maxdepth 2 -name "*.exe" 2>/dev/null); do
-            smoke "$exe"
+            echo "--- smoke: $exe"
+            $TOUT 3 "$exe" \
+              || { code=$?; [ $code -eq 124 ] || exit $code; }
           done
         fi
 
@@ -566,7 +568,7 @@ jobs:
         submodules: recursive
 
     - name: Install dependencies
-      run: brew install ninja
+      run: brew install ninja coreutils
 
     - name: Configure
       run: |
@@ -586,13 +588,12 @@ jobs:
     - name: Smoke test examples
       shell: bash
       run: |
+        TOUT=$(command -v gtimeout 2>/dev/null || echo timeout)
         for app in build-quartz2d/examples/*.app; do
-          name=$(basename "${app%.app}")
-          bin="$app/Contents/MacOS/$name"
+          bin="$app/Contents/MacOS/$(basename "${app%.app}")"
           echo "--- smoke: $bin"
-          timeout 3 "$bin"
-          code=$?
-          [ $code -eq 0 ] || [ $code -eq 124 ] || exit $code
+          $TOUT 3 "$bin" \
+            || { code=$?; [ $code -eq 124 ] || exit $code; }
         done
 
     - name: Upload test results
