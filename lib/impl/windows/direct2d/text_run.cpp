@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <cmath>
 #include <artist/text_run.hpp>
 #include <artist/canvas.hpp>
 #include <infra/utf8_utils.hpp>
@@ -197,9 +198,24 @@ namespace cycfi::artist
    {
       if (!_layout)
          return 0;
+
+      // The shared engine's contract (text_layout.hpp): caret_index must select
+      // the FIRST row whose top is >= p.y (top-based, like the Quartz/Cairo
+      // lower_bound), not the row that geometrically contains p.y. DirectWrite's
+      // HitTestPoint is body-based (row containing y), so map p.y to the target
+      // row ourselves, then hit-test that row's vertical centre for the column.
+      float lh = _line_height > 0? _line_height : 1.0f;
+      long n = long(num_lines());
+      long row = long(std::ceil(p.y / lh - 0.01f));   // first row with top >= y
+      if (row < 0)
+         row = 0;
+      if (row > n - 1)
+         row = n - 1;
+      float yy = (float(row) + 0.5f) * lh;
+
       BOOL trailing = FALSE, inside = FALSE;
       DWRITE_HIT_TEST_METRICS hm{};
-      _layout->HitTestPoint(p.x - _offset_x, p.y, &trailing, &inside, &hm);
+      _layout->HitTestPoint(p.x - _offset_x, yy, &trailing, &inside, &hm);
       std::size_t u16 = hm.textPosition + (trailing? hm.length : 0);
       return u32_of(u16);
    }
