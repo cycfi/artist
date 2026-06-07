@@ -23,16 +23,6 @@
 # define GL_FRAMEBUFFER_BINDING 0x8CA6
 #endif
 
-// Windows' <GL/gl.h> is frozen at OpenGL 1.1, so tokens introduced in later
-// versions are absent. Define the few we need (used only as constant args to
-// glGetIntegerv / Skia's GrGLFramebufferInfo) rather than pull in <GL/glext.h>.
-#ifndef GL_RGBA8
-# define GL_RGBA8 0x8058
-#endif
-#ifndef GL_FRAMEBUFFER_BINDING
-# define GL_FRAMEBUFFER_BINDING 0x8CA6
-#endif
-
 #include <SkImage.h>
 #include <SkColorSpace.h>
 #include <SkCanvas.h>
@@ -74,6 +64,7 @@ public:
                   ~window();
 
    void           render();
+   void           on_resize(int w_px, int h_px);
 
 private:
 
@@ -101,7 +92,9 @@ window::window(extent size, color bkd, bool animate)
  , _bkd{bkd}
 {
    auto error = [](char const* msg){ throw std::runtime_error(msg); };
-   auto style = WS_CAPTION | WS_SYSMENU | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
+   // WS_OVERLAPPEDWINDOW adds WS_THICKFRAME (resize grips) + WS_MAXIMIZEBOX +
+   // WS_MINIMIZEBOX, making the window resizable (was caption + sysmenu only).
+   auto style = WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
 
    LPTSTR windowClass = MAKEINTATOM(registerClass(nullptr));
    if (windowClass == 0)
@@ -261,6 +254,15 @@ LRESULT CALLBACK handle_event(
          }
          break;
 
+      case WM_SIZE:
+         // lParam carries the new client size in physical pixels. Recreate the
+         // Skia surface at that size and redraw immediately so content reflows
+         // live during the drag (WM_SIZE is dispatched inside the modal resize
+         // loop). Ignore minimize (zero size).
+         if (win && wParam != SIZE_MINIMIZED)
+            win->on_resize(LOWORD(lParam), HIWORD(lParam));
+         break;
+
       case WM_KEYDOWN:
          if (wParam == VK_ESCAPE)
          {
@@ -328,6 +330,18 @@ void window::render()
    gpu_canvas->restore();
    _ctx->flushAndSubmit(_surface.get());
    SwapBuffers(DC);
+}
+
+// Handle a window resize: store the new logical size, drop the Skia surface so
+// render() recreates it at the new client size (the WGL default framebuffer
+// tracks the client area), and redraw immediately for responsiveness.
+void window::on_resize(int w_px, int h_px)
+{
+   if (w_px <= 0 || h_px <= 0)
+      return;
+   _size = extent{float(w_px / _scale), float(h_px / _scale)};
+   _surface.reset();
+   render();
 }
 
 namespace cycfi::artist

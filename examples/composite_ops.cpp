@@ -48,11 +48,11 @@ char const* mode_name(canvas::composite_op_enum mode)
    return "";
 }
 
+image dest{"dest.png"};
+image src{"src.png"};
+
 void composite_draw(canvas& cnv, point p, canvas::composite_op_enum mode)
 {
-   // Static locals: initialized on first call, after init_paths() has run.
-   static image dest{"dest.png"};
-   static image src{"src.png"};
    {
       auto save = cnv.new_state();
       cnv.add_rect({p.x, p.y, p.x + xsize, p.y + ysize});
@@ -110,12 +110,19 @@ void composite_ops(canvas& cnv)
 void draw(canvas& cnv)
 {
    scale_to_fit(cnv, {window_size.x, window_size.y}, bkd_color);
-   image img{window_size};
+
+   // composite_ops is static content: render it into the offscreen image once
+   // and reuse it every frame. Recreating a (GPU-backed) offscreen image each
+   // frame made resize sluggish on the Skia backend; the blit below is cheap.
+   static image img = []
    {
-      offscreen_image ctx{img};
+      image im{window_size};
+      offscreen_image ctx{im};
       canvas pm_cnv{ctx.context()};
       composite_ops(pm_cnv);
-   }
+      return im;
+   }();
+
    cnv.draw(img);
 }
 
