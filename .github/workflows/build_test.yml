@@ -353,13 +353,12 @@ jobs:
       run: ctest --verbose --test-dir build
       shell: bash
 
-    - name: Smoke test examples
+    - name: Smoke test examples (Linux / macOS)
+      if: runner.os != 'Windows'
       shell: bash
       run: |
         # Run each example for 3 seconds. Exit 0 = clean, 124 = killed by timeout — both pass.
         # A crash (SIGSEGV → 139, abort → 134, etc.) is a non-zero, non-124 code and fails.
-        # Use || to prevent set -e from firing on timeout's 124 exit code.
-        # macOS ships gtimeout from brew coreutils; Linux/Windows use timeout.
         TOUT=$(command -v gtimeout 2>/dev/null || echo timeout)
         if [ "$RUNNER_OS" = "Linux" ]; then
           # GTK3+Skia uses GtkGLArea (EGL/GL) — force Mesa software rendering.
@@ -370,26 +369,33 @@ jobs:
             (cd "$dir" && xvfb-run --auto-servernum -- $TOUT 3 "./$name") \
               || { code=$?; [ $code -eq 124 ] || exit $code; }
           done
-        elif [ "$RUNNER_OS" = "macOS" ]; then
+        else
           for app in build/examples/*.app; do
             name=$(basename "${app%.app}")
-            bin="$app/Contents/MacOS/$name"
-            echo "--- smoke: $bin"
+            echo "--- smoke: $app"
             (cd "$app/Contents/MacOS" && $TOUT 3 "./$name") \
               || { code=$?; [ $code -eq 124 ] || exit $code; }
           done
-        else
-          # On Windows, vcpkg dynamic DLLs live in vcpkg_installed/x64-windows/bin.
-          # Add them to PATH so the runtime loader can find Skia, etc.
-          VCPKG_BIN=$(cygpath -u "$(pwd)/build/vcpkg_installed/x64-windows/bin" 2>/dev/null || true)
-          [ -d "$VCPKG_BIN" ] && export PATH="$VCPKG_BIN:$PATH" || true
-          for exe in $(find build/examples -maxdepth 2 -name "*.exe" 2>/dev/null); do
-            echo "--- smoke: $exe"
-            dir=$(dirname "$exe"); name=$(basename "$exe")
-            (cd "$dir" && $TOUT 3 "./$name") \
-              || { code=$?; [ $code -eq 124 ] || exit $code; }
-          done
         fi
+
+    - name: Smoke test examples (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        # PowerShell handles DLL search paths natively — no cygpath gymnastics needed.
+        # Prepend vcpkg DLL dir so Skia and other dynamic libs are found.
+        $vcpkgBin = "build\vcpkg_installed\x64-windows\bin"
+        if (Test-Path $vcpkgBin) {
+          $env:PATH = "$((Resolve-Path $vcpkgBin).Path);$env:PATH"
+        }
+        $exes = Get-ChildItem build\examples -Filter "*.exe" -ErrorAction SilentlyContinue
+        foreach ($exe in $exes) {
+          Write-Host "--- smoke: $($exe.FullName)"
+          $p = Start-Process -FilePath $exe.FullName -WorkingDirectory $exe.DirectoryName -PassThru
+          $timedOut = -not $p.WaitForExit(3000)
+          if ($timedOut) { $p.Kill(); Write-Host "  (timed out — ok)"; continue }
+          if ($p.ExitCode -ne 0) { Write-Error "Exit $($p.ExitCode)"; exit $p.ExitCode }
+        }
 
     - name: Upload test results
       if: always()
@@ -537,7 +543,8 @@ jobs:
       run: ctest --verbose --test-dir build-cairo
       shell: bash
 
-    - name: Smoke test examples
+    - name: Smoke test examples (Linux / macOS)
+      if: runner.os != 'Windows'
       shell: bash
       run: |
         TOUT=$(command -v gtimeout 2>/dev/null || echo timeout)
@@ -548,23 +555,31 @@ jobs:
             (cd "$dir" && xvfb-run --auto-servernum -- $TOUT 3 "./$name") \
               || { code=$?; [ $code -eq 124 ] || exit $code; }
           done
-        elif [ "$RUNNER_OS" = "macOS" ]; then
+        else
           for app in build-cairo/examples/*.app; do
             name=$(basename "${app%.app}")
             echo "--- smoke: $app"
             (cd "$app/Contents/MacOS" && $TOUT 3 "./$name") \
               || { code=$?; [ $code -eq 124 ] || exit $code; }
           done
-        else
-          VCPKG_BIN=$(cygpath -u "$(pwd)/build-cairo/vcpkg_installed/x64-windows/bin" 2>/dev/null || true)
-          [ -d "$VCPKG_BIN" ] && export PATH="$VCPKG_BIN:$PATH" || true
-          for exe in $(find build-cairo/examples -maxdepth 2 -name "*.exe" 2>/dev/null); do
-            echo "--- smoke: $exe"
-            dir=$(dirname "$exe"); name=$(basename "$exe")
-            (cd "$dir" && $TOUT 3 "./$name") \
-              || { code=$?; [ $code -eq 124 ] || exit $code; }
-          done
         fi
+
+    - name: Smoke test examples (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $vcpkgBin = "build-cairo\vcpkg_installed\x64-windows\bin"
+        if (Test-Path $vcpkgBin) {
+          $env:PATH = "$((Resolve-Path $vcpkgBin).Path);$env:PATH"
+        }
+        $exes = Get-ChildItem build-cairo\examples -Filter "*.exe" -ErrorAction SilentlyContinue
+        foreach ($exe in $exes) {
+          Write-Host "--- smoke: $($exe.FullName)"
+          $p = Start-Process -FilePath $exe.FullName -WorkingDirectory $exe.DirectoryName -PassThru
+          $timedOut = -not $p.WaitForExit(3000)
+          if ($timedOut) { $p.Kill(); Write-Host "  (timed out — ok)"; continue }
+          if ($p.ExitCode -ne 0) { Write-Error "Exit $($p.ExitCode)"; exit $p.ExitCode }
+        }
 
     - name: Upload test results
       if: always()
