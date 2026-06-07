@@ -249,6 +249,18 @@ if (ARTIST_CAIRO)
    )
 endif()
 
+if (WIN32 AND ARTIST_DIRECT2D)
+   set(ARTIST_IMPL
+      impl/windows/direct2d/canvas.cpp
+      impl/windows/direct2d/context.cpp
+      impl/windows/direct2d/path.cpp
+      impl/windows/direct2d/path_impl.cpp
+      impl/windows/direct2d/image.cpp
+      impl/windows/direct2d/font.cpp
+      # impl/windows/direct2d/text_run.cpp   # task #7
+   )
+endif()
+
 source_group("Source Files\\artist"
    FILES
    ${ARTIST_SOURCES}
@@ -344,6 +356,23 @@ if (ARTIST_CAIRO)
       artist
       PUBLIC
          ARTIST_CAIRO
+   )
+endif()
+
+if (WIN32 AND ARTIST_DIRECT2D)
+   target_compile_definitions(
+      artist
+      PUBLIC
+         ARTIST_DIRECT2D
+   )
+   # Expose the backend's low-level header so the example host can create the
+   # HWND render target + wrap it in a d2d::context (mirrors the 2020 branch).
+   target_include_directories(artist PUBLIC impl/windows/direct2d)
+   # Direct2D / DirectWrite / WIC are system libs — the whole point: no vcpkg,
+   # no Skia blob. d2d1.lib also provides the D2D 1.1 (ID2D1DeviceContext) API.
+   # dxguid provides the D2D effect CLSIDs (Gaussian blur / 2D affine transform).
+   target_link_libraries(artist PUBLIC
+      d2d1 dwrite windowscodecs dxgi dxguid ole32
    )
 endif()
 
