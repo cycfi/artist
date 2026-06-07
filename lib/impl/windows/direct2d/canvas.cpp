@@ -238,17 +238,27 @@ namespace cycfi::artist
    }
 
    void canvas::canvas_state::apply_blur(
-      context& ctx, artist::rect bounds, render_function render)
+      context& ctx, artist::rect /*bounds*/, render_function render)
    {
       auto& cur = current();
-      offscreen_context offscreen{ctx};
-      auto bm_target = offscreen.target();
+
+      // The blurred shadow must be composited onto the MAIN target, so we need
+      // the main target as an ID2D1DeviceContext (D2D 1.1). If unavailable,
+      // skip the shadow rather than mis-render.
+      device_context* dc = nullptr;
+      if (FAILED(ctx.target()->QueryInterface(&dc)) || !dc)
+         return;
 
       float alpha = 1.0f;
       if (std::holds_alternative<color>(cur.fill_info))
          alpha = std::get<color>(cur.fill_info).alpha;
 
+      // Render the shape (in shadow color) into a compatible offscreen bitmap,
+      // positioned exactly like the real shape (same transform).
+      offscreen_context offscreen{ctx};
+      auto bm_target = offscreen.target();
       bm_target->BeginDraw();
+      bm_target->Clear(D2D1::ColorF(0, 0, 0, 0));
       bm_target->SetTransform(cur.matrix);
       solid_color_brush* shadow_paint = nullptr;
       bm_target->CreateSolidColorBrush(
@@ -260,35 +270,34 @@ namespace cycfi::artist
       render(bm_target, shadow_paint, true);
       bm_target->EndDraw();
 
-      auto dc = offscreen.dc();
+      // Gaussian-blur the shadow bitmap, offset it, and draw it onto the main
+      // target (under the shape, which the caller paints next).
       effect* blur = nullptr;
-      dc->CreateEffect(CLSID_D2D1GaussianBlur, &blur);
-      auto blur_val = (cur.shadow_blur / cur.matrix.m11) / 2;
-      blur->SetInput(0, offscreen.bitmap());
-      blur->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_SOFT);
-      blur->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, blur_val);
-      blur->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_GAUSSIANBLUR_OPTIMIZATION_BALANCED);
-
-      auto offset_x = cur.shadow_offset.x / cur.matrix.m11;
-      auto offset_y = cur.shadow_offset.y / cur.matrix.m22;
-
       effect* xform = nullptr;
-      dc->CreateEffect(CLSID_D2D12DAffineTransform, &xform);
-      xform->SetInputEffect(0, blur);
-      matrix2x2f matrix = D2D1::Matrix3x2F::Translation(offset_x, offset_y);
-      xform->SetValue(D2D1_2DAFFINETRANSFORM_PROP_TRANSFORM_MATRIX, matrix);
+      if (SUCCEEDED(dc->CreateEffect(CLSID_D2D1GaussianBlur, &blur)) && blur &&
+          SUCCEEDED(dc->CreateEffect(CLSID_D2D12DAffineTransform, &xform)) && xform)
+      {
+         float blur_val = (cur.shadow_blur / cur.matrix.m11) / 2;
+         blur->SetInput(0, offscreen.bitmap());
+         blur->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_SOFT);
+         blur->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, blur_val);
+         blur->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_GAUSSIANBLUR_OPTIMIZATION_BALANCED);
 
-      dc->SetTransform(D2D1::Matrix3x2F::Identity());
-      dc->DrawImage(
-         xform,
-         D2D1_POINT_2F{bounds.left, bounds.top},
-         D2D1_RECT_F{bounds.left, bounds.top, bounds.right, bounds.bottom},
-         D2D1_INTERPOLATION_MODE_LINEAR
-      );
+         float offset_x = cur.shadow_offset.x;
+         float offset_y = cur.shadow_offset.y;
+         xform->SetInputEffect(0, blur);
+         xform->SetValue(
+            D2D1_2DAFFINETRANSFORM_PROP_TRANSFORM_MATRIX,
+            D2D1::Matrix3x2F::Translation(offset_x, offset_y));
+
+         dc->SetTransform(D2D1::Matrix3x2F::Identity());
+         dc->DrawImage(xform, D2D1_INTERPOLATION_MODE_LINEAR);
+      }
 
       release(blur);
       release(xform);
       release(shadow_paint);
+      release(dc);
    }
 
    void canvas::canvas_state::fill(context& ctx, bool preserve)
@@ -299,13 +308,13 @@ namespace cycfi::artist
             _path.impl()->fill(*target, b, preserve);
          };
 
-      ctx.target()->SetTransform(current().matrix);
       if (current().shadow_blur != 0)
       {
          auto bounds = _path.impl()->fill_bounds();
          adjust_for_blur(bounds);
-         apply_blur(ctx, bounds, render);
+         apply_blur(ctx, bounds, render);   // leaves the transform at identity
       }
+      ctx.target()->SetTransform(current().matrix);
       render(ctx.target(), fill_paint(*ctx.target()), preserve);
    }
 
@@ -319,13 +328,13 @@ namespace cycfi::artist
             _path.impl()->stroke(*target, b, lw, preserve, ss);
          };
 
-      ctx.target()->SetTransform(current().matrix);
       if (current().shadow_blur != 0)
       {
          auto bounds = _path.impl()->stroke_bounds(lw, ss);
          adjust_for_blur(bounds);
-         apply_blur(ctx, bounds, render);
+         apply_blur(ctx, bounds, render);   // leaves the transform at identity
       }
+      ctx.target()->SetTransform(current().matrix);
       render(ctx.target(), stroke_paint(*ctx.target()), preserve);
    }
 

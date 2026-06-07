@@ -14,7 +14,15 @@ namespace cycfi::artist::d2d
       {
          factory_maker()
          {
-            D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, &ptr);
+            // Create an ID2D1Factory1 (D2D 1.1). Render targets made from a
+            // 1.1 factory can be QueryInterface'd to ID2D1DeviceContext, which
+            // is what the shadow (Gaussian blur) and composite-op paths need.
+            D2D1_FACTORY_OPTIONS opts{};
+            D2D1CreateFactory(
+               D2D1_FACTORY_TYPE_MULTI_THREADED,
+               __uuidof(ID2D1Factory1), &opts,
+               reinterpret_cast<void**>(&ptr)
+            );
          }
 
          ~factory_maker()
@@ -22,7 +30,7 @@ namespace cycfi::artist::d2d
             release(ptr);
          }
 
-         factory* ptr = nullptr;
+         factory* ptr = nullptr;   // actually an ID2D1Factory1 (base-typed)
       };
 
       struct wic_factory_maker
