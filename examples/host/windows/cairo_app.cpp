@@ -29,6 +29,7 @@ public:
                ~window();
 
    void        render(HWND hwnd);
+   void        on_dpi_changed(unsigned dpi, RECT const* suggested);
 
 private:
 
@@ -105,6 +106,22 @@ void window::make_offscreen_dc(HDC hdc, int w, int h)
    _offscreen_buff = CreateCompatibleBitmap(hdc, w, h);
 }
 
+void window::on_dpi_changed(unsigned dpi, RECT const* suggested)
+{
+   // The window moved to a monitor with a different scale factor. Update the
+   // scale and adopt Windows' suggested rect; the WM_SIZE that follows repaints
+   // (and recreates the offscreen buffer) at the new resolution.
+   _scale = dpi / 96.0f;
+   if (suggested)
+      SetWindowPos(
+         _wnd, nullptr,
+         suggested->left, suggested->top,
+         suggested->right - suggested->left,
+         suggested->bottom - suggested->top,
+         SWP_NOZORDER | SWP_NOACTIVATE);
+   InvalidateRect(_wnd, nullptr, FALSE);
+}
+
 namespace
 {
 
@@ -131,6 +148,12 @@ namespace
                InvalidateRect(hwnd, nullptr, FALSE);
                UpdateWindow(hwnd);
             }
+            break;
+
+         case WM_DPICHANGED:
+            if (g_window)
+               g_window->on_dpi_changed(
+                  HIWORD(wparam), reinterpret_cast<RECT const*>(lparam));
             break;
 
          case WM_KEYDOWN:
@@ -253,7 +276,10 @@ int run_app(
 )
 {
    (void)argc; (void)argv;
-   SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE);
+   // Per-monitor-v2: render at the real pixel resolution and handle DPI changes
+   // (WM_DPICHANGED) ourselves so Windows never bitmap-stretches the window.
+   // System-DPI awareness (the old call) left 4K/scaled displays pixelated.
+   SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
    window win{window_size, bkd, animate};
 
    MSG msg;
