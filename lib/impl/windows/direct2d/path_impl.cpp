@@ -48,6 +48,15 @@ namespace cycfi::artist::d2d
       _path_gens_state = path_ended;
    }
 
+   void path_impl::absorb(path_impl const& other)
+   {
+      // other's geometry gens are self-contained (capture by value); copy them.
+      // The caller is expected to have flattened any pending sub-path first.
+      for (auto const& g : other._geometry_gens)
+         _geometry_gens.push_back(g);
+      release(_fill_geometry);
+   }
+
    void path_impl::fill(render_target& target, brush* paint, bool preserve)
    {
       build_path();

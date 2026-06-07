@@ -37,7 +37,35 @@ namespace cycfi::artist::d2d
       using geometry_vector = std::vector<geometry*>;
       using iterator = geometry_vector::iterator;
 
+                           path_impl() = default;
                            ~path_impl();
+
+      // Copy only the generators/state; the realized geometries and the grouped
+      // fill geometry are device-side caches (owned COM objects) and are
+      // regenerated lazily — copying the raw pointers would double-free them.
+                           path_impl(path_impl const& rhs)
+                            : _geometry_gens(rhs._geometry_gens)
+                            , _mode(rhs._mode)
+                            , _path_gens(rhs._path_gens)
+                            , _path_gens_state(rhs._path_gens_state)
+                            , _start(rhs._start)
+                            , _cp(rhs._cp)
+                           {}
+
+      path_impl&           operator=(path_impl const& rhs)
+                           {
+                              if (this != &rhs)
+                              {
+                                 clear_geometries();
+                                 _geometry_gens = rhs._geometry_gens;
+                                 _mode = rhs._mode;
+                                 _path_gens = rhs._path_gens;
+                                 _path_gens_state = rhs._path_gens_state;
+                                 _start = rhs._start;
+                                 _cp = rhs._cp;
+                              }
+                              return *this;
+                           }
 
       bool                 empty() const;
       void                 clear();
@@ -46,6 +74,11 @@ namespace cycfi::artist::d2d
       void                 add(rect r);
       void                 add(rect r, float radius);
       void                 add(circle c);
+
+      // Fold any pending free-form sub-path into the geometry generators.
+      void                 flatten()           { build_path(); }
+      // Append another path's geometry generators (used by canvas::add_path).
+      void                 absorb(path_impl const& other);
 
       void                 fill(
                               render_target& target

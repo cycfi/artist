@@ -458,9 +458,17 @@ namespace cycfi::artist
       _state->path().add_round_rect(r, radius);
    }
 
-   void canvas::add_path(path const& /*p*/)
+   void canvas::add_path(path const& p)
    {
-      // TODO (task #5): append the given path's geometry to the current path.
+      if (!p.impl())
+         return;
+      // Copy the source path's generators (self-contained), fold any pending
+      // sub-path, and append to the current path. The current transform is
+      // applied at fill/stroke time, so the path's user-space coords compose
+      // with the canvas CTM (matches the other backends).
+      d2d::path_impl src{*p.impl()};
+      src.flatten();
+      _state->path().impl()->absorb(src);
    }
 
    void canvas::clear_rect(rect const& r)
