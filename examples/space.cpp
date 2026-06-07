@@ -17,6 +17,12 @@ float y = 0;
 
 void draw(canvas& cnv)
 {
+   // True window size (before the fit transform) so the FPS readout anchors to
+   // the real window corner instead of moving with the letterbox.
+   auto const win = cnv.clip_extent();
+
+   cnv.save();
+   scale_to_fit(cnv, {window_size.x, window_size.y}, colors::black);
    cnv.translate(x, y);
    cnv.draw(space);
    x += x_incr;
@@ -31,8 +37,8 @@ void draw(canvas& cnv)
    if (y < -(size.y-480))
       y_incr = -y_incr;
 
-   cnv.translate(-x, -y);
-   print_elapsed(cnv, window_size, colors::black.opacity(0));
+   cnv.restore();   // undo scale_to_fit + pan → back to window coordinates
+   print_elapsed(cnv, {win.width(), win.height()}, colors::black.opacity(0));
 }
 
 int main(int argc, char const* argv[])

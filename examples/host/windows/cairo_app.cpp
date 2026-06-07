@@ -33,6 +33,7 @@ public:
 private:
 
    ATOM        registerClass(HINSTANCE hInstance);
+   void        make_offscreen_dc(HDC hdc, int w, int h);
 
    extent      _size;
    bool        _animate;
@@ -46,27 +47,31 @@ private:
 
 static window* g_window = nullptr;
 
-namespace
-{
-   void make_offscreen_dc(HDC hdc, window* win, HWND hwnd, int w, int h);
-}
-
 void window::render(HWND hwnd)
 {
-   RECT dirty;
-   GetUpdateRect(hwnd, &dirty, false);
-
    PAINTSTRUCT ps;
    HDC hdc = BeginPaint(hwnd, &ps);
    SetBkMode(hdc, TRANSPARENT);
 
-   RECT r;
-   GetWindowRect(hwnd, &r);
-   int win_width  = r.right  - r.left;
-   int win_height = r.bottom - r.top;
+   // Size the offscreen buffer to the CLIENT area (not the whole window incl.
+   // title bar / borders) so the canvas clip_extent() matches the true drawable
+   // region. Reflow examples read clip_extent() directly; static ones letterbox
+   // against it. Update _size so the recreate check settles after a resize.
+   RECT cr;
+   GetClientRect(hwnd, &cr);
+   int cw = cr.right  - cr.left;
+   int ch = cr.bottom - cr.top;
+   if (cw <= 0 || ch <= 0)
+   {
+      EndPaint(hwnd, &ps);
+      return;
+   }
 
-   if (hdc != _hdc || win_width != int(_size.x * _scale) || win_height != int(_size.y * _scale))
-      make_offscreen_dc(hdc, this, hwnd, win_width, win_height);
+   if (hdc != _hdc || cw != int(_size.x * _scale) || ch != int(_size.y * _scale))
+   {
+      make_offscreen_dc(hdc, cw, ch);
+      _size = extent{float(cw / _scale), float(ch / _scale)};
+   }
 
    HANDLE hold = SelectObject(_offscreen_hdc, _offscreen_buff);
 
@@ -83,27 +88,25 @@ void window::render(HWND hwnd)
    cairo_destroy(context);
    cairo_surface_destroy(surface);
 
-   int w = dirty.right  - dirty.left;
-   int h = dirty.bottom - dirty.top;
-   BitBlt(hdc, dirty.left, dirty.top, w, h,
-          _offscreen_hdc, dirty.left, dirty.top, SRCCOPY);
+   // Blit the whole client area (resize + timer invalidate the full client).
+   BitBlt(hdc, 0, 0, cw, ch, _offscreen_hdc, 0, 0, SRCCOPY);
 
    SelectObject(_offscreen_hdc, hold);
    EndPaint(hwnd, &ps);
 }
 
+void window::make_offscreen_dc(HDC hdc, int w, int h)
+{
+   if (_offscreen_buff) DeleteObject(_offscreen_buff);
+   if (_offscreen_hdc)  DeleteDC(_offscreen_hdc);
+
+   _hdc            = hdc;
+   _offscreen_hdc  = CreateCompatibleDC(hdc);
+   _offscreen_buff = CreateCompatibleBitmap(hdc, w, h);
+}
+
 namespace
 {
-   void make_offscreen_dc(HDC hdc, window* win, HWND hwnd, int w, int h)
-   {
-      (void)hwnd;
-      if (win->_offscreen_buff) DeleteObject(win->_offscreen_buff);
-      if (win->_offscreen_hdc)  DeleteDC(win->_offscreen_hdc);
-
-      win->_hdc            = hdc;
-      win->_offscreen_hdc  = CreateCompatibleDC(hdc);
-      win->_offscreen_buff = CreateCompatibleBitmap(hdc, w, h);
-   }
 
    LRESULT CALLBACK handle_event(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
    {
@@ -117,6 +120,17 @@ namespace
          case WM_PAINT:
             if (g_window)
                g_window->render(hwnd);
+            break;
+
+         case WM_SIZE:
+            // Repaint the whole client at the new size. UpdateWindow forces a
+            // synchronous WM_PAINT so content reflows live during the drag
+            // (WM_SIZE arrives inside the modal resize loop). Skip minimize.
+            if (g_window && wparam != SIZE_MINIMIZED)
+            {
+               InvalidateRect(hwnd, nullptr, FALSE);
+               UpdateWindow(hwnd);
+            }
             break;
 
          case WM_KEYDOWN:
@@ -158,7 +172,9 @@ window::window(extent size, color /*bkd*/, bool animate)
 {
    auto error = [](char const* msg){ throw std::runtime_error(msg); };
 
-   auto style = WS_CAPTION | WS_SYSMENU | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
+   // WS_OVERLAPPEDWINDOW adds WS_THICKFRAME (resize grips) + WS_MAXIMIZEBOX +
+   // WS_MINIMIZEBOX, making the window resizable (was caption + sysmenu only).
+   auto style = WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
    LPTSTR windowClass = MAKEINTATOM(registerClass(nullptr));
    if (windowClass == 0)
       error("Error: registerClass() failed.");

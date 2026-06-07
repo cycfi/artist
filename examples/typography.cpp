@@ -167,6 +167,7 @@ void typography(canvas& cnv)
 
 void draw(canvas& cnv)
 {
+   scale_to_fit(cnv, {window_size.x, window_size.y}, bkd_color);
    typography(cnv);
 }
 
