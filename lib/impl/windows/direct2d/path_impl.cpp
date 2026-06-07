@@ -125,17 +125,13 @@ namespace cycfi::artist::d2d
 
    void path_impl::begin_path()
    {
+      // Close any open sub-path but do NOT open a new figure here: the figure
+      // must begin at the first move_to/line_to/arc start, otherwise a path that
+      // starts with an arc (no explicit move_to, e.g. a per-corner round rect)
+      // gets a spurious edge from (0,0) to the first point.
       if (_path_gens_state == path_started)
          end_path();
-      _path_gens_state = path_started;
-      _path_gens.push_back(
-         [](geometry_sink* sink, render_mode mode)
-         {
-            figure_begin flag = mode == path_impl::stroke_mode?
-               figure_begin_hollow : figure_begin_filled;
-            sink->BeginFigure({0, 0}, flag);
-         }
-      );
+      _path_gens_state = path_ended;
       _start = _cp = point{0, 0};
    }
 
@@ -189,6 +185,18 @@ namespace cycfi::artist::d2d
     , bool ccw
    )
    {
+      // A non-positive radius is a degenerate corner (callers pass e.g. -1 to
+      // mean "sharp"). A D2D arc segment with a <=0 size is invalid and fails
+      // GeometrySink::Close, so collapse it to a point.
+      if (radius <= 0)
+      {
+         if (_path_gens_state == path_ended)
+            move_to(p);
+         else
+            line_to(p);
+         return;
+      }
+
       auto startx = p.x + (radius * std::cos(start_angle));
       auto starty = p.y + (radius * std::sin(start_angle));
       auto endx = p.x + (radius * std::cos(end_angle));
@@ -203,7 +211,7 @@ namespace cycfi::artist::d2d
       if (diff_angle < 0)
          diff_angle += 2 * pi;
 
-      arc_segment arc;
+      arc_segment arc{};
       arc.point = {endx, endy};
       arc.size = {radius, radius};
       arc.rotationAngle = diff_angle * 180 / pi;
@@ -268,7 +276,7 @@ namespace cycfi::artist::d2d
       if (_path_gens_state == path_ended)
          move_to({cp.x, cp.y});
 
-      quadratic_bezier_segment quad;
+      quadratic_bezier_segment quad{};
       quad.point1 = {cp.x, cp.y};
       quad.point2 = {end.x, end.y};
 
@@ -286,7 +294,7 @@ namespace cycfi::artist::d2d
       if (_path_gens_state == path_ended)
          move_to({cp1.x, cp1.y});
 
-      bezier_segment bezier;
+      bezier_segment bezier{};
       bezier.point1 = {cp1.x, cp1.y};
       bezier.point2 = {cp2.x, cp2.y};
       bezier.point3 = {end.x, end.y};

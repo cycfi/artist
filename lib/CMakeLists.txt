@@ -387,7 +387,11 @@ endif()
 
 target_compile_features(artist PUBLIC cxx_std_17)
 
-if (IPO_SUPPORTED AND CMAKE_BUILD_TYPE STREQUAL "Release")
+# NOTE: LTO/LTCG (/GL) miscompiles the Direct2D path code — Release builds render
+# spurious geometry (e.g. shapes2 spikes) that a no-LTO build (verified via the
+# ASan RelWithDebInfo build) does not. Likely UB the optimizer exploits; pending
+# investigation. Disable IPO for the Direct2D backend; Skia/Cairo keep it.
+if (IPO_SUPPORTED AND CMAKE_BUILD_TYPE STREQUAL "Release" AND NOT ARTIST_DIRECT2D)
    message(STATUS "Enabling LTO for artist")
    set_target_properties(artist PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
