@@ -10,11 +10,14 @@
    device loss via context_state::update/discard.
 =============================================================================*/
 #include <infra/support.hpp>
+#include <infra/utf8_utils.hpp>
 #include <artist/canvas.hpp>
 #include "context.hpp"
 #include "path_impl.hpp"
+#include "font_impl.hpp"
 #include <variant>
 #include <stack>
+#include <vector>
 #include <cmath>
 
 namespace cycfi::artist
@@ -533,24 +536,140 @@ namespace cycfi::artist
    }
 
    ////////////////////////////////////////////////////////////////////////////
-   // Text (stubs for the baseline; task #7 implements DirectWrite)
+   // Text (DirectWrite)
    void canvas::font(class font const& font_)
    {
       if (font_)
          _state->current().font = font_;
    }
 
-   void canvas::fill_text(std::string_view /*utf8*/, point /*p*/)
+   namespace
    {
+      // Aligned left-edge x and baseline y for an anchor point `p`, given the
+      // text width and font ascent/descent. Mirrors the Quartz alignment.
+      void align_text(int align, point& left_baseline, float width, float a, float d)
+      {
+         switch (align & 0x3)   // horizontal
+         {
+            case canvas::center: left_baseline.x -= width / 2; break;
+            case canvas::right:  left_baseline.x -= width;     break;
+            default: break;
+         }
+         switch (align & 0x1C)  // vertical (baseline-origin)
+         {
+            case canvas::top:    left_baseline.y += a;             break;
+            case canvas::middle: left_baseline.y += (a - d) / 2;   break;
+            case canvas::bottom: left_baseline.y -= d;             break;
+            default: break;     // baseline
+         }
+      }
    }
 
-   void canvas::stroke_text(std::string_view /*utf8*/, point /*p*/)
+   void canvas::fill_text(std::string_view utf8, point p)
    {
+      auto fi = _state->current().font.impl();
+      auto t = _context->target();
+      if (!fi || !fi->format || !t)
+         return;
+
+      auto wtext = d2d::to_utf16(utf8);
+      IDWriteTextLayout* layout = nullptr;
+      if (FAILED(d2d::dwrite_factory()->CreateTextLayout(
+            wtext.c_str(), UINT32(wtext.size()), fi->format,
+            FLT_MAX, FLT_MAX, &layout)) || !layout)
+         return;
+
+      DWRITE_TEXT_METRICS tm{};
+      layout->GetMetrics(&tm);
+
+      point lb = p;
+      align_text(_state->current().text_align, lb, tm.widthIncludingTrailingWhitespace,
+         fi->ascent, fi->descent);
+
+      t->SetTransform(_state->current().matrix);
+      auto brush = _state->fill_paint(*t);
+      t->DrawTextLayout(
+         D2D1::Point2F(lb.x, lb.y - fi->ascent),   // layout box top-left
+         layout, brush, D2D1_DRAW_TEXT_OPTIONS_NONE
+      );
+      d2d::release(layout);
    }
 
-   canvas::text_metrics canvas::measure_text(std::string_view /*utf8*/)
+   void canvas::stroke_text(std::string_view utf8, point p)
    {
-      return {};
+      auto fi = _state->current().font.impl();
+      auto t = _context->target();
+      if (!fi || !fi->face || !t)
+         return;
+
+      auto cps = to_utf32(utf8);
+      if (cps.empty())
+         return;
+      std::vector<UINT32> codes(cps.begin(), cps.end());
+      std::vector<UINT16> glyphs(codes.size());
+      fi->face->GetGlyphIndices(codes.data(), UINT32(codes.size()), glyphs.data());
+
+      std::vector<DWRITE_GLYPH_METRICS> gm(glyphs.size());
+      fi->face->GetDesignGlyphMetrics(glyphs.data(), UINT32(glyphs.size()), gm.data(), FALSE);
+      DWRITE_FONT_METRICS fmx{};
+      fi->face->GetMetrics(&fmx);
+      float scale = fi->size / float(fmx.designUnitsPerEm);
+
+      std::vector<FLOAT> advances(glyphs.size());
+      float width = 0;
+      for (size_t i = 0; i != glyphs.size(); ++i)
+      {
+         advances[i] = gm[i].advanceWidth * scale;
+         width += advances[i];
+      }
+
+      // Glyph outline is emitted at baseline origin (0,0), y-down.
+      ID2D1PathGeometry* geo = nullptr;
+      if (FAILED(d2d::get_factory().CreatePathGeometry(&geo)) || !geo)
+         return;
+      ID2D1GeometrySink* sink = nullptr;
+      geo->Open(&sink);
+      fi->face->GetGlyphRunOutline(
+         fi->size, glyphs.data(), advances.data(), nullptr,
+         UINT32(glyphs.size()), FALSE, FALSE, sink
+      );
+      sink->Close();
+      d2d::release(sink);
+
+      point lb = p;
+      align_text(_state->current().text_align, lb, width, fi->ascent, fi->descent);
+
+      t->SetTransform(
+         D2D1::Matrix3x2F::Translation(lb.x, lb.y) * _state->current().matrix);
+      t->DrawGeometry(
+         geo, _state->stroke_paint(*t),
+         _state->current().line_width, _state->stroke_style_obj()
+      );
+      d2d::release(geo);
+   }
+
+   canvas::text_metrics canvas::measure_text(std::string_view utf8)
+   {
+      auto fi = _state->current().font.impl();
+      if (!fi || !fi->format)
+         return {};
+
+      auto wtext = d2d::to_utf16(utf8);
+      IDWriteTextLayout* layout = nullptr;
+      float width = 0;
+      if (SUCCEEDED(d2d::dwrite_factory()->CreateTextLayout(
+            wtext.c_str(), UINT32(wtext.size()), fi->format,
+            FLT_MAX, FLT_MAX, &layout)) && layout)
+      {
+         DWRITE_TEXT_METRICS tm{};
+         layout->GetMetrics(&tm);
+         width = tm.widthIncludingTrailingWhitespace;
+         d2d::release(layout);
+      }
+      return text_metrics{
+         fi->ascent, fi->descent, fi->leading,
+         {width, fi->ascent + fi->descent + fi->leading}
+      };
    }
 
    void canvas::text_align(int align)
