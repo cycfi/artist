@@ -15,6 +15,9 @@
 
 #if defined(ARTIST_QUARTZ_2D)
 using path_impl = struct CGPath;
+#elif defined(ARTIST_DIRECT2D)
+namespace cycfi::artist::d2d { struct path_impl; }
+using path_impl = cycfi::artist::d2d::path_impl;
 #elif defined(ARTIST_SKIA)
 using path_impl = class SkPathBuilder;
 #elif defined(ARTIST_CAIRO)
