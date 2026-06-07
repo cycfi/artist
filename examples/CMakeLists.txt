@@ -394,12 +394,8 @@ set(composite_ops_images
 )
 
 add_example(shapes)
-if (NOT ARTIST_DIRECT2D)
-   # typography/typo_perf use the text_run engine, not yet built for Direct2D
-   # (task #7). They'd fail to link until text_run.cpp lands.
-   add_example(typography)
-   add_example(typo_perf)
-endif()
+add_example(typography)
+add_example(typo_perf)
 add_example(rain)
 add_example(tauri)
 add_example(space)
