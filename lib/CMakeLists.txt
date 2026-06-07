@@ -257,7 +257,7 @@ if (WIN32 AND ARTIST_DIRECT2D)
       impl/windows/direct2d/path_impl.cpp
       impl/windows/direct2d/image.cpp
       impl/windows/direct2d/font.cpp
-      # impl/windows/direct2d/text_run.cpp   # task #7
+      impl/windows/direct2d/text_run.cpp
    )
 endif()
 
