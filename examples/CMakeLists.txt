@@ -217,7 +217,9 @@ function(add_example name)
 
    elseif (MSVC)
 
-      if (ARTIST_CAIRO)
+      if (ARTIST_DIRECT2D)
+         set(WINDOWS_HOST host/windows/direct2d_app.cpp)
+      elseif (ARTIST_CAIRO)
          set(WINDOWS_HOST host/windows/cairo_app.cpp)
       else()
          set(WINDOWS_HOST host/windows/skia_app.cpp)
@@ -247,7 +249,8 @@ function(add_example name)
       # The Skia host uses WGL + OpenGL directly (wgl*/gl* in opengl32,
       # ChoosePixelFormat/SetPixelFormat/SwapBuffers in gdi32). The old host
       # got these transitively via the now-removed sk_app, so link explicitly.
-      if (NOT ARTIST_CAIRO)
+      # Direct2D needs neither (d2d1/dwrite/windowscodecs come via the artist lib).
+      if (ARTIST_SKIA)
          find_package(OpenGL REQUIRED)
          target_link_libraries(${name} OpenGL::GL gdi32)
       endif()
@@ -391,8 +394,12 @@ set(composite_ops_images
 )
 
 add_example(shapes)
-add_example(typography)
-add_example(typo_perf)
+if (NOT ARTIST_DIRECT2D)
+   # typography/typo_perf use the text_run engine, not yet built for Direct2D
+   # (task #7). They'd fail to link until text_run.cpp lands.
+   add_example(typography)
+   add_example(typo_perf)
+endif()
 add_example(rain)
 add_example(tauri)
 add_example(space)

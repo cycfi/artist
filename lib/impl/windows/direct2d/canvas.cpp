@@ -1,0 +1,576 @@
+/*=============================================================================
+   Copyright (c) 2016-2026 Joel de Guzman
+
+   Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
+
+   Direct2D canvas. Ported from the 2020 `direct2d` branch and adapted to
+   develop's full canvas API. Gaps the 2020 branch left (save/restore stack,
+   clip, full transforms, composite ops, text) are being filled incrementally;
+   see direct2d_backend_plan.md. Brushes are created lazily and rebuilt on
+   device loss via context_state::update/discard.
+=============================================================================*/
+#include <infra/support.hpp>
+#include <artist/canvas.hpp>
+#include "context.hpp"
+#include "path_impl.hpp"
+#include <variant>
+#include <stack>
+#include <cmath>
+
+namespace cycfi::artist
+{
+   using namespace d2d;
+
+   ////////////////////////////////////////////////////////////////////////////
+   // canvas_state
+   ////////////////////////////////////////////////////////////////////////////
+   class canvas::canvas_state : public context_state
+   {
+   public:
+
+      using line_cap_enum = canvas::line_cap_enum;
+      using join_enum = canvas::join_enum;
+
+      using paint_info = std::variant<
+         color
+       , canvas::linear_gradient
+       , canvas::radial_gradient
+      >;
+
+      // Savable state (push/pop on save/restore). The current path is NOT here
+      // (canvas semantics: the path is independent of the state stack).
+      struct info
+      {
+         matrix2x2f     matrix         = matrix2x2f::Identity();
+         paint_info     fill_info      = colors::black;
+         paint_info     stroke_info    = colors::black;
+         float          line_width     = 1;
+         line_cap_enum  line_cap       = line_cap_enum::butt;
+         join_enum      join           = join_enum::miter_join;
+         float          miter_limit    = 10;
+         point          shadow_offset  = {0, 0};
+         float          shadow_blur    = 0;
+         color          shadow_color   = colors::black;
+         class font     font           = font_descr{"Segoe UI", 12};
+         int            text_align     = canvas::baseline;
+      };
+
+                        canvas_state();
+                        ~canvas_state();
+
+      void              update(render_target& target) override;
+      void              discard() override;
+
+      info&             current()         { return _stack.top(); }
+      info const&       current() const    { return _stack.top(); }
+      void              save();
+      void              restore();
+
+      artist::path&     path()            { return _path; }
+
+      void              set_fill(paint_info const& info);
+      void              set_stroke(paint_info const& info);
+      brush*            fill_paint(render_target& target);
+      brush*            stroke_paint(render_target& target);
+      d2d::stroke_style* stroke_style_obj();
+
+      void              fill(context& ctx, bool preserve);
+      void              stroke(context& ctx, bool preserve);
+
+   private:
+
+      using render_function = std::function<void(render_target*, brush*, bool)>;
+      void              apply_blur(context& ctx, artist::rect bounds, render_function render);
+      void              adjust_for_blur(artist::rect& bounds);
+
+      std::stack<info>  _stack;
+      artist::path      _path;
+
+      brush*            _fill_paint = nullptr;     // lazy, derived from fill_info
+      brush*            _stroke_paint = nullptr;   // lazy, derived from stroke_info
+      d2d::stroke_style*_stroke_style = nullptr;   // lazy, derived from cap/join/miter
+   };
+
+   canvas::canvas_state::canvas_state()
+   {
+      _stack.push(info{});
+   }
+
+   canvas::canvas_state::~canvas_state()
+   {
+      release(_fill_paint);
+      release(_stroke_paint);
+      release(_stroke_style);
+   }
+
+   void canvas::canvas_state::update(render_target& /*target*/)
+   {
+      // Device (re)acquired: drop derived device-dependent resources so they
+      // rebuild lazily against the new target.
+      discard();
+   }
+
+   void canvas::canvas_state::discard()
+   {
+      release(_fill_paint);
+      release(_stroke_paint);
+      release(_stroke_style);
+   }
+
+   void canvas::canvas_state::save()
+   {
+      _stack.push(_stack.top());   // copy current
+   }
+
+   void canvas::canvas_state::restore()
+   {
+      if (_stack.size() > 1)
+      {
+         _stack.pop();
+         // Derived resources depend on the (now restored) info; rebuild lazily.
+         release(_fill_paint);
+         release(_stroke_paint);
+         release(_stroke_style);
+      }
+   }
+
+   void canvas::canvas_state::set_fill(paint_info const& info)
+   {
+      current().fill_info = info;
+      release(_fill_paint);
+   }
+
+   void canvas::canvas_state::set_stroke(paint_info const& info)
+   {
+      current().stroke_info = info;
+      release(_stroke_paint);
+   }
+
+   brush* canvas::canvas_state::fill_paint(render_target& target)
+   {
+      if (!_fill_paint)
+         _fill_paint = std::visit(
+            [&](auto const& i){ return make_paint(i, target); }, current().fill_info);
+      return _fill_paint;
+   }
+
+   brush* canvas::canvas_state::stroke_paint(render_target& target)
+   {
+      if (!_stroke_paint)
+         _stroke_paint = std::visit(
+            [&](auto const& i){ return make_paint(i, target); }, current().stroke_info);
+      return _stroke_paint;
+   }
+
+   d2d::stroke_style* canvas::canvas_state::stroke_style_obj()
+   {
+      if (!_stroke_style)
+         _stroke_style = make_stroke_style(
+            current().line_cap, current().join, current().miter_limit);
+      return _stroke_style;
+   }
+
+   void canvas::canvas_state::adjust_for_blur(artist::rect& bounds)
+   {
+      float offset = current().shadow_blur / current().matrix.m11;
+      bounds.left -= offset;
+      bounds.right += offset;
+      bounds.top -= offset;
+      bounds.bottom += offset;
+   }
+
+   void canvas::canvas_state::apply_blur(
+      context& ctx, artist::rect bounds, render_function render)
+   {
+      auto& cur = current();
+      offscreen_context offscreen{ctx};
+      auto bm_target = offscreen.target();
+
+      float alpha = 1.0f;
+      if (std::holds_alternative<color>(cur.fill_info))
+         alpha = std::get<color>(cur.fill_info).alpha;
+
+      bm_target->BeginDraw();
+      bm_target->SetTransform(cur.matrix);
+      solid_color_brush* shadow_paint = nullptr;
+      bm_target->CreateSolidColorBrush(
+         D2D1::ColorF(
+            cur.shadow_color.red, cur.shadow_color.green,
+            cur.shadow_color.blue, alpha),
+         &shadow_paint
+      );
+      render(bm_target, shadow_paint, true);
+      bm_target->EndDraw();
+
+      auto dc = offscreen.dc();
+      effect* blur = nullptr;
+      dc->CreateEffect(CLSID_D2D1GaussianBlur, &blur);
+      auto blur_val = (cur.shadow_blur / cur.matrix.m11) / 2;
+      blur->SetInput(0, offscreen.bitmap());
+      blur->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_SOFT);
+      blur->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, blur_val);
+      blur->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_GAUSSIANBLUR_OPTIMIZATION_BALANCED);
+
+      auto offset_x = cur.shadow_offset.x / cur.matrix.m11;
+      auto offset_y = cur.shadow_offset.y / cur.matrix.m22;
+
+      effect* xform = nullptr;
+      dc->CreateEffect(CLSID_D2D12DAffineTransform, &xform);
+      xform->SetInputEffect(0, blur);
+      matrix2x2f matrix = D2D1::Matrix3x2F::Translation(offset_x, offset_y);
+      xform->SetValue(D2D1_2DAFFINETRANSFORM_PROP_TRANSFORM_MATRIX, matrix);
+
+      dc->SetTransform(D2D1::Matrix3x2F::Identity());
+      dc->DrawImage(
+         xform,
+         D2D1_POINT_2F{bounds.left, bounds.top},
+         D2D1_RECT_F{bounds.left, bounds.top, bounds.right, bounds.bottom},
+         D2D1_INTERPOLATION_MODE_LINEAR
+      );
+
+      release(blur);
+      release(xform);
+      release(shadow_paint);
+   }
+
+   void canvas::canvas_state::fill(context& ctx, bool preserve)
+   {
+      auto render =
+         [this](render_target* target, brush* b, bool preserve)
+         {
+            _path.impl()->fill(*target, b, preserve);
+         };
+
+      ctx.target()->SetTransform(current().matrix);
+      if (current().shadow_blur != 0)
+      {
+         auto bounds = _path.impl()->fill_bounds();
+         adjust_for_blur(bounds);
+         apply_blur(ctx, bounds, render);
+      }
+      render(ctx.target(), fill_paint(*ctx.target()), preserve);
+   }
+
+   void canvas::canvas_state::stroke(context& ctx, bool preserve)
+   {
+      auto lw = current().line_width;
+      auto ss = stroke_style_obj();
+      auto render =
+         [this, lw, ss](render_target* target, brush* b, bool preserve)
+         {
+            _path.impl()->stroke(*target, b, lw, preserve, ss);
+         };
+
+      ctx.target()->SetTransform(current().matrix);
+      if (current().shadow_blur != 0)
+      {
+         auto bounds = _path.impl()->stroke_bounds(lw, ss);
+         adjust_for_blur(bounds);
+         apply_blur(ctx, bounds, render);
+      }
+      render(ctx.target(), stroke_paint(*ctx.target()), preserve);
+   }
+
+   ////////////////////////////////////////////////////////////////////////////
+   // canvas
+   ////////////////////////////////////////////////////////////////////////////
+   canvas::canvas(canvas_impl* context_)
+    : _context{context_}
+    , _state{std::make_unique<canvas_state>()}
+   {
+      _context->state(_state.get());
+   }
+
+   canvas::~canvas()
+   {
+   }
+
+   ////////////////////////////////////////////////////////////////////////////
+   // Transforms
+   void canvas::translate(point p)
+   {
+      auto& m = _state->current().matrix;
+      m = matrix2x2f::Translation({p.x, p.y}) * m;
+   }
+
+   void canvas::rotate(float rad)
+   {
+      auto& m = _state->current().matrix;
+      m = matrix2x2f::Rotation(rad * 180 / pi, {0, 0}) * m;
+   }
+
+   void canvas::scale(point p)
+   {
+      auto& m = _state->current().matrix;
+      m = matrix2x2f::Scale({p.x, p.y}, {0, 0}) * m;
+   }
+
+   void canvas::skew(double sx, double sy)
+   {
+      auto& m = _state->current().matrix;
+      auto sk = matrix2x2f::Skew(
+         float(std::atan(sx) * 180 / pi), float(std::atan(sy) * 180 / pi), {0, 0});
+      m = sk * m;
+   }
+
+   point canvas::device_to_user(point p)
+   {
+      auto m = _state->current().matrix;
+      m.Invert();
+      auto q = m.TransformPoint({p.x, p.y});
+      return {q.x, q.y};
+   }
+
+   point canvas::user_to_device(point p)
+   {
+      auto q = _state->current().matrix.TransformPoint({p.x, p.y});
+      return {q.x, q.y};
+   }
+
+   affine_transform canvas::transform() const
+   {
+      auto const& m = _state->current().matrix;
+      return affine_transform{m._11, m._12, m._21, m._22, m._31, m._32};
+   }
+
+   void canvas::transform(affine_transform const& mat)
+   {
+      auto& m = _state->current().matrix;
+      m = matrix2x2f(
+         float(mat.a), float(mat.b), float(mat.c),
+         float(mat.d), float(mat.tx), float(mat.ty));
+   }
+
+   void canvas::transform(double a, double b, double c, double d, double tx, double ty)
+   {
+      transform(affine_transform{a, b, c, d, tx, ty});
+   }
+
+   ////////////////////////////////////////////////////////////////////////////
+   // State
+   void canvas::save()
+   {
+      _state->save();
+   }
+
+   void canvas::restore()
+   {
+      _state->restore();
+   }
+
+   ////////////////////////////////////////////////////////////////////////////
+   // Paths
+   void canvas::begin_path()
+   {
+      _state->path().impl()->begin_path();
+   }
+
+   void canvas::close_path()
+   {
+      _state->path().impl()->close_path();
+   }
+
+   void canvas::fill()
+   {
+      _state->fill(*_context, false);
+   }
+
+   void canvas::fill_preserve()
+   {
+      _state->fill(*_context, true);
+   }
+
+   void canvas::stroke()
+   {
+      _state->stroke(*_context, false);
+   }
+
+   void canvas::stroke_preserve()
+   {
+      _state->stroke(*_context, true);
+   }
+
+   void canvas::clip()
+   {
+      // TODO (task #5): PushLayer with the current path geometry, popped on
+      // restore(). No-op for the baseline (gradient fills don't need it).
+   }
+
+   void canvas::clip(class path const& /*p*/)
+   {
+      // TODO (task #5)
+   }
+
+   rect canvas::clip_extent() const
+   {
+      if (auto t = _context->target())
+      {
+         auto s = t->GetSize();   // DIPs
+         return {0, 0, s.width, s.height};
+      }
+      return {0, 0, 0, 0};
+   }
+
+   bool canvas::point_in_path(point p) const
+   {
+      return _state->path().includes(p);
+   }
+
+   rect canvas::fill_extent() const
+   {
+      return _state->path().impl()->fill_bounds();
+   }
+
+   void canvas::move_to(point p)
+   {
+      _state->path().impl()->move_to(p);
+   }
+
+   void canvas::line_to(point p)
+   {
+      _state->path().impl()->line_to(p);
+   }
+
+   void canvas::arc_to(point p1, point p2, float radius)
+   {
+      _state->path().impl()->arc_to(p1, p2, radius);
+   }
+
+   void canvas::arc(
+      point p, float radius,
+      float start_angle, float end_angle,
+      bool ccw)
+   {
+      _state->path().arc(p, radius, start_angle, end_angle, ccw);
+   }
+
+   void canvas::add_rect(rect const& r)
+   {
+      _state->path().add_rect(r);
+   }
+
+   void canvas::add_round_rect_impl(rect const& r, float radius)
+   {
+      _state->path().add_round_rect(r, radius);
+   }
+
+   void canvas::add_path(path const& /*p*/)
+   {
+      // TODO (task #5): append the given path's geometry to the current path.
+   }
+
+   void canvas::clear_rect(rect const& r)
+   {
+      auto t = _context->target();
+      if (!t)
+         return;
+      t->SetTransform(_state->current().matrix);
+      t->PushAxisAlignedClip(
+         D2D1::RectF(r.left, r.top, r.right, r.bottom),
+         D2D1_ANTIALIAS_MODE_ALIASED);
+      t->Clear(D2D1::ColorF(0, 0, 0, 0));
+      t->PopAxisAlignedClip();
+   }
+
+   void canvas::quadratic_curve_to(point cp, point end)
+   {
+      _state->path().impl()->quadratic_curve_to(cp, end);
+   }
+
+   void canvas::bezier_curve_to(point cp1, point cp2, point end)
+   {
+      _state->path().impl()->bezier_curve_to(cp1, cp2, end);
+   }
+
+   ////////////////////////////////////////////////////////////////////////////
+   // Styles
+   void canvas::fill_style(color c)            { _state->set_fill(c); }
+   void canvas::stroke_style(color c)          { _state->set_stroke(c); }
+   void canvas::fill_style(linear_gradient const& gr)   { _state->set_fill(gr); }
+   void canvas::fill_style(radial_gradient const& gr)   { _state->set_fill(gr); }
+   void canvas::stroke_style(linear_gradient const& gr) { _state->set_stroke(gr); }
+   void canvas::stroke_style(radial_gradient const& gr) { _state->set_stroke(gr); }
+
+   void canvas::line_width(float w)
+   {
+      _state->current().line_width = w;
+   }
+
+   void canvas::line_cap(line_cap_enum cap)
+   {
+      _state->current().line_cap = cap;
+      _state->discard();   // stroke_style rebuilds lazily
+   }
+
+   void canvas::line_join(join_enum join)
+   {
+      _state->current().join = join;
+      _state->discard();
+   }
+
+   void canvas::miter_limit(float limit)
+   {
+      _state->current().miter_limit = limit;
+      _state->discard();
+   }
+
+   void canvas::shadow_style(point offset, float blur, color c)
+   {
+      auto& cur = _state->current();
+      cur.shadow_offset = offset;
+      cur.shadow_blur = blur;
+      cur.shadow_color = c;
+   }
+
+   void canvas::global_composite_operation(composite_op_enum /*mode*/)
+   {
+      // TODO (task #5): map to D2D1_PRIMITIVE_BLEND / blend effect.
+   }
+
+   void canvas::fill_rule(path::fill_rule_enum rule)
+   {
+      _state->path().fill_rule(rule);
+   }
+
+   ////////////////////////////////////////////////////////////////////////////
+   // Text (stubs for the baseline; task #7 implements DirectWrite)
+   void canvas::font(class font const& font_)
+   {
+      if (font_)
+         _state->current().font = font_;
+   }
+
+   void canvas::fill_text(std::string_view /*utf8*/, point /*p*/)
+   {
+   }
+
+   void canvas::stroke_text(std::string_view /*utf8*/, point /*p*/)
+   {
+   }
+
+   canvas::text_metrics canvas::measure_text(std::string_view /*utf8*/)
+   {
+      return {};
+   }
+
+   void canvas::text_align(int align)
+   {
+      _state->current().text_align = align;
+   }
+
+   void canvas::text_align(text_halign align)
+   {
+      _state->current().text_align |= align;
+   }
+
+   void canvas::text_baseline(text_valign align)
+   {
+      _state->current().text_align |= align;
+   }
+
+   ////////////////////////////////////////////////////////////////////////////
+   // Pixmaps (stub for the baseline; task #6 implements WIC draw)
+   void canvas::draw(image const& /*pic*/, rect const& /*src*/, rect const& /*dest*/)
+   {
+   }
+}

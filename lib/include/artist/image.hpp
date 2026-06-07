@@ -24,6 +24,9 @@ namespace cycfi::artist
 {
 #if defined(ARTIST_QUARTZ_2D)
    struct canvas_impl;
+#elif defined(ARTIST_DIRECT2D)
+   namespace d2d { struct context; }
+   using canvas_impl = d2d::context;
 #elif !defined(ARTIST_SKIA) && !defined(ARTIST_CAIRO)
    struct canvas_impl;   // no backend selected: opaque, declaration only
 #endif
