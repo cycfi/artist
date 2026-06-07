@@ -199,19 +199,70 @@ namespace cycfi::artist
       if (!_layout)
          return 0;
 
-      // The shared engine's contract (text_layout.hpp): caret_index must select
-      // the FIRST row whose top is >= p.y (top-based, like the Quartz/Cairo
-      // lower_bound), not the row that geometrically contains p.y. DirectWrite's
-      // HitTestPoint is body-based (row containing y), so map p.y to the target
-      // row ourselves, then hit-test that row's vertical centre for the column.
-      float lh = _line_height > 0? _line_height : 1.0f;
-      long n = long(num_lines());
-      long row = long(std::ceil(p.y / lh - 0.01f));   // first row with top >= y
-      if (row < 0)
-         row = 0;
-      if (row > n - 1)
-         row = n - 1;
-      float yy = (float(row) + 0.5f) * lh;
+      // The shared engine's contract (text_layout.hpp): caret_index selects the
+      // FIRST row whose top is >= p.y (top-based, like the Quartz/Cairo
+      // lower_bound), and returns npos for a click below the last line. Use the
+      // ACTUAL DirectWrite line metrics rather than a uniform line-height guess:
+      // a fallback font (e.g. CJK glyphs in a Latin font) makes some lines taller
+      // than the requested uniform height, and a fixed-lh guess then drifts and
+      // mis-maps the row. (For uniform Latin text this is identical to r*lh.)
+      UINT32 count = 0;
+      _layout->GetLineMetrics(nullptr, 0, &count);
+      if (count == 0)
+         return 0;
+      std::vector<DWRITE_LINE_METRICS> lm(count);
+      if (FAILED(_layout->GetLineMetrics(lm.data(), count, &count)) || count == 0)
+         return 0;
+
+      // Per-line top y measured with the SAME API caret_point uses
+      // (HitTestTextPosition on each line's first code unit). Deriving tops this
+      // way keeps the top-based row selection exactly consistent with the y that
+      // caret_point reports — mixing GetLineMetrics heights with
+      // HitTestTextPosition tops drifts on fallback lines and mis-maps the row.
+      std::vector<float> tops(count);
+      std::vector<float> startx(count);   // x of each line's first code unit
+      std::vector<UINT32> start16(count); // each line's first code unit
+      UINT32 pos16 = 0;
+      float last_bottom = 0;
+      for (UINT32 r = 0; r != count; ++r)
+      {
+         FLOAT px = 0, py = 0;
+         DWRITE_HIT_TEST_METRICS thm{};
+         _layout->HitTestTextPosition(pos16, FALSE, &px, &py, &thm);
+         tops[r] = py;
+         startx[r] = px;
+         start16[r] = pos16;
+         last_bottom = py + lm[r].height;
+         pos16 += lm[r].length;
+      }
+
+      if (p.y > last_bottom)
+         return npos;   // below the last line
+
+      // First row whose top is >= p.y (with a small tolerance for exact tops).
+      UINT32 row = count;
+      for (UINT32 r = 0; r != count; ++r)
+      {
+         if (tops[r] >= p.y - 0.01f)
+         {
+            row = r;
+            break;
+         }
+      }
+      if (row == count)         // p.y is inside the last line's body
+         row = count - 1;
+
+      // At or left of the line's start, return the line's first code point (like
+      // the Cairo backend's `p.x <= row.x` case). DirectWrite's HitTestPoint
+      // otherwise skips a leading zero-width code point (e.g. U+2060 WORD JOINER)
+      // to the first visible glyph.
+      if (p.x - _offset_x <= startx[row] + 0.01f)
+         return u32_of(start16[row]);
+
+      // Hit-test the column at a y safely inside the chosen row.
+      float yy = (row + 1 < count)?
+         (tops[row] + tops[row + 1]) * 0.5f
+       : tops[row] + lm[row].height * 0.5f;
 
       BOOL trailing = FALSE, inside = FALSE;
       DWRITE_HIT_TEST_METRICS hm{};
