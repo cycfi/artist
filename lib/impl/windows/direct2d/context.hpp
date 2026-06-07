@@ -17,6 +17,8 @@
 #include <d2d1.h>
 #include <d2d1_1.h>
 #include <d2d1helper.h>
+#include <d2d1effects.h>     // CLSID_D2D1Composite / GaussianBlur / 2DAffineTransform
+#include <d2d1effects_1.h>   // CLSID_D2D1Blend + D2D1_BLEND_MODE (blend composite ops)
 #include <dwrite.h>
 #include <wincodec.h>
 #include <memory>

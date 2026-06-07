@@ -25,6 +25,90 @@ namespace cycfi::artist
    using namespace d2d;
 
    ////////////////////////////////////////////////////////////////////////////
+   // Composite-op mapping (canvas globalCompositeOperation → D2D)
+   ////////////////////////////////////////////////////////////////////////////
+   namespace
+   {
+      // The 13 "blend" ops map to the D2D1Blend effect; the rest are Porter-Duff
+      // and map to a D2D1_COMPOSITE_MODE applied directly by DrawImage.
+      bool composite_is_blend(canvas::composite_op_enum m)
+      {
+         switch (m)
+         {
+            case canvas::darker:      case canvas::difference:
+            case canvas::exclusion:   case canvas::multiply:
+            case canvas::screen:      case canvas::color_dodge:
+            case canvas::color_burn:  case canvas::soft_light:
+            case canvas::hard_light:  case canvas::hue:
+            case canvas::saturation:  case canvas::color_op:
+            case canvas::luminosity:
+               return true;
+            default:
+               return false;
+         }
+      }
+
+      D2D1_COMPOSITE_MODE to_composite_mode(canvas::composite_op_enum m)
+      {
+         switch (m)
+         {
+            case canvas::source_over:      return D2D1_COMPOSITE_MODE_SOURCE_OVER;
+            case canvas::source_atop:      return D2D1_COMPOSITE_MODE_SOURCE_ATOP;
+            case canvas::source_in:        return D2D1_COMPOSITE_MODE_SOURCE_IN;
+            case canvas::source_out:       return D2D1_COMPOSITE_MODE_SOURCE_OUT;
+            case canvas::destination_over: return D2D1_COMPOSITE_MODE_DESTINATION_OVER;
+            case canvas::destination_atop: return D2D1_COMPOSITE_MODE_DESTINATION_ATOP;
+            case canvas::destination_in:   return D2D1_COMPOSITE_MODE_DESTINATION_IN;
+            case canvas::destination_out:  return D2D1_COMPOSITE_MODE_DESTINATION_OUT;
+            case canvas::lighter:          return D2D1_COMPOSITE_MODE_PLUS;
+            case canvas::copy:             return D2D1_COMPOSITE_MODE_SOURCE_COPY;
+            case canvas::xor_:             return D2D1_COMPOSITE_MODE_XOR;
+            default:                       return D2D1_COMPOSITE_MODE_SOURCE_OVER;
+         }
+      }
+
+      // `darker` -> DARKEN (channel-min) matches Skia/Cairo, not the W3C
+      // PlusDarker; see the cross-backend inconsistency note.
+      D2D1_BLEND_MODE to_blend_mode(canvas::composite_op_enum m)
+      {
+         switch (m)
+         {
+            case canvas::darker:      return D2D1_BLEND_MODE_DARKEN;
+            case canvas::difference:  return D2D1_BLEND_MODE_DIFFERENCE;
+            case canvas::exclusion:   return D2D1_BLEND_MODE_EXCLUSION;
+            case canvas::multiply:    return D2D1_BLEND_MODE_MULTIPLY;
+            case canvas::screen:      return D2D1_BLEND_MODE_SCREEN;
+            case canvas::color_dodge: return D2D1_BLEND_MODE_COLOR_DODGE;
+            case canvas::color_burn:  return D2D1_BLEND_MODE_COLOR_BURN;
+            case canvas::soft_light:  return D2D1_BLEND_MODE_SOFT_LIGHT;
+            case canvas::hard_light:  return D2D1_BLEND_MODE_HARD_LIGHT;
+            case canvas::hue:         return D2D1_BLEND_MODE_HUE;
+            case canvas::saturation:  return D2D1_BLEND_MODE_SATURATION;
+            case canvas::color_op:    return D2D1_BLEND_MODE_COLOR;
+            case canvas::luminosity:  return D2D1_BLEND_MODE_LUMINOSITY;
+            default:                  return D2D1_BLEND_MODE_MULTIPLY;
+         }
+      }
+
+      // Axis-aligned device-space bounding box of a user-space rect under `m`.
+      artist::rect device_bounds(matrix2x2f const& m, artist::rect const& r)
+      {
+         D2D1_POINT_2F c[4] =
+         {
+            m.TransformPoint({r.left,  r.top}),    m.TransformPoint({r.right, r.top}),
+            m.TransformPoint({r.right, r.bottom}), m.TransformPoint({r.left,  r.bottom})
+         };
+         float minx = c[0].x, maxx = c[0].x, miny = c[0].y, maxy = c[0].y;
+         for (int i = 1; i != 4; ++i)
+         {
+            minx = std::min(minx, c[i].x); maxx = std::max(maxx, c[i].x);
+            miny = std::min(miny, c[i].y); maxy = std::max(maxy, c[i].y);
+         }
+         return {minx, miny, maxx, maxy};
+      }
+   }
+
+   ////////////////////////////////////////////////////////////////////////////
    // canvas_state
    ////////////////////////////////////////////////////////////////////////////
    class canvas::canvas_state : public context_state
@@ -33,6 +117,7 @@ namespace cycfi::artist
 
       using line_cap_enum = canvas::line_cap_enum;
       using join_enum = canvas::join_enum;
+      using composite_op_enum = canvas::composite_op_enum;
 
       using paint_info = std::variant<
          color
@@ -56,6 +141,7 @@ namespace cycfi::artist
          color          shadow_color   = colors::black;
          class font     font           = font_descr{"Segoe UI", 12};
          int            text_align     = canvas::baseline;
+         composite_op_enum composite   = canvas::source_over;
          std::size_t    clip_depth     = 0;   // # of clip layers active at save
       };
 
@@ -81,6 +167,12 @@ namespace cycfi::artist
 
       void              fill(context& ctx, bool preserve);
       void              stroke(context& ctx, bool preserve);
+
+      // Draw `render` (which paints the primitive onto the given target at the
+      // current matrix) honoring the current global composite op. `user_bounds`
+      // is the primitive's bounding rect in user space (the affected region).
+      using draw_fn = std::function<void(render_target*)>;
+      void              composite_draw(context& ctx, artist::rect user_bounds, draw_fn render);
 
    private:
 
@@ -303,42 +395,155 @@ namespace cycfi::artist
       release(dc);
    }
 
+   void canvas::canvas_state::composite_draw(
+      context& ctx, artist::rect user_bounds, draw_fn render)
+   {
+      auto mode = current().composite;
+      auto main = ctx.target();
+
+      // Fast path: plain source-over draws straight to the target.
+      device_context* dc = nullptr;
+      if (mode == canvas::source_over ||
+          FAILED(main->QueryInterface(&dc)) || !dc)
+      {
+         main->SetTransform(current().matrix);
+         render(main);
+         release(dc);
+         return;
+      }
+
+      // Render the source primitive into a fresh, input-capable target bitmap via
+      // a *separate* device context (the main one is mid-BeginDraw, so it can't be
+      // retargeted). A D2D1_BITMAP_OPTIONS_TARGET bitmap can be both rendered to
+      // and used as a DrawImage source / blend-effect input — unlike the bitmap
+      // behind a CreateCompatibleRenderTarget, which is not a valid effect input.
+      auto sz = main->GetPixelSize();
+      ID2D1Device* device = nullptr;
+      device_context* sdc = nullptr;
+      ID2D1Bitmap1* src_bm = nullptr;
+      dc->GetDevice(&device);
+      bool ready =
+         device &&
+         SUCCEEDED(device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &sdc)) && sdc &&
+         SUCCEEDED(sdc->CreateBitmap(
+            sz, nullptr, 0,
+            D2D1::BitmapProperties1(
+               D2D1_BITMAP_OPTIONS_TARGET,
+               D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)),
+            &src_bm)) && src_bm;
+
+      if (!ready)
+      {
+         // Couldn't build the intermediate; draw plainly rather than drop it.
+         main->SetTransform(current().matrix);
+         render(main);
+         release(src_bm); release(sdc); release(device); release(dc);
+         return;
+      }
+
+      sdc->SetTarget(src_bm);
+      sdc->BeginDraw();
+      sdc->Clear(D2D1::ColorF(0, 0, 0, 0));
+      sdc->SetTransform(current().matrix);
+      render(sdc);
+      sdc->EndDraw();
+      sdc->SetTarget(nullptr);   // unbind so src_bm can be used as an input
+
+      // Decide what to draw and how, BEFORE installing the clip. The destination
+      // snapshot (CopyFromRenderTarget) must NOT happen inside an axis-aligned
+      // clip — it returns failure there, which silently drops the blend.
+      ID2D1Image* draw_img = nullptr;        // what to composite (non-owning alias)
+      D2D1_COMPOSITE_MODE draw_mode = D2D1_COMPOSITE_MODE_SOURCE_OVER;
+      bitmap* bg = nullptr;                  // background snapshot (blend only)
+      effect* blend = nullptr;               // blend effect (blend only)
+      ID2D1Image* blend_out = nullptr;       // blend effect output (owned)
+
+      if (composite_is_blend(mode))
+      {
+         // Blend modes need both operands. Snapshot the live target as the
+         // background (a plain bitmap is a valid CopyFromRenderTarget dest and
+         // blend input), then blend the source over it and source-copy the result.
+         auto props = D2D1::BitmapProperties(
+            D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED));
+         D2D1_POINT_2U dp{0, 0};
+         D2D1_RECT_U sr{0, 0, sz.width, sz.height};
+         main->Flush(nullptr, nullptr);
+         if (SUCCEEDED(main->CreateBitmap(sz, nullptr, 0, &props, &bg)) && bg &&
+             SUCCEEDED(bg->CopyFromRenderTarget(&dp, main, &sr)) &&
+             SUCCEEDED(dc->CreateEffect(CLSID_D2D1Blend, &blend)) && blend)
+         {
+            blend->SetInput(0, bg);       // background (destination)
+            blend->SetInput(1, src_bm);   // foreground (source)
+            blend->SetValue(D2D1_BLEND_PROP_MODE, to_blend_mode(mode));
+            blend->GetOutput(&blend_out); // an effect is not an ID2D1Image; its output is
+            draw_img = blend_out;
+            draw_mode = D2D1_COMPOSITE_MODE_SOURCE_COPY;
+         }
+      }
+      else
+      {
+         // Porter-Duff: DrawImage composites the source onto the live target
+         // (the destination) directly, in the requested mode.
+         draw_img = src_bm;
+         draw_mode = to_composite_mode(mode);
+      }
+
+      // The composite is confined to the primitive's device-space bounds — canvas
+      // ops affect only the draw's coverage, not the whole surface (matches Skia).
+      if (draw_img)
+      {
+         auto db = device_bounds(current().matrix, user_bounds);
+         dc->SetTransform(D2D1::Matrix3x2F::Identity());
+         dc->PushAxisAlignedClip(
+            D2D1::RectF(db.left, db.top, db.right, db.bottom),
+            D2D1_ANTIALIAS_MODE_ALIASED);
+         dc->DrawImage(draw_img, D2D1_INTERPOLATION_MODE_LINEAR, draw_mode);
+         dc->PopAxisAlignedClip();
+      }
+
+      release(blend_out);
+      release(blend);
+      release(bg);
+      release(src_bm);
+      release(sdc);
+      release(device);
+      release(dc);
+   }
+
    void canvas::canvas_state::fill(context& ctx, bool preserve)
    {
-      auto render =
-         [this](render_target* target, brush* b, bool preserve)
-         {
-            _path.impl()->fill(*target, b, preserve);
-         };
-
       if (current().shadow_blur != 0)
       {
+         auto render =
+            [this](render_target* target, brush* b, bool preserve)
+            { _path.impl()->fill(*target, b, preserve); };
          auto bounds = _path.impl()->fill_bounds();
          adjust_for_blur(bounds);
          apply_blur(ctx, bounds, render);   // leaves the transform at identity
       }
-      ctx.target()->SetTransform(current().matrix);
-      render(ctx.target(), fill_paint(*ctx.target()), preserve);
+      auto bounds = _path.impl()->fill_bounds();
+      composite_draw(ctx, bounds,
+         [this, preserve](render_target* t)
+         { _path.impl()->fill(*t, fill_paint(*t), preserve); });
    }
 
    void canvas::canvas_state::stroke(context& ctx, bool preserve)
    {
       auto lw = current().line_width;
       auto ss = stroke_style_obj();
-      auto render =
-         [this, lw, ss](render_target* target, brush* b, bool preserve)
-         {
-            _path.impl()->stroke(*target, b, lw, preserve, ss);
-         };
-
       if (current().shadow_blur != 0)
       {
+         auto render =
+            [this, lw, ss](render_target* target, brush* b, bool preserve)
+            { _path.impl()->stroke(*target, b, lw, preserve, ss); };
          auto bounds = _path.impl()->stroke_bounds(lw, ss);
          adjust_for_blur(bounds);
          apply_blur(ctx, bounds, render);   // leaves the transform at identity
       }
-      ctx.target()->SetTransform(current().matrix);
-      render(ctx.target(), stroke_paint(*ctx.target()), preserve);
+      auto bounds = _path.impl()->stroke_bounds(lw, ss);
+      composite_draw(ctx, bounds,
+         [this, lw, ss, preserve](render_target* t)
+         { _path.impl()->stroke(*t, stroke_paint(*t), lw, preserve, ss); });
    }
 
    ////////////////////////////////////////////////////////////////////////////
@@ -465,10 +670,15 @@ namespace cycfi::artist
    {
       bool owned = false;
       auto geo = _state->path().impl()->realize_fill(owned);
-      if (!geo)
-         return;
-      geo->AddRef();   // kept alive until the layer is popped
-      _state->do_clip(geo);
+      // clip() consumes the current path (matches the other backends' detach);
+      // otherwise the clip geometry lingers and a following fill_rect/fill would
+      // also paint it.
+      if (geo)
+      {
+         geo->AddRef();   // kept alive until the layer is popped
+         _state->do_clip(geo);
+      }
+      _state->path().impl()->clear();
    }
 
    void canvas::clip(class path const& p)
@@ -613,9 +823,9 @@ namespace cycfi::artist
       cur.shadow_color = c;
    }
 
-   void canvas::global_composite_operation(composite_op_enum /*mode*/)
+   void canvas::global_composite_operation(composite_op_enum mode)
    {
-      // TODO (task #5): map to D2D1_PRIMITIVE_BLEND / blend effect.
+      _state->current().composite = mode;
    }
 
    void canvas::fill_rule(path::fill_rule_enum rule)
@@ -779,23 +989,24 @@ namespace cycfi::artist
    // Pixmaps
    void canvas::draw(image const& pic, rect const& src, rect const& dest)
    {
-      auto t = _context->target();
       auto wic = d2d::wic_bitmap(pic);
-      if (!t || !wic)
+      if (!_context->target() || !wic)
          return;
 
-      ID2D1Bitmap* bm = nullptr;
-      if (FAILED(t->CreateBitmapFromWicBitmap(wic, &bm)) || !bm)
-         return;
-
-      t->SetTransform(_state->current().matrix);
-      t->DrawBitmap(
-         bm,
-         D2D1::RectF(dest.left, dest.top, dest.right, dest.bottom),
-         1.0f,
-         D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,
-         D2D1::RectF(src.left, src.top, src.right, src.bottom)
-      );
-      release(bm);
+      _state->composite_draw(*_context, dest,
+         [&](render_target* t)
+         {
+            ID2D1Bitmap* bm = nullptr;
+            if (FAILED(t->CreateBitmapFromWicBitmap(wic, &bm)) || !bm)
+               return;
+            t->DrawBitmap(
+               bm,
+               D2D1::RectF(dest.left, dest.top, dest.right, dest.bottom),
+               1.0f,
+               D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,
+               D2D1::RectF(src.left, src.top, src.right, src.bottom)
+            );
+            release(bm);
+         });
    }
 }
