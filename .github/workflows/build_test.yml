@@ -14,9 +14,148 @@ on:
           - skia
           - cairo
           - quartz2d
+          - linux-hosts
 env:
   BUILD_TYPE: Release
 jobs:
+
+  ###########################################################################
+  # Linux Hosts — build all 6 configs + headless smoke test
+  # (gtk3 | wayland | x11) × (cairo | skia)
+  #
+  # This job ensures the native Linux host files always compile and the
+  # examples start without crashing. It would have caught both PR #27
+  # compile errors (NativeSurface typo, missing <iostream>) and the
+  # immediate segfault caused by a null zxdg_decoration_manager_v1 pointer.
+  ###########################################################################
+  build-linux-hosts:
+    name: "Linux Hosts (${{ matrix.host }}/${{ matrix.backend }})"
+    if: >
+      github.event_name != 'workflow_dispatch' ||
+      inputs.job == 'all' ||
+      inputs.job == 'linux-hosts'
+    runs-on: ubuntu-latest
+    env:
+      VCPKG_BINARY_SOURCES: "clear;http,https://media.cycfi.com/vcpkg-cache/{sha}.zip,read;x-aws,s3://cycfi-media/vcpkg-cache/,write"
+      AWS_ENDPOINT_URL: "https://24c350f8d000d722e6bcc12e3b03469a.r2.cloudflarestorage.com"
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+    strategy:
+      fail-fast: false
+      matrix:
+        host:    [gtk3, wayland, x11]
+        backend: [cairo, skia]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install base dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ninja-build pkg-config xvfb
+
+    - name: Install cairo backend dependencies
+      if: matrix.backend == 'cairo'
+      run: |
+        sudo apt-get install -y \
+          libcairo2-dev libfontconfig1-dev libfreetype6-dev libharfbuzz-dev
+
+    - name: Install skia backend dependencies
+      if: matrix.backend == 'skia'
+      run: |
+        sudo apt-get install -y \
+          libharfbuzz-dev libunibreak-dev fontconfig \
+          libgl1-mesa-dev libglu1-mesa-dev \
+          autoconf autoconf-archive automake libtool
+
+    - name: Install gtk3 host dependencies
+      if: matrix.host == 'gtk3'
+      run: |
+        sudo apt-get install -y libgtk-3-dev libgtkglext1-dev libegl-dev
+
+    - name: Install wayland host dependencies
+      if: matrix.host == 'wayland'
+      run: |
+        sudo apt-get install -y \
+          libwayland-dev wayland-protocols \
+          libdecor-0-dev libxkbcommon-dev \
+          libegl-dev libgl1-mesa-dev \
+          weston
+
+    - name: Install x11 host dependencies
+      if: matrix.host == 'x11'
+      run: |
+        sudo apt-get install -y libx11-dev libegl-dev libgl1-mesa-dev
+
+    - name: Bootstrap vcpkg (skia)
+      if: matrix.backend == 'skia'
+      run: lib/external/vcpkg/bootstrap-vcpkg.sh -disableMetrics
+
+    - name: Configure
+      run: |
+        if [ "${{ matrix.backend }}" = "skia" ]; then
+          export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig:$PKG_CONFIG_PATH"
+          cmake -S . -B build-hosts \
+            -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+            -DARTIST_SKIA=ON \
+            -DARTIST_BUILD_EXAMPLES=ON \
+            -DARTIST_BUILD_TESTS=OFF \
+            -DARTIST_LINUX_HOST=${{ matrix.host }} \
+            -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake \
+            -DVCPKG_TARGET_TRIPLET=x64-linux \
+            -DVCPKG_ENV_PASSTHROUGH_UNTRACKED=PKG_CONFIG_PATH \
+            -G Ninja
+        else
+          cmake -S . -B build-hosts \
+            -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+            -DARTIST_CAIRO=ON \
+            -DARTIST_BUILD_EXAMPLES=ON \
+            -DARTIST_BUILD_TESTS=OFF \
+            -DARTIST_LINUX_HOST=${{ matrix.host }} \
+            -G Ninja
+        fi
+
+    - name: Build
+      run: cmake --build build-hosts
+
+    - name: Smoke test — GTK3 and X11 hosts (Xvfb)
+      if: matrix.host != 'wayland'
+      run: |
+        # Run each example for up to 3 seconds under a virtual framebuffer.
+        # Exit 0 = clean shutdown, 124 = killed by timeout (both are success).
+        # Any crash (SIGSEGV → 139, SIGABRT → 134, etc.) fails the job.
+        for bin in $(find build-hosts/examples -maxdepth 1 -type f -executable); do
+          echo "--- smoke: $bin"
+          xvfb-run --auto-servernum -- timeout 3 "$bin"
+          code=$?
+          # 124 = timeout (binary was still running — that is a pass)
+          [ $code -eq 0 ] || [ $code -eq 124 ] || exit $code
+        done
+
+    - name: Smoke test — Wayland host (weston headless)
+      if: matrix.host == 'wayland'
+      run: |
+        # Spin up a headless weston compositor, point examples at its socket.
+        export XDG_RUNTIME_DIR=/tmp/ci-xdg
+        mkdir -p "$XDG_RUNTIME_DIR"
+        weston --backend=headless-backend.so --socket=ci-wayland \
+               --no-config --idle-time=0 &
+        WESTON_PID=$!
+        # Give weston a moment to bind the socket before clients connect.
+        sleep 1
+        export WAYLAND_DISPLAY=ci-wayland
+        FAILED=0
+        for bin in $(find build-hosts/examples -maxdepth 1 -type f -executable); do
+          echo "--- smoke: $bin"
+          timeout 3 "$bin"
+          code=$?
+          [ $code -eq 0 ] || [ $code -eq 124 ] || FAILED=$code
+        done
+        kill "$WESTON_PID" 2>/dev/null || true
+        exit $FAILED
 
   ###########################################################################
   # Skia
