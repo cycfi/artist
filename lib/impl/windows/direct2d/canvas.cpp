@@ -174,8 +174,11 @@ namespace cycfi::artist
       using draw_fn = std::function<void(render_target*)>;
       void              composite_draw(context& ctx, artist::rect user_bounds, draw_fn render);
 
-   private:
-
+      // Drop-shadow blur. Public so canvas::fill_text / stroke_text can apply the
+      // current shadow under text the same way fill()/stroke() do under paths:
+      // `render` draws the primitive (in the supplied shadow brush) into an
+      // offscreen, which is Gaussian-blurred, offset, and composited onto the
+      // main target. Leaves the main transform at identity.
       using render_function = std::function<void(render_target*, brush*, bool)>;
       void              apply_blur(context& ctx, artist::rect bounds, render_function render);
       void              adjust_for_blur(artist::rect& bounds);
@@ -884,12 +887,20 @@ namespace cycfi::artist
       align_text(_state->current().text_align, lb, tm.widthIncludingTrailingWhitespace,
          fi->ascent, fi->descent);
 
+      D2D1_POINT_2F org = D2D1::Point2F(lb.x, lb.y - fi->ascent);   // layout box top-left
+
+      // Drop shadow / glow: render the text in the shadow color into an offscreen,
+      // blur + offset it, and composite under the real text.
+      if (_state->current().shadow_blur != 0)
+         _state->apply_blur(*_context, {},
+            [layout, org](render_target* target, brush* b, bool)
+            {
+               target->DrawTextLayout(org, layout, b, D2D1_DRAW_TEXT_OPTIONS_NONE);
+            });
+
       t->SetTransform(_state->current().matrix);
       auto brush = _state->fill_paint(*t);
-      t->DrawTextLayout(
-         D2D1::Point2F(lb.x, lb.y - fi->ascent),   // layout box top-left
-         layout, brush, D2D1_DRAW_TEXT_OPTIONS_NONE
-      );
+      t->DrawTextLayout(org, layout, brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
       d2d::release(layout);
    }
 
@@ -937,12 +948,22 @@ namespace cycfi::artist
       point lb = p;
       align_text(_state->current().text_align, lb, width, fi->ascent, fi->descent);
 
-      t->SetTransform(
-         D2D1::Matrix3x2F::Translation(lb.x, lb.y) * _state->current().matrix);
-      t->DrawGeometry(
-         geo, _state->stroke_paint(*t),
-         _state->current().line_width, _state->stroke_style_obj()
-      );
+      auto lw = _state->current().line_width;
+      auto ss = _state->stroke_style_obj();
+      auto xform = D2D1::Matrix3x2F::Translation(lb.x, lb.y) * _state->current().matrix;
+
+      // Drop shadow / glow for the stroked outline (the glyph outline sits at the
+      // origin, so the shadow render must re-apply the glyph translation).
+      if (_state->current().shadow_blur != 0)
+         _state->apply_blur(*_context, {},
+            [geo, xform, lw, ss](render_target* target, brush* b, bool)
+            {
+               target->SetTransform(xform);
+               target->DrawGeometry(geo, b, lw, ss);
+            });
+
+      t->SetTransform(xform);
+      t->DrawGeometry(geo, _state->stroke_paint(*t), lw, ss);
       d2d::release(geo);
    }
 

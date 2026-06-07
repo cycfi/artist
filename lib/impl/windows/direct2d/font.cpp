@@ -209,26 +209,44 @@ namespace cycfi::artist
       auto style   = dwrite_style(descr._slant);
       auto stretch = dwrite_stretch(descr._stretch);
 
-      // First family in the comma-separated list (DirectWrite resolves a single
-      // family; falls back internally if absent).
-      std::istringstream str{std::string{descr._families}};
-      std::string first;
-      std::getline(str, first, ',');
-      trim(first);
-      std::wstring wfamily = d2d::to_utf16(std::string_view{first});
-
       _ptr->size = descr._size;
 
-      // Prefer the bundled (custom) collection when it has this family; else use
-      // the system collection (nullptr => system in CreateTextFormat).
+      // Resolve the family from the comma-separated list. Prefer the bundled
+      // (custom) collection and pick the FIRST listed family it actually
+      // contains. This matters for e.g. "Open Sans Condensed, Open Sans": the
+      // custom collection groups the condensed faces *under* "Open Sans"
+      // (selected via the stretch axis), so the first name misses and we must
+      // fall through to "Open Sans" + DWRITE_FONT_STRETCH_CONDENSED rather than
+      // give up and render a normal-width fallback. If none of the listed names
+      // are in the custom collection, use the first against the system
+      // collection (nullptr => system in CreateTextFormat).
+      auto custom = d2d::custom_font_collection();
+      std::wstring wfamily;
       IDWriteFontCollection* coll = nullptr;
-      if (auto custom = d2d::custom_font_collection())
       {
-         UINT32 idx = 0;
-         BOOL ex = FALSE;
-         custom->FindFamilyName(wfamily.c_str(), &idx, &ex);
-         if (ex)
-            coll = custom;
+         std::istringstream str{std::string{descr._families}};
+         std::string fam;
+         while (std::getline(str, fam, ','))
+         {
+            trim(fam);
+            if (fam.empty())
+               continue;
+            std::wstring wf = d2d::to_utf16(std::string_view{fam});
+            if (wfamily.empty())
+               wfamily = wf;   // first listed family = the system fallback
+            if (custom)
+            {
+               UINT32 idx = 0;
+               BOOL ex = FALSE;
+               custom->FindFamilyName(wf.c_str(), &idx, &ex);
+               if (ex)
+               {
+                  wfamily = wf;
+                  coll = custom;
+                  break;
+               }
+            }
+         }
       }
 
       d2d::dwrite_factory()->CreateTextFormat(
