@@ -84,6 +84,7 @@ namespace cycfi::artist::d2d
    ////////////////////////////////////////////////////////////////////////////
    factory&             get_factory();
    IWICImagingFactory&  get_wic_factory();
+   IDWriteFactory*      dwrite_factory();
 
    ////////////////////////////////////////////////////////////////////////////
    // Abstract canvas state hook (so device-dependent resources held by the
