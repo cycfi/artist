@@ -569,8 +569,26 @@ namespace cycfi::artist
    }
 
    ////////////////////////////////////////////////////////////////////////////
-   // Pixmaps (stub for the baseline; task #6 implements WIC draw)
-   void canvas::draw(image const& /*pic*/, rect const& /*src*/, rect const& /*dest*/)
+   // Pixmaps
+   void canvas::draw(image const& pic, rect const& src, rect const& dest)
    {
+      auto t = _context->target();
+      auto wic = d2d::wic_bitmap(pic);
+      if (!t || !wic)
+         return;
+
+      ID2D1Bitmap* bm = nullptr;
+      if (FAILED(t->CreateBitmapFromWicBitmap(wic, &bm)) || !bm)
+         return;
+
+      t->SetTransform(_state->current().matrix);
+      t->DrawBitmap(
+         bm,
+         D2D1::RectF(dest.left, dest.top, dest.right, dest.bottom),
+         1.0f,
+         D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,
+         D2D1::RectF(src.left, src.top, src.right, src.bottom)
+      );
+      release(bm);
    }
 }

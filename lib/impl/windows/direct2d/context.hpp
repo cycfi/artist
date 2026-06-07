@@ -155,6 +155,10 @@ namespace cycfi::artist::d2d
    brush* make_paint(canvas::linear_gradient const& lg, render_target& target);
    brush* make_paint(canvas::radial_gradient const& rg, render_target& target);
 
+   // Access the backing WIC bitmap of an image (defined in image.cpp). Returns
+   // nullptr for an empty image.
+   IWICBitmap* wic_bitmap(image const& img);
+
    template <typename Container>
    inline geometry_group* make_group(Container const& c, fill_mode mode)
    {
