@@ -277,7 +277,10 @@ namespace cycfi::artist
       if (SUCCEEDED(dc->CreateEffect(CLSID_D2D1GaussianBlur, &blur)) && blur &&
           SUCCEEDED(dc->CreateEffect(CLSID_D2D12DAffineTransform, &xform)) && xform)
       {
-         float blur_val = (cur.shadow_blur / cur.matrix.m11) / 2;
+         // Match the Skia backend: shadow blur maps directly to the Gaussian
+         // standard deviation (Skia uses sigma = blur). The earlier /2 made the
+         // D2D shadow about half as wide (too tight/hard).
+         float blur_val = cur.shadow_blur / cur.matrix.m11;
          blur->SetInput(0, offscreen.bitmap());
          blur->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_SOFT);
          blur->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, blur_val);
