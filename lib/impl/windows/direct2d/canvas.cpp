@@ -56,6 +56,7 @@ namespace cycfi::artist
          color          shadow_color   = colors::black;
          class font     font           = font_descr{"Segoe UI", 12};
          int            text_align     = canvas::baseline;
+         std::size_t    clip_depth     = 0;   // # of clip layers active at save
       };
 
                         canvas_state();
@@ -87,8 +88,57 @@ namespace cycfi::artist
       void              apply_blur(context& ctx, artist::rect bounds, render_function render);
       void              adjust_for_blur(artist::rect& bounds);
 
+   public:
+
+      // Clip layers (PushLayer/PopLayer), nested with save/restore.
+      void              set_target(render_target* t)   { _rt = t; }
+      // Push a clip layer for `geo` (user space) under the current matrix.
+      // Takes one ref on geo (released when the layer is popped on restore).
+      void              do_clip(geometry* geo)
+                        {
+                           if (!_rt || !geo)
+                           {
+                              release(geo);
+                              return;
+                           }
+                           ID2D1Layer* layer = nullptr;
+                           if (FAILED(_rt->CreateLayer(nullptr, &layer)) || !layer)
+                           {
+                              release(geo);
+                              return;
+                           }
+                           _rt->SetTransform(current().matrix);
+                           _rt->PushLayer(
+                              D2D1::LayerParameters(
+                                 D2D1::InfiniteRect(), geo,
+                                 D2D1_ANTIALIAS_MODE_PER_PRIMITIVE,
+                                 D2D1::IdentityMatrix(), 1.0f, nullptr,
+                                 D2D1_LAYER_OPTIONS_NONE),
+                              layer);
+                           _clips.push_back({layer, geo});
+                        }
+      std::size_t       clip_count() const             { return _clips.size(); }
+      void              pop_clips_to(std::size_t depth)
+                        {
+                           while (_clips.size() > depth)
+                           {
+                              auto c = _clips.back();
+                              _clips.pop_back();
+                              if (_rt)
+                                 _rt->PopLayer();
+                              release(c.layer);
+                              release(c.geo);
+                           }
+                        }
+
+   private:
+
+      struct clip_t { ID2D1Layer* layer; geometry* geo; };
+
       std::stack<info>  _stack;
       artist::path      _path;
+      render_target*    _rt = nullptr;
+      std::vector<clip_t> _clips;
 
       brush*            _fill_paint = nullptr;     // lazy, derived from fill_info
       brush*            _stroke_paint = nullptr;   // lazy, derived from stroke_info
@@ -102,6 +152,7 @@ namespace cycfi::artist
 
    canvas::canvas_state::~canvas_state()
    {
+      pop_clips_to(0);   // balance any outstanding PushLayer before EndDraw
       release(_fill_paint);
       release(_stroke_paint);
       release(_stroke_style);
@@ -123,13 +174,16 @@ namespace cycfi::artist
 
    void canvas::canvas_state::save()
    {
-      _stack.push(_stack.top());   // copy current
+      auto copy = _stack.top();
+      copy.clip_depth = _clips.size();   // clips active when this level began
+      _stack.push(copy);
    }
 
    void canvas::canvas_state::restore()
    {
       if (_stack.size() > 1)
       {
+         pop_clips_to(_stack.top().clip_depth);   // drop clips added this level
          _stack.pop();
          // Derived resources depend on the (now restored) info; rebuild lazily.
          release(_fill_paint);
@@ -283,6 +337,7 @@ namespace cycfi::artist
     , _state{std::make_unique<canvas_state>()}
    {
       _context->state(_state.get());
+      _state->set_target(_context->target());
    }
 
    canvas::~canvas()
@@ -396,13 +451,25 @@ namespace cycfi::artist
 
    void canvas::clip()
    {
-      // TODO (task #5): PushLayer with the current path geometry, popped on
-      // restore(). No-op for the baseline (gradient fills don't need it).
+      bool owned = false;
+      auto geo = _state->path().impl()->realize_fill(owned);
+      if (!geo)
+         return;
+      geo->AddRef();   // kept alive until the layer is popped
+      _state->do_clip(geo);
    }
 
-   void canvas::clip(class path const& /*p*/)
+   void canvas::clip(class path const& p)
    {
-      // TODO (task #5)
+      // Copy so we can realize the geometry (build_path mutates); the copy's
+      // path_impl owns the cached geometry, so AddRef to outlive it.
+      path tmp{p};
+      bool owned = false;
+      auto geo = tmp.impl()->realize_fill(owned);
+      if (!geo)
+         return;
+      geo->AddRef();
+      _state->do_clip(geo);
    }
 
    rect canvas::clip_extent() const
