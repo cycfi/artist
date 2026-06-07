@@ -109,12 +109,20 @@ void composite_ops(canvas& cnv)
 
 void draw(canvas& cnv)
 {
-   image img{window_size};
+   scale_to_fit(cnv, {window_size.x, window_size.y}, bkd_color);
+
+   // composite_ops is static content: render it into the offscreen image once
+   // and reuse it every frame. Recreating a (GPU-backed) offscreen image each
+   // frame made resize sluggish on the Skia backend; the blit below is cheap.
+   static image img = []
    {
-      offscreen_image ctx{img};
+      image im{window_size};
+      offscreen_image ctx{im};
       canvas pm_cnv{ctx.context()};
       composite_ops(pm_cnv);
-   }
+      return im;
+   }();
+
    cnv.draw(img);
 }
 

@@ -37,6 +37,12 @@ constexpr float max_w = 580.0f;
 
 void draw(canvas& cnv)
 {
+   // True window size (before the fit transform), so the FPS readout can anchor
+   // to the real window corner instead of moving with the letterbox.
+   auto const win = cnv.clip_extent();
+
+   cnv.save();
+   scale_to_fit(cnv, {window_size.x, window_size.y}, bkd_color);
    cnv.add_rect({{0, 0}, window_size});
    cnv.fill_style(bkd_color);
    cnv.fill();
@@ -47,17 +53,23 @@ void draw(canvas& cnv)
       width_incr = -width_incr;
 
    // Draw the animated box outline
-   cnv.add_rect({20, 20, 20 + box_width, 460});
+   rect const box{20, 20, 20 + box_width, 460};
+   cnv.add_rect(box);
    cnv.stroke_style(rgba(100, 120, 200, 100));
    cnv.line_width(1);
    cnv.stroke();
 
-   // Reflow and draw every frame
+   // Reflow and draw every frame, clipped to the box.
+   cnv.save();
+   cnv.add_rect(box);
+   cnv.clip();
    auto tlayout = text_layout{font_descr{"Open Sans", 14}.italic(), text};
    tlayout.flow(box_width, true);
    tlayout.draw(cnv, {20, 30}, rgba(220, 220, 220, 200));
+   cnv.restore();
 
-   print_elapsed(cnv, window_size, bkd_color);
+   cnv.restore();   // undo scale_to_fit → back to window coordinates
+   print_elapsed(cnv, {win.width(), win.height()}, bkd_color);
 }
 
 int main(int argc, char const* argv[])
