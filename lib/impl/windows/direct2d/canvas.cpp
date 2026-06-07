@@ -63,6 +63,7 @@ namespace cycfi::artist
 
       void              update(render_target& target) override;
       void              discard() override;
+      matrix2x2f        current_matrix() const override { return _stack.top().matrix; }
 
       info&             current()         { return _stack.top(); }
       info const&       current() const    { return _stack.top(); }

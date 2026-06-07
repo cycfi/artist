@@ -109,6 +109,8 @@ elseif (MSVC)
       set(GOLDEN_PATH windows_golden/skia)
    elseif (ARTIST_CAIRO)
       set(GOLDEN_PATH windows_golden/cairo)
+   elseif (ARTIST_DIRECT2D)
+      set(GOLDEN_PATH windows_golden/direct2d)
    endif()
 
    set(GOLDEN_DIR windows_golden)

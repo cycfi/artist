@@ -95,6 +95,13 @@ elseif (ARTIST_CAIRO)
    message(STATUS "Building Artist lib with Cairo.")
 endif()
 
+# The Direct2D backend (and Catch2, used by the tests) rely on C++ exceptions.
+# The base MSVC flags don't enable unwind semantics (C4530), so a throw would
+# fail-fast (0xC0000409) instead of unwinding. Enable /EHsc for all targets.
+if (MSVC AND ARTIST_DIRECT2D)
+   add_compile_options(/EHsc)
+endif()
+
 if (APPLE)
    if (NOT CMAKE_OSX_ARCHITECTURES)
       set(CMAKE_OSX_ARCHITECTURES ${CMAKE_SYSTEM_PROCESSOR})

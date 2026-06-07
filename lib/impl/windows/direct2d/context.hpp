@@ -92,8 +92,10 @@ namespace cycfi::artist::d2d
    ////////////////////////////////////////////////////////////////////////////
    struct context_state
    {
-      virtual void   update(render_target& cnv) = 0;
-      virtual void   discard() = 0;
+      virtual void         update(render_target& cnv) = 0;
+      virtual void         discard() = 0;
+      // Current user transform, so out-of-canvas drawers (text_run) can honor it.
+      virtual matrix2x2f   current_matrix() const = 0;
    };
 
    ////////////////////////////////////////////////////////////////////////////
