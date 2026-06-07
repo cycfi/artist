@@ -168,29 +168,37 @@ namespace cycfi::artist
          return;
 
       fs::path p{std::string{path_}};
+      // Ensure the destination directory exists (golden bootstrap writes into
+      // dirs that may not be present yet).
+      std::error_code ec;
+      if (p.has_parent_path())
+         fs::create_directories(p.parent_path(), ec);
       std::wstring wpath = p.wstring();
 
+      // Every step is checked: WIC returns failure HRESULTs (e.g. an unwritable
+      // path) rather than throwing, and the previous unchecked chain
+      // null-dereferenced the next interface (crash at frame->Initialize).
       IWICStream* stream = nullptr;
-      d2d::get_wic_factory().CreateStream(&stream);
-      stream->InitializeFromFilename(wpath.c_str(), GENERIC_WRITE);
-
       IWICBitmapEncoder* encoder = nullptr;
-      d2d::get_wic_factory().CreateEncoder(
-         GUID_ContainerFormatPng, nullptr, &encoder);
-      encoder->Initialize(stream, WICBitmapEncoderNoCache);
-
       IWICBitmapFrameEncode* frame = nullptr;
-      encoder->CreateNewFrame(&frame, nullptr);
-      frame->Initialize(nullptr);
+      auto& wic = d2d::get_wic_factory();
 
-      UINT w = 0, h = 0;
-      _impl->bitmap->GetSize(&w, &h);
-      frame->SetSize(w, h);
-      WICPixelFormatGUID pf = GUID_WICPixelFormat32bppPBGRA;
-      frame->SetPixelFormat(&pf);
-      frame->WriteSource(_impl->bitmap, nullptr);
-      frame->Commit();
-      encoder->Commit();
+      if (SUCCEEDED(wic.CreateStream(&stream)) && stream &&
+          SUCCEEDED(stream->InitializeFromFilename(wpath.c_str(), GENERIC_WRITE)) &&
+          SUCCEEDED(wic.CreateEncoder(GUID_ContainerFormatPng, nullptr, &encoder)) && encoder &&
+          SUCCEEDED(encoder->Initialize(stream, WICBitmapEncoderNoCache)) &&
+          SUCCEEDED(encoder->CreateNewFrame(&frame, nullptr)) && frame &&
+          SUCCEEDED(frame->Initialize(nullptr)))
+      {
+         UINT w = 0, h = 0;
+         _impl->bitmap->GetSize(&w, &h);
+         WICPixelFormatGUID pf = GUID_WICPixelFormat32bppPBGRA;
+         frame->SetSize(w, h);
+         frame->SetPixelFormat(&pf);
+         if (SUCCEEDED(frame->WriteSource(_impl->bitmap, nullptr)) &&
+             SUCCEEDED(frame->Commit()))
+            encoder->Commit();
+      }
 
       d2d::release(frame);
       d2d::release(encoder);
