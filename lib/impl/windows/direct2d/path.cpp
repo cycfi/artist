@@ -53,9 +53,9 @@ namespace cycfi::artist
       return *this;
    }
 
-   bool path::operator==(path const& /*rhs*/) const
+   bool path::operator==(path const& rhs) const
    {
-      return false;   // geometry equality is not meaningfully defined here
+      return _impl && rhs._impl && _impl->equals(*rhs._impl);
    }
 
    bool path::is_empty() const
