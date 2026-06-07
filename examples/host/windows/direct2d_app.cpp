@@ -36,6 +36,8 @@ public:
                ~window();
 
    void        render(HWND hwnd);
+   void        on_resize();
+   void        on_dpi_changed(unsigned dpi, RECT const* suggested);
 
 private:
 
@@ -113,6 +115,37 @@ void window::render(HWND hwnd)
    EndPaint(hwnd, &ps);
 }
 
+void window::on_resize()
+{
+   // Resize the back buffer to the new client size so the next frame is drawn
+   // (as vectors) at the new resolution. Without this, the HwndRenderTarget
+   // keeps its original size and Direct2D bitmap-stretches it -> blurry/pixelated.
+   if (!_target)
+      return;
+   RECT cr;
+   GetClientRect(_wnd, &cr);
+   _target->Resize(D2D1::SizeU(cr.right - cr.left, cr.bottom - cr.top));
+}
+
+void window::on_dpi_changed(unsigned dpi, RECT const* suggested)
+{
+   // The window moved to a monitor with a different scale factor. Update the
+   // render-target DPI (so 1 DIP stays 1 logical pixel and content stays crisp)
+   // and adopt Windows' suggested position/size; the WM_SIZE that follows
+   // resizes the back buffer.
+   _scale = dpi / 96.0f;
+   if (_target)
+      _target->SetDpi(96.0f * _scale, 96.0f * _scale);
+   if (suggested)
+      SetWindowPos(
+         _wnd, nullptr,
+         suggested->left, suggested->top,
+         suggested->right - suggested->left,
+         suggested->bottom - suggested->top,
+         SWP_NOZORDER | SWP_NOACTIVATE);
+   InvalidateRect(_wnd, nullptr, FALSE);
+}
+
 namespace
 {
    LRESULT CALLBACK handle_event(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
@@ -133,9 +166,16 @@ namespace
          case WM_SIZE:
             if (g_window && wparam != SIZE_MINIMIZED)
             {
+               g_window->on_resize();
                InvalidateRect(hwnd, nullptr, FALSE);
                UpdateWindow(hwnd);
             }
+            break;
+
+         case WM_DPICHANGED:
+            if (g_window)
+               g_window->on_dpi_changed(
+                  HIWORD(wparam), reinterpret_cast<RECT const*>(lparam));
             break;
 
          case WM_KEYDOWN:
@@ -259,7 +299,11 @@ int run_app(
 )
 {
    (void)argc; (void)argv;
-   SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE);
+   // Per-monitor-v2: we render at the real pixel resolution and handle DPI
+   // ourselves (target DPI + WM_DPICHANGED), so Windows never bitmap-stretches
+   // the window. System-DPI awareness (the old call) left 4K/scaled displays
+   // virtualized and pixelated.
+   SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
    window win{window_size, bkd, animate};
 
    MSG msg;
