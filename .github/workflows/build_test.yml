@@ -14,6 +14,7 @@ on:
           - skia
           - cairo
           - quartz2d
+          - direct2d
           - linux-hosts
 env:
   BUILD_TYPE: Release
@@ -627,4 +628,90 @@ jobs:
       with:
         name: test-results-quartz2d
         path: build-quartz2d/test/results/
+        if-no-files-found: ignore
+
+  ###########################################################################
+  # Direct2D (Windows MSVC) — native backend, no vcpkg (system d2d1/dwrite/
+  # windowscodecs). Requires the MSVC v14.44 toolset or newer; older toolsets
+  # miscompile the backend under /O2 (the CMake config FATAL_ERRORs on them).
+  ###########################################################################
+  build-direct2d:
+    name: "Direct2D (Windows MSVC x64)"
+    if: >
+      github.event_name != 'workflow_dispatch' ||
+      inputs.job == 'all' ||
+      inputs.job == 'direct2d'
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Configure
+      shell: cmake -P {0}
+      run: |
+        execute_process(
+          COMMAND "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat" && set
+          OUTPUT_FILE environment_script_output.txt
+        )
+        file(STRINGS environment_script_output.txt output_lines)
+        foreach(line IN LISTS output_lines)
+          if (line MATCHES "^([a-zA-Z0-9_-]+)=(.*)$")
+            set(ENV{${CMAKE_MATCH_1}} "${CMAKE_MATCH_2}")
+          endif()
+        endforeach()
+
+        execute_process(
+          COMMAND ${CMAKE_COMMAND}
+            -S .
+            -B build-d2d
+            -D CMAKE_BUILD_TYPE=$ENV{BUILD_TYPE}
+            -D ARTIST_DIRECT2D=ON
+            -D ARTIST_BUILD_EXAMPLES=ON
+            -D ARTIST_BUILD_TESTS=ON
+            -G Ninja
+            -D CMAKE_MAKE_PROGRAM=ninja
+          RESULT_VARIABLE result
+          ERROR_VARIABLE error_message
+        )
+        if (NOT result EQUAL 0)
+          message(FATAL_ERROR "Configure failed: ${error_message} - ${result}")
+        endif()
+
+    - name: Build
+      shell: cmake -P {0}
+      run: |
+        execute_process(
+          COMMAND "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat" && set
+          OUTPUT_FILE environment_script_output.txt
+        )
+        file(STRINGS environment_script_output.txt output_lines)
+        foreach(line IN LISTS output_lines)
+          if (line MATCHES "^([a-zA-Z0-9_-]+)=(.*)$")
+            set(ENV{${CMAKE_MATCH_1}} "${CMAKE_MATCH_2}")
+          endif()
+        endforeach()
+
+        execute_process(
+          COMMAND ${CMAKE_COMMAND} --build build-d2d
+          RESULT_VARIABLE result
+          ERROR_VARIABLE error_message
+        )
+        if (NOT result EQUAL 0)
+          message(FATAL_ERROR "Build failed: ${error_message} - ${result}")
+        endif()
+
+    # Offscreen WIC rendering works headless (no GPU window); D2D falls back to
+    # the WARP software renderer on the GPU-less runner.
+    - name: Test
+      run: ctest --verbose --test-dir build-d2d
+      shell: bash
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-direct2d
+        path: build-d2d/test/results/
         if-no-files-found: ignore
