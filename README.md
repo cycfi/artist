@@ -18,6 +18,18 @@ graphics.
 
 ## News
 
+Check out the develop branch. It's a ground up rewrite of artist with various improvements and new features:
+
+- vcpkg-based build system — replaces the old prebuilt binary branch; Skia and all dependencies managed via vcpkg with a shared R2 binary cache for fast restores
+- Cairo backend — HarfBuzz text shaping, software shadow blur, macOS Quartz surface optimisation
+- Direct2D backend — native Windows D2D/DirectWrite/WIC, no Skia dependency
+- Native Linux hosts — GTK3, Wayland, and X11
+- Rope-backed text layout engine — multi-paragraph, incremental edits, O(log n) insert/erase
+- Visual regression testing — CIEDE2000 perceptual comparison with complexity-adaptive tiled checks
+- Comprehensive CI — all platforms and backends covered, including headless smoke tests
+
+Heads up! This will be merged to master in the near future.
+
 * 13 May 2020: Foundation docs
 * 20 March 2020: Initial port for Quartz-2D
 * 31 March 2020: Initial port for Skia (MacOS)
