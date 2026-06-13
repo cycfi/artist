@@ -26,8 +26,13 @@ xcuserdata/
 /.vscode/
 /.idea/
 /build/
+/build-*/
 /cmake-build-debug/
 /cmake-build-release/
 /.vs/
 /CMakeSettings.json
 /Testing/
+/vcpkg_installed/
+/lib/external/vcpkg/
+/docs/
+/ai/
