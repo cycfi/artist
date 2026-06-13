@@ -8,12 +8,19 @@
 #ifndef GrQuad_DEFINED
 #define GrQuad_DEFINED
 
-#include "include/core/SkMatrix.h"
 #include "include/core/SkPoint.h"
 #include "include/core/SkPoint3.h"
-#include "include/private/SkVx.h"
+#include "include/core/SkRect.h"
+#include "include/core/SkScalar.h"
+#include "include/private/base/SkAssert.h"
+#include "include/private/base/SkFloatingPoint.h"
+#include "src/base/SkVx.h"
 #include "src/gpu/BufferWriter.h"
 
+#include <algorithm>
+#include <type_traits>
+
+class SkMatrix;
 enum class GrQuadAAFlags;
 
 /**
@@ -93,8 +100,9 @@ public:
             accum *= fY[i];
             accum *= fW[i];
         }
-        SkASSERT(0 == accum || SkScalarIsNaN(accum));
-        return !SkScalarIsNaN(accum);
+        SkASSERT(0 == accum || SkIsNaN(accum));
+
+        return accum == 0.0f;
     }
 
     float x(int i) const { return fX[i]; }

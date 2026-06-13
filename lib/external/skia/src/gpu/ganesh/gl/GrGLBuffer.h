@@ -8,11 +8,19 @@
 #ifndef GrGLBuffer_DEFINED
 #define GrGLBuffer_DEFINED
 
-#include "include/gpu/gl/GrGLTypes.h"
+#include "include/core/SkRefCnt.h"
+#include "include/gpu/ganesh/gl/GrGLTypes.h"
+#include "include/private/base/SkAssert.h"
+#include "include/private/gpu/ganesh/GrTypesPriv.h"
 #include "src/gpu/ganesh/GrGpuBuffer.h"
 
-class GrGLGpu;
+#include <cstddef>
+#include <string_view>
+
 class GrGLCaps;
+class GrGLGpu;
+class SkString;
+class SkTraceMemoryDump;
 
 class GrGLBuffer : public GrGpuBuffer {
 public:
@@ -49,6 +57,7 @@ private:
 
     void onMap(MapType) override;
     void onUnmap(MapType) override;
+    bool onClearToZero() override;
     bool onUpdateData(const void* src, size_t offset, size_t size, bool preserve) override;
 
     void onSetLabel() override;

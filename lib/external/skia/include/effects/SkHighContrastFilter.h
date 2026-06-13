@@ -8,7 +8,11 @@
 #ifndef SkHighContrastFilter_DEFINED
 #define SkHighContrastFilter_DEFINED
 
-#include "include/core/SkColorFilter.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkTypes.h"
+
+class SkColorFilter;
 
 /**
  *  Configuration struct for SkHighContrastFilter.
@@ -33,16 +37,16 @@ struct SkHighContrastConfig {
     SkHighContrastConfig(bool grayscale,
                          InvertStyle invertStyle,
                          SkScalar contrast)
-        : fGrayscale(grayscale),
-          fInvertStyle(invertStyle),
-          fContrast(contrast) {}
+        : fGrayscale(grayscale)
+        , fInvertStyle(invertStyle)
+        , fContrast(contrast) {}
 
     // Returns true if all of the fields are set within the valid range.
     bool isValid() const {
         return fInvertStyle >= InvertStyle::kNoInvert &&
-            fInvertStyle <= InvertStyle::kInvertLightness &&
-            fContrast >= -1.0 &&
-            fContrast <= 1.0;
+               fInvertStyle <= InvertStyle::kInvertLightness &&
+               fContrast >= -1.0 &&
+               fContrast <= 1.0;
     }
 
     // If true, the color will be converted to grayscale.

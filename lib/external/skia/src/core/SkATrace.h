@@ -10,6 +10,8 @@
 
 #include "include/utils/SkEventTracer.h"
 
+#include <cstdint>
+
 /**
  * This class is used to support ATrace in android apps. It hooks into the SkEventTracer system. It
  * currently supports the macros TRACE_EVENT*, TRACE_EVENT_INSTANT*, and TRACE_EVENT_BEGIN/END*.
@@ -40,7 +42,7 @@ public:
     const uint8_t* getCategoryGroupEnabled(const char* name) override;
 
     const char* getCategoryGroupName(const uint8_t* categoryEnabledFlag) override {
-        static const char* category = "skiaATrace";
+        static const char* const category = "skiaATrace";
         return category;
     }
 

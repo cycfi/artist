@@ -8,23 +8,28 @@
 #ifndef SkPaint_DEFINED
 #define SkPaint_DEFINED
 
-#include "include/core/SkBlendMode.h"
 #include "include/core/SkColor.h"
 #include "include/core/SkRefCnt.h"
-#include "include/private/SkTo.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkTypes.h"
+#include "include/private/base/SkCPUTypes.h"
+#include "include/private/base/SkFloatingPoint.h"
+#include "include/private/base/SkTo.h"
+#include "include/private/base/SkTypeTraits.h"
 
+#include <cstdint>
 #include <optional>
+#include <type_traits>
 
 class SkBlender;
 class SkColorFilter;
 class SkColorSpace;
-struct SkRect;
 class SkImageFilter;
 class SkMaskFilter;
-class SkMatrix;
-class SkPath;
 class SkPathEffect;
 class SkShader;
+enum class SkBlendMode;
+struct SkRect;
 
 /** \class SkPaint
     SkPaint controls options applied when drawing. SkPaint collects all
@@ -172,7 +177,7 @@ public:
     }
 
     /** Requests, but does not require, to distribute color error.
-        @param dither  setting for ditering
+        @param dither  setting for dithering
     */
     void setDither(bool dither) { fBitfields.fDither = static_cast<unsigned>(dither); }
 
@@ -251,7 +256,7 @@ public:
 
     /** Retrieves alpha from the color used when stroking and filling.
 
-        @return  alpha ranging from zero, fully transparent, to 255, fully opaque
+        @return  alpha ranging from zero, fully transparent, to one, fully opaque
     */
     float getAlphaf() const { return fColor4f.fA; }
 
@@ -312,15 +317,18 @@ public:
     */
     SkScalar getStrokeMiter() const { return fMiterLimit; }
 
-    /** Sets the limit at which a sharp corner is drawn beveled.
-        Valid values are zero and greater.
-        Has no effect if miter is less than zero.
+    /** When stroking a small joinAngle with miter, the miterLength may be very long.
+        When miterLength > maxMiterLength (or joinAngle < minJoinAngle) the join will become bevel.
+        miterLimit = maxMiterLength / strokeWidth or miterLimit = 1 / sin(minJoinAngle / 2).
 
-        @param miter  zero and greater miter limit
+        This call has no effect if the miterLimit passed is less than zero.
+        Values less than one will be treated as bevel.
+
+        @param miterLimit  zero and greater miter limit
 
         example: https://fiddle.skia.org/c/@Paint_setStrokeMiter
     */
-    void setStrokeMiter(SkScalar miter);
+    void setStrokeMiter(SkScalar miterLimit);
 
     /** \enum SkPaint::Cap
         Cap draws at the beginning and end of an open path contour.
@@ -382,34 +390,6 @@ public:
         example: https://fiddle.skia.org/c/@Paint_setStrokeJoin
     */
     void setStrokeJoin(Join join);
-
-    /** Returns the filled equivalent of the stroked path.
-
-        @param src       SkPath read to create a filled version
-        @param dst       resulting SkPath; may be the same as src, but may not be nullptr
-        @param cullRect  optional limit passed to SkPathEffect
-        @param resScale  if > 1, increase precision, else if (0 < resScale < 1) reduce precision
-                         to favor speed and size
-        @return          true if the path represents style fill, or false if it represents hairline
-    */
-    bool getFillPath(const SkPath& src, SkPath* dst, const SkRect* cullRect,
-                     SkScalar resScale = 1) const;
-
-    bool getFillPath(const SkPath& src, SkPath* dst, const SkRect* cullRect,
-                     const SkMatrix& ctm) const;
-
-    /** Returns the filled equivalent of the stroked path.
-
-        Replaces dst with the src path modified by SkPathEffect and style stroke.
-        SkPathEffect, if any, is not culled. stroke width is created with default precision.
-
-        @param src  SkPath read to create a filled version
-        @param dst  resulting SkPath dst may be the same as src, but may not be nullptr
-        @return     true if the path represents style fill, or false if it represents hairline
-    */
-    bool getFillPath(const SkPath& src, SkPath* dst) const {
-        return this->getFillPath(src, dst, nullptr, 1);
-    }
 
     /** Returns optional colors used when filling a path, such as a gradient.
 
@@ -621,7 +601,7 @@ public:
 
     /**     (to be made private)
         Returns true if SkPaint does not include elements requiring extensive computation
-        to compute SkBaseDevice bounds of drawn geometry. For instance, SkPaint with SkPathEffect
+        to compute device bounds of drawn geometry. For instance, SkPaint with SkPathEffect
         always returns false.
 
         @return  true if SkPaint allows for fast computation of bounds
@@ -678,6 +658,8 @@ public:
     const SkRect& doComputeFastBounds(const SkRect& orig, SkRect* storage,
                                       Style style) const;
 
+    using sk_is_trivially_relocatable = std::true_type;
+
 private:
     sk_sp<SkPathEffect>   fPathEffect;
     sk_sp<SkShader>       fShader;
@@ -700,6 +682,15 @@ private:
         } fBitfields;
         uint32_t fBitfieldsUInt;
     };
+
+    static_assert(::sk_is_trivially_relocatable<decltype(fPathEffect)>::value);
+    static_assert(::sk_is_trivially_relocatable<decltype(fShader)>::value);
+    static_assert(::sk_is_trivially_relocatable<decltype(fMaskFilter)>::value);
+    static_assert(::sk_is_trivially_relocatable<decltype(fColorFilter)>::value);
+    static_assert(::sk_is_trivially_relocatable<decltype(fImageFilter)>::value);
+    static_assert(::sk_is_trivially_relocatable<decltype(fBlender)>::value);
+    static_assert(::sk_is_trivially_relocatable<decltype(fColor4f)>::value);
+    static_assert(::sk_is_trivially_relocatable<decltype(fBitfields)>::value);
 
     friend class SkPaintPriv;
 };

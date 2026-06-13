@@ -8,10 +8,10 @@
 #ifndef SkFDot6_DEFINED
 #define SkFDot6_DEFINED
 
-#include "include/core/SkMath.h"
 #include "include/core/SkScalar.h"
-#include "include/private/SkFixed.h"
-#include "include/private/SkTo.h"
+#include "include/private/base/SkFixed.h"
+#include "include/private/base/SkMath.h"
+#include "include/private/base/SkTo.h"
 
 typedef int32_t SkFDot6;
 
@@ -20,7 +20,7 @@ typedef int32_t SkFDot6;
  * _cairo_fixed_from_double. It does banker's rounding
  * (i.e. round to nearest even)
  */
-inline SkFDot6 SkScalarRoundToFDot6(SkScalar x, int shift = 0)
+inline SkFDot6 SkScalarRoundToFDot6(SkScalar x, int shift)
 {
     union {
         double  fDouble;
@@ -41,7 +41,7 @@ inline SkFDot6 SkScalarRoundToFDot6(SkScalar x, int shift = 0)
 #define SK_FDot6Half        (32)
 
 #ifdef SK_DEBUG
-    inline SkFDot6 SkIntToFDot6(int x) {
+    constexpr inline SkFDot6 SkIntToFDot6(int x) {
         SkASSERT(SkToS16(x) == x);
         return x << 6;
     }
@@ -51,7 +51,7 @@ inline SkFDot6 SkScalarRoundToFDot6(SkScalar x, int shift = 0)
 
 #define SkFDot6Floor(x)     ((x) >> 6)
 #define SkFDot6Ceil(x)      (((x) + 63) >> 6)
-#define SkFDot6Round(x)     (((x) + 32) >> 6)
+#define SkFDot6Round(x)     (((x) + SK_FDot6Half) >> 6)
 
 #define SkFixedToFDot6(x)   ((x) >> 10)
 
@@ -61,9 +61,10 @@ inline SkFixed SkFDot6ToFixed(SkFDot6 x) {
     return SkLeftShift(x, 10);
 }
 
-#define SkScalarToFDot6(x)  (SkFDot6)((x) * 64)
-#define SkFDot6ToScalar(x)  ((SkScalar)(x) * 0.015625f)
-#define SkFDot6ToFloat      SkFDot6ToScalar
+#define SkFloatToFDot6(x)  (SkFDot6)((x) * SK_FDot6One)
+#define SkScalarToFDot6    SkFloatToFDot6
+#define SkFDot6ToFloat(x)  ((float)(x) * 0.015625f)
+#define SkFDot6ToScalar    SkFDot6ToFloat
 
 inline SkFixed SkFDot6Div(SkFDot6 a, SkFDot6 b) {
     SkASSERT(b != 0);

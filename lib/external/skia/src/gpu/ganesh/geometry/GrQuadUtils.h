@@ -8,12 +8,14 @@
 #ifndef GrQuadUtils_DEFINED
 #define GrQuadUtils_DEFINED
 
-#include "include/private/SkVx.h"
+#include "src/base/SkVx.h"
 #include "src/gpu/ganesh/geometry/GrQuad.h"
 
-enum class GrQuadAAFlags;
+#include <cstdint>
+
 enum class GrAA : bool;
-enum class GrAAType : unsigned;
+enum class GrAAType : unsigned int;
+enum class GrQuadAAFlags;
 struct SkRect;
 
 namespace GrQuadUtils {
@@ -215,7 +217,7 @@ namespace GrQuadUtils {
         friend int ClipToW0(DrawQuad*, DrawQuad*); // To reuse Vertices struct
     };
 
-}; // namespace GrQuadUtils
+} // namespace GrQuadUtils
 
 void GrQuadUtils::Outset(const skvx::float4& edgeDistances, GrQuad* quad) {
     TessellationHelper outsetter;

@@ -9,20 +9,24 @@
 #define GrGLSLShaderBuilder_DEFINED
 
 #include "include/core/SkSpan.h"
-#include "include/private/SkSLStatement.h"
-#include "include/private/SkSLString.h"
-#include "include/private/SkTDArray.h"
-#include "src/core/SkTBlockList.h"
+#include "include/core/SkString.h"
+#include "include/core/SkTypes.h"
+#include "include/private/base/SkTArray.h"
+#include "src/base/SkTBlockList.h"
 #include "src/gpu/ganesh/GrShaderVar.h"
 #include "src/gpu/ganesh/glsl/GrGLSLUniformHandler.h"
+#include "src/sksl/SkSLDefines.h"
+#include "src/sksl/ir/SkSLStatement.h"  // IWYU pragma: keep
 
-#include <stdarg.h>
+#include <cstdarg>
+#include <cstddef>
+#include <cstdint>
+#include <string>
 
 class GrGLSLColorSpaceXformHelper;
-
-namespace SkSL {
-    class ThreadContext;
-}
+class GrGLSLProgramBuilder;
+enum class SkBlendMode;
+enum class SkSLType : char;
 
 /**
   base class for all shaders builders
@@ -262,7 +266,7 @@ protected:
 
     GrGLSLProgramBuilder* fProgramBuilder;
     std::string fCompilerString;
-    SkSTArray<kPrealloc, SkString> fShaderStrings;
+    skia_private::STArray<kPrealloc, SkString> fShaderStrings;
     SkString fCode;
     SkString fFunctions;
     SkString fExtensions;
@@ -272,7 +276,7 @@ protected:
     VarArray fInputs;
     VarArray fOutputs;
     uint32_t fFeaturesAddedMask;
-    SkSTArray<1, SkString> fLayoutParams[kLastInterfaceQualifier + 1];
+    skia_private::STArray<1, SkString> fLayoutParams[kLastInterfaceQualifier + 1];
     int fCodeIndex;
     bool fFinalized;
 
@@ -287,6 +291,5 @@ protected:
     friend class GrGLPathProgramBuilder; // to access fInputs.
     friend class GrVkPipelineStateBuilder;
     friend class GrMtlPipelineStateBuilder;
-    friend class SkSL::ThreadContext;
 };
 #endif

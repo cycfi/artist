@@ -9,6 +9,11 @@
 #define SkGraphics_DEFINED
 
 #include "include/core/SkRefCnt.h"
+#include "include/private/base/SkAPI.h"
+
+#include <cstddef>
+#include <cstdint>
+#include <memory>
 
 class SkData;
 class SkImageGenerator;
@@ -65,11 +70,31 @@ public:
     static int SetFontCacheCountLimit(int count);
 
     /**
+     *  Return the current limit to the number of entries in the typeface cache.
+     *  A cache "entry" is associated with each typeface.
+     */
+    static int GetTypefaceCacheCountLimit();
+
+    /**
+     *  Set the limit to the number of entries in the typeface cache, and return
+     *  the previous value. Changes to this only take effect the next time
+     *  each cache object is modified.
+     */
+    static int SetTypefaceCacheCountLimit(int count);
+
+    /**
      *  For debugging purposes, this will attempt to purge the font cache. It
      *  does not change the limit, but will cause subsequent font measures and
      *  draws to be recreated, since they will no longer be in the cache.
      */
     static void PurgeFontCache();
+
+    /**
+     *  If the strike cache is above the cache limit, attempt to purge strikes
+     *  with pinners. This should be called after clients release locks on
+     *  pinned strikes.
+     */
+    static void PurgePinnedFontCache();
 
     /**
      *  This function returns the memory used for temporary images and other resources.
@@ -115,16 +140,6 @@ public:
      */
     static void PurgeAllCaches();
 
-    /**
-     *  Applications with command line options may pass optional state, such
-     *  as cache sizes, here, for instance:
-     *  font-cache-limit=12345678
-     *
-     *  The flags format is name=value[;name=value...] with no spaces.
-     *  This format is subject to change.
-     */
-    static void SetFlags(const char* flags);
-
     typedef std::unique_ptr<SkImageGenerator>
                                             (*ImageGeneratorFromEncodedDataFactory)(sk_sp<SkData>);
 
@@ -149,27 +164,6 @@ public:
             std::unique_ptr<SkOpenTypeSVGDecoder> (*)(const uint8_t* svg, size_t length);
     static OpenTypeSVGDecoderFactory SetOpenTypeSVGDecoderFactory(OpenTypeSVGDecoderFactory);
     static OpenTypeSVGDecoderFactory GetOpenTypeSVGDecoderFactory();
-
-    /**
-     *  Temporarily (until variable COLRv1 is released) pass a feature switch function for whether
-     *  variable COLRv1 is enabled. Needed for initializing FreeType with a property setting so that
-     *  variable COLRv1 can be enabled in Chrome Canaries during development.
-     */
-    using VariableColrV1EnabledFunc = bool (*)();
-    static VariableColrV1EnabledFunc SetVariableColrV1EnabledFunc(VariableColrV1EnabledFunc);
-    static bool GetVariableColrV1Enabled();
-
-    /**
-     *  Call early in main() to allow Skia to use a JIT to accelerate CPU-bound operations.
-     */
-    static void AllowJIT();
-};
-
-class SkAutoGraphics {
-public:
-    SkAutoGraphics() {
-        SkGraphics::Init();
-    }
 };
 
 #endif

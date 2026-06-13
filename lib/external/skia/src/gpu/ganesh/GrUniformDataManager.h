@@ -8,12 +8,14 @@
 #ifndef GrUniformDataManager_DEFINED
 #define GrUniformDataManager_DEFINED
 
+#include "include/private/base/SkDebug.h"
+#include "include/private/base/SkTArray.h"
+#include "src/base/SkAutoMalloc.h"
 #include "src/gpu/ganesh/glsl/GrGLSLProgramDataManager.h"
 
-#include "include/private/SkTArray.h"
-#include "include/private/gpu/ganesh/GrTypesPriv.h"
-#include "src/core/SkAutoMalloc.h"
-#include "src/core/SkSLTypeShared.h"
+#include <cstdint>
+
+enum class SkSLType : char;
 
 /**
  * Subclass of GrGLSLProgramDataManager used to store uniforms for a program in a CPU buffer that
@@ -58,7 +60,7 @@ protected:
         SkSLType fType   : 8;
         SkDEBUGCODE(
             int  fArrayCount;
-        );
+        )
     };
 
     int copyUniforms(void* dest, const void* src, int numUniforms, SkSLType uniformType) const;
@@ -75,7 +77,7 @@ protected:
     uint32_t fUniformSize;
     bool fWrite16BitUniforms = false;
 
-    SkTArray<Uniform, true> fUniforms;
+    skia_private::TArray<Uniform, true> fUniforms;
 
     mutable SkAutoMalloc fUniformData;
     mutable bool         fUniformsDirty = false;

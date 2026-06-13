@@ -98,22 +98,23 @@ if (ARTIST_SKIA)
       if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
          set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows/msvc/x86_64/src/prebuilt_binaries)
          if (CMAKE_BUILD_TYPE STREQUAL "Release")
-            set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/windows/skia/msvc/x86_64/x86_64.zip)
-            set(ARTIST_BINARIES_MD5 93b0a532f87c1068bc2adabf19da086d)
+            set(ARTIST_BINARIES_URL skia_msvc.zip)
+            set(ARTIST_BINARIES_HASH db2820a86f18d6eafbe61aa622e477c2fd2f91266ded9903aed26b8be7ed84f6)
             set(ARTIST_BINARIES_PREFIX windows/msvc/x86_64)
          else()
-            set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/windows/skia/msvc/x86_64-dbg/x86_64-dbg.zip)
-            set(ARTIST_BINARIES_MD5 b2e5f3927c3b6b3f41ca1c51c8b6a55f)
+            set(ARTIST_BINARIES_URL skia_msvc_dbg.zip)
+            set(ARTIST_BINARIES_HASH a8971d891f8e5fc4daa5432d3c9dc3b66730a168e4ece94c28a16bd0b8c101f2)
             set(ARTIST_BINARIES_PREFIX windows/msvc/x86_64)
          endif()
       elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
          if (CMAKE_BUILD_TYPE STREQUAL "Debug")
             message(WARNING "Warning: There are no precompiled binaries built using MTd for Clang. Use MT.")
          endif()
-         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows/clang/x86_64/src/prebuilt_binaries)
-         set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/windows/skia/clang/x86_64/x86_64.zip)
-         set(ARTIST_BINARIES_MD5 b2bc06c19cd61f93505b7e37eaf489db)
-         set(ARTIST_BINARIES_PREFIX windows/clang/x86_64)
+         message(WARNING "Warning: Not supported")
+         # set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/windows/clang/x86_64/src/prebuilt_binaries)
+         # set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/windows/skia/clang/x86_64/x86_64.zip)
+         # set(ARTIST_BINARIES_MD5 b2bc06c19cd61f93505b7e37eaf489db)
+         # set(ARTIST_BINARIES_PREFIX windows/clang/x86_64)
       endif()
 
       set(SKIA_LIBRARIES
@@ -136,8 +137,8 @@ if (ARTIST_SKIA)
 
       ExternalProject_Add(prebuilt_binaries
          PREFIX "${ARTIST_BINARIES_PREFIX}"
-         URL ${ARTIST_BINARIES_URL}
-         URL_MD5 ${ARTIST_BINARIES_MD5}
+         URL https://github.com/silovaa/skia_bin/releases/download/m141/${ARTIST_BINARIES_URL}
+         URL_HASH SHA256=${ARTIST_BINARIES_HASH}
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
          INSTALL_COMMAND ""
@@ -157,47 +158,69 @@ if (ARTIST_SKIA)
    elseif (UNIX)
 
       if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
-         set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/linux/gcc/x86_64/src/prebuilt_binaries)
-         set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/linux/skia/gcc/x86_64/libskia.a.zip)
-         set(ARTIST_BINARIES_MD5 18def70ddce24ea79a7a308163dfbda3)
-         set(ARTIST_BINARIES_PREFIX linux/gcc/x86_64)
+         set(CPL gcc)
+         if (ARTIST_X11)
+            set(PLATFORM x11)
+            set(ARTIST_BINARIES_HASH c8b3c6def4e870ac17d8805a9056999c311eb5f72b6df399f551628b56fa1af6)
+         else()
+            set(PLATFORM egl)
+            set(ARTIST_BINARIES_HASH acc9525fa0d1f7561da9298132921a62f9b37dfb65267a2e15ecc84e08e5f424)
+         endif()
+
       elseif (CMAKE_C_COMPILER_ID STREQUAL "Clang")
-      set(ARTIST_BINARIES ${CMAKE_CURRENT_BINARY_DIR}/linux/clang/x86_64/src/prebuilt_binaries)
-      set(ARTIST_BINARIES_URL https://github.com/cycfi/artist/raw/prebuilt_binaries_0.90/linux/skia/clang/x86_64/libskia.a.zip)
-      set(ARTIST_BINARIES_MD5 db92deccb22589f2551955003ef37ce6)
-      set(ARTIST_BINARIES_PREFIX linux/clang/x86_64)
-   endif()
+         set(CPL clang)
+         if (ARTIST_X11)
+            set(PLATFORM x11)
+            set(ARTIST_BINARIES_HASH 785de1222ebe63b94d397e81693ea3b65cd09919e4546d142e29be79713714ce)
+         else()
+            set(PLATFORM egl)
+            set(ARTIST_BINARIES_HASH e18f6841e5acc246f4248da442a487b96c5ab8a768924eee4cad995b062e05f8)
+         endif()
+
+      endif()
 
       find_package(Threads)
       find_package(PkgConfig REQUIRED)
       find_package(OpenGL REQUIRED)
+      find_package(harfbuzz REQUIRED)
 
-      pkg_check_modules(harfbuzz REQUIRED IMPORTED_TARGET harfbuzz)
-      pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
-      pkg_check_modules(freetype2 REQUIRED IMPORTED_TARGET freetype2)
+      pkg_check_modules(skia_depends REQUIRED IMPORTED_TARGET
+         fontconfig freetype2 zlib libpng libjpeg libwebp libwebpdemux
+      )
 
-      set(SKIA_LIBRARY ${ARTIST_BINARIES}/libskia.a)
+      set(ARTIST_BINARIES_PREFIX linux/${CPL}/x86_64)
+      set(SKIA_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/${ARTIST_BINARIES_PREFIX}/src/prebuilt_binaries/libskia.a)
 
       ExternalProject_Add(prebuilt_binaries
          PREFIX "${ARTIST_BINARIES_PREFIX}"
-         URL ${ARTIST_BINARIES_URL}
-         URL_MD5 ${ARTIST_BINARIES_MD5}
+         URL https://github.com/silovaa/skia_bin/releases/download/m141/skia_${PLATFORM}_${CPL}.zip
+         URL_HASH SHA256=${ARTIST_BINARIES_HASH}
          CONFIGURE_COMMAND ""
          BUILD_COMMAND ""
          INSTALL_COMMAND ""
          BUILD_BYPRODUCTS ${SKIA_LIBRARY}
       )
 
-      set(ARTIST_DEPEPENDENCIES
+      set(ARTIST_DEPEPENDENCIES_BASE
          "${SKIA_LIBRARY}"
          ${CMAKE_DL_LIBS}
-         PkgConfig::harfbuzz
-         PkgConfig::fontconfig
-         PkgConfig::freetype2
+         PkgConfig::skia_depends
          Threads::Threads
+         harfbuzz::harfbuzz
          OpenGL::OpenGL
-         OpenGL::GLX
       )
+
+      if (ARTIST_X11)
+         set(ARTIST_DEPEPENDENCIES
+            ${ARTIST_DEPEPENDENCIES_BASE}
+            OpenGL::GLX
+         )
+      else()
+         set(ARTIST_DEPEPENDENCIES
+            ${ARTIST_DEPEPENDENCIES_BASE}
+            OpenGL::EGL
+         )
+      endif()
 
    endif()
 
@@ -241,16 +264,17 @@ if (ARTIST_SKIA)
 
    if (APPLE)
       set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
-         external/skia/tools/sk_app/mac/GLWindowContext_mac.mm
-         external/skia/tools/sk_app/mac/RasterWindowContext_mac.mm
+         external/skia/tools/window/mac/GLWindowContext_mac.mm
+         external/skia/tools/window/mac/RasterWindowContext_mac.mm
       )
       set_source_files_properties(${ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT}
          PROPERTIES COMPILE_FLAGS -fno-objc-arc
       )
    elseif (MSVC)
       set(ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT
-         external/skia/tools/sk_app/win/GLWindowContext_win.cpp
-         external/skia/tools/sk_app/win/RasterWindowContext_win.cpp
+         external/skia/tools/window/win/GLWindowContext_win.cpp
+         external/skia/tools/window/win/RasterWindowContext_win.cpp
+	      external/skia/tools/gpu/gl/win/SkWGL_win.cpp
       )
    endif()
 
@@ -261,8 +285,8 @@ if (ARTIST_SKIA)
       impl/skia/text_layout.cpp
       impl/skia/path.cpp
       impl/skia/detail/harfbuzz.cpp
-      external/skia/tools/sk_app/GLWindowContext.cpp
-      external/skia/tools/sk_app/WindowContext.cpp
+      external/skia/tools/window/GLWindowContext.cpp
+      external/skia/tools/window/WindowContext.cpp
       external/skia/tools/ToolUtils.cpp
       external/skia/tools/SkMetaData.cpp
       ${ARTIST_SKIA_PLATFORM_WINDOW_CONTEXT}
@@ -321,7 +345,7 @@ if (ARTIST_SKIA)
       artist
       PUBLIC
          external/skia
-         external/skia/include
+         external/skia/include 
          external/skia/include/core
          external/skia/include/config
          external/skia/include/utils
@@ -331,7 +355,7 @@ if (ARTIST_SKIA)
          external/skia/include/ports
          external/skia/src/gpu
          external/skia/modules/skshaper/include
-         external/filesystem/include/
+         #external/filesystem/include/
          external/harfbuzz/include/
          external/fontconfig/include/
    )
@@ -339,7 +363,9 @@ if (ARTIST_SKIA)
       artist
       PUBLIC
          ARTIST_SKIA
-         SK_RELEASE
+         #SK_RELEASE
+         #SK_DEBUG
+         SK_GL
    )
 endif()
 
@@ -348,14 +374,6 @@ if (ARTIST_QUARTZ_2D)
       artist
       PUBLIC
          ARTIST_QUARTZ_2D
-   )
-endif()
-
-if (ARTIST_SKIA)
-   target_compile_definitions(
-      artist
-      PUBLIC
-        SK_GL
    )
 endif()
 
@@ -404,8 +422,6 @@ elseif (WIN32)
          MSVC_RUNTIME_LIBRARY "MultiThreadedDebug"
       )
    endif()
-
-
 endif()
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")

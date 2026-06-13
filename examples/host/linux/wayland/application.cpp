@@ -28,9 +28,9 @@ struct Surface::Impl: public WL::Toplevel
 
     void draw(float scale) override
     {
-        m_need_redraw = m_holder->draw(scale);
+        m_need_redraw = m_holder->draw(scale, m_buffer.canvas());
 
-        m_holder->skia_surf->flush();
+        //m_holder->skia_surf->flush();
         m_context.flush(m_buffer);
     }
 
@@ -44,27 +44,24 @@ struct Surface::Impl: public WL::Toplevel
                 m_width *= m_scale;
                 m_height *= m_scale;
 
-                m_buffer.init(*this, m_width, m_height);
-                m_context.makeCurrent(m_buffer);
+                m_buffer.init(m_context, *this, m_width, m_height);
 
-                m_holder->skia_surf = m_context.makeSurface(m_width, m_height);
                 m_holder->configure(w, h, SurfaceState::resizing);
                 draw(m_scale);
                 return;
             }
-            else {
-                if (s & WL::resizing)
-                    state |= SurfaceState::resizing;
-                if (s & WL::maximized)
-                    state |= SurfaceState::maximized;
-                if (s & WL::activated)
-                    state |= SurfaceState::activated;
-                if (s & WL::fullscreen)
-                    state |= SurfaceState::fullscreen;
 
-                if (s & WL::resizing)
-                    m_buffer.resize(w, h); 
-            }
+            if (s & WL::resizing)
+                state |= SurfaceState::resizing;
+            if (s & WL::maximized)
+                state |= SurfaceState::maximized;
+            if (s & WL::activated)
+                state |= SurfaceState::activated;
+            if (s & WL::fullscreen)
+                state |= SurfaceState::fullscreen;
+
+            if (s & WL::resizing)
+                m_buffer.resize(m_context, w, h);
 
             m_holder->configure(w, h, state);
             m_need_redraw = true;

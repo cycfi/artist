@@ -8,30 +8,38 @@
 #ifndef SkLRUCache_DEFINED
 #define SkLRUCache_DEFINED
 
-#include "include/private/SkChecksum.h"
-#include "include/private/SkTHash.h"
-#include "src/core/SkTInternalLList.h"
+#include "src/base/SkTInternalLList.h"
+#include "src/core/SkChecksum.h"
+#include "src/core/SkTHash.h"
+
+struct SkNoOpPurge {
+    template <typename K, typename V>
+    void operator()(void* /* context */, const K& /* k */, const V* /* v */) const {}
+};
 
 /**
  * A generic LRU cache.
  */
-template <typename K, typename V, typename HashK = SkGoodHash>
-class SkLRUCache : public SkNoncopyable {
+template <typename K, typename V, typename HashK = SkGoodHash, typename PurgeCB = SkNoOpPurge>
+class SkLRUCache {
 private:
     struct Entry {
-        Entry(const K& key, V&& value)
-        : fKey(key)
-        , fValue(std::move(value)) {}
+        template<typename K1, typename V1>
+        Entry(K1&& key, V1&& value)
+            : fKey(std::forward<K1>(key))
+            , fValue(std::forward<V1>(value)) {}
 
-        K fKey;
+        const K fKey;
         V fValue;
 
         SK_DECLARE_INTERNAL_LLIST_INTERFACE(Entry);
     };
 
 public:
-    explicit SkLRUCache(int maxCount)
-    : fMaxCount(maxCount) {}
+    explicit SkLRUCache(int maxCount, void* context = nullptr)
+            : fMaxCount(maxCount)
+            , fContext(context) {}
+    SkLRUCache() = delete;
 
     ~SkLRUCache() {
         Entry* node = fLRU.head();
@@ -41,6 +49,10 @@ public:
             node = fLRU.head();
         }
     }
+
+    // Make noncopyable
+    SkLRUCache(const SkLRUCache&) = delete;
+    SkLRUCache& operator=(const SkLRUCache&) = delete;
 
     V* find(const K& key) {
         Entry** value = fMap.find(key);
@@ -55,10 +67,7 @@ public:
         return &entry->fValue;
     }
 
-    V* insert(const K& key, V value) {
-        SkASSERT(!this->find(key));
-
-        Entry* entry = new Entry(key, std::move(value));
+    V* insert(Entry* entry) {
         fMap.set(entry);
         fLRU.addToHead(entry);
         while (fMap.count() > fMaxCount) {
@@ -67,20 +76,26 @@ public:
         return &entry->fValue;
     }
 
-    V* insert_or_update(const K& key, V value) {
-        if (V* found = this->find(key)) {
-            *found = std::move(value);
-            return found;
-        } else {
-            return this->insert(key, std::move(value));
-        }
+    template<typename K1, typename V1>
+    V* insert(K1&& key, V1&& value) {
+        SkASSERT(!this->find(key));
+        return this->insert(new Entry(std::forward<K1>(key), std::forward<V1>(value)));
     }
 
-    int count() {
+    template<typename K1, typename V1>
+    V* insert_or_update(K1&& key, V1&& value) {
+        if (V* found = this->find(key)) {
+            *found = std::forward<V1>(value);
+            return found;
+        }
+        return this->insert(new Entry(std::forward<K1>(key), std::forward<V1>(value)));
+    }
+
+    int count() const {
         return fMap.count();
     }
 
-    template <typename Fn>  // f(K*, V*)
+    template <typename Fn>  // f(const K*, V*)
     void foreach(Fn&& fn) {
         typename SkTInternalLList<Entry>::Iter iter;
         for (Entry* e = iter.init(fLRU, SkTInternalLList<Entry>::Iter::kHead_IterStart); e;
@@ -97,6 +112,17 @@ public:
         }
     }
 
+    void remove(const K& key) {
+        Entry** value = fMap.find(key);
+        SkASSERT(value);
+        Entry* entry = *value;
+        SkASSERT(key == entry->fKey);
+        PurgeCB()(fContext, key, &entry->fValue);
+        fMap.remove(key);
+        fLRU.remove(entry);
+        delete entry;
+    }
+
 private:
     struct Traits {
         static const K& GetKey(Entry* e) {
@@ -108,19 +134,10 @@ private:
         }
     };
 
-    void remove(const K& key) {
-        Entry** value = fMap.find(key);
-        SkASSERT(value);
-        Entry* entry = *value;
-        SkASSERT(key == entry->fKey);
-        fMap.remove(key);
-        fLRU.remove(entry);
-        delete entry;
-    }
-
-    int                             fMaxCount;
-    SkTHashTable<Entry*, K, Traits> fMap;
-    SkTInternalLList<Entry>         fLRU;
+    int                                         fMaxCount;
+    skia_private::THashTable<Entry*, K, Traits> fMap;
+    SkTInternalLList<Entry>                     fLRU;
+    void*                                       fContext;
 };
 
 #endif

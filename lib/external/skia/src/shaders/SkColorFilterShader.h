@@ -8,35 +8,39 @@
 #ifndef SkColorFilterShader_DEFINED
 #define SkColorFilterShader_DEFINED
 
-#include "src/core/SkColorFilterBase.h"
+#include "include/core/SkFlattenable.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkShader.h"
+#include "src/effects/colorfilters/SkColorFilterBase.h"
 #include "src/shaders/SkShaderBase.h"
 
-class SkArenaAlloc;
+class SkColorFilter;
+class SkReadBuffer;
+class SkWriteBuffer;
+struct SkStageRec;
 
 class SkColorFilterShader : public SkShaderBase {
 public:
-    SkColorFilterShader(sk_sp<SkShader> shader, float alpha, sk_sp<SkColorFilter> filter);
+    static sk_sp<SkShader> Make(sk_sp<SkShader> shader, float alpha, sk_sp<SkColorFilter> filter);
 
-#if SK_SUPPORT_GPU
-    std::unique_ptr<GrFragmentProcessor> asFragmentProcessor(const GrFPArgs&) const override;
-#endif
+    ShaderType type() const override { return ShaderType::kColorFilter; }
+
+    sk_sp<SkShader> shader() const { return fShader; }
+    sk_sp<SkColorFilterBase> filter() const { return fFilter; }
+    float alpha() const { return fAlpha; }
 
 private:
+    SkColorFilterShader(sk_sp<SkShader> shader, float alpha, sk_sp<SkColorFilter> filter);
+
     bool isOpaque() const override;
     void flatten(SkWriteBuffer&) const override;
-    bool onAppendStages(const SkStageRec&) const override;
-
-    skvm::Color onProgram(skvm::Builder*, skvm::Coord device, skvm::Coord local, skvm::Color paint,
-                          const SkMatrixProvider&, const SkMatrix* localM, const SkColorInfo& dst,
-                          skvm::Uniforms* uniforms, SkArenaAlloc*) const override;
+    bool appendStages(const SkStageRec&, const SkShaders::MatrixRec&) const override;
 
     SK_FLATTENABLE_HOOKS(SkColorFilterShader)
 
     sk_sp<SkShader>          fShader;
     sk_sp<SkColorFilterBase> fFilter;
-    float                    fAlpha;
-
-    using INHERITED = SkShaderBase;
+    float fAlpha;
 };
 
 #endif

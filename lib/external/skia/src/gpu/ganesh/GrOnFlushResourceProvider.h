@@ -8,8 +8,7 @@
 #ifndef GrOnFlushResourceProvider_DEFINED
 #define GrOnFlushResourceProvider_DEFINED
 
-#include "include/core/SkSpan.h"
-#include "src/gpu/ganesh/GrDeferredUpload.h"
+#include "src/gpu/AtlasTypes.h"
 
 class GrCaps;
 class GrDrawingManager;
@@ -36,7 +35,7 @@ public:
      * Called once flushing is complete. startTokenForNextFlush can be used to track resources
      * used in the current flush.
      */
-    virtual void postFlush(skgpu::DrawToken startTokenForNextFlush) {}
+    virtual void postFlush(skgpu::AtlasToken startTokenForNextFlush) {}
 
     /**
      * Tells the callback owner to hold onto this object when freeing GPU resources.
@@ -53,11 +52,11 @@ class GrOnFlushResourceProvider {
 public:
     explicit GrOnFlushResourceProvider(GrDrawingManager* drawingMgr) : fDrawingMgr(drawingMgr) {}
 
-    bool SK_WARN_UNUSED_RESULT instatiateProxy(GrSurfaceProxy*);
+    [[nodiscard]] bool instantiateProxy(GrSurfaceProxy*);
 
     const GrCaps* caps() const;
 
-#if GR_TEST_UTILS
+#if defined(GPU_TEST_UTILS)
     bool failFlushTimeCallbacks() const;
 #endif
 

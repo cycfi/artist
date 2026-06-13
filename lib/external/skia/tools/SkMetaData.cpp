@@ -7,8 +7,8 @@
 
 #include "tools/SkMetaData.h"
 
-#include "include/private/SkMalloc.h"
-#include "include/private/SkTo.h"
+#include "include/private/base/SkMalloc.h"
+#include "include/private/base/SkTo.h"
 
 void SkMetaData::reset()
 {
@@ -137,7 +137,7 @@ bool SkMetaData::findPtr(const char name[], void** ptr) const {
     const Rec* rec = this->find(name, kPtr_Type);
     if (rec) {
         SkASSERT(rec->fDataCount == 1);
-        void** found = (void**)rec->data();
+        void* const* found = (void* const*)rec->data();
         if (ptr) {
             *ptr = *found;
         }

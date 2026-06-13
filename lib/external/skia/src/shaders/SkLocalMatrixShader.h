@@ -8,39 +8,54 @@
 #ifndef SkLocalMatrixShader_DEFINED
 #define SkLocalMatrixShader_DEFINED
 
-#include "src/core/SkReadBuffer.h"
-#include "src/core/SkWriteBuffer.h"
+#include "include/core/SkColor.h"
+#include "include/core/SkFlattenable.h"
+#include "include/core/SkMatrix.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkShader.h"
+#include "include/core/SkTypes.h"
 #include "src/shaders/SkShaderBase.h"
 
-class GrFragmentProcessor;
+#include <type_traits>
+#include <utility>
+
 class SkArenaAlloc;
+class SkImage;
+class SkReadBuffer;
+class SkWriteBuffer;
+enum class SkTileMode;
+struct SkStageRec;
 
 class SkLocalMatrixShader final : public SkShaderBase {
 public:
-    SkLocalMatrixShader(sk_sp<SkShader> proxy, const SkMatrix& localMatrix)
-        : INHERITED(&localMatrix)
-        , fProxyShader(std::move(proxy)) {
+    template <typename T, typename... Args>
+    static std::enable_if_t<std::is_base_of_v<SkShader, T>, sk_sp<SkShader>>
+    MakeWrapped(const SkMatrix* localMatrix, Args&&... args) {
+        auto t = sk_make_sp<T>(std::forward<Args>(args)...);
+        if (localMatrix) {
+            return t->makeWithLocalMatrix(*localMatrix);
+        }
+        return t;
     }
 
-    GradientType asAGradient(GradientInfo* info) const override {
-        return fProxyShader->asAGradient(info);
-    }
+    SkLocalMatrixShader(sk_sp<SkShader> wrapped, const SkMatrix& localMatrix)
+            : fLocalMatrix(localMatrix), fWrappedShader(std::move(wrapped)) {}
 
-#if SK_SUPPORT_GPU
-    std::unique_ptr<GrFragmentProcessor> asFragmentProcessor(const GrFPArgs&) const override;
-#endif
-#ifdef SK_ENABLE_SKSL
-    void addToKey(const SkKeyContext&,
-                  SkPaintParamsKeyBuilder*,
-                  SkPipelineDataGatherer*) const override;
-#endif
+    bool isOpaque() const override { return as_SB(fWrappedShader)->isOpaque(); }
+
+    bool isConstant(SkColor4f* color = nullptr) const override;
+    GradientType asGradient(GradientInfo* info, SkMatrix* localMatrix) const override;
+    ShaderType type() const override { return ShaderType::kLocalMatrix; }
 
     sk_sp<SkShader> makeAsALocalMatrixShader(SkMatrix* localMatrix) const override {
         if (localMatrix) {
-            *localMatrix = this->getLocalMatrix();
+            *localMatrix = fLocalMatrix;
         }
-        return fProxyShader;
+        return fWrappedShader;
     }
+
+    const SkMatrix& localMatrix() const { return fLocalMatrix; }
+    sk_sp<SkShader> wrappedShader() const { return fWrappedShader; }
 
 protected:
     void flatten(SkWriteBuffer&) const override;
@@ -51,18 +66,46 @@ protected:
 
     SkImage* onIsAImage(SkMatrix* matrix, SkTileMode* mode) const override;
 
-    bool onAppendStages(const SkStageRec&) const override;
+    bool onAsLuminanceColor(SkColor4f*) const override;
 
-    skvm::Color onProgram(skvm::Builder*, skvm::Coord device, skvm::Coord local, skvm::Color paint,
-                          const SkMatrixProvider&, const SkMatrix* localM, const SkColorInfo& dst,
-                          skvm::Uniforms* uniforms, SkArenaAlloc*) const override;
+    bool appendStages(const SkStageRec&, const SkShaders::MatrixRec&) const override;
 
 private:
     SK_FLATTENABLE_HOOKS(SkLocalMatrixShader)
 
-    sk_sp<SkShader> fProxyShader;
+    SkMatrix fLocalMatrix;
+    sk_sp<SkShader> fWrappedShader;
+};
 
-    using INHERITED = SkShaderBase;
+/**
+ *  Replaces the CTM when used. Created to support clipShaders, which have to be evaluated
+ *  using the CTM that was present at the time they were specified (which may be different
+ *  from the CTM at the time something is drawn through the clip.
+ */
+class SkCTMShader final : public SkShaderBase {
+public:
+    SkCTMShader(sk_sp<SkShader> proxy, const SkMatrix& ctm);
+
+    bool isOpaque() const override { return fProxyShader->isOpaque(); }
+
+    bool isConstant(SkColor4f* color = nullptr) const override;
+    GradientType asGradient(GradientInfo* info, SkMatrix* localMatrix) const override;
+
+    ShaderType type() const override { return ShaderType::kCTM; }
+
+    const SkMatrix& ctm() const { return fCTM; }
+    sk_sp<SkShader> proxyShader() const { return fProxyShader; }
+
+protected:
+    void flatten(SkWriteBuffer&) const override { SkASSERT(false); }
+
+    bool appendStages(const SkStageRec& rec, const SkShaders::MatrixRec&) const override;
+
+private:
+    SK_FLATTENABLE_HOOKS(SkCTMShader)
+
+    sk_sp<SkShader> fProxyShader;
+    SkMatrix fCTM;
 };
 
 #endif

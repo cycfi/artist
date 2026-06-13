@@ -9,7 +9,11 @@
 #ifndef SkStrokerPriv_DEFINED
 #define SkStrokerPriv_DEFINED
 
-#include "src/core/SkStroke.h"
+#include "include/core/SkPaint.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkScalar.h"
+
+class SkPathBuilder;
 
 #define CWX(x, y)   (-y)
 #define CWY(x, y)   (x)
@@ -23,13 +27,13 @@
 
 class SkStrokerPriv {
 public:
-    typedef void (*CapProc)(SkPath* path,
+    typedef void (*CapProc)(SkPathBuilder* path,
                             const SkPoint& pivot,
                             const SkVector& normal,
                             const SkPoint& stop,
-                            SkPath* otherPath);
+                            bool extendLastPt);
 
-    typedef void (*JoinProc)(SkPath* outer, SkPath* inner,
+    typedef void (*JoinProc)(SkPathBuilder* outer, SkPathBuilder* inner,
                              const SkVector& beforeUnitNormal,
                              const SkPoint& pivot,
                              const SkVector& afterUnitNormal,

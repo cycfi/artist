@@ -7,6 +7,7 @@
 ## Build generated
 _build/
 DerivedData/
+out/
 
 ## Various settings
 *.pbxuser
@@ -31,3 +32,4 @@ xcuserdata/
 /.vs/
 /CMakeSettings.json
 /Testing/
+CMakeLists.txt.user

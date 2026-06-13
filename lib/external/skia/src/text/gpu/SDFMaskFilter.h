@@ -8,7 +8,12 @@
 #ifndef sktext_gpu_SDFMaskFilter_DEFINED
 #define sktext_gpu_SDFMaskFilter_DEFINED
 
+#include "include/core/SkTypes.h"
+
+#if !defined(SK_DISABLE_SDF_TEXT)
+
 #include "include/core/SkMaskFilter.h"
+#include "include/core/SkRefCnt.h"
 
 namespace sktext::gpu {
 
@@ -21,8 +26,8 @@ public:
     static sk_sp<SkMaskFilter> Make();
 };
 
-extern void register_sdf_maskfilter_createproc();
-
 }  // namespace sktext::gpu
+
+#endif // !defined(SK_DISABLE_SDF_TEXT)
 
 #endif

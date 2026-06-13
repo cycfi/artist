@@ -21,14 +21,16 @@ public:
         ~Buffer()
         {if (!empty()) wl_egl_window_destroy(m_egl_window);}
 
-        void init(const Surface &wl, uint32_t width, uint32_t height);   
-        void resize(uint32_t width, uint32_t height);
+        void init(ContextEGL &ctx, const Surface &wl, uint32_t width, uint32_t height);
+        void resize(ContextEGL &ctx, uint32_t width, uint32_t height);
 
         bool empty() const {return m_egl_window == nullptr;}
+        SkCanvas* canvas() const {return m_skia_surface->getCanvas();}
 
     private:
         wl_egl_window *m_egl_window{nullptr};
         EGLSurface m_egl_surface{EGL_NO_SURFACE};
+        sk_sp<SkSurface> m_skia_surface;
 
         friend class ContextEGL;
     };

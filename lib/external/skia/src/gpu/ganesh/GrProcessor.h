@@ -8,18 +8,10 @@
 #ifndef GrProcessor_DEFINED
 #define GrProcessor_DEFINED
 
-#include "include/core/SkMath.h"
 #include "include/core/SkString.h"
-#include "src/gpu/ganesh/GrColor.h"
-#include "src/gpu/ganesh/GrGpuBuffer.h"
-#include "src/gpu/ganesh/GrProcessorUnitTest.h"
-#include "src/gpu/ganesh/GrProgramDesc.h"
-#include "src/gpu/ganesh/GrSamplerState.h"
-#include "src/gpu/ganesh/GrShaderVar.h"
-#include "src/gpu/ganesh/GrSurfaceProxyPriv.h"
-#include "src/gpu/ganesh/GrTextureProxy.h"
 
-class GrResourceProvider;
+#include <cstddef>
+#include <new>
 
 /** Provides custom shader code to the Ganesh shading pipeline. GrProcessor objects *must* be
     immutable: after being constructed, their fields may not change.
@@ -64,13 +56,6 @@ public:
         kGrDistanceFieldA8TextGeoProc_ClassID,
         kGrDistanceFieldLCDTextGeoProc_ClassID,
         kGrDistanceFieldPathGeoProc_ClassID,
-        kGrDSLFPTest_DoStatement_ClassID,
-        kGrDSLFPTest_ForStatement_ClassID,
-        kGrDSLFPTest_IfStatement_ClassID,
-        kGrDSLFPTest_SwitchStatement_ClassID,
-        kGrDSLFPTest_Swizzle_ClassID,
-        kGrDSLFPTest_Ternary_ClassID,
-        kGrDSLFPTest_WhileStatement_ClassID,
         kGrFillRRectOp_Processor_ClassID,
         kGrGaussianConvolutionFragmentProcessor_ClassID,
         kGrMatrixConvolutionEffect_ClassID,
@@ -117,7 +102,7 @@ public:
     virtual const char* name() const = 0;
 
     /** Human-readable dump of all information */
-#if GR_TEST_UTILS
+#if defined(GPU_TEST_UTILS)
     virtual SkString onDumpInfo() const { return SkString(); }
 
     SkString dumpInfo() const {

@@ -12,8 +12,11 @@
 #include "include/core/SkPathEffect.h"
 #include "include/core/SkPoint.h"
 #include "include/core/SkRect.h"
+#include "include/core/SkSpan.h"
 
-class SkPath;
+#include <optional>
+
+class SkPathBuilder;
 class SkStrokeRec;
 
 class SkPathEffectBase : public SkPathEffect {
@@ -59,6 +62,8 @@ public:
 
         SkPath             fFirst;      // If not empty, contains geometry for first point
         SkPath             fLast;       // If not empty, contains geometry for last point
+
+        SkSpan<SkPoint> points() { return {fPoints, fNumPoints}; }
     };
 
     /**
@@ -97,7 +102,7 @@ public:
      * The output of path effects must always be in the original (input) coordinate system,
      * regardless of whether the path effect uses the CTM or not.
      */
-    virtual bool onFilterPath(SkPath*, const SkPath&, SkStrokeRec*, const SkRect*,
+    virtual bool onFilterPath(SkPathBuilder*, const SkPath&, SkStrokeRec*, const SkRect*,
                               const SkMatrix& /* ctm */) const = 0;
 
     /** Path effects *requiring* a valid CTM should override to return true. */
@@ -107,8 +112,14 @@ public:
                             const SkRect*) const {
         return false;
     }
-    virtual DashType onAsADash(DashInfo*) const {
-        return kNone_DashType;
+
+    struct DashInfo {
+        SkSpan<const SkScalar> fIntervals;
+        SkScalar               fPhase;
+    };
+
+    virtual std::optional<DashInfo> asADash() const {
+        return {};
     }
 
 

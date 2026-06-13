@@ -9,9 +9,18 @@
 #define SkRegion_DEFINED
 
 #include "include/core/SkRect.h"
+#include "include/private/base/SkAPI.h"
+#include "include/private/base/SkAssert.h"
+#include "include/private/base/SkDebug.h"
+#include "include/private/base/SkTypeTraits.h"
 
-class SkPath;
-class SkRgnBuilder;
+#include "include/core/SkPath.h"    // IWYU -- for SK_HIDE_PATH_EDIT_METHODS
+
+#include <cstddef>
+#include <cstdint>
+#include <type_traits>
+
+class SkPathBuilder;
 
 /** \class SkRegion
     SkRegion describes the set of pixels used to clip SkCanvas. SkRegion is compact,
@@ -170,7 +179,7 @@ public:
     */
     int computeRegionComplexity() const;
 
-    /** Appends outline of SkRegion to path.
+    /** Appends outline of SkRegion to path builder.
         Returns true if SkRegion is not empty; otherwise, returns false, and leaves path
         unmodified.
 
@@ -179,7 +188,16 @@ public:
 
         example: https://fiddle.skia.org/c/@Region_getBoundaryPath
     */
+    bool addBoundaryPath(SkPathBuilder*) const;
+
+    /**
+     * Return the boundary of the region as a path.
+     */
+    SkPath getBoundaryPath() const;
+
+#ifndef SK_HIDE_PATH_EDIT_METHODS
     bool getBoundaryPath(SkPath* path) const;
+#endif
 
     /** Constructs an empty SkRegion. SkRegion is set to empty bounds
         at (0, 0) with zero width and height. Always returns false.
@@ -553,7 +571,7 @@ public:
     /** \class SkRegion::Spanerator
         Returns the line segment ends within SkRegion that intersect a horizontal line.
     */
-    class Spanerator {
+    class SK_API Spanerator {
     public:
 
         /** Sets SkRegion::Spanerator to return line segments in SkRegion on scan line.
@@ -606,6 +624,8 @@ public:
     */
     size_t readFromMemory(const void* buffer, size_t length);
 
+    using sk_is_trivially_relocatable = std::true_type;
+
 private:
     static constexpr int kOpCount = kReplace_Op + 1;
 
@@ -617,7 +637,7 @@ private:
     struct RunHead;
 
     static RunHead* emptyRunHeadPtr() { return (SkRegion::RunHead*) -1; }
-    static constexpr RunHead* kRectRunHeadPtr = nullptr;
+    static constexpr const RunHead* const kRectRunHeadPtr = nullptr;
 
     // allocate space for count runs
     void allocateRuns(int count);
@@ -628,6 +648,9 @@ private:
 
     SkIRect     fBounds;
     RunHead*    fRunHead;
+
+    static_assert(::sk_is_trivially_relocatable<decltype(fBounds)>::value);
+    static_assert(::sk_is_trivially_relocatable<decltype(fRunHead)>::value);
 
     void freeRuns();
 

@@ -8,7 +8,16 @@
 #ifndef GrInnerFanTriangulator_DEFINED
 #define GrInnerFanTriangulator_DEFINED
 
+#include "include/core/SkRect.h"
 #include "src/gpu/ganesh/geometry/GrTriangulator.h"
+
+#include <utility>
+
+class GrEagerVertexAllocator;
+class SkArenaAlloc;
+class SkPath;
+
+#if !defined(SK_ENABLE_OPTIMIZE_SIZE)
 
 // Triangulates the inner polygon(s) of a path (i.e., the triangle fan for a Redbook rendering
 // method). When combined with the outer curves and breadcrumb triangles, these produce a complete
@@ -47,4 +56,15 @@ public:
     }
 };
 
-#endif
+#else
+
+// Stub out GrInnerFanTriangulator::BreadcrumbTriangleList for function declarations.
+namespace GrInnerFanTriangulator {
+    struct BreadcrumbTriangleList {
+        BreadcrumbTriangleList() = delete;
+    };
+};
+
+#endif // SK_ENABLE_OPTIMIZE_SIZE
+
+#endif // GrInnerFanTriangulator_DEFINED

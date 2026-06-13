@@ -9,24 +9,29 @@
 #define PathRenderer_DEFINED
 
 #include "include/core/SkRefCnt.h"
-#include "include/private/SkTArray.h"
-#include "include/private/gpu/ganesh/GrTypesPriv.h"
+#include "include/private/base/SkAssert.h"
+#include "include/private/base/SkDebug.h"
+#include "src/gpu/ganesh/GrPaint.h"
+
+#include <string.h>
 
 class GrCaps;
 class GrClip;
 class GrHardClip;
-class GrPaint;
 class GrRecordingContext;
 class GrRenderTargetProxy;
 class GrStyledShape;
-class GrStyle;
-struct GrUserStencilSettings;
-struct SkIRect;
 class SkMatrix;
 class SkPath;
 class SkSurfaceProps;
+enum class GrAA : bool;
+enum class GrAAType : unsigned int;
+struct GrUserStencilSettings;
+struct SkIRect;
+struct SkISize;
+struct SkRect;
 
-namespace skgpu::v1 {
+namespace skgpu::ganesh {
 
 class SurfaceDrawContext;
 
@@ -35,6 +40,10 @@ class SurfaceDrawContext;
  */
 class PathRenderer : public SkRefCnt {
 public:
+    // Used to guard TriangulatingPathRenderer and DefaultPathRenderer from excessively complex
+    // paths, which may cause OOM or other stalls
+    static constexpr int kMaxGPUPathRendererVerbs = 1 << 14;
+
     PathRenderer() = default;
 
     virtual const char* name() const = 0;
@@ -157,7 +166,7 @@ public:
         const GrStyledShape* fShape;
         GrAA                 fDoStencilMSAA;
 
-        SkDEBUGCODE(void validate() const);
+        SkDEBUGCODE(void validate() const;)
     };
 
     /**
@@ -205,6 +214,6 @@ private:
     using INHERITED = SkRefCnt;
 };
 
-} // namespace skgpu::v1
+}  // namespace skgpu::ganesh
 
 #endif // PathRenderer_DEFINED

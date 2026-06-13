@@ -8,14 +8,23 @@
 #ifndef sktext_gpu_SubRunAllocator_DEFINED
 #define sktext_gpu_SubRunAllocator_DEFINED
 
-#include "include/core/SkMath.h"
 #include "include/core/SkSpan.h"
-#include "include/private/SkTemplates.h"
-#include "src/core/SkArenaAlloc.h"
+#include "include/private/base/SkAssert.h"
+#include "include/private/base/SkMath.h"
+#include "include/private/base/SkTLogic.h"
+#include "include/private/base/SkTemplates.h"
+#include "include/private/base/SkTo.h"
+#include "src/base/SkArenaAlloc.h"
 
 #include <algorithm>
+#include <array>
 #include <climits>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <limits>
 #include <memory>
+#include <new>
 #include <tuple>
 #include <utility>
 
@@ -71,7 +80,7 @@ public:
         // Following this logic, the equation for the additional bytes is
         //   (maxAlignment/minAlignment - 1) * minAlignment
         //     = maxAlignment - minAlignment.
-        int minimumSize = AlignUp(requestedSize, minAlignment)
+        int minimumSize = SkToInt(AlignUp(requestedSize, minAlignment))
                           + blockSize
                           + maxAlignment - minAlignment;
 
@@ -79,7 +88,7 @@ public:
         // maximum int. The > 32K heuristic is from the JEMalloc behavior.
         constexpr int k32K = (1 << 15);
         if (minimumSize >= k32K && minimumSize < std::numeric_limits<int>::max() - k4K) {
-            minimumSize = AlignUp(minimumSize, k4K);
+            minimumSize = SkToInt(AlignUp(minimumSize, k4K));
         }
 
         return minimumSize;
@@ -121,9 +130,9 @@ private:
     // kAllocationAlignment accounts for this difference. For more information see:
     // https://github.com/emscripten-core/emscripten/issues/10072
     #if !defined(SK_FORCE_8_BYTE_ALIGNMENT)
-        inline static constexpr int kAllocationAlignment = alignof(std::max_align_t);
+        static constexpr int kAllocationAlignment = alignof(std::max_align_t);
     #else
-        inline static constexpr int kAllocationAlignment = 8;
+        static constexpr int kAllocationAlignment = 8;
     #endif
 
     static constexpr size_t AlignUp(int size, int alignment) {
@@ -255,6 +264,18 @@ public:
         return reinterpret_cast<T*>(fAlloc.template allocateBytesFor<T>(n));
     }
 
+    template<typename T>
+    SkSpan<T> makePODSpan(SkSpan<const T> s) {
+        static_assert(HasNoDestructor<T>, "This is not POD. Use makeUniqueArray.");
+        if (s.empty()) {
+            return SkSpan<T>{};
+        }
+
+        T* result = this->makePODArray<T>(SkTo<int>(s.size()));
+        memcpy(result, s.data(), s.size_bytes());
+        return {result, s.size()};
+    }
+
     template<typename T, typename Src, typename Map>
     SkSpan<T> makePODArray(const Src& src, Map map) {
         static_assert(HasNoDestructor<T>, "This is not POD. Use makeUniqueArray.");
@@ -284,6 +305,17 @@ public:
             new (&array[i]) T(initializer(i));
         }
         return std::unique_ptr<T[], ArrayDestroyer>{array, ArrayDestroyer{n}};
+    }
+
+    template<typename T, typename U, typename Map>
+    std::unique_ptr<T[], ArrayDestroyer> makeUniqueArray(SkSpan<const U> src, Map map) {
+        static_assert(!HasNoDestructor<T>, "This is POD. Use makePODArray.");
+        int count = SkCount(src);
+        T* array = reinterpret_cast<T*>(fAlloc.template allocateBytesFor<T>(src.size()));
+        for (int i = 0; i < count; ++i) {
+            new (&array[i]) T(map(src[i]));
+        }
+        return std::unique_ptr<T[], ArrayDestroyer>{array, ArrayDestroyer{count}};
     }
 
     void* alignedBytes(int size, int alignment);

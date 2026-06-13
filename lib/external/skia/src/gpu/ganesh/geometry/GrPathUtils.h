@@ -8,13 +8,16 @@
 #ifndef GrPathUtils_DEFINED
 #define GrPathUtils_DEFINED
 
-#include "include/core/SkRect.h"
-#include "include/private/SkTArray.h"
-#include "src/core/SkGeometry.h"
-#include "src/core/SkPathPriv.h"
-#include "src/gpu/BufferWriter.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkScalar.h"
+#include "include/private/base/SkTArray.h"
+
+#include <cstddef>
+#include <cstdint>
 
 class SkMatrix;
+enum class SkPathFirstDirection;
+struct SkRect;
 
 /**
  *  Utilities for evaluating paths.
@@ -119,7 +122,7 @@ void getConicKLM(const SkPoint p[3], const SkScalar weight, SkMatrix* klm);
 // preserve the starting and ending tangent vectors (modulo FP precision).
 void convertCubicToQuads(const SkPoint p[4],
                          SkScalar tolScale,
-                         SkTArray<SkPoint, true>* quads);
+                         skia_private::TArray<SkPoint, true>* quads);
 
 // When we approximate a cubic {a,b,c,d} with a quadratic we may have to ensure that the new control
 // point lies between the lines ab and cd. The convex path renderer requires this. It starts with a
@@ -130,7 +133,7 @@ void convertCubicToQuads(const SkPoint p[4],
 void convertCubicToQuadsConstrainToTangents(const SkPoint p[4],
                                             SkScalar tolScale,
                                             SkPathFirstDirection dir,
-                                            SkTArray<SkPoint, true>* quads);
+                                            skia_private::TArray<SkPoint, true>* quads);
 
 }  // namespace GrPathUtils
 

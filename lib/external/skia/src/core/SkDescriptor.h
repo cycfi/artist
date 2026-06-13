@@ -8,14 +8,19 @@
 #ifndef SkDescriptor_DEFINED
 #define SkDescriptor_DEFINED
 
-#include <memory>
-#include <new>
-
-#include "include/private/SkMacros.h"
-#include "include/private/SkNoncopyable.h"
-#include "src/core/SkBuffer.h"
-#include "src/core/SkFontPriv.h"
+#include "include/core/SkString.h"
+#include "include/private/base/SkAssert.h"
+#include "include/private/base/SkDebug.h"
+#include "include/private/base/SkNoncopyable.h"
 #include "src/core/SkScalerContext.h"
+
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <optional>
+
+class SkReadBuffer;
+class SkWriteBuffer;
 
 class SkDescriptor : SkNoncopyable {
 public:

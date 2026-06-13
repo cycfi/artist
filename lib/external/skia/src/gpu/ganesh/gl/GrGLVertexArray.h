@@ -8,14 +8,16 @@
 #ifndef GrGLVertexArray_DEFINED
 #define GrGLVertexArray_DEFINED
 
-#include "include/gpu/gl/GrGLTypes.h"
-#include "include/private/SkTArray.h"
+#include "include/gpu/ganesh/gl/GrGLTypes.h"
+#include "include/private/base/SkTArray.h"
 #include "include/private/gpu/ganesh/GrTypesPriv.h"
 #include "src/gpu/ganesh/GrGpuResource.h"
-#include "src/gpu/ganesh/gl/GrGLDefines_impl.h"
+
+#include <cstddef>
 
 class GrBuffer;
 class GrGLGpu;
+enum class SkSLType : char;
 
 /**
  * This sets and tracks the vertex attribute array state. It is used internally by GrGLVertexArray
@@ -53,7 +55,7 @@ public:
                             GrPrimitiveRestart = GrPrimitiveRestart::kNo);
 
     void invalidate() {
-        int count = fAttribArrayStates.count();
+        int count = fAttribArrayStates.size();
         for (int i = 0; i < count; ++i) {
             fAttribArrayStates[i].invalidate();
         }
@@ -63,7 +65,7 @@ public:
     /**
      * The number of attrib arrays that this object is configured to track.
      */
-    int count() const { return fAttribArrayStates.count(); }
+    int count() const { return fAttribArrayStates.size(); }
 
 private:
     inline static constexpr int kInvalidDivisor = -1;
@@ -87,7 +89,7 @@ private:
         int                       fDivisor;
     };
 
-    SkSTArray<16, AttribArrayState, true> fAttribArrayStates;
+    skia_private::STArray<16, AttribArrayState, true> fAttribArrayStates;
     int fNumEnabledArrays;
     GrPrimitiveRestart fPrimitiveRestartEnabled;
     bool fEnableStateIsValid = false;

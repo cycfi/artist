@@ -9,22 +9,39 @@
 #define GrPipeline_DEFINED
 
 #include "include/core/SkRefCnt.h"
-#include "src/gpu/ganesh/GrColor.h"
+#include "include/private/base/SkDebug.h"
+#include "include/private/base/SkMacros.h"
+#include "include/private/base/SkPoint_impl.h"
+#include "include/private/base/SkTemplates.h"
+#include "include/private/base/SkTo.h"
+#include "include/private/gpu/ganesh/GrTypesPriv.h"
+#include "src/gpu/Swizzle.h"
+#include "src/gpu/ganesh/GrCaps.h"
 #include "src/gpu/ganesh/GrDstProxyView.h"
 #include "src/gpu/ganesh/GrFragmentProcessor.h"
-#include "src/gpu/ganesh/GrProcessorSet.h"
-#include "src/gpu/ganesh/GrScissorState.h"
+#include "src/gpu/ganesh/GrSurfaceProxy.h"
 #include "src/gpu/ganesh/GrSurfaceProxyView.h"
-#include "src/gpu/ganesh/GrUserStencilSettings.h"
+#include "src/gpu/ganesh/GrTextureProxy.h"
 #include "src/gpu/ganesh/GrWindowRectsState.h"
+#include "src/gpu/ganesh/GrXferProcessor.h"
 #include "src/gpu/ganesh/effects/GrPorterDuffXferProcessor.h"
+
+#include <cstdint>
+#include <functional>
+#include <memory>
 
 class GrAppliedClip;
 class GrAppliedHardClip;
-struct GrGLSLBuiltinUniformHandles;
 class GrGLSLProgramDataManager;
-class GrOp;
+class GrProcessorSet;
+class GrTexture;
 class GrTextureEffect;
+enum class SkBlendMode;
+struct GrGLSLBuiltinUniformHandles;
+
+namespace skgpu {
+class KeyBuilder;
+}
 
 /**
  * This immutable object contains information needed to build a shader program and set API
@@ -209,12 +226,13 @@ private:
         kScissorTestEnabled = (kLastInputFlag << 2),
     };
 
-    GR_DECL_BITFIELD_CLASS_OPS_FRIENDS(Flags);
+    SK_DECL_BITFIELD_CLASS_OPS_FRIENDS(Flags);
 
     friend bool operator&(Flags, InputFlags);
 
     // A pipeline can contain up to three processors: color, paint coverage, and clip coverage.
-    using FragmentProcessorArray = SkAutoSTArray<3, std::unique_ptr<const GrFragmentProcessor>>;
+    using FragmentProcessorArray =
+            skia_private::AutoSTArray<3, std::unique_ptr<const GrFragmentProcessor>>;
 
     GrDstProxyView fDstProxy;
     GrWindowRectsState fWindowRectsState;
@@ -228,8 +246,8 @@ private:
     skgpu::Swizzle fWriteSwizzle;
 };
 
-GR_MAKE_BITFIELD_CLASS_OPS(GrPipeline::InputFlags)
-GR_MAKE_BITFIELD_CLASS_OPS(GrPipeline::Flags)
+SK_MAKE_BITFIELD_CLASS_OPS(GrPipeline::InputFlags)
+SK_MAKE_BITFIELD_CLASS_OPS(GrPipeline::Flags)
 
 inline bool operator&(GrPipeline::Flags flags, GrPipeline::InputFlags inputFlag) {
     return (flags & (GrPipeline::Flags)inputFlag);

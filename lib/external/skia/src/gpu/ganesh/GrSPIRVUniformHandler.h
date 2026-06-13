@@ -8,8 +8,22 @@
 #ifndef GrSPIRVUniformHandler_DEFINED
 #define GrSPIRVUniformHandler_DEFINED
 
-#include "src/core/SkTBlockList.h"
+#include "include/private/base/SkTArray.h"
+#include "include/private/gpu/ganesh/GrTypesPriv.h"
+#include "src/base/SkTBlockList.h"
+#include "src/gpu/Swizzle.h"
+#include "src/gpu/ganesh/GrSamplerState.h"
 #include "src/gpu/ganesh/glsl/GrGLSLUniformHandler.h"
+
+#include <cstdint>
+
+class GrBackendFormat;
+class GrGLSLProgramBuilder;
+class GrProcessor;
+class GrShaderVar;
+class SkString;
+enum class SkSLType : char;
+struct GrShaderCaps;
 
 /*
  * This class can be used for basic SPIR-V uniform handling. It will make a single uniform buffer
@@ -19,8 +33,6 @@
  */
 class GrSPIRVUniformHandler : public GrGLSLUniformHandler {
 public:
-    static const int kUniformsPerBlock = 8;
-
     const GrShaderVar& getUniformVariable(UniformHandle u) const override;
     const char* getUniformCStr(UniformHandle u) const override;
 
@@ -28,11 +40,9 @@ public:
         int fUBOOffset;
     };
     typedef SkTBlockList<SPIRVUniformInfo> UniformInfoArray;
-    enum {
-        kUniformBinding = 0,
-        kUniformDescriptorSet = 0,
-        kSamplerTextureDescriptorSet = 1,
-    };
+    static constexpr int kUniformDescriptorSet = 0;
+    static constexpr int kSamplerTextureDescriptorSet = 1;
+
     uint32_t getRTFlipOffset() const;
 
     int numUniforms() const override {
@@ -62,11 +72,9 @@ private:
                                           int arrayCount,
                                           const char** outName) override;
 
-    UniformInfoArray    fUniforms;
-    UniformInfoArray    fSamplers;
-    UniformInfoArray    fTextures;
-    SkTArray<skgpu::Swizzle> fSamplerSwizzles;
-    SkTArray<SkString>  fSamplerReferences;
+    UniformInfoArray fUniforms;
+    UniformInfoArray fSamplers;
+    skia_private::TArray<skgpu::Swizzle> fSamplerSwizzles;
 
     uint32_t fCurrentUBOOffset = 0;
     uint32_t fRTFlipOffset = 0;

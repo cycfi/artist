@@ -9,9 +9,18 @@
 #define SkStroke_DEFINED
 
 #include "include/core/SkPaint.h"
-#include "include/core/SkPath.h"
-#include "include/core/SkPoint.h"
-#include "include/private/SkTo.h"
+#include "include/core/SkPathTypes.h"
+#include "include/core/SkScalar.h"
+#include "include/private/base/SkAssert.h"
+#include "include/private/base/SkDebug.h"
+#include "include/private/base/SkTo.h"
+
+#include <cmath>
+#include <cstdint>
+
+class SkPath;
+class SkPathBuilder;
+struct SkRect;
 
 #ifdef SK_DEBUG
 extern bool gDebugStrokerErrorSet;
@@ -31,11 +40,11 @@ public:
     SkStroke(const SkPaint&);
     SkStroke(const SkPaint&, SkScalar width);   // width overrides paint.getStrokeWidth()
 
-    SkPaint::Cap    getCap() const { return (SkPaint::Cap)fCap; }
-    void        setCap(SkPaint::Cap);
+    SkPaint::Cap getCap() const { return (SkPaint::Cap)fCap; }
+    void         setCap(SkPaint::Cap);
 
-    SkPaint::Join   getJoin() const { return (SkPaint::Join)fJoin; }
-    void        setJoin(SkPaint::Join);
+    SkPaint::Join getJoin() const { return (SkPaint::Join)fJoin; }
+    void          setJoin(SkPaint::Join);
 
     void    setMiterLimit(SkScalar);
     void    setWidth(SkScalar);
@@ -53,16 +62,16 @@ public:
      */
     SkScalar getResScale() const { return fResScale; }
     void setResScale(SkScalar rs) {
-        SkASSERT(rs > 0 && SkScalarIsFinite(rs));
+        SkASSERT(rs > 0 && std::isfinite(rs));
         fResScale = rs;
     }
 
     /**
      *  Stroke the specified rect, winding it in the specified direction..
      */
-    void    strokeRect(const SkRect& rect, SkPath* result,
+    void    strokeRect(const SkRect& rect, SkPathBuilder* result,
                        SkPathDirection = SkPathDirection::kCW) const;
-    void    strokePath(const SkPath& path, SkPath*) const;
+    void    strokePath(const SkPath& path, SkPathBuilder*) const;
 
     ////////////////////////////////////////////////////////////////
 

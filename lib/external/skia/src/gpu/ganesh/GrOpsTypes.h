@@ -10,9 +10,12 @@
 
 #include "include/core/SkMatrix.h"
 #include "include/core/SkRect.h"
-#include "include/private/SkColorData.h"
-#include "include/private/gpu/ganesh/GrTypesPriv.h"
+#include "src/core/SkColorData.h"
 #include "src/gpu/ganesh/GrSurfaceProxyView.h"
+
+enum SkAlphaType : int;
+enum class GrQuadAAFlags;
+struct SkPoint;
 
 /** Used by SDC::drawQuadSet and FillRectOp */
 struct GrQuadSetEntry {

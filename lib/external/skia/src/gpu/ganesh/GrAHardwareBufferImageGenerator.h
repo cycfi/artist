@@ -7,12 +7,12 @@
 #ifndef GrAHardwareBufferImageGenerator_DEFINED
 #define GrAHardwareBufferImageGenerator_DEFINED
 
-#include "include/core/SkImageGenerator.h"
-
+#include "include/private/gpu/ganesh/GrTextureGenerator.h"
 #include "include/private/gpu/ganesh/GrTypesPriv.h"
 
 class GrGpuResource;
 class GrSurfaceProxyView;
+class SkRecorder;
 
 extern "C" {
     typedef struct AHardwareBuffer AHardwareBuffer;
@@ -29,9 +29,9 @@ extern "C" {
  *  To implement certain features like tiling, Skia may copy the texture to
  *  avoid OpenGL API limitations.
  */
-class GrAHardwareBufferImageGenerator : public SkImageGenerator {
+class GrAHardwareBufferImageGenerator : public GrTextureGenerator {
 public:
-    static std::unique_ptr<SkImageGenerator> Make(AHardwareBuffer*, SkAlphaType,
+    static std::unique_ptr<GrAHardwareBufferImageGenerator> Make(AHardwareBuffer*, SkAlphaType,
                                                   sk_sp<SkColorSpace>, GrSurfaceOrigin);
 
     ~GrAHardwareBufferImageGenerator() override;
@@ -43,10 +43,12 @@ private:
                                     bool isProtectedContent, uint32_t bufferFormat,
                                     GrSurfaceOrigin surfaceOrigin);
 
-    bool onIsValid(GrRecordingContext*) const override;
+    bool onIsValid(SkRecorder*) const override;
 
-    GrSurfaceProxyView onGenerateTexture(GrRecordingContext*, const SkImageInfo&, const SkIPoint&,
-                                         GrMipmapped, GrImageTexGenPolicy) override;
+    GrSurfaceProxyView onGenerateTexture(GrRecordingContext*,
+                                         const SkImageInfo&,
+                                         skgpu::Mipmapped,
+                                         GrImageTexGenPolicy) override;
 
     GrSurfaceOrigin origin() const override { return fSurfaceOrigin; }
 
@@ -60,7 +62,5 @@ private:
     uint32_t         fBufferFormat;
     const bool       fIsProtectedContent;
     GrSurfaceOrigin  fSurfaceOrigin;
-
-    using INHERITED = SkImageGenerator;
 };
 #endif  // GrAHardwareBufferImageGenerator_DEFINED

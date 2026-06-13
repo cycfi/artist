@@ -10,27 +10,36 @@
 
 #include "include/core/SkTypes.h"
 
-#if GR_TEST_UTILS
+#if defined(GPU_TEST_UTILS)
 
+#include "include/core/SkPathEffect.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkSpan.h"
 #include "include/core/SkStrokeRec.h"
 #include "include/core/SkSurfaceProps.h"
-#include "include/private/SkMacros.h"
-#include "include/private/SkTemplates.h"
-#include "include/utils/SkRandom.h"
-#include "src/core/SkMatrixProvider.h"
+#include "include/core/SkTypes.h"
+#include "include/private/base/SkTemplates.h"
 #include "src/core/SkPathEffectBase.h"
 #include "src/gpu/ganesh/GrColor.h"
 #include "src/gpu/ganesh/GrFPArgs.h"
 #include "src/gpu/ganesh/GrSamplerState.h"
-#include "src/shaders/SkShaderBase.h"
+
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <optional>
 
 class GrColorInfo;
 class GrColorSpaceXform;
 class GrProcessorTestData;
 class GrStyle;
+class SkColorSpace;
 class SkMatrix;
 class SkPath;
+class SkPathBuilder;
 class SkRRect;
+class SkRandom;
 struct SkRect;
 
 namespace GrTest {
@@ -64,7 +73,6 @@ public:
     const GrFPArgs& args() const { return fArgs; }
 
 private:
-    SkMatrixProvider fMatrixProvider;
     std::unique_ptr<GrColorInfo> fColorInfoStorage;
     SkSurfaceProps fSurfaceProps;
     GrFPArgs fArgs;
@@ -74,29 +82,28 @@ private:
 // is in the optional build target effects.
 class TestDashPathEffect : public SkPathEffectBase {
 public:
-    static sk_sp<SkPathEffect> Make(const SkScalar* intervals, int count, SkScalar phase) {
-        return sk_sp<SkPathEffect>(new TestDashPathEffect(intervals, count, phase));
+    static sk_sp<SkPathEffect> Make(SkSpan<const SkScalar> intervals, SkScalar phase) {
+        return sk_sp<SkPathEffect>(new TestDashPathEffect(intervals, phase));
     }
 
     Factory getFactory() const override { return nullptr; }
     const char* getTypeName() const override { return nullptr; }
 
 protected:
-    bool onFilterPath(SkPath* dst, const SkPath&, SkStrokeRec* , const SkRect*,
+    bool onFilterPath(SkPathBuilder* dst, const SkPath&, SkStrokeRec* , const SkRect*,
                       const SkMatrix&) const override;
-    DashType onAsADash(DashInfo* info) const override;
+    std::optional<DashInfo> asADash() const override;
 
 private:
-    TestDashPathEffect(const SkScalar* intervals, int count, SkScalar phase);
+    TestDashPathEffect(SkSpan<const SkScalar> intervals, SkScalar phase);
 
     bool computeFastBounds(SkRect* bounds) const override { return true; }
 
-    int                     fCount;
-    SkAutoTArray<SkScalar>  fIntervals;
-    SkScalar                fPhase;
-    SkScalar                fInitialDashLength;
-    int                     fInitialDashIndex;
-    SkScalar                fIntervalLength;
+    skia_private::AutoTArray<SkScalar>  fIntervals;
+    SkScalar                            fPhase;
+    SkScalar                            fInitialDashLength;
+    size_t                              fInitialDashIndex;
+    SkScalar                            fIntervalLength;
 };
 
 }  // namespace GrTest

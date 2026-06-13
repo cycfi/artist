@@ -8,12 +8,18 @@
 #ifndef GrRenderTarget_DEFINED
 #define GrRenderTarget_DEFINED
 
-#include "include/core/SkRect.h"
+#include "include/core/SkRefCnt.h"
+#include "include/gpu/ganesh/GrBackendSurface.h"
+#include "include/gpu/ganesh/GrTypes.h"
+#include "include/private/base/SkTArray.h"
+#include "src/gpu/ganesh/GrAttachment.h"
 #include "src/gpu/ganesh/GrSurface.h"
 
-class GrCaps;
-class GrAttachment;
-class GrBackendRenderTarget;
+#include <string_view>
+
+class GrGpu;
+struct SkISize;
+struct SkPoint;
 
 /**
  * GrRenderTarget represents a 2D buffer of pixels that can be rendered to.
@@ -67,7 +73,7 @@ public:
      * actual number of samples in use. (This may differ from fSampleCnt.) Sample locations are
      * returned as 0..1 offsets relative to the top-left corner of the pixel.
      */
-    const SkTArray<SkPoint>& getSampleLocations();
+    const skia_private::TArray<SkPoint>& getSampleLocations();
 
 protected:
     GrRenderTarget(GrGpu*,

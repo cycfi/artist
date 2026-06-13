@@ -8,12 +8,18 @@
 #ifndef GrYUVATextureProxies_DEFINED
 #define GrYUVATextureProxies_DEFINED
 
+#include "include/core/SkRefCnt.h"
 #include "include/core/SkYUVAInfo.h"
-#include "src/core/SkYUVAInfoLocation.h"
+#include "include/gpu/GpuTypes.h"
+#include "include/gpu/ganesh/GrTypes.h"
+#include "src/core/SkYUVAInfoLocation.h"  // IWYU pragma: keep
+#include "src/gpu/Swizzle.h"
 #include "src/gpu/ganesh/GrSurfaceProxy.h"
 #include "src/gpu/ganesh/GrSurfaceProxyView.h"
 
-class GrSurfaceProxyView;
+#include <array>
+
+enum class GrColorType;
 
 class GrYUVATextureProxies {
 public:
@@ -47,7 +53,7 @@ public:
     GrSurfaceOrigin textureOrigin() const { return fTextureOrigin; }
 
     // Overall set of YUVA proxies is mip mapped if each plane is mip mapped.
-    GrMipmapped mipmapped() const { return fMipmapped; }
+    skgpu::Mipmapped mipmapped() const { return fMipmapped; }
 
     GrSurfaceProxy* proxy(int i) const { return fProxies[i].get(); }
 
@@ -69,7 +75,7 @@ private:
     std::array<sk_sp<GrSurfaceProxy>, SkYUVAInfo::kMaxPlanes> fProxies;
     SkYUVAInfo fYUVAInfo;
     GrSurfaceOrigin fTextureOrigin = kTopLeft_GrSurfaceOrigin;
-    GrMipmapped fMipmapped = GrMipmapped::kNo;
+    skgpu::Mipmapped fMipmapped = skgpu::Mipmapped::kNo;
     SkYUVAInfo::YUVALocations fYUVALocations = {};
 };
 

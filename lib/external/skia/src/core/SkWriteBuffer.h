@@ -8,23 +8,40 @@
 #ifndef SkWriteBuffer_DEFINED
 #define SkWriteBuffer_DEFINED
 
+#include "include/core/SkColor.h"
 #include "include/core/SkData.h"
-#include "include/core/SkFlattenable.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkSamplingOptions.h"
+#include "include/core/SkScalar.h"
 #include "include/core/SkSerialProcs.h"
-#include "include/private/SkTHash.h"
+#include "include/core/SkSpan.h"
+#include "src/core/SkTHash.h"
 #include "src/core/SkWriter32.h"
 
+#include <cstddef>
+#include <cstdint>
 #include <string_view>
 
 class SkFactorySet;
+class SkFlattenable;
 class SkImage;
 class SkM44;
+class SkMatrix;
+class SkPaint;
 class SkPath;
 class SkRefCntSet;
+class SkRegion;
+class SkStream;
+class SkTypeface;
+class SkWStream;
+struct SkIRect;
+struct SkPoint3;
+struct SkPoint;
+struct SkRect;
 
 class SkWriteBuffer {
 public:
-    SkWriteBuffer() {}
+    SkWriteBuffer(const SkSerialProcs& p): fProcs(p) {}
     virtual ~SkWriteBuffer() {}
 
     virtual void writePad32(const void* buffer, size_t bytes) = 0;
@@ -40,9 +57,9 @@ public:
 
     virtual void writeBool(bool value) = 0;
     virtual void writeScalar(SkScalar value) = 0;
-    virtual void writeScalarArray(const SkScalar* value, uint32_t count) = 0;
+    virtual void writeScalarArray(SkSpan<const SkScalar>) = 0;
     virtual void writeInt(int32_t value) = 0;
-    virtual void writeIntArray(const int32_t* value, uint32_t count) = 0;
+    virtual void writeIntArray(SkSpan<const int32_t>) = 0;
     virtual void writeUInt(uint32_t value) = 0;
     void write32(int32_t value) {
         this->writeInt(value);
@@ -51,11 +68,11 @@ public:
 
     virtual void writeFlattenable(const SkFlattenable* flattenable) = 0;
     virtual void writeColor(SkColor color) = 0;
-    virtual void writeColorArray(const SkColor* color, uint32_t count) = 0;
+    virtual void writeColorArray(SkSpan<const SkColor>) = 0;
     virtual void writeColor4f(const SkColor4f& color) = 0;
-    virtual void writeColor4fArray(const SkColor4f* color, uint32_t count) = 0;
+    virtual void writeColor4fArray(SkSpan<const SkColor4f>) = 0;
     virtual void writePoint(const SkPoint& point) = 0;
-    virtual void writePointArray(const SkPoint* point, uint32_t count) = 0;
+    virtual void writePointArray(SkSpan<const SkPoint>) = 0;
     virtual void writePoint3(const SkPoint3& point) = 0;
     virtual void write(const SkM44&) = 0;
     virtual void writeMatrix(const SkMatrix& matrix) = 0;
@@ -69,12 +86,10 @@ public:
     virtual void writeTypeface(SkTypeface* typeface) = 0;
     virtual void writePaint(const SkPaint& paint) = 0;
 
-    void setSerialProcs(const SkSerialProcs& procs) { fProcs = procs; }
+    const SkSerialProcs& serialProcs() const { return fProcs; }
 
 protected:
     SkSerialProcs   fProcs;
-
-    friend class SkPicturePriv; // fProcs
 };
 
 /**
@@ -82,8 +97,8 @@ protected:
  */
 class SkBinaryWriteBuffer : public SkWriteBuffer {
 public:
-    SkBinaryWriteBuffer();
-    SkBinaryWriteBuffer(void* initialStorage, size_t storageSize);
+    SkBinaryWriteBuffer(const SkSerialProcs&);
+    SkBinaryWriteBuffer(void* initialStorage, size_t storageSize, const SkSerialProcs&);
     ~SkBinaryWriteBuffer() override;
 
     void write(const void* buffer, size_t bytes) {
@@ -106,19 +121,19 @@ public:
     void writeByteArray(const void* data, size_t size) override;
     void writeBool(bool value) override;
     void writeScalar(SkScalar value) override;
-    void writeScalarArray(const SkScalar* value, uint32_t count) override;
+    void writeScalarArray(SkSpan<const SkScalar>) override;
     void writeInt(int32_t value) override;
-    void writeIntArray(const int32_t* value, uint32_t count) override;
+    void writeIntArray(SkSpan<const int32_t>) override;
     void writeUInt(uint32_t value) override;
     void writeString(std::string_view value) override;
 
     void writeFlattenable(const SkFlattenable* flattenable) override;
     void writeColor(SkColor color) override;
-    void writeColorArray(const SkColor* color, uint32_t count) override;
+    void writeColorArray(SkSpan<const SkColor>) override;
     void writeColor4f(const SkColor4f& color) override;
-    void writeColor4fArray(const SkColor4f* color, uint32_t count) override;
+    void writeColor4fArray(SkSpan<const SkColor4f>) override;
     void writePoint(const SkPoint& point) override;
-    void writePointArray(const SkPoint* point, uint32_t count) override;
+    void writePointArray(SkSpan<const SkPoint>) override;
     void writePoint3(const SkPoint3& point) override;
     void write(const SkM44&) override;
     void writeMatrix(const SkMatrix& matrix) override;
@@ -146,7 +161,7 @@ private:
     SkWriter32 fWriter;
 
     // Only used if we do not have an fFactorySet
-    SkTHashMap<const char*, uint32_t> fFlattenableDict;
+    skia_private::THashMap<const char*, uint32_t> fFlattenableDict;
 };
 
 enum SkWriteBufferImageFlags {

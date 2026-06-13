@@ -8,24 +8,32 @@
 #ifndef GrGLSLProgramBuilder_DEFINED
 #define GrGLSLProgramBuilder_DEFINED
 
+#include "include/private/base/SkDebug.h"
+#include "include/private/base/SkTArray.h"
+#include "include/private/gpu/ganesh/GrTypesPriv.h"
+#include "src/gpu/Swizzle.h"
 #include "src/gpu/ganesh/GrCaps.h"
 #include "src/gpu/ganesh/GrFragmentProcessor.h"
 #include "src/gpu/ganesh/GrGeometryProcessor.h"
+#include "src/gpu/ganesh/GrPipeline.h"
 #include "src/gpu/ganesh/GrProgramInfo.h"
+#include "src/gpu/ganesh/GrSamplerState.h"
+#include "src/gpu/ganesh/GrShaderVar.h"
 #include "src/gpu/ganesh/GrXferProcessor.h"
 #include "src/gpu/ganesh/glsl/GrGLSLFragmentShaderBuilder.h"
-#include "src/gpu/ganesh/glsl/GrGLSLProgramDataManager.h"
 #include "src/gpu/ganesh/glsl/GrGLSLUniformHandler.h"
 #include "src/gpu/ganesh/glsl/GrGLSLVertexGeoBuilder.h"
-#include "src/sksl/SkSLCompiler.h"
 
+#include <cstdint>
+#include <memory>
+#include <string>
 #include <vector>
 
-class GrProgramDesc;
-class GrRenderTarget;
-class GrShaderVar;
+class GrBackendFormat;
 class GrGLSLVaryingHandler;
+class GrProgramDesc;
 class SkString;
+enum GrSurfaceOrigin : int;
 struct GrShaderCaps;
 
 class GrGLSLProgramBuilder {
@@ -45,7 +53,6 @@ public:
         return fProgramInfo.pipeline().snapVerticesToPixelCenters();
     }
     bool hasPointSize() const { return fProgramInfo.primitiveType() == GrPrimitiveType::kPoints; }
-    virtual SkSL::Compiler* shaderCompiler() const = 0;
 
     const GrProgramDesc& desc() const { return fDesc; }
 
@@ -78,18 +85,48 @@ public:
     SkString nameVariable(char prefix, const char* name, bool mangle = true);
 
     /**
+     * Emits samplers for TextureEffect fragment processors as needed. `fp` can be a TextureEffect,
+     * or a tree containing zero or more TextureEffects.
+     */
+    bool emitTextureSamplersForFPs(const GrFragmentProcessor& fp,
+                                   GrFragmentProcessor::ProgramImpl& impl,
+                                   int* samplerIndex);
+
+    /**
+     * advanceStage is called by program creator between each processor's emit code.  It increments
+     * the stage index for variable name mangling, and also ensures verification variables in the
+     * fragment shader are cleared.
+     */
+    void advanceStage() {
+        fStageIndex++;
+        SkDEBUGCODE(fFS.debugOnly_resetPerStageVerification();)
+        fFS.nextStage();
+    }
+
+    /** Adds the SkSL function that implements an FP assuming its children are already written. */
+    void writeFPFunction(const GrFragmentProcessor& fp, GrFragmentProcessor::ProgramImpl& impl);
+
+    /**
+     * Returns a function-call invocation of `fp` in string form, passing the appropriate
+     * combination of `inputColor`, `destColor` and `fLocalCoordsVar` for the FP.
+     */
+    std::string invokeFP(const GrFragmentProcessor& fp,
+                         const GrFragmentProcessor::ProgramImpl& impl,
+                         const char* inputColor,
+                         const char* destColor,
+                         const char* coords) const;
+    /**
      * If the FP's coords are unused or all uses have been lifted to interpolated varyings then
      * don't put coords in the FP's function signature or call sites.
      */
-    bool fragmentProcessorHasCoordsParam(const GrFragmentProcessor*);
+    bool fragmentProcessorHasCoordsParam(const GrFragmentProcessor*) const;
 
     virtual GrGLSLUniformHandler* uniformHandler() = 0;
     virtual const GrGLSLUniformHandler* uniformHandler() const = 0;
     virtual GrGLSLVaryingHandler* varyingHandler() = 0;
 
-    // Used for backend customization of the output color and secondary color variables from the
-    // fragment processor. Only used if the outputs are explicitly declared in the shaders
-    virtual void finalizeFragmentOutputColor(GrShaderVar& outputColor) {}
+    // Used for backend customization of the secondary color variable from the fragment processor.
+    // Only used if the output is explicitly declared in the shaders.
     virtual void finalizeFragmentSecondaryColor(GrShaderVar& outputColor) {}
 
     // number of each input/output type in a single allocation block, used by many builders
@@ -122,15 +159,6 @@ protected:
     bool fragColorIsInOut() const { return fFS.primaryColorOutputIsInOut(); }
 
 private:
-    // advanceStage is called by program creator between each processor's emit code.  It increments
-    // the stage index for variable name mangling, and also ensures verification variables in the
-    // fragment shader are cleared.
-    void advanceStage() {
-        fStageIndex++;
-        SkDEBUGCODE(fFS.debugOnly_resetPerStageVerification();)
-        fFS.nextStage();
-    }
-
     SkString getMangleSuffix() const;
 
     // Generates a possibly mangled name for a stage variable and writes it to the fragment shader.
@@ -148,8 +176,6 @@ private:
     /** Recursive step to write out children FPs' functions before parent's. */
     void writeChildFPFunctions(const GrFragmentProcessor& fp,
                                GrFragmentProcessor::ProgramImpl& impl);
-    /** Adds the SkSL function that implements an FP assuming its children are already written. */
-    void writeFPFunction(const GrFragmentProcessor& fp, GrFragmentProcessor::ProgramImpl& impl);
     bool emitAndInstallXferProc(const SkString& colorIn, const SkString& coverageIn);
     SamplerHandle emitSampler(const GrBackendFormat&, GrSamplerState, const skgpu::Swizzle&,
                               const char* name);
@@ -181,7 +207,7 @@ private:
      * child would be substage 0 of stage 1. If that FP also has three children then its third child
      * would be substage 2 of stubstage 0 of stage 1 and would be mangled as "_S1_c0_c2".
      */
-    SkTArray<int> fSubstageIndices;
+    skia_private::TArray<int> fSubstageIndices;
 };
 
 #endif

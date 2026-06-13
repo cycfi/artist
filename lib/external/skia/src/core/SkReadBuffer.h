@@ -8,30 +8,48 @@
 #ifndef SkReadBuffer_DEFINED
 #define SkReadBuffer_DEFINED
 
-#include "include/core/SkFont.h"
+#include "include/core/SkColor.h"
+#include "include/core/SkColorFilter.h"
+#include "include/core/SkFlattenable.h"
 #include "include/core/SkImageFilter.h"
-#include "include/core/SkPath.h"
+#include "include/core/SkPaint.h"
 #include "include/core/SkPathEffect.h"
-#include "include/core/SkPicture.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
+#include "include/core/SkSamplingOptions.h"
 #include "include/core/SkScalar.h"
 #include "include/core/SkSerialProcs.h"
+#include "include/core/SkShader.h"
+#include "include/core/SkSpan.h"
+#include "include/private/base/SkAlign.h"
+#include "include/private/base/SkAssert.h"
 #include "src/core/SkBlenderBase.h"
-#include "src/core/SkColorFilterBase.h"
 #include "src/core/SkImageFilter_Base.h"
 #include "src/core/SkMaskFilterBase.h"
 #include "src/core/SkPaintPriv.h"
 #include "src/core/SkPicturePriv.h"
 #include "src/core/SkSamplingPriv.h"
-#include "src/core/SkWriteBuffer.h"
+#include "src/core/SkTHash.h"
+#include "src/effects/colorfilters/SkColorFilterBase.h"
 #include "src/shaders/SkShaderBase.h"
 
-#ifdef SK_SUPPORT_LEGACY_DRAWLOOPER
-#include "include/core/SkDrawLooper.h"
-#endif
+#include <cstddef>
+#include <cstdint>
+#include <optional>
 
+class SkBlender;
 class SkData;
 class SkImage;
+class SkM44;
+class SkMaskFilter;
+class SkMatrix;
+class SkPath;
+class SkRRect;
+class SkRegion;
+class SkString;
+class SkTypeface;
+struct SkPoint3;
 
 class SkReadBuffer {
 public:
@@ -106,7 +124,7 @@ public:
     void readRRect(SkRRect* rrect);
     void readRegion(SkRegion* region);
 
-    void readPath(SkPath* path);
+    std::optional<SkPath> readPath();
 
     SkPaint readPaint() {
         return SkPaintPriv::Unflatten(*this);
@@ -118,9 +136,6 @@ public:
         return sk_sp<T>((T*)this->readFlattenable(T::GetFlattenableType()));
     }
     sk_sp<SkColorFilter> readColorFilter() { return this->readFlattenable<SkColorFilterBase>(); }
-#ifdef SK_SUPPORT_LEGACY_DRAWLOOPER
-    sk_sp<SkDrawLooper> readDrawLooper() { return this->readFlattenable<SkDrawLooper>(); }
-#endif
     sk_sp<SkImageFilter> readImageFilter() { return this->readFlattenable<SkImageFilter_Base>(); }
     sk_sp<SkBlender> readBlender() { return this->readFlattenable<SkBlenderBase>(); }
     sk_sp<SkMaskFilter> readMaskFilter() { return this->readFlattenable<SkMaskFilterBase>(); }
@@ -132,11 +147,11 @@ public:
 
     // binary data and arrays
     bool readByteArray(void* value, size_t size);
-    bool readColorArray(SkColor* colors, size_t size);
-    bool readColor4fArray(SkColor4f* colors, size_t size);
-    bool readIntArray(int32_t* values, size_t size);
-    bool readPointArray(SkPoint* points, size_t size);
-    bool readScalarArray(SkScalar* values, size_t size);
+    bool readColorArray(SkSpan<SkColor>);
+    bool readColor4fArray(SkSpan<SkColor4f>);
+    bool readIntArray(SkSpan<int32_t>);
+    bool readPointArray(SkSpan<SkPoint>);
+    bool readScalarArray(SkSpan<SkScalar>);
 
     const void* skipByteArray(size_t* size);
 
@@ -167,6 +182,9 @@ public:
 
     void setDeserialProcs(const SkDeserialProcs& procs);
     const SkDeserialProcs& getDeserialProcs() const { return fProcs; }
+
+    bool allowSkSL() const { return fAllowSkSL; }
+    void setAllowSkSL(bool allow) { fAllowSkSL = allow; }
 
     /**
      *  If isValid is false, sets the buffer to be "invalid". Returns true if the buffer
@@ -222,7 +240,7 @@ private:
     const char* fBase = nullptr;  // beginning of buffer
 
     // Only used if we do not have an fFactoryArray.
-    SkTHashMap<uint32_t, SkFlattenable::Factory> fFlattenableDict;
+    skia_private::THashMap<uint32_t, SkFlattenable::Factory> fFlattenableDict;
 
     int fVersion = 0;
 
@@ -238,6 +256,7 @@ private:
         return SkIsAlign4((uintptr_t)ptr);
     }
 
+    bool fAllowSkSL = true;
     bool fError = false;
 };
 

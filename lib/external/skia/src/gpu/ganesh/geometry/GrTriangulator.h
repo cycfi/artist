@@ -8,11 +8,20 @@
 #ifndef GrTriangulator_DEFINED
 #define GrTriangulator_DEFINED
 
+#if !defined(SK_ENABLE_OPTIMIZE_SIZE)
+
 #include "include/core/SkPath.h"
+#include "include/core/SkPathTypes.h"
 #include "include/core/SkPoint.h"
-#include "include/private/SkColorData.h"
-#include "src/core/SkArenaAlloc.h"
-#include "src/gpu/ganesh/GrColor.h"
+#include "include/core/SkScalar.h"
+#include "include/private/base/SkAssert.h"
+#include "src/base/SkArenaAlloc.h"
+#include "src/gpu/BufferWriter.h"
+
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <tuple>
 
 class GrEagerVertexAllocator;
 struct SkRect;
@@ -43,7 +52,7 @@ public:
     }
 
     // Enums used by GrTriangulator internals.
-    typedef enum { kLeft_Side, kRight_Side } Side;
+    enum class Side { kLeft, kRight };
     enum class EdgeType { kInner, kOuter, kConnector };
 
     // Structs used by GrTriangulator internals.
@@ -82,7 +91,13 @@ protected:
         kFoundSelfIntersection
     };
 
-    SimplifyResult SK_WARN_UNUSED_RESULT simplify(VertexList* mesh, const Comparator&);
+    enum class BoolFail {
+        kFalse,
+        kTrue,
+        kFail
+    };
+
+    [[nodiscard]] SimplifyResult simplify(VertexList* mesh, const Comparator&);
 
     // 5) Tessellate the simplified mesh into monotone polygons:
     virtual std::tuple<Poly*, bool> tessellate(const VertexList& vertices, const Comparator&);
@@ -151,29 +166,30 @@ protected:
     MonotonePoly* allocateMonotonePoly(Edge* edge, Side side, int winding);
     Edge* allocateEdge(Vertex* top, Vertex* bottom, int winding, EdgeType type);
     Edge* makeEdge(Vertex* prev, Vertex* next, EdgeType type, const Comparator&);
-    void setTop(Edge* edge, Vertex* v, EdgeList* activeEdges, Vertex** current,
-                const Comparator&) const;
-    void setBottom(Edge* edge, Vertex* v, EdgeList* activeEdges, Vertex** current,
-                   const Comparator&) const;
-    void mergeEdgesAbove(Edge* edge, Edge* other, EdgeList* activeEdges, Vertex** current,
-                         const Comparator&) const;
-    void mergeEdgesBelow(Edge* edge, Edge* other, EdgeList* activeEdges, Vertex** current,
-                         const Comparator&) const;
+    [[nodiscard]] bool setTop(
+        Edge* edge, Vertex* v, EdgeList* activeEdges, Vertex** current, const Comparator&) const;
+    [[nodiscard]] bool setBottom(
+        Edge* edge, Vertex* v, EdgeList* activeEdges, Vertex** current, const Comparator&) const;
+    [[nodiscard]] bool mergeEdgesAbove(
+        Edge* edge, Edge* other, EdgeList* activeEdges, Vertex** current, const Comparator&) const;
+    [[nodiscard]] bool mergeEdgesBelow(
+        Edge* edge, Edge* other, EdgeList* activeEdges, Vertex** current, const Comparator&) const;
     Edge* makeConnectingEdge(Vertex* prev, Vertex* next, EdgeType, const Comparator&,
                              int windingScale = 1);
     void mergeVertices(Vertex* src, Vertex* dst, VertexList* mesh, const Comparator&) const;
-    static void FindEnclosingEdges(Vertex* v, EdgeList* edges, Edge** left, Edge** right);
-    void mergeCollinearEdges(Edge* edge, EdgeList* activeEdges, Vertex** current,
+    static void FindEnclosingEdges(const Vertex& v, const EdgeList& edges,
+                                   Edge** left, Edge** right);
+    bool mergeCollinearEdges(Edge* edge, EdgeList* activeEdges, Vertex** current,
                              const Comparator&) const;
-    bool splitEdge(Edge* edge, Vertex* v, EdgeList* activeEdges, Vertex** current,
-                   const Comparator&);
-    bool intersectEdgePair(Edge* left, Edge* right, EdgeList* activeEdges, Vertex** current,
-                           const Comparator&);
+    BoolFail splitEdge(Edge* edge, Vertex* v, EdgeList* activeEdges, Vertex** current,
+                       const Comparator&);
+    BoolFail intersectEdgePair(Edge* left, Edge* right, EdgeList* activeEdges, Vertex** current,
+                               const Comparator&);
     Vertex* makeSortedVertex(const SkPoint&, uint8_t alpha, VertexList* mesh, Vertex* reference,
                              const Comparator&) const;
     void computeBisector(Edge* edge1, Edge* edge2, Vertex*) const;
-    bool checkForIntersection(Edge* left, Edge* right, EdgeList* activeEdges, Vertex** current,
-                              VertexList* mesh, const Comparator&);
+    BoolFail checkForIntersection(Edge* left, Edge* right, EdgeList* activeEdges, Vertex** current,
+                                  VertexList* mesh, const Comparator&);
     void sanitizeContours(VertexList* contours, int contourCnt) const;
     bool mergeCoincidentVertices(VertexList* mesh, const Comparator&) const;
     void buildEdges(VertexList* contours, int contourCnt, VertexList* mesh,
@@ -189,6 +205,8 @@ protected:
     SkArenaAlloc* const fAlloc;
     int fNumMonotonePolys = 0;
     int fNumEdges = 0;
+    // Track how deep of a stack we get from mergeCollinearEdges()
+    mutable int fMergeCollinearStackCount = 0;
 
     // Internal control knobs.
     bool fRoundVerticesToQuarterPixel = false;
@@ -360,6 +378,7 @@ struct GrTriangulator::Line {
         fB *= scale;
         fC *= scale;
     }
+
     bool nearParallel(const Line& o) const {
         return fabs(o.fA - fA) < 0.00001 && fabs(o.fB - fB) < 0.00001;
     }
@@ -407,8 +426,7 @@ struct GrTriangulator::Edge {
         , fRightPolyNext(nullptr)
         , fUsedInLeftPoly(false)
         , fUsedInRightPoly(false)
-        , fLine(top, bottom) {
-        }
+        , fLine(top, bottom) {}
     int      fWinding;          // 1 == edge goes downward; -1 = edge goes upward.
     Vertex*  fTop;              // The top vertex in vertex-sort-order (sweep_lt).
     Vertex*  fBottom;           // The bottom vertex in vertex-sort-order.
@@ -435,13 +453,15 @@ struct GrTriangulator::Edge {
         // longer on the ideal line.
         return (p == fTop->fPoint || p == fBottom->fPoint) ? 0.0 : fLine.dist(p);
     }
-    bool isRightOf(Vertex* v) const { return this->dist(v->fPoint) < 0.0; }
-    bool isLeftOf(Vertex* v) const { return this->dist(v->fPoint) > 0.0; }
+
+    bool isRightOf(const Vertex& v) const { return this->dist(v.fPoint) < 0.0; }
+    bool isLeftOf(const Vertex& v) const { return this->dist(v.fPoint)  > 0.0; }
     void recompute() { fLine = Line(fTop, fBottom); }
     void insertAbove(Vertex*, const Comparator&);
     void insertBelow(Vertex*, const Comparator&);
     void disconnect();
     bool intersect(const Edge& other, SkPoint* p, uint8_t* alpha = nullptr) const;
+    bool hasTopAndBottom() const { return fTop != nullptr && fBottom != nullptr; }
 };
 
 struct GrTriangulator::EdgeList {
@@ -449,9 +469,9 @@ struct GrTriangulator::EdgeList {
     Edge* fHead;
     Edge* fTail;
     void insert(Edge* edge, Edge* prev, Edge* next);
-    void insert(Edge* edge, Edge* prev);
+    bool insert(Edge* edge, Edge* prev);
     void append(Edge* e) { insert(e, fTail, nullptr); }
-    void remove(Edge* edge);
+    bool remove(Edge* edge);
     void removeAll() {
         while (fHead) {
             this->remove(fHead);
@@ -509,4 +529,6 @@ struct GrTriangulator::Comparator {
     Direction fDirection;
 };
 
-#endif
+#endif // SK_ENABLE_OPTIMIZE_SIZE
+
+#endif // GrTriangulator_DEFINED

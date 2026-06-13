@@ -8,8 +8,10 @@
 #ifndef SkPaintPriv_DEFINED
 #define SkPaintPriv_DEFINED
 
+#include "include/core/SkColor.h"
 #include "include/core/SkPaint.h"
 
+class SkColorSpace;
 class SkReadBuffer;
 class SkWriteBuffer;
 enum SkColorType : int;
@@ -58,7 +60,6 @@ public:
     // typically the color space of the device we're drawing into.
     static void RemoveColorFilter(SkPaint*, SkColorSpace* dstCS);
 
-    static SkScalar ComputeResScaleForStroking(const SkMatrix&);
 };
 
 #endif

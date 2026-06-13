@@ -10,6 +10,8 @@
 
 #include "include/core/SkScalar.h"
 
+template <typename T> class SkNoDestructor;
+
 namespace sktext::gpu {
 
 // Distance field text needs this table to compute a value for use in the fragment shader.
@@ -22,15 +24,20 @@ public:
         delete[] fGammaCorrectTable;
     }
 
-    SkScalar getAdjustment(int i, bool useGammaCorrectTable) const {
-        return useGammaCorrectTable ? fGammaCorrectTable[i] : fTable[i];
+    SkScalar getAdjustment(int lum, bool useGammaCorrectTable) const {
+        lum >>= kDistanceAdjustLumShift;
+        return useGammaCorrectTable ? fGammaCorrectTable[lum] : fTable[lum];
     }
 
 private:
     DistanceFieldAdjustTable();
 
+    static constexpr int kDistanceAdjustLumShift = 5;
+
     SkScalar* fTable;
     SkScalar* fGammaCorrectTable;
+
+    friend class SkNoDestructor<DistanceFieldAdjustTable>;
 };
 
 }  // namespace sktext::gpu

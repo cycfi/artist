@@ -4,13 +4,14 @@
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
+#ifndef SkRescaleAndReadPixels_DEFINED
+#define SkRescaleAndReadPixels_DEFINED
 
-#include "include/core/SkBitmap.h"
 #include "include/core/SkImage.h"
-#include "include/core/SkSamplingOptions.h"
 
-struct SkImageInfo;
+class SkBitmap;
 struct SkIRect;
+struct SkImageInfo;
 
 /** Generic/synchronous implementation for SkImage:: and SkSurface::asyncRescaleAndReadPixels. */
 void SkRescaleAndReadPixels(SkBitmap src,
@@ -20,3 +21,5 @@ void SkRescaleAndReadPixels(SkBitmap src,
                             SkImage::RescaleMode,
                             SkImage::ReadPixelsCallback,
                             SkImage::ReadPixelsContext);
+
+#endif  // SkRescaleAndReadPixels_DEFINED

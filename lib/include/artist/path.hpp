@@ -103,6 +103,8 @@ namespace cycfi::artist
 #endif
 
       path_impl*        impl();
+
+
       path_impl const*  impl() const;
 
    private:
@@ -235,7 +237,6 @@ namespace cycfi::artist
    }
 #endif
 }
-
 
 // The following may seem like crazy code! It is a workaround over MSVC
 // producing bad code if this is defined in the cpp file that causes a really
