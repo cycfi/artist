@@ -1,7 +1,11 @@
 name: Build
 on:
   push:
+    paths-ignore:
+      - 'docs/**'
   pull_request:
+    paths-ignore:
+      - 'docs/**'
   workflow_dispatch:
     inputs:
       job:
