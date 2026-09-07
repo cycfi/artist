@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 190">
+  <defs>
+    <style>
+      .fill  { fill: #414042; }
+      .line  { fill: none; stroke: #414042; stroke-width: 1; }
+      .label { font-family: MyriadPro-Regular, 'Myriad Pro', sans-serif;
+                font-size: 13px; fill: #414042; }
+    </style>
+  </defs>
+  <!-- a self-intersecting five-pointed star, traced as one continuous path -->
+  <g transform="translate(120,80)">
+    <path class="fill" fill-rule="nonzero"
+      d="M 0 -60 L 35 55 L -57 -18 L 57 -18 L -35 55 Z"/>
+    <text class="label" x="0" y="95" text-anchor="middle">fill_winding</text>
+  </g>
+  <g transform="translate(360,80)">
+    <path class="fill" fill-rule="evenodd"
+      d="M 0 -60 L 35 55 L -57 -18 L 57 -18 L -35 55 Z"/>
+    <text class="label" x="0" y="95" text-anchor="middle">fill_odd_even</text>
+  </g>
+</svg>

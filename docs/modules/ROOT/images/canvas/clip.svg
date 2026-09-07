@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 175">
+  <defs>
+    <style>
+      .fill    { fill: #414042; }
+      .ghost   { fill: #edeeef; }
+      .clipbox { fill: none; stroke: #be1e2d; stroke-width: 1.5;
+                  stroke-dasharray: 0 0 4 4; }
+      .label   { font-family: MyriadPro-Regular, 'Myriad Pro', sans-serif;
+                  font-size: 13px; fill: #414042; }
+    </style>
+    <clipPath id="c">
+      <rect x="-60" y="-60" width="75" height="80"/>
+    </clipPath>
+  </defs>
+
+  <g transform="translate(120,80)">
+    <circle class="fill" cx="0" cy="0" r="55"/>
+    <text class="label" x="0" y="90" text-anchor="middle">the path, unclipped</text>
+  </g>
+
+  <g transform="translate(340,80)">
+    <circle class="ghost" cx="0" cy="0" r="55"/>
+    <circle class="fill" cx="0" cy="0" r="55" clip-path="url(#c)"/>
+    <rect class="clipbox" x="-60" y="-60" width="75" height="80"/>
+    <text class="label" x="0" y="90" text-anchor="middle">clipped to the dashed region</text>
+  </g>
+</svg>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">
+  <defs>
+    <style>
+      .word   { font-family: MyriadPro-Regular, 'Myriad Pro', sans-serif;
+                 font-size: 40px; fill: #414042; }
+      .drop   { stroke: #cfd0d1; stroke-width: 1; }
+      .metric { stroke: #be1e2d; stroke-width: 1; stroke-dasharray: 0 0 3 3; }
+      .pt     { fill: #be1e2d; }
+      .rlabel { font-family: MyriadPro-Regular, 'Myriad Pro', sans-serif;
+                 font-size: 12px; fill: #be1e2d; }
+      .label  { font-family: MyriadPro-Regular, 'Myriad Pro', sans-serif;
+                 font-size: 12px; fill: #414042; }
+    </style>
+  </defs>
+
+  <!-- textLength pins the glyphs to exactly 120 units: 100 to 220 -->
+  <text class="word" x="100" y="110" textLength="120"
+    lengthAdjust="spacingAndGlyphs">Text</text>
+
+  <line class="metric" x1="92" y1="82"  x2="240" y2="82"/>
+  <line class="metric" x1="92" y1="96"  x2="240" y2="96"/>
+  <line class="metric" x1="92" y1="110" x2="240" y2="110"/>
+  <line class="metric" x1="92" y1="120" x2="240" y2="120"/>
+  <text class="rlabel" x="246" y="86">top</text>
+  <text class="rlabel" x="246" y="100">middle</text>
+  <text class="rlabel" x="246" y="114">baseline</text>
+  <text class="rlabel" x="246" y="124">bottom</text>
+
+  <line class="drop" x1="100" y1="122" x2="100" y2="150"/>
+  <line class="drop" x1="160" y1="122" x2="160" y2="150"/>
+  <line class="drop" x1="220" y1="122" x2="220" y2="150"/>
+  <circle class="pt" cx="100" cy="150" r="3.5"/>
+  <circle class="pt" cx="160" cy="150" r="3.5"/>
+  <circle class="pt" cx="220" cy="150" r="3.5"/>
+  <text class="label" x="100" y="170" text-anchor="middle">left</text>
+  <text class="label" x="160" y="170" text-anchor="middle">center</text>
+  <text class="label" x="220" y="170" text-anchor="middle">right</text>
+</svg>

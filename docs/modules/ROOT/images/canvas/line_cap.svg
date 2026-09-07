@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 110">
+  <defs>
+    <style>
+      .stroke { stroke: #414042; stroke-width: 18; }
+      .guide  { stroke: #e6e7e8; stroke-width: 1; }
+      .label  { font-family: MyriadPro-Regular, 'Myriad Pro', sans-serif;
+                 font-size: 13px; fill: #414042; }
+      .ext    { stroke: #be1e2d; stroke-width: 1; stroke-dasharray: 0 0 3 3; }
+    </style>
+  </defs>
+  <g>
+    <line class="ext" x1="40" y1="20" x2="40" y2="60"/>
+    <line class="ext" x1="120" y1="20" x2="120" y2="60"/>
+    <line class="stroke" x1="40" y1="40" x2="120" y2="40" stroke-linecap="butt"/>
+    <text class="label" x="80" y="80" text-anchor="middle">butt</text>
+  </g>
+  <g>
+    <line class="ext" x1="200" y1="20" x2="200" y2="60"/>
+    <line class="ext" x1="280" y1="20" x2="280" y2="60"/>
+    <line class="stroke" x1="200" y1="40" x2="280" y2="40" stroke-linecap="round"/>
+    <text class="label" x="240" y="80" text-anchor="middle">round</text>
+  </g>
+  <g>
+    <line class="ext" x1="360" y1="20" x2="360" y2="60"/>
+    <line class="ext" x1="440" y1="20" x2="440" y2="60"/>
+    <line class="stroke" x1="360" y1="40" x2="440" y2="40" stroke-linecap="square"/>
+    <text class="label" x="400" y="80" text-anchor="middle">square</text>
+  </g>
+</svg>

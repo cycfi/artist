@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 180">
+  <defs>
+    <style>
+      .pic   { fill: #e6e7e8; stroke: #414042; stroke-width: 1; }
+      .src   { fill: none; stroke: #be1e2d; stroke-width: 2; }
+      .dest  { fill: none; stroke: #be1e2d; stroke-width: 2; }
+      .grid  { stroke: #cfd0d1; stroke-width: 1; }
+      .label { font-family: MyriadPro-Regular, 'Myriad Pro', sans-serif;
+                font-size: 13px; fill: #414042; }
+      .rlabel{ font-family: MyriadPro-Regular, 'Myriad Pro', sans-serif;
+                font-size: 13px; fill: #be1e2d; }
+    </style>
+    <marker id="a" viewBox="0 0 8 8" refX="7" refY="4"
+      markerWidth="10" markerHeight="10" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 z" fill="#be1e2d"/>
+    </marker>
+  </defs>
+
+  <rect class="pic" x="20" y="30" width="150" height="100"/>
+  <line class="grid" x1="70" y1="30" x2="70" y2="130"/>
+  <line class="grid" x1="120" y1="30" x2="120" y2="130"/>
+  <line class="grid" x1="20" y1="80" x2="170" y2="80"/>
+  <rect class="src" x="70" y="30" width="50" height="50"/>
+  <text class="rlabel" x="95" y="22" text-anchor="middle">src</text>
+  <text class="label" x="95" y="148" text-anchor="middle">pic</text>
+
+  <line stroke="#be1e2d" stroke-width="1.5" x1="180" y1="80" x2="255" y2="80"
+    marker-end="url(#a)"/>
+
+  <rect class="dest" x="270" y="35" width="120" height="90"/>
+  <text class="rlabel" x="330" y="27" text-anchor="middle">dest</text>
+  <text class="label" x="330" y="148" text-anchor="middle">canvas</text>
+</svg>

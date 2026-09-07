@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 200">
+  <defs>
+    <style>
+      .curve  { fill: none; stroke: #be1e2d; stroke-width: 3; }
+      .handle { stroke: #414042; stroke-width: 1; stroke-dasharray: 0 0 3 3; }
+      .cp     { fill: #414042; }
+      .label  { font-family: MyriadPro-Regular, 'Myriad Pro', sans-serif;
+                 font-size: 13px; fill: #414042; }
+    </style>
+  </defs>
+
+  <g transform="translate(30,0)">
+    <line class="handle" x1="10" y1="140" x2="60" y2="35"/>
+    <line class="handle" x1="180" y1="140" x2="130" y2="35"/>
+    <path class="curve" d="M 10 140 C 60 35, 130 35, 180 140"/>
+    <circle class="cp" cx="10" cy="140" r="4"/>
+    <circle class="cp" cx="180" cy="140" r="4"/>
+    <circle class="cp" cx="60" cy="35" r="3.5"/>
+    <circle class="cp" cx="130" cy="35" r="3.5"/>
+    <text class="label" x="52" y="27">cp1</text>
+    <text class="label" x="122" y="27">cp2</text>
+    <text class="label" x="10" y="160" text-anchor="middle">current</text>
+    <text class="label" x="180" y="160" text-anchor="middle">end</text>
+    <text class="label" x="95" y="186" text-anchor="middle">bezier_curve_to</text>
+  </g>
+
+  <g transform="translate(280,0)">
+    <line class="handle" x1="10" y1="140" x2="70" y2="35"/>
+    <path class="curve" d="M 10 140 Q 70 35, 130 140"/>
+    <circle class="cp" cx="10" cy="140" r="4"/>
+    <circle class="cp" cx="130" cy="140" r="4"/>
+    <circle class="cp" cx="70" cy="35" r="3.5"/>
+    <text class="label" x="62" y="27">cp</text>
+    <text class="label" x="10" y="160" text-anchor="middle">current</text>
+    <text class="label" x="130" y="160" text-anchor="middle">end</text>
+    <text class="label" x="70" y="186" text-anchor="middle">quadratic_curve_to</text>
+  </g>
+</svg>
