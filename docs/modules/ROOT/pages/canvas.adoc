@@ -238,3 +238,468 @@ p.fill_rule(fr)
    point.
 . Set the path's fill rule to `fr` (which can be `path::fill_winding` or
    `path::fill_odd_even`).
+
+== canvas
+
+The `canvas` is the surface you draw on. You do not construct one yourself:
+the host window creates a canvas for its drawing area and hands it to you,
+and you draw with it for the duration of the call.
+
+Drawing with the canvas follows a pattern borrowed from the HTML5 canvas.
+You set the styles you want, build a path, and then fill or stroke it. The
+styles are state held by the canvas, not arguments to each call, so a fill
+color set once applies to every fill that follows until you set another one.
+
+[source,c++]
+----
+cnv.fill_style(colors::navy_blue);
+cnv.add_round_rect(bounds, 5);
+cnv.fill();
+----
+
+=== Notation
+
+These names are used throughout the sections that follow.
+
+[cols="1,3"]
+|===
+| `cnv` | Instance of `canvas`.
+| `p` | Instance of `path`.
+| `r` | Instance of `rect`.
+| `c` | Instance of `color`, except where noted.
+| `pt`, `pt1`, `pt2` | Instance of `point`.
+| `x`, `y`, `width`, `height` | Scalar values.
+| `radius`, `rad`, `blur`, `w`, `limit` | Scalar values.
+| `sx`, `sy`, `offsetx`, `offsety` | Scalar values.
+| `mat` | Instance of `affine_transform`.
+| `utf8` | Instance of `std::string_view`, holding UTF-8 text.
+| `f` | Instance of `font`.
+| `pic` | Instance of `image`.
+| `gr` | Instance of `linear_gradient` or `radial_gradient`.
+| `cs` | Instance of `canvas::color_stop`.
+| `offset` | A scalar from 0.0 to 1.0, except where noted.
+|===
+
+=== Validity
+
+A `canvas` you are handed by the host is always valid for the duration of
+the draw call. The check exists for the rarer case, code that may run
+before a surface is ready.
+
+==== Expressions
+
+[source,c++]
+----
+// Check validity [1].
+cnv
+!cnv
+
+// Reach the backend [2].
+cnv.impl()
+----
+
+==== Semantics
+
+. `canvas` converts to `bool`, `true` if it wraps a real drawing surface.
+  `!cnv` is the negation.
+. Get the backend-specific handle underneath: an `SkCanvas*` for Skia, a
+  `cairo_t*` for Cairo, or Artist's own `canvas_impl*` for Quartz2D. Reach
+  for this only when you need a backend's own facility that Artist does
+  not expose.
+
+=== Transforms
+
+The transform maps the coordinates you draw in, called user space, onto the
+coordinates of the surface, called device space. Transforms compose, so each
+call applies on top of what is already in effect.
+
+==== Expressions
+
+[source,c++]
+----
+// Move the origin [1].
+cnv.translate(pt)
+cnv.translate(x, y)
+
+// Rotate about the origin [2].
+cnv.rotate(rad)
+
+// Scale [3].
+cnv.scale(pt)
+cnv.scale(xy)
+cnv.scale(x, y)
+
+// Skew [4].
+cnv.skew(sx, sy)
+
+// Convert between coordinate spaces [5].
+cnv.device_to_user(pt)
+cnv.device_to_user(x, y)
+cnv.user_to_device(pt)
+cnv.user_to_device(x, y)
+
+// Get and set the transform outright [6].
+cnv.transform()
+cnv.transform(mat)
+cnv.transform(a, b, c, d, tx, ty)
+----
+
+==== Semantics
+
+. Move the origin by `pt` (or `x, y`).
+. Rotate about the origin by `rad` radians, clockwise.
+. Scale by `pt` (or by `xy` on both axes, or by `x` and `y` separately).
+. Skew by `sx` and `sy`.
+. Convert a point from device space to user space, and back. Useful when a
+  mouse position, which arrives in device space, has to be compared against
+  something you drew.
+. Get the current transform as an `affine_transform`, or replace it with
+  `mat`, or with the six values of a transformation matrix. Setting the
+  transform replaces what is in effect rather than composing with it.
+
+=== Paths
+
+A path is built into the canvas with the calls below, then filled or
+stroked. This is the same geometry the standalone
+xref:canvas.adoc#_path[`path`] class describes, expressed as a sequence of
+calls rather than an object; use `add_path` to draw a `path` you built
+separately.
+
+`fill` and `stroke` consume the path: after either, the canvas begins a new
+one. Use `fill_preserve` or `stroke_preserve` when you want to do both,
+which is how you draw a shape with an outline.
+
+==== Expressions
+
+[source,c++]
+----
+// Begin and close [1].
+cnv.begin_path()
+cnv.close_path()
+
+// Fill and stroke [2].
+cnv.fill()
+cnv.stroke()
+cnv.fill_preserve()
+cnv.stroke_preserve()
+
+// Move and draw [3].
+cnv.move_to(pt)
+cnv.move_to(x, y)
+cnv.line_to(pt)
+cnv.line_to(x, y)
+
+// Arcs [4].
+cnv.arc_to(pt1, pt2, radius)
+cnv.arc_to(x1, y1, x2, y2, radius)
+cnv.arc(pt, radius, start_angle, end_angle, ccw)
+cnv.arc(pt, radius, start_angle, end_angle)
+cnv.arc(x, y, radius, start_angle, end_angle, ccw)
+cnv.arc(x, y, radius, start_angle, end_angle)
+
+// Curves [5].
+cnv.quadratic_curve_to(cp, end)
+cnv.quadratic_curve_to(cpx, cpy, x, y)
+cnv.bezier_curve_to(cp1, cp2, end)
+cnv.bezier_curve_to(cp1x, cp1y, cp2x, cp2y, x, y)
+
+// Add whole shapes [6].
+cnv.add_rect(r)
+cnv.add_rect(x, y, width, height)
+cnv.add_round_rect(r, radius)
+cnv.add_round_rect(x, y, width, height, radius)
+cnv.add_circle(c)
+cnv.add_circle(cx, cy, radius)
+cnv.add_path(p)
+
+// Erase [7].
+cnv.clear_rect(r)
+cnv.clear_rect(x, y, width, height)
+
+// Clip [8].
+cnv.clip()
+cnv.clip(p)
+cnv.clip_extent()
+
+// Query [9].
+cnv.point_in_path(pt)
+cnv.point_in_path(x, y)
+cnv.fill_extent()
+
+// Fill rule [10].
+cnv.fill_rule(rule)
+----
+
+==== Semantics
+
+. Start a new path, and close the current shape by drawing a line back to
+  where it began.
+. Fill the current path, or stroke it. The `_preserve` forms leave the path
+  in place so it can be used again; the others clear it.
+. Move the current point to `pt` (or `x, y`) without drawing, and draw a
+  straight line to it.
+. Add an arc between two tangents `pt1` and `pt2` with the given `radius`,
+  or an arc centred on `pt` from `start_angle` to `end_angle`, both in
+  radians. `ccw` selects the direction and defaults to `false`, clockwise.
+. Add a quadratic Bézier curve through control point `cp` to `end`, or a
+  cubic one through `cp1` and `cp2`. Both start at the current point.
+. Add a rectangle, a rounded rectangle, a circle, or an entire `path` built
+  elsewhere.
+. Erase the rectangle `r`, leaving it transparent.
+. Clip subsequent drawing to the current path, or to `p`. Clipping
+  intersects with whatever clip is already in effect, so it only ever
+  narrows the drawable area. `clip_extent` returns the smallest rectangle
+  containing it. Use a saved state, below, to get it back.
+. Return `true` if `pt` is inside the current path, and get the smallest
+  rectangle that the path's fill would cover.
+. Set the rule that decides what counts as inside for self-intersecting
+  paths, either `path::fill_winding` or `path::fill_odd_even`.
+
+NOTE: `round_rect` and `circle` still exist for code written against the
+Cairo-only canvas but are deprecated; use `add_round_rect` and `add_circle`.
+
+=== Styles
+
+The styles decide how `fill` and `stroke` render. They are canvas state:
+set one and it stays in effect until it is set again, or until a saved
+state is restored over it.
+
+==== Expressions
+
+[source,c++]
+----
+// Fill and stroke color [1].
+cnv.fill_style(c)
+cnv.stroke_style(c)
+cnv.fill_color(c)
+cnv.stroke_color(c)
+
+// Line rendering [2].
+cnv.line_width(w)
+cnv.line_cap(cap)
+cnv.line_join(join)
+cnv.miter_limit(limit)
+
+// Shadow [3].
+cnv.shadow_style(offset, blur, c)
+cnv.shadow_style(offsetx, offsety, blur, c)
+cnv.shadow_style(blur, c)
+
+// Compositing [4].
+cnv.composite_op(mode)
+cnv.global_composite_operation(mode)
+
+// Font [5].
+cnv.font(f)
+----
+
+==== Semantics
+
+. Set the color used by `fill` and by `stroke`. `fill_color` and
+  `stroke_color` are the same operations under names that read better
+  alongside the gradient overloads below.
+. Set the stroke width, the shape of its ends, the shape of its corners,
+  and the limit past which a miter join is cut off to a bevel. `cap` is one
+  of `canvas::butt`, `canvas::round` or `canvas::square`. `join` is one of
+  `canvas::bevel_join`, `canvas::round_join` or `canvas::miter_join`.
+. Draw a shadow behind what is filled or stroked, displaced by `offset`
+  (or `offsetx, offsety`), softened by `blur`, in color `c`. The third form
+  casts the shadow with no displacement.
+. Set how new drawing combines with what is already there. `mode` is one of
+  the `canvas::composite_op_enum` values: the Porter-Duff operators
+  `source_over`, `source_atop`, `source_in`, `source_out`, their
+  `destination_` counterparts, `copy` and `xor_`; and the blend modes
+  `lighter`, `darker`, `difference`, `exclusion`, `multiply`, `screen`,
+  `color_dodge`, `color_burn`, `soft_light`, `hard_light`, `hue`,
+  `saturation`, `color_op` and `luminosity`. `global_composite_operation`
+  is the same operation under its HTML5 name.
+. Set the font that `fill_text` and `stroke_text` will use. See
+  xref:foundation.adoc[Foundation] for building a `font`.
+
+NOTE: `darker` is the one operator the backends do not agree on. Quartz2D
+implements the W3C PlusDarker rule exactly; Skia and Cairo approximate it
+with a per-channel minimum.
+
+=== Gradients
+
+A gradient may be used anywhere a color may, as the fill or the stroke. You
+build one by giving it its geometry and then adding color stops along it.
+
+[source,c++]
+----
+auto gr = canvas::linear_gradient{{0, 0}, {0, 100}};
+gr.add_color_stop({0.0, colors::black});
+gr.add_color_stop({1.0, colors::white});
+cnv.fill_style(gr);
+----
+
+==== Expressions
+
+[source,c++]
+----
+// A gradient along a line [1].
+canvas::linear_gradient{start, end}
+canvas::linear_gradient{startx, starty, endx, endy}
+
+// A gradient between two circles [2].
+canvas::radial_gradient{c1, c1r, c2, c2r}
+canvas::radial_gradient{c1x, c1y, c1r, c2x, c2y, c2r}
+
+// Add a color stop [3].
+gr.add_color_stop(cs)
+gr.add_color_stop(offset, c)
+
+// Use it [4].
+cnv.fill_style(gr)
+cnv.stroke_style(gr)
+----
+
+==== Semantics
+
+. A gradient that runs along the line from `start` to `end`.
+. A gradient that runs between two circles, from the one centred at `c1`
+  with radius `c1r` to the one centred at `c2` with radius `c2r`. Give the
+  two circles the same centre for the usual radial fill; offset them for a
+  cone-like effect.
+. Add a color stop: `offset` is the position along the gradient, from 0.0
+  at the start to 1.0 at the end, and `c` is the color there. A
+  `color_stop` is the pair as a struct.
+. Fill or stroke with the gradient instead of a flat color.
+
+=== Rectangles
+
+Rectangles are common enough to be worth their own calls, which build and
+draw the shape in one step, leaving the current path alone.
+
+==== Expressions
+
+[source,c++]
+----
+// Fill [1].
+cnv.fill_rect(r)
+cnv.fill_rect(x, y, width, height)
+cnv.fill_round_rect(r, radius)
+cnv.fill_round_rect(x, y, width, height, radius)
+
+// Stroke [2].
+cnv.stroke_rect(r)
+cnv.stroke_rect(x, y, width, height)
+cnv.stroke_round_rect(r, radius)
+cnv.stroke_round_rect(x, y, width, height, radius)
+----
+
+==== Semantics
+
+. Fill the rectangle `r` (or `x, y, width, height`), with corners rounded
+  to `radius` in the `round` forms.
+. The same, stroked rather than filled.
+
+=== Text
+
+Text is drawn with the font set by `font`, positioned by the current
+alignment. `measure_text` reports what a string will occupy without drawing
+it, which is what you need to lay text out.
+
+==== Expressions
+
+[source,c++]
+----
+// Draw [1].
+cnv.fill_text(utf8, pt)
+cnv.fill_text(utf8, x, y)
+cnv.stroke_text(utf8, pt)
+cnv.stroke_text(utf8, x, y)
+
+// Measure [2].
+cnv.measure_text(utf8)
+
+// Alignment [3].
+cnv.text_align(align)
+cnv.text_baseline(align)
+----
+
+==== Semantics
+
+. Draw `utf8` at `pt` (or `x, y`), filled or stroked. The text is UTF-8,
+  and is shaped by HarfBuzz, so scripts needing ligatures and reordering
+  render correctly.
+. Return a `text_metrics` for `utf8`: its `ascent`, `descent`, `leading`
+  and overall `size`, in the current font.
+. Set where the point given to `fill_text` sits within the text.
+  `text_align` takes `canvas::left`, `canvas::center` or `canvas::right`
+  horizontally, and `text_baseline` takes `canvas::baseline`, `canvas::top`,
+  `canvas::middle` or `canvas::bottom` vertically. The `int` overload of
+  `text_align` takes the two combined with `|`.
+
+=== Pixmaps
+
+An `image` is drawn with `draw`. The overloads differ in how much of the
+image is drawn and where it lands.
+
+==== Expressions
+
+[source,c++]
+----
+// Draw an image [1].
+cnv.draw(pic)
+cnv.draw(pic, pos)
+cnv.draw(pic, posx, posy)
+
+// Scaled [2].
+cnv.draw(pic, pos, scale)
+cnv.draw(pic, posx, posy, scale)
+
+// Into a rectangle [3].
+cnv.draw(pic, dest)
+
+// Part of it, into a rectangle [4].
+cnv.draw(pic, src, dest)
+----
+
+==== Semantics
+
+. Draw the whole image with its top left corner at `pos` (or `posx, posy`),
+  which defaults to the origin.
+. The same, scaled by `scale`.
+. Draw the whole image stretched to fill the rectangle `dest`.
+. Draw the part of the image in the rectangle `src`, stretched to fill
+  `dest`. This is how you draw one frame of a sprite sheet.
+
+=== States
+
+The canvas holds its styles, transform and clip as one bundle of state.
+Saving pushes a copy of that bundle; restoring pops it. This is how you
+draw something under a transform or a clip without disturbing what comes
+after.
+
+Prefer `new_state`, which restores the state when the returned object goes
+out of scope, even if an exception carries you out of the block:
+
+[source,c++]
+----
+{
+   auto state = cnv.new_state();
+   cnv.clip(p);
+   cnv.translate(offset);
+   // draw
+}  // the clip and the transform are undone here
+----
+
+==== Expressions
+
+[source,c++]
+----
+// Scoped [1].
+cnv.new_state()
+
+// Explicit [2].
+cnv.save()
+cnv.restore()
+----
+
+==== Semantics
+
+. Save the current state and return a `canvas::state` that restores it when
+  destroyed. It may be moved but not copied.
+. Save and restore the state by hand. Every `save` needs a matching
+  `restore`; `new_state` is preferable for that reason.
