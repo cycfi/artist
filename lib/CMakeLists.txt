@@ -266,7 +266,11 @@ source_group("Header Files\\artist"
 
 add_library(artist STATIC)
 
-if (NOT MSVC)
+# Only the Cairo backend needs pkg-config here, to find cairo and its
+# companions below. The Skia branches ask for it where they use it, and
+# Quartz2D needs none of it: a macOS build with the default backend does
+# not require pkg-config at all.
+if (ARTIST_CAIRO AND NOT MSVC)
    find_package(PkgConfig REQUIRED)
 endif()
 
@@ -361,10 +365,6 @@ target_compile_features(artist PUBLIC cxx_std_17)
 if (IPO_SUPPORTED AND CMAKE_BUILD_TYPE STREQUAL "Release")
    message(STATUS "Enabling LTO for artist")
    set_target_properties(artist PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
-endif()
-
-if (NOT MSVC)
-   find_package(PkgConfig REQUIRED)
 endif()
 
 ###############################################################################
