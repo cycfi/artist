@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 190">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 190"
+     font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'>
   <defs>
     <style>
-      .fill  { fill: #414042; }
-      .line  { fill: none; stroke: #414042; stroke-width: 1; }
-      .label { font-family: MyriadPro-Regular, 'Myriad Pro', sans-serif;
-                font-size: 13px; fill: #414042; }
+      .fill  { fill: #1565c0; }
+      .line  { fill: none; stroke: #5d5d5d; stroke-width: 1; }
+      .label { font-size: 13px; fill: #1a1a1a; }
     </style>
   </defs>
   <!-- a self-intersecting five-pointed star, traced as one continuous path -->

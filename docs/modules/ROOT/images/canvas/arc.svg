@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 180">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 180"
+     font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'>
   <defs>
     <style>
-      .guide { fill: none; stroke: #e6e7e8; stroke-width: 1.5; }
-      .arc   { fill: none; stroke: #be1e2d; stroke-width: 3; }
-      .rad   { stroke: #414042; stroke-width: 1; stroke-dasharray: 0 0 3 3; }
-      .pt    { fill: #414042; }
-      .label { font-family: MyriadPro-Regular, 'Myriad Pro', sans-serif;
-                font-size: 13px; fill: #414042; }
+      .guide { fill: none; stroke: #cccccc; stroke-width: 1.5; }
+      .arc   { fill: none; stroke: #1565c0; stroke-width: 3; }
+      .rad   { stroke: #1a1a1a; stroke-width: 1; stroke-dasharray: 0 0 3 3; }
+      .pt    { fill: #1a1a1a; }
+      .label { font-size: 13px; fill: #1a1a1a; }
     </style>
   </defs>
   <circle class="guide" cx="130" cy="100" r="70"/>

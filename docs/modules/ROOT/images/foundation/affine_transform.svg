@@ -1,21 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="22 0 398 170">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="22 0 398 170"
+     font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'>
   <defs>
     <style>
-      .m     { font-family: MyriadPro-Regular, 'Myriad Pro', sans-serif;
-               font-size: 15px; fill: #414042; }
-      .eq    { font-family: MyriadPro-Regular, 'Myriad Pro', sans-serif;
-               font-size: 14px; fill: #414042; }
-      .lbl   { font-family: MyriadPro-Regular, 'Myriad Pro', sans-serif;
-               font-size: 12px; fill: #be1e2d; }
-      .brk   { stroke: #414042; stroke-width: 1.5; fill: none; }
-      .box   { stroke: #be1e2d; stroke-width: 1; fill: none;
+      .m     { font-size: 15px; fill: #1a1a1a; }
+      .eq    { font-size: 14px; fill: #1a1a1a; }
+      .lbl   { font-size: 12px; fill: #1565c0; }
+      .brk   { stroke: #5d5d5d; stroke-width: 1.5; fill: none; }
+      .box   { stroke: #1565c0; stroke-width: 1; fill: none;
                stroke-dasharray: 3 3; }
-      .plate { fill: #e6e7e8; }
+      .plate { fill: #f3f3f3; }
     </style>
   </defs>
 
-  <rect class="plate" x="30" y="28" width="185" height="104" rx="3"/>
+  <rect class="plate" x="30" y="28" width="185" height="104" rx="8"/>
 
   <path class="brk" d="M 52,34 L 42,34 L 42,126 L 52,126"/>
   <path class="brk" d="M 193,34 L 203,34 L 203,126 L 193,126"/>

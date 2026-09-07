@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 130">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 130"
+     font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'>
   <defs>
     <style>
-      .stroke { fill: none; stroke: #414042; stroke-width: 16; }
-      .label  { font-family: MyriadPro-Regular, 'Myriad Pro', sans-serif;
-                 font-size: 13px; fill: #414042; }
+      .stroke { fill: none; stroke: #1565c0; stroke-width: 16; }
+      .label  { font-size: 13px; fill: #1a1a1a; }
     </style>
   </defs>
   <g>
