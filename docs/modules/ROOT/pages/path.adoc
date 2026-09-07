@@ -2,238 +2,326 @@
 
 == Overview
 
-The `path` is the basic building block for a lot of drawing tasks that
-involve the `canvas`. It is a mathematical description of shapes, that
-include lines, rectangles, cubic and quadratic curves, circles and arcs.
-A `path` may be built once and drawn many times, which is cheaper than
-rebuilding the geometry on each draw, especially on GPU backends. To build
-geometry into the canvas directly instead, without an object to keep, see
-xref:canvas/current_path.adoc[Current Path].
+The `path` is a mathematical description of shapes: lines, rectangles,
+cubic and quadratic curves, circles and arcs. Each shape is built from
+primitives that say how the path is formed, and the finished object can be
+handed to the `canvas` to fill or stroke.
 
-== path
+Build a `path` once and draw it many times. That is cheaper than rebuilding
+the geometry on every draw, and graphics backends, GPU ones especially, are
+optimized for immutable paths created outside the draw function.
 
-The `path` is the basic building block for a lot of drawing tasks that
-involve the `canvas`. The path is a mathematical description of shapes, that
-include lines, rectangles, cubic and quadratic curves, circles, arcs, etc.
-Each shape in the path is constructed using a set of primitives that
-represent instructions on how the path is formed.
+TIP: To build geometry into the canvas directly, without an object to keep,
+see xref:canvas/current_path.adoc[Current Path]. The two offer the same
+primitives; the difference is whether the geometry outlives the draw.
 
-For efficiency, it is advisable to construct a `path` once and draw it
-multiple times. Graphics backends, especially those that involve the GPU, are
-optimized for immutable paths that are created outside the UI draw function.
+== Include
 
-[source,c++]
-----
-class path
-{
-public:
-                     path();
-                     ~path();
+```c++
+#include <artist/path.hpp>
+```
 
-                     path(rect const& r);
-                     path(rect const& r, float radius);
-                     path(circle const& c);
-                     path(std::string_view svg_def);
-                     path(path const& rhs);
-                     path(path&& rhs);
+== Declaration
 
-   path&             operator=(path const& rhs);
-   path&             operator=(path&& rhs);
-
-   bool              operator==(path const& rhs) const;
-   bool              operator!=(path const& rhs) const;
-   bool              is_empty() const;
-   bool              includes(point p) const;
-   bool              includes(float x, float y) const;
-   rect              bounds() const;
-
-   void              close();
-
-   void              add_rect(rect const& r);
-   void              add_round_rect(rect const& r, float radius);
-   void              add_circle(circle const& c);
-
-   void              add_rect(float x, float y, float width, float height);
-   void              add_round_rect(
-                        float x, float y,
-                        float width, float height,
-                        float radius
-                     );
-   void              add_circle(float cx, float cy, float radius);
-
-   void              move_to(point p);
-   void              line_to(point p);
-   void              arc_to(point p1, point p2, float radius);
-   void              arc(
-                        point p, float radius,
-                        float start_angle, float end_angle,
-                        bool ccw = false
-                     );
-
-   void              quadratic_curve_to(point cp, point end);
-   void              bezier_curve_to(point cp1, point cp2, point end);
-
-   void              move_to(float x, float y);
-   void              line_to(float x, float y);
-   void              arc_to(
-                        float x1, float y1,
-                        float x2, float y2,
-                        float radius
-                     );
-   void              arc(
-                        float x, float y, float radius,
-                        float start_angle, float end_angle,
-                        bool ccw = false
-                     );
-
-   void              quadratic_curve_to(float cpx, float cpy, float x, float y);
-   void              bezier_curve_to(
-                        float cp1x, float cp1y,
-                        float cp2x, float cp2y,
-                        float x, float y
-                     );
-
-   enum fill_rule_enum
+```c++
+   class path
    {
-      fill_winding,
-      fill_odd_even
+   public:
+                        path();
+                        ~path();
+
+                        path(rect const& r);
+                        path(rect const& r, float radius);
+                        path(circle const& c);
+                        path(std::string_view svg_def);
+                        path(path const& rhs);
+                        path(path&& rhs);
+
+      path&             operator=(path const& rhs);
+      path&             operator=(path&& rhs);
+
+      bool              operator==(path const& rhs) const;
+      bool              operator!=(path const& rhs) const;
+      bool              is_empty() const;
+      bool              includes(point p) const;
+      bool              includes(float x, float y) const;
+      rect              bounds() const;
+
+      void              close();
+
+      void              add_rect(rect const& r);
+      void              add_round_rect(rect const& r, float radius);
+      void              add_circle(circle const& c);
+
+      void              add_rect(float x, float y, float w, float h);
+      void              add_round_rect(
+                           float x, float y,
+                           float width, float height,
+                           float radius
+                        );
+      void              add_circle(float cx, float cy, float radius);
+
+      void              move_to(point p);
+      void              line_to(point p);
+      void              arc_to(point p1, point p2, float radius);
+      void              arc(
+                           point p, float radius,
+                           float start_angle, float end_angle,
+                           bool ccw = false
+                        );
+
+      void              quadratic_curve_to(point cp, point end);
+      void              bezier_curve_to(point cp1, point cp2, point end);
+
+      void              move_to(float x, float y);
+      void              line_to(float x, float y);
+      void              arc_to(
+                           float x1, float y1,
+                           float x2, float y2,
+                           float radius
+                        );
+      void              arc(
+                           float x, float y, float radius,
+                           float start_angle, float end_angle,
+                           bool ccw = false
+                        );
+
+      void              quadratic_curve_to(
+                           float cpx, float cpy,
+                           float x, float y
+                        );
+      void              bezier_curve_to(
+                           float cp1x, float cp1y,
+                           float cp2x, float cp2y,
+                           float x, float y
+                        );
+
+      enum fill_rule_enum
+      {
+         fill_winding,
+         fill_odd_even
+      };
+
+      void              fill_rule(fill_rule_enum rule);
+      fill_rule_enum    fill_rule() const;   // Quartz-2D backend only
+
+      path_impl*        impl();
+      path_impl const*  impl() const;
    };
+```
 
-   void              fill_rule(fill_rule_enum rule);
-
-   path_impl*        impl();
-   path_impl const*  impl() const;
-};
-----
-
-=== Expressions
-
-[source,c++]
-----
-// Default constructor [1].
-path{}
-
-// Constructors [2].
-path{ r }
-path{ r, radius }
-path{ c }
-path{ svg_def }
-
-// Copy constructor. [3]
-path{ p }
-
-// Assignment [4]
-p = p2
-
-// Equality [5]
-p == p2
-
-// Non-equality [6]
-p != p2
-
-// Check for empty path [7]
-p.empty()
-
-// Check for inclusion [8]
-p.includes(pt)
-p.includes(x, y)
-
-// Get the path bounds [9]
-p.bounds()
-
-// Close path [10]
-p.close()
-
-// Add rectangle [11]
-p.add_rect(r)
-p.add_rect(x, y, width height)
-
-// Add rounded rectangle [12]
-p.add_round_rect(r, radius)
-p.add_round_rect(x, y, width height, radius)
-
-// Add circle [13]
-p.add_circle(c)
-p.add_circle(cx, cy, radius)
-
-// Move current point [14]
-p.move_to(pt)
-p.move_to(x, y)
-
-// Add an arc [15]
-p.arc_to(pt1, pt2, radius)
-p.arc_to(x1, y1, x2, y2, radius)
-
-// Add an arc [16]
-p.arc(pt, radius, start_angle, end_angle, ccw)
-p.arc(pt, radius, start_angle, end_angle)
-p.arc(x, y, radius, start_angle, end_angle, ccw)
-p.arc(x, y, radius, start_angle, end_angle)
-
-// Add a quadratic Bézier curve [17]
-p.quadratic_curve_to(cp, end)
-p.quadratic_curve_to(cpx, cpy, x, y)
-
-// Add a cubic Bézier curve [18]
-p.bezier_curve_to(cp1, cp2, end)
-p.bezier_curve_to(cp1x, cp1y, cp2x, cp2y, x, y)
-
-// Set the fill-rule [19]
-p.fill_rule(fr)
-
-----
+== Expressions
 
 === Notation
 
-[cols="1,3"]
+`p`, `p2`                    :: Objects of type `path`.
+`r`                          :: Object of type `rect`.
+`c`                          :: Object of type `circle`.
+`pt`, `pt1`, `pt2`           :: Objects of type `point`.
+`cp`, `cp1`, `cp2`, `end`    :: Objects of type `point`, control and end
+                                points of a curve.
+`x`, `y`, `width`, `height`  :: Floating point coordinates and sizes.
+`cx`, `cy`, `radius`         :: Floating point centre and radius.
+`x1`, `y1`, `x2`, `y2`       :: Floating point coordinates.
+`cpx`, `cpy`                 :: Floating point control point coordinates.
+`start_angle`, `end_angle`   :: Floating point angles in radians.
+`ccw`                        :: A `bool` selecting the sweep direction.
+`svg_def`                    :: Object of type `std::string_view`.
+`fr`                         :: Object of type `path::fill_rule_enum`.
+
+=== Constructors and Assignment
+
+[cols="1,1"]
 |===
-| `r` | Instance of `rect`.
-| `pt`, `pt1`, `pt2` | Instance of `point`.
-| `cp`, `cp1`, `cp2`, `end` | Instance of `point`.
-| `x`, `y`, `width`, `height` | Scalar values.
-| `radius`, `x1`, `y1`, `x2`, `y2` | Scalar values.
-| `cpx`, `cpy` | Scalar values.
-| `start_angle`, `end_angle` | Scalar values.
-| `ccw` | A Boolean value.
-| `c` | Instance of `circle`.
-| `svg_def` | Instance of `std::string_view`.
-| `p`, `p2` | Instance of `path`
-| `fr` | Instance of `path::fill_rule_enum`
+| Expression              | Semantics
+
+| `path()`                | Construct an empty path.
+| `path(r)`               | Construct a rectangle from `r`.
+| `path(r, radius)`       | Construct a rounded rectangle from `r` with
+                            corner `radius`.
+| `path(c)`               | Construct a circle from `c`.
+| `path(svg_def)`         | Construct from a string holding the `d`
+                            attribute of an
+                            https://www.w3.org/TR/SVG11/paths.html#PathElement[SVG
+                            path element].
+| `path(p)`               | Copy construct from `p`.
+| `path(std::move(p))`    | Move construct from `p`.
+| `p = p2`                | Assign `p2` to `p`.
+| `p = std::move(p2)`     | Move assign `p2` to `p`.
 |===
 
-=== Semantics
-. Default construct a `path`.
-. Construct a `path`:
-.. A rectangle from a `rect`, `r`.
-.. A rounded-rectangle from a `rect`, `r`, and `radius`.
-.. A circle from a `circle`, `c`.
-.. A complex path from a string view that conforms to the syntax of an
-   https://www.w3.org/TR/SVG11/paths.html#PathElement[SVG path element].
-. Copy construct a `path `, `p`.
-. Assign `p2`, to `p`.
-. Returns `true` if a `p2`, is equal to `p`.
-. Returns `true` if `p2`, is not equal to a `p`.
-. Returns `true` if `p` is empty.
-. Returns `true` if point `pt` (or `x, y`) is inside `p`.
-. Get the smallest rectangle that encapsulates the path, `p`.
-. Close the current shape.
-. Add rectangle, `r` (or `x, y, width height`), to the current path.
-. Add rounded rectangle, `r, radius` (or `x, y, width, height, radius``) to
-   the current path.
-. Add circle, `c` (or `cx, cy, radius`) to the current path.
-. Move the current point to `pt` (or `x, y`).
-. Add an arc, to the current path, between two tangents `pt1` and `pt2` (or
-   `x1, y1, x2, y2`) with the given `radius`.
-. Add an arc, to the current path, given a center point, `pt` (or `x, y`),
-   `start_angle` (in radians) and an `end_angle` and a `bool` flag, `ccw`,
-   that specifies whether counterclockwise (flag is `false`) or clockwise
-   (flag is 'true`). The default is `false` (clockwise).
-. Add a quadratic Bézier curve to the current path using the specified
-   control point, `cp` (or `cpx, cpy`) and ending point`end` (or `x, y`).
-   The starting point for the curve is the current point.
-. Add a cubic Bézier curve to the current path using the specified control
-   points `cp1` and `cp2` (or `cp1x, cp1y` and `cp2x, cp2y`) and ending
-   point`end` (or `x, y`). The starting point for the curve is the current
-   point.
-. Set the path's fill rule to `fr` (which can be `path::fill_winding` or
-   `path::fill_odd_even`).
+NOTE: C++ brace initialization may also be used.
+
+The `svg_def` parser accepts the commands `M`, `L`, `H`, `V`, `C`, `S`,
+`Q`, `T`, `A` and `Z`, each in its absolute (uppercase) and relative
+(lowercase) form.
+
+IMPORTANT: The `svg_def` constructor throws `std::runtime_error` if it
+meets a command it does not recognize. Wrap it in a `try` block when the
+string comes from anywhere but a literal in your own source.
+
+=== Comparison
+
+[cols="1,1,1"]
+|===
+| Expression    | Semantics                            | Return Type
+
+| `p == p2`     | Whether `p2` is equal to `p`.        | `bool`
+| `p != p2`     | The negation of the above.           | `bool`
+|===
+
+=== Queries
+
+[cols="1,1,1"]
+|===
+| Expression           | Semantics                          | Return Type
+
+| `p.is_empty()`       | Whether `p` holds no geometry.     | `bool`
+| `p.includes(pt)`     | Whether the point `pt` lies inside
+                         `p`, according to the current fill
+                         rule.                              | `bool`
+| `p.includes(x, y)`   | As above, given the coordinates
+                         directly.                          | `bool`
+| `p.bounds()`         | The smallest rectangle that
+                         encloses `p`.                      | `rect`
+|===
+
+=== Shapes
+
+Each adds a complete, closed shape to the path.
+
+[cols="1,1,1"]
+|===
+| Expression                    | Semantics                    | Return Type
+
+| `p.add_rect(r)`               | Add the rectangle `r`.       | `void`
+| `p.add_rect(x, y, width,
+    height)`                    | As above, given the
+                                  coordinates directly.       | `void`
+| `p.add_round_rect(r, radius)` | Add `r` with corners
+                                  rounded by `radius`.        | `void`
+| `p.add_round_rect(x, y,
+    width, height, radius)`     | As above, given the
+                                  coordinates directly.       | `void`
+| `p.add_circle(c)`             | Add the circle `c`.          | `void`
+| `p.add_circle(cx, cy,
+    radius)`                    | As above, given the centre
+                                  and radius directly.        | `void`
+|===
+
+NOTE: `add_round_rect` clamps `radius` to the range
+`0 .. min(width, height) / 2`, so an oversized radius gives the fully
+rounded shape rather than a malformed one.
+
+=== Lines and Curves
+
+These extend the current shape from the current point. `move_to` sets that
+point without drawing.
+
+image::canvas/arc.svg[alt="arc parameters", width=280px, align=center, title="The centre, radius, and the two angles taken by arc.", link={imagesdir}/canvas/arc.svg]
+
+image::canvas/bezier.svg[alt="curve control points", width=480px, align=center, title="Control and end points of the cubic and quadratic curves. The curve starts at the current point.", link={imagesdir}/canvas/bezier.svg]
+
+[cols="1,1,1"]
+|===
+| Expression                    | Semantics                    | Return Type
+
+| `p.move_to(pt)`               | Move the current point to
+                                  `pt` without drawing.       | `void`
+| `p.move_to(x, y)`             | As above, given the
+                                  coordinates directly.       | `void`
+| `p.line_to(pt)`               | Add a straight line from the
+                                  current point to `pt`.      | `void`
+| `p.line_to(x, y)`             | As above, given the
+                                  coordinates directly.       | `void`
+| `p.arc_to(pt1, pt2, radius)`  | Add an arc of the given
+                                  `radius` between the
+                                  tangents `pt1` and `pt2`.   | `void`
+| `p.arc_to(x1, y1, x2, y2,
+    radius)`                    | As above, given the
+                                  coordinates directly.       | `void`
+| `p.arc(pt, radius,
+    start_angle, end_angle,
+    ccw)`                       | Add an arc centred on `pt`
+                                  running from `start_angle`
+                                  to `end_angle`.             | `void`
+| `p.arc(x, y, radius,
+    start_angle, end_angle,
+    ccw)`                       | As above, given the centre
+                                  directly.                   | `void`
+| `p.quadratic_curve_to(cp,
+    end)`                       | Add a quadratic curve to
+                                  `end` with control point
+                                  `cp`.                       | `void`
+| `p.quadratic_curve_to(cpx,
+    cpy, x, y)`                 | As above, given the
+                                  coordinates directly.       | `void`
+| `p.bezier_curve_to(cp1, cp2,
+    end)`                       | Add a cubic curve to `end`
+                                  with control points `cp1`
+                                  and `cp2`.                  | `void`
+| `p.bezier_curve_to(cp1x,
+    cp1y, cp2x, cp2y, x, y)`    | As above, given the
+                                  coordinates directly.       | `void`
+| `p.close()`                   | Close the current shape,
+                                  joining its last point to
+                                  its first.                  | `void`
+|===
+
+Both `arc` overloads take `ccw` as a defaulted parameter, so it may be
+omitted. Angles are in radians and `radius` is clamped to be non-negative.
+
+NOTE: `ccw` defaults to `false`, which sweeps in the direction of
+increasing angle. Because Artist's y axis grows downward, that appears
+*clockwise* on screen. Pass `true` to reverse it.
+
+=== Fill Rule
+
+The fill rule decides which regions of a self-intersecting path count as
+inside, and it governs both filling and `includes`.
+
+image::canvas/fill_rule.svg[alt="fill rules", width=480px, align=center, title="The same star under the two fill rules.", link={imagesdir}/canvas/fill_rule.svg]
+
+[cols="1,1,1"]
+|===
+| Expression           | Semantics                          | Return Type
+
+| `p.fill_rule(fr)`    | Set the fill rule to `fr`, either
+                         `path::fill_winding` or
+                         `path::fill_odd_even`.             | `void`
+| `p.fill_rule()`      | The current fill rule.             |
+                                                    `path::fill_rule_enum`
+|===
+
+NOTE: The getter is compiled only for the Quartz-2D backend. The setter is
+available on all three.
+
+=== Backend Access
+
+[cols="1,1,1"]
+|===
+| Expression    | Semantics                                 | Return Type
+
+| `p.impl()`    | The underlying backend object: a
+                  `CGPath` on Quartz-2D, an
+                  `SkPathBuilder` on Skia, a
+                  `cairo_artist_path_t` on Cairo.           | `path_impl*`
+|===
+
+WARNING: `impl` is an escape hatch for backend-specific work. Code that
+uses it is not portable across backends. There is a `const` overload
+returning `path_impl const*`.
+
+== Example
+
+Building a shape once and drawing it many times:
+
+```c++
+   // Built once, outside the draw function
+   auto arrow = path{"M 0 0 L 40 20 L 0 40 L 10 20 Z"};
+
+   // ... in the draw function
+   cnv.add_path(arrow);
+   cnv.fill_style(colors::navy_blue);
+   cnv.fill();
+```
