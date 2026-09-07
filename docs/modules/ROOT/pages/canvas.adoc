@@ -29,9 +29,10 @@ cnv.fill();
 
 The pages in this section catalogue the canvas interface.
 
-* xref:canvas/path.adoc[Path] builds reusable geometry.
 * xref:canvas/transforms.adoc[Transforms] map user space onto the surface.
-* xref:canvas/paths.adoc[Paths] build and paint geometry directly.
+* xref:canvas/current_path.adoc[Current Path] builds geometry into the
+  canvas itself, then paints it. For geometry kept as an object, see
+  xref:path.adoc[Path].
 * xref:canvas/styles.adoc[Styles] decide how fills and strokes render.
 * xref:canvas/gradients.adoc[Gradients] fill and stroke with a ramp of
   color.

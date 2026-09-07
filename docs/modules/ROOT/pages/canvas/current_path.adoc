@@ -1,11 +1,14 @@
-= Paths
+= Current Path
 
 == Overview
 
-A path is built into the canvas with the calls below, then filled or
-stroked. This is the same geometry the xref:canvas/path.adoc[`path`]
-class describes, expressed as a sequence of calls rather than an object.
-Use `add_path` to draw a `path` built separately.
+The canvas holds one path at a time, its _current path_. The calls below
+build geometry into it, and `fill` or `stroke` paints and then clears it.
+
+This is the same geometry the xref:path.adoc[`path` class]
+describes, expressed as a sequence of calls rather than as an object. Build
+it here when the shape changes on every draw; build a `path` when the shape
+is fixed and worth keeping, then hand it over with `add_path`.
 
 == begin_path / close_path
 

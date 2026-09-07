@@ -6,7 +6,9 @@ The `path` is the basic building block for a lot of drawing tasks that
 involve the `canvas`. It is a mathematical description of shapes, that
 include lines, rectangles, cubic and quadratic curves, circles and arcs.
 A `path` may be built once and drawn many times, which is cheaper than
-rebuilding the geometry on each draw, especially on GPU backends.
+rebuilding the geometry on each draw, especially on GPU backends. To build
+geometry into the canvas directly instead, without an object to keep, see
+xref:canvas/current_path.adoc[Current Path].
 
 == path
 
