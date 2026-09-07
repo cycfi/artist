@@ -3,284 +3,227 @@
 == Overview
 
 The `affine_transform` is the matrix behind the canvas
-xref:canvas/transforms.adoc[Transforms]. It maps a point in user space to a
-point in device space, and it is what `canvas::transform()` returns and
-`canvas::transform(mat)` takes.
+xref:canvas/transforms.adoc[Transforms]. It maps a point in the coordinates
+you draw in, called user space, to a point in the coordinates of the
+surface, called device space. It is what `canvas::transform()` returns and
+what `canvas::transform(mat)` takes.
 
-image::foundation/affine_transform.svg[]
+image::foundation/affine_transform.svg[alt="Affine transform matrix", width=560px, align=center, title="The six stored members and the mapping they define. The third column is fixed and is not stored.", link={imagesdir}/foundation/affine_transform.svg]
 
-Six numbers are stored. The `a`, `b`, `c` and `d` members carry the linear
-part, which is scale, rotation and skew. The `tx` and `ty` members carry
-the translation. The third column of the matrix is fixed and is not stored.
+The `a`, `b`, `c` and `d` members carry the linear part, which is scale,
+rotation and skew. The `tx` and `ty` members carry the translation. A
+default constructed `affine_transform` is the identity.
 
-Artist's y axis grows downward, so a positive rotation, which takes the
-positive x axis toward the positive y axis, appears clockwise on screen.
+The type is a plain aggregate of six `double` members, so it is cheap to
+copy and usable in constant expressions. Everything except `rotate` and
+`skew`, which need `std::sin`, `std::cos` and `std::tan`, is `constexpr`.
 
-'''
+NOTE: Artist's y axis grows downward, so a positive rotation, which takes
+the positive x axis toward the positive y axis, appears clockwise on
+screen.
 
-== affine_transform
+== Include
 
-An aggregate holding the six matrix members, default constructed to the
-identity.
+```c++
+#include <artist/affine_transform.hpp>
+```
 
-[source,c++]
-----
-struct affine_transform
-{
-   constexpr bool                is_identity() const;
-   constexpr affine_transform    translate(double tx, double ty) const;
-   constexpr affine_transform    scale(double sx, double sy) const;
-   constexpr affine_transform    scale(double sc) const;
-   inline affine_transform       rotate(double rad) const;
-   inline affine_transform       skew(double sx, double sy) const;
-   constexpr affine_transform    invert() const;
+== Declaration
 
-   constexpr point               apply(point p) const;
-   constexpr point               apply(float x, float y) const;
+```c++
+   struct affine_transform
+   {
+      constexpr bool                is_identity() const;
+      constexpr affine_transform    translate(double tx, double ty) const;
+      constexpr affine_transform    scale(double sx, double sy) const;
+      constexpr affine_transform    scale(double sc) const;
+      inline affine_transform       rotate(double rad) const;
+      inline affine_transform       skew(double sx, double sy) const;
+      constexpr affine_transform    invert() const;
 
-                                 template <std::size_t N>
-   constexpr void                apply(point p[N]) const;
-   constexpr void                apply(point p[], std::size_t n) const;
+      constexpr point               apply(point p) const;
+      constexpr point               apply(float x, float y) const;
 
-   double a    = 1.0;
-   double b    = 0.0;
-   double c    = 0.0;
-   double d    = 1.0;
-   double tx   = 0.0;
-   double ty   = 0.0;
-};
+                                    template <std::size_t N>
+      constexpr void                apply(point p[N]) const;
+      constexpr void                apply(point p[], std::size_t n) const;
 
-constexpr affine_transform affine_identity;
-----
+      double a    = 1.0;
+      double b    = 0.0;
+      double c    = 0.0;
+      double d    = 1.0;
+      double tx   = 0.0;
+      double ty   = 0.0;
+   };
 
-=== Notation
+   constexpr affine_transform affine_identity;
+```
 
-`t`, `t2`:: Instance of `affine_transform`
-`a`, `b`, `c`, `d`, `tx`, `ty`:: `double`
+```c++
+   // Factory functions
+   constexpr affine_transform make_translation(double tx, double ty);
+   constexpr affine_transform make_scale(double sx, double sy);
+   constexpr affine_transform make_scale(double sc);
+   inline affine_transform    make_rotation(double rad);
+   inline affine_transform    make_skew(double sx, double sy);
+```
 
-=== Expressions
-
-[,c++]
-----
-// variant 1
-affine_transform{}
-
-// variant 2
-affine_transform{a, b, c, d, tx, ty}
-
-// variant 3
-affine_identity
-
-// variant 4
-t.a, t.b, t.c, t.d, t.tx, t.ty
-
-// variant 5
-t == t2
-t != t2
-
-// variant 6
-t.is_identity()
-----
-
-=== Semantics
-
-. Default construct the identity transform, `{1, 0, 0, 1, 0, 0}`.
-. Construct from the six members, in declaration order. There are no
-constructors, so the members may be given in part and the rest take their
-default values.
-. `affine_identity` is the identity transform as a named constant.
-. Direct access to the members. They are `double`, while `point` is
-`float`.
-. Compares all six members. The comparison is exact, so two transforms that
-differ only by rounding are not equal.
-. Returns `true` if `t` compares equal to `affine_identity`.
-
-'''
-
-== make_translation / make_scale / make_rotation / make_skew
-
-Builds a transform for one operation, starting from the identity.
+== Expressions
 
 === Notation
 
-`tx`, `ty`:: `double`, a distance
-`sx`, `sy`, `sc`:: `double`, a scale factor for `make_scale`, an angle in
-radians for `make_skew`
-`rad`:: `double`, an angle in radians
+`t`, `t2`         :: Objects of type `affine_transform`.
+`p`               :: Object of type `point`.
+`x`, `y`          :: Floating point coordinates.
+`tx`, `ty`        :: Floating point translation distances.
+`sx`, `sy`, `sc`  :: Floating point scale factors for `scale`, or angles in
+                     radians for `skew`.
+`rad`             :: Floating point angle in radians.
+`pts`             :: An array of `point`.
+`n`               :: Object of type `std::size_t`, a count.
+`N`               :: A compile time `std::size_t`.
 
-=== Expressions
+=== Constructors and Assignment
 
-[,c++]
-----
-// variant 1
-make_translation(tx, ty)
+[cols="1,1"]
+|===
+| Expression                        | Semantics
 
-// variant 2
-make_scale(sx, sy)
+| `affine_transform{}`              | Default construct the identity
+                                      transform, `{1, 0, 0, 1, 0, 0}`.
+| `affine_transform{a, b, c, d,
+    tx, ty}`                        | Construct from the six members, in
+                                      declaration order.
+| `affine_transform(t)`             | Copy construct from `t`.
+| `t = t2`                          | Assign `t2` to `t`.
+|===
 
-// variant 3
-make_scale(sc)
+NOTE: There are no user declared constructors. The members may be given in
+part and the rest take their default values, so `affine_transform{2.0}` is
+a scale of 2 in x only.
 
-// variant 4
-make_rotation(rad)
+=== Comparison
 
-// variant 5
-make_skew(sx, sy)
-----
+[cols="1,1,1"]
+|===
+| Expression         | Semantics                             | Return Type
 
-=== Semantics
+| `t == t2`          | Compare all six members. The
+                       comparison is exact, so two
+                       transforms differing only by
+                       rounding are not equal.               | `bool`
+| `t != t2`          | The negation of the above.            | `bool`
+| `t.is_identity()`  | Whether `t` compares equal to
+                       `affine_identity`.                    | `bool`
+|===
 
-. Returns `{1, 0, 0, 1, tx, ty}`, a translation by `tx` and `ty`.
-. Returns `{sx, 0, 0, sy, 0, 0}`, a scale by `sx` and `sy` about the
-origin.
-. Returns `{sc, 0, 0, sc, 0, 0}`, a uniform scale about the origin.
-. Returns `{cos(rad), sin(rad), -sin(rad), cos(rad), 0, 0}`, a rotation
-about the origin. Scale and rotation are about the origin, not the centre
-of what you are drawing.
-. Returns `{1, tan(sx), tan(sy), 1, 0, 0}`. `sx` is the angle by which y
-shears with x, and `sy` the angle by which x shears with y.
+=== Composition
 
-'''
+Each returns a new transform; `t` is not modified.
 
-== translate / scale / rotate / skew
+[cols="1,1,1"]
+|===
+| Expression             | Semantics                     | Return Type
 
-Composes one more operation onto an existing transform.
+| `t.translate(tx, ty)`  | Compose a translation by `tx`
+                           and `ty` onto `t`.            | `affine_transform`
+| `t.scale(sx, sy)`      | Compose a scale by `sx` and
+                           `sy` onto `t`.                | `affine_transform`
+| `t.scale(sc)`          | Compose a uniform scale by
+                           `sc` onto `t`.                | `affine_transform`
+| `t.rotate(rad)`        | Compose a rotation by `rad`
+                           onto `t`.                     | `affine_transform`
+| `t.skew(sx, sy)`       | Compose a skew by `sx` and
+                           `sy` onto `t`.                | `affine_transform`
+| `t * t2`               | The transform that applies
+                           `t2` first and then `t`, so
+                           that `(t * t2).apply(p)`
+                           equals `t.apply(t2.apply(p))`. | `affine_transform`
+|===
 
-=== Notation
+The composing members are defined as `t * make_translation(tx, ty)` and so
+on, which means the new operation applies within the space `t` already
+establishes. This is the same rule the canvas calls follow: scaling by 2
+and then translating by 10 moves by 20 device units. Composition is not
+commutative, so `t * t2` and `t2 * t` differ in general.
 
-`t`:: Instance of `affine_transform`
-`tx`, `ty`:: `double`, a distance
-`sx`, `sy`, `sc`:: `double`, a scale factor for `scale`, an angle in
-radians for `skew`
-`rad`:: `double`, an angle in radians
+=== Application
 
-=== Expressions
+[cols="1,1,1"]
+|===
+| Expression           | Semantics                       | Return Type
 
-[,c++]
-----
-// variant 1
-t.translate(tx, ty)
+| `t.apply(p)`         | Map the point `p` through `t`.  | `point`
+| `t.apply(x, y)`      | As above, given the coordinates
+                         directly.                       | `point`
+| `t.apply<N>(pts)`    | Map the first `N` points of
+                         `pts` in place.                 | `void`
+| `t.apply(pts, n)`    | Map the first `n` points of
+                         `pts` in place.                 | `void`
+|===
 
-// variant 2
-t.scale(sx, sy)
+NOTE: `N` cannot be deduced from an array parameter, so the third variant
+must be given the count as an explicit template argument. The arithmetic is
+done in `double` and narrowed to the `float` members of `point`.
 
-// variant 3
-t.scale(sc)
+=== Inversion
 
-// variant 4
-t.rotate(rad)
+[cols="1,1,1"]
+|===
+| Expression     | Semantics                             | Return Type
 
-// variant 5
-t.skew(sx, sy)
-----
+| `t.invert()`   | The inverse of `t`, the transform
+                   that maps a device space point back
+                   to the user space point it came
+                   from.                                 | `affine_transform`
+|===
 
-=== Semantics
+IMPORTANT: If the determinant, `a * d - c * b`, is zero, `t` is not
+invertible and `t` itself is returned unchanged. No error is reported, so
+check the determinant yourself if a degenerate transform is possible.
 
-. Each returns a new transform, `t * make_translation(tx, ty)` and so on
-for the rest. `t` is not modified.
-. The new operation applies within the space `t` already establishes, which
-is the same rule the canvas calls follow. Scaling by 2 and then translating
-by 10 moves by 20 device units.
-. `rotate` and `skew` call `std::sin`, `std::cos` and `std::tan`, so they
-are not `constexpr`. The other three are.
+=== Free Functions
 
-=== Examples
+Each builds a transform for one operation, starting from the identity.
 
-[,c++]
-----
-// Rotate about (cx, cy) rather than the origin
-auto t = affine_identity
-   .translate(cx, cy)
-   .rotate(M_PI / 4)
-   .translate(-cx, -cy)
-   ;
-----
+[cols="1,1,1"]
+|===
+| Expression                 | Semantics                  | Return Type
 
-'''
+| `affine_identity`          | The identity transform as
+                               a named constant.          | `affine_transform`
+| `make_translation(tx, ty)` | `{1, 0, 0, 1, tx, ty}`, a
+                               translation by `tx` and
+                               `ty`.                      | `affine_transform`
+| `make_scale(sx, sy)`       | `{sx, 0, 0, sy, 0, 0}`, a
+                               scale about the origin.    | `affine_transform`
+| `make_scale(sc)`           | `{sc, 0, 0, sc, 0, 0}`, a
+                               uniform scale about the
+                               origin.                    | `affine_transform`
+| `make_rotation(rad)`       | `{cos(rad), sin(rad),
+                               -sin(rad), cos(rad), 0,
+                               0}`, a rotation about the
+                               origin.                    | `affine_transform`
+| `make_skew(sx, sy)`        | `{1, tan(sx), tan(sy), 1,
+                               0, 0}`. `sx` is the angle
+                               by which y shears with x,
+                               and `sy` the angle by
+                               which x shears with y.     | `affine_transform`
+|===
 
-== operator*
+Scale and rotation are about the origin, not the centre of what you are
+drawing. Translate first to work about some other point.
 
-Composes two transforms.
+== Example
 
-=== Notation
+Rotating about an arbitrary point rather than the origin:
 
-`t`, `t2`:: Instance of `affine_transform`
+```c++
+   auto t = affine_identity
+      .translate(cx, cy)
+      .rotate(M_PI / 4)
+      .translate(-cx, -cy)
+      ;
 
-=== Expression
-
-[,c++]
-----
-t * t2
-----
-
-=== Semantics
-
-. Returns the transform that applies `t2` first and then `t`, so that
-`(t * t2).apply(p)` equals `t.apply(t2.apply(p))`.
-. Composition is not commutative. `t * t2` and `t2 * t` differ in general.
-
-'''
-
-== invert
-
-Undoes a transform.
-
-=== Notation
-
-`t`:: Instance of `affine_transform`
-
-=== Expression
-
-[,c++]
-----
-t.invert()
-----
-
-=== Semantics
-
-. Returns the inverse of `t`, the transform that maps a device space point
-back to the user space point it came from.
-. If the determinant, `a * d - c * b`, is zero, `t` is not invertible and
-`t` itself is returned unchanged. There is no error reported, so check the
-determinant yourself if a degenerate transform is possible.
-
-'''
-
-== apply
-
-Maps points through the transform.
-
-=== Notation
-
-`t`:: Instance of `affine_transform`
-`p`:: Instance of `point`
-`x`, `y`:: `float`
-`pts`:: An array of `point`
-`n`:: `std::size_t`, a count
-
-=== Expressions
-
-[,c++]
-----
-// variant 1
-t.apply(p)
-
-// variant 2
-t.apply(x, y)
-
-// variant 3
-t.apply<N>(pts)
-
-// variant 4
-t.apply(pts, n)
-----
-
-=== Semantics
-
-. Returns the transformed `point`.
-. Same, given the coordinates directly.
-. Transforms the `N` points of `pts` in place, given `N` as an explicit
-template argument.
-. Transforms the first `n` points of `pts` in place.
-. The arithmetic is done in `double` and the result is narrowed to the
-`float` members of `point`.
+   auto p = t.apply(point{x, y});
+```
