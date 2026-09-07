@@ -1,0 +1,49 @@
+= States
+
+== Overview
+
+The canvas holds its styles, transform and clip as one bundle of state.
+Saving pushes a copy of that bundle; restoring pops it. This is how you
+draw under a transform or a clip without disturbing what comes after.
+
+== new_state / save / restore
+
+Saves and restores the canvas state: its styles, transform and clip, taken
+together.
+
+=== Notation
+
+`cnv`:: Instance of `canvas`
+
+=== Expressions
+
+[,c++]
+----
+// variant 1
+cnv.new_state()
+
+// variant 2
+cnv.save()
+cnv.restore()
+----
+
+=== Semantics
+
+. Saves the state and returns a `canvas::state` that restores it when
+destroyed, including when an exception carries you out of the block. It may
+be moved but not copied.
+. Saves and restores the state by hand. Every `save` needs a matching
+`restore`.
+. Variant 1 is preferable for that reason.
+
+[,c++]
+----
+{
+   auto state = cnv.new_state();
+   cnv.clip(p);
+   cnv.translate(offset);
+   // draw
+}  // the clip and the transform are undone here
+----
+
+'''

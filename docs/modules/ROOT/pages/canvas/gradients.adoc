@@ -1,0 +1,83 @@
+= Gradients
+
+== Overview
+
+A gradient may be used anywhere a color may, as the fill or the stroke.
+You build one by giving it its geometry, then adding color stops along
+it.
+
+== linear_gradient
+
+A gradient that runs along a line. May be used anywhere a color may.
+
+=== Notation
+
+`start`, `end`:: Instance of `point`
+`startx`, `starty`, `endx`, `endy`:: `float`
+`cs`:: Instance of `canvas::color_stop`
+`offset`:: `float`, from 0.0 at the start to 1.0 at the end
+`c`:: Instance of `color`
+
+=== Expressions
+
+[,c++]
+----
+// variant 1
+canvas::linear_gradient{start, end}
+
+// variant 2
+canvas::linear_gradient{startx, starty, endx, endy}
+
+// variant 3
+gr.add_color_stop(cs)
+gr.add_color_stop(offset, c)
+----
+
+=== Semantics
+
+. Constructs a gradient running from `start` to `end`.
+. The same, with the two points given as four scalars.
+. Adds a color stop: `offset` is the position along the gradient and `c` is
+the color there. A `color_stop` is the pair as a struct.
+
+[,c++]
+----
+auto gr = canvas::linear_gradient{{0, 0}, {0, 100}};
+gr.add_color_stop({0.0, colors::black});
+gr.add_color_stop({1.0, colors::white});
+cnv.fill_style(gr);
+----
+
+'''
+
+== radial_gradient
+
+A gradient that runs between two circles.
+
+=== Notation
+
+`c1`, `c2`:: Instance of `point`, the two centres
+`c1r`, `c2r`:: `float`, the two radii
+`c1x`, `c1y`, `c2x`, `c2y`:: `float`
+
+=== Expressions
+
+[,c++]
+----
+// variant 1
+canvas::radial_gradient{c1, c1r, c2, c2r}
+
+// variant 2
+canvas::radial_gradient{c1x, c1y, c1r, c2x, c2y, c2r}
+----
+
+=== Semantics
+
+. Constructs a gradient running from the circle centred at `c1` with
+radius `c1r` to the circle centred at `c2` with radius `c2r`.
+. The same, with the centres given as scalars.
+. Give both circles the same centre for the usual radial fill; offset them
+for a cone-like effect.
+. Color stops are added as for `linear_gradient`.
+
+'''

@@ -1,0 +1,193 @@
+= Styles
+
+== Overview
+
+The styles decide how `fill` and `stroke` render. They are canvas state:
+set one and it stays in effect until it is set again, or until a saved
+state is restored over it.
+
+== fill_style / stroke_style
+
+Sets the paint used by `fill` and by `stroke`.
+
+=== Notation
+
+`c`:: Instance of `color`
+`gr`:: Instance of `linear_gradient` or `radial_gradient`
+
+=== Expressions
+
+[,c++]
+----
+// variant 1
+cnv.fill_style(c)
+cnv.stroke_style(c)
+
+// variant 2
+cnv.fill_style(gr)
+cnv.stroke_style(gr)
+
+// variant 3
+cnv.fill_color(c)
+cnv.stroke_color(c)
+----
+
+=== Semantics
+
+. Fills or strokes with a flat color.
+. Fills or strokes with a gradient.
+. `fill_color` and `stroke_color` are the same operations as variant 1,
+under names that read better beside the gradient overloads.
+. The style is canvas state: it stays in effect until set again, or until a
+saved state is restored over it.
+
+'''
+
+== line_width
+
+Sets the width of a stroke.
+
+=== Notation
+
+`w`:: `float`
+
+=== Expression
+
+[,c++]
+----
+cnv.line_width(w)
+----
+
+=== Semantics
+
+. Strokes drawn afterwards are `w` units wide, measured in user space,
+so the transform scales it.
+
+'''
+
+== line_cap
+
+image::/canvas/line_cap.svg[alt="line_cap", width=480px, role=center]
+
+Sets the shape drawn at the ends of an open stroke.
+
+=== Notation
+
+`cap`:: `canvas::line_cap_enum`
+
+=== Expression
+
+[,c++]
+----
+cnv.line_cap(cap)
+----
+
+=== Semantics
+
+. `canvas::butt` ends the stroke exactly at the endpoint.
+. `canvas::round` extends it by a half-circle of half the line width.
+. `canvas::square` extends it by a square of half the line width.
+. The dashed guides above mark the true endpoints.
+
+'''
+
+== line_join / miter_limit
+
+image::/canvas/line_join.svg[alt="line_join", width=480px, role=center]
+
+Sets the shape drawn where two stroke segments meet.
+
+=== Notation
+
+`join`:: `canvas::join_enum`
+`limit`:: `float`
+
+=== Expressions
+
+[,c++]
+----
+// variant 1
+cnv.line_join(join)
+
+// variant 2
+cnv.miter_limit(limit)
+----
+
+=== Semantics
+
+. `canvas::bevel_join` cuts the corner flat, `canvas::round_join` rounds
+it, and `canvas::miter_join` extends both edges to a point.
+. Sets how far a miter may extend before it is cut back to a bevel, as a
+multiple of the line width. Sharp angles produce very long miters without
+it. Defaults to 10.
+
+'''
+
+== shadow_style
+
+Casts a shadow behind whatever is filled or stroked.
+
+=== Notation
+
+`offset`:: Instance of `point`
+`offsetx`, `offsety`, `blur`:: `float`
+`c`:: Instance of `color`
+
+=== Expressions
+
+[,c++]
+----
+// variant 1
+cnv.shadow_style(offset, blur, c)
+
+// variant 2
+cnv.shadow_style(offsetx, offsety, blur, c)
+
+// variant 3
+cnv.shadow_style(blur, c)
+----
+
+=== Semantics
+
+. The shadow is displaced by `offset`, softened by `blur`, in color `c`.
+. The same, with the displacement given as two scalars.
+. The same, with no displacement, so the shadow spreads evenly around what
+is drawn, giving a glow.
+
+'''
+
+== composite_op
+
+Sets how new drawing combines with what is already on the canvas.
+
+=== Notation
+
+`mode`:: `canvas::composite_op_enum`
+
+=== Expressions
+
+[,c++]
+----
+// variant 1
+cnv.composite_op(mode)
+
+// variant 2
+cnv.global_composite_operation(mode)
+----
+
+=== Semantics
+
+. Sets the compositing mode. Variant 2 is the same operation under its
+HTML5 name.
+. The Porter-Duff operators are `source_over` (the default),
+`source_atop`, `source_in`, `source_out`, their four `destination_`
+counterparts, `copy` and `xor_`.
+. The blend modes are `lighter`, `darker`, `difference`, `exclusion`,
+`multiply`, `screen`, `color_dodge`, `color_burn`, `soft_light`,
+`hard_light`, `hue`, `saturation`, `color_op` and `luminosity`.
+
+NOTE: `darker` is the one mode the backends do not agree on. Quartz2D
+implements the W3C PlusDarker rule exactly; Skia and Cairo approximate it
+with a per-channel minimum.
+
+'''

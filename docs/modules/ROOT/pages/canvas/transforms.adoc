@@ -1,0 +1,178 @@
+= Transforms
+
+== Overview
+
+The transform maps the coordinates you draw in, called user space, onto
+the coordinates of the surface, called device space. `translate`,
+`rotate`, `scale` and `skew` compose, each applying on top of the
+transform already in effect, while `transform` replaces it outright.
+
+== translate
+
+Moves the origin of user space.
+
+=== Notation
+
+`p`:: Instance of `point`
+`x`, `y`:: `float`
+
+=== Expressions
+
+[,c++]
+----
+// variant 1
+cnv.translate(p)
+
+// variant 2
+cnv.translate(x, y)
+----
+
+=== Semantics
+
+. The origin is moved by `p` (or `x, y`).
+. Transforms compose: the move applies on top of the transform already in
+effect.
+
+'''
+
+== rotate
+
+Rotates user space about the origin.
+
+=== Notation
+
+`rad`:: `float`, an angle in radians
+
+=== Expression
+
+[,c++]
+----
+cnv.rotate(rad)
+----
+
+=== Semantics
+
+. User space is rotated about the origin by `rad`.
+. Rotation is about the origin, not the centre of what you are drawing.
+Translate first to rotate about some other point.
+
+'''
+
+== scale
+
+Scales user space.
+
+=== Notation
+
+`p`:: Instance of `point`
+`xy`, `x`, `y`:: `float`
+
+=== Expressions
+
+[,c++]
+----
+// variant 1
+cnv.scale(p)
+
+// variant 2
+cnv.scale(xy)
+
+// variant 3
+cnv.scale(x, y)
+----
+
+=== Semantics
+
+. User space is scaled by `p`, by `xy` on both axes, or by `x` and `y`
+independently.
+. A value greater than 1.0 scales up, a value less than 1.0 scales down.
+. Line widths, fonts and everything else drawn afterwards scale with it.
+
+'''
+
+== skew
+
+Skews user space.
+
+=== Notation
+
+`sx`, `sy`:: `double`
+
+=== Expression
+
+[,c++]
+----
+cnv.skew(sx, sy)
+----
+
+=== Semantics
+
+. User space is skewed by `sx` in x and `sy` in y.
+
+'''
+
+== device_to_user / user_to_device
+
+Converts a point between the coordinates you draw in (user space) and the
+coordinates of the surface (device space).
+
+=== Notation
+
+`p`:: Instance of `point`
+`x`, `y`:: `float`
+
+=== Expressions
+
+[,c++]
+----
+// variant 1
+cnv.device_to_user(p)
+cnv.device_to_user(x, y)
+
+// variant 2
+cnv.user_to_device(p)
+cnv.user_to_device(x, y)
+----
+
+=== Semantics
+
+. Returns the `point` in user space corresponding to a device space
+point. Useful for a mouse position, which arrives in device space, that has
+to be compared against something you drew.
+. Returns the `point` in device space corresponding to a user space point.
+
+'''
+
+== transform
+
+Gets or replaces the current transform outright.
+
+=== Notation
+
+`mat`:: Instance of `affine_transform`
+`a`, `b`, `c`, `d`, `tx`, `ty`:: `double`
+
+=== Expressions
+
+[,c++]
+----
+// variant 1
+cnv.transform()
+
+// variant 2
+cnv.transform(mat)
+
+// variant 3
+cnv.transform(a, b, c, d, tx, ty)
+----
+
+=== Semantics
+
+. Returns the current transform as an `affine_transform`.
+. Replaces the current transform with `mat`.
+. Replaces the current transform with the six values of a transformation
+matrix.
+. Unlike `translate`, `rotate`, `scale` and `skew`, which compose, setting
+the transform replaces whatever is in effect.
+
+'''

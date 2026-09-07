@@ -1,0 +1,50 @@
+= Images
+
+== Overview
+
+An `image` is drawn onto the canvas with `draw`. The overloads differ in
+how much of the image is drawn, where it lands, and at what size.
+
+== draw
+
+image::/canvas/draw.svg[alt="draw", width=460px, role=center]
+
+Draws an `image` onto the canvas.
+
+=== Notation
+
+`pic`:: Instance of `image`
+`src`, `dest`:: Instance of `rect`
+`pos`:: Instance of `point`
+`posx`, `posy`, `scale`:: `float`
+
+=== Expressions
+
+[,c++]
+----
+// variant 1
+cnv.draw(pic)
+cnv.draw(pic, pos)
+cnv.draw(pic, posx, posy)
+
+// variant 2
+cnv.draw(pic, pos, scale)
+cnv.draw(pic, posx, posy, scale)
+
+// variant 3
+cnv.draw(pic, dest)
+
+// variant 4
+cnv.draw(pic, src, dest)
+----
+
+=== Semantics
+
+. Draws the whole image with its top left corner at `pos` (or
+`posx, posy`), which defaults to the origin.
+. The same, scaled by `scale`.
+. Draws the whole image stretched to fill `dest`.
+. Draws the region `src` of the image stretched to fill `dest`. This is how
+a single frame is taken from a sprite sheet.
+
+'''

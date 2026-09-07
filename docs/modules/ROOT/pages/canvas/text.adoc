@@ -1,0 +1,128 @@
+= Text
+
+== Overview
+
+Text is drawn in the font set by `font`, positioned by the current
+alignment. `measure_text` reports what a string will occupy without
+drawing it, which is what you need to lay text out.
+
+== font
+
+Sets the font that `fill_text` and `stroke_text` will use.
+
+=== Notation
+
+`f`:: Instance of `font`
+
+=== Expression
+
+[,c++]
+----
+cnv.font(f)
+----
+
+=== Semantics
+
+. Text drawn afterwards uses `f`.
+. See xref:foundation.adoc[Foundation] for constructing a `font`.
+
+'''
+
+== fill_text / stroke_text
+
+Draws text at a point, filled or outlined.
+
+=== Notation
+
+`utf8`:: Instance of `std::string_view`, holding UTF-8 text
+`p`:: Instance of `point`
+`x`, `y`:: `float`
+
+=== Expressions
+
+[,c++]
+----
+// variant 1
+cnv.fill_text(utf8, p)
+cnv.fill_text(utf8, x, y)
+
+// variant 2
+cnv.stroke_text(utf8, p)
+cnv.stroke_text(utf8, x, y)
+----
+
+=== Semantics
+
+. Fills the text at `p` (or `x, y`), in the current font and fill style.
+. Strokes it instead, in the current stroke style.
+. Where `p` sits relative to the text is decided by `text_align` and
+`text_baseline`.
+. The text is UTF-8 and is shaped by HarfBuzz, so scripts requiring
+ligatures and reordering render correctly.
+
+'''
+
+== measure_text
+
+Reports what a string will occupy, without drawing it.
+
+=== Notation
+
+`utf8`:: Instance of `std::string_view`, holding UTF-8 text
+
+=== Expression
+
+[,c++]
+----
+cnv.measure_text(utf8)
+----
+
+=== Semantics
+
+. Returns a `canvas::text_metrics` for `utf8` in the current font, with
+members `ascent`, `descent`, `leading` and `size`.
+. This is what you need to lay text out, or to size an element around it.
+
+'''
+
+== text_align / text_baseline
+
+image::/canvas/text_align.svg[alt="text_align", width=400px, role=center]
+
+Sets where the point given to `fill_text` sits relative to the text.
+
+=== Notation
+
+`halign`:: `canvas::text_halign`
+`valign`:: `canvas::text_valign`
+`align`:: `int`
+
+=== Expressions
+
+[,c++]
+----
+// variant 1
+cnv.text_align(halign)
+
+// variant 2
+cnv.text_baseline(valign)
+
+// variant 3
+cnv.text_align(align)
+----
+
+=== Semantics
+
+. Sets the horizontal alignment: `canvas::left` (the default),
+`canvas::center` or `canvas::right`.
+. Sets the vertical alignment: `canvas::baseline` (the default),
+`canvas::top`, `canvas::middle` or `canvas::bottom`.
+. Sets both at once, combined with `|`.
+
+=== Examples
+
+. `cnv.text_align(canvas::center)`
+. `cnv.text_baseline(canvas::middle)`
+. `cnv.text_align(canvas::center | canvas::middle)`
+
+'''

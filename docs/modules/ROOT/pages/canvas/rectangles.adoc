@@ -1,0 +1,45 @@
+= Rectangles
+
+== Overview
+
+Rectangles are common enough to be worth their own calls, which build
+and paint the shape in one step, leaving the current path untouched.
+
+== fill_rect / stroke_rect
+
+Builds and paints a rectangle in one step, leaving the current path untouched.
+
+=== Notation
+
+`r`:: Instance of `rect`
+`x`, `y`, `width`, `height`, `radius`:: `float`
+
+=== Expressions
+
+[,c++]
+----
+// variant 1
+cnv.fill_rect(r)
+cnv.fill_rect(x, y, width, height)
+
+// variant 2
+cnv.fill_round_rect(r, radius)
+cnv.fill_round_rect(x, y, width, height, radius)
+
+// variant 3
+cnv.stroke_rect(r)
+cnv.stroke_rect(x, y, width, height)
+
+// variant 4
+cnv.stroke_round_rect(r, radius)
+cnv.stroke_round_rect(x, y, width, height, radius)
+----
+
+=== Semantics
+
+. Fills the rectangle `r` (or `x, y, width, height`).
+. Fills it with corners rounded to `radius`.
+. Strokes the rectangle.
+. Strokes it with rounded corners.
+
+'''
