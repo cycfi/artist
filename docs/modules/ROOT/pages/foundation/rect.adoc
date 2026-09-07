@@ -1,0 +1,309 @@
+= Rect
+
+== Overview
+
+The `rect` is a 2-dimensional rectangle, given by its `left`, `top`,
+`right` and `bottom` coordinates.
+
+== rect
+
+The `rect` struct represents a 2-dimensional rectangle specified by the
+`left`, `top`, `right`, and `bottom` coordinates.
+
+=== Declaration
+
+[source,c++]
+----
+struct rect
+{
+               rect();
+               rect(float left, float top, float right, float bottom);
+               rect(point origin, float right, float bottom)
+
+               rect(point top_left, point bottom_right);
+               rect(float left, float top, extent size);
+               rect(point origin, extent size);
+
+               rect(rect const&) = default;
+   rect&       operator=(rect const&) = default;
+
+   bool        operator==(rect const& other) const;
+   bool        operator!=(rect const& other) const;
+
+   bool        is_empty() const;
+   bool        includes(point p) const;
+   bool        includes(rect const& other) const;
+
+   float       width() const;
+   void        width(float w);
+   float       height() const;
+   void        height(float h);
+   extent      size() const;
+
+   point       top_left() const;
+   point       bottom_right() const;
+   point       top_right() const;
+   point       bottom_left() const;
+
+   rect        move(float dx, float dy) const;
+   rect        move_to(float x, float y) const;
+   rect        inset(float x = 1.0, float y = 1.0) const;
+
+   float       left;
+   float       top;
+   float       right;
+   float       bottom;
+};
+----
+
+=== Free Functions
+
+[source,c++]
+----
+bool           is_valid(rect const& r);
+bool           is_same_size(rect const& a, rect const& b);
+bool           intersects(rect const& a, rect const& b);
+
+point          center_point(rect const& r);
+float          area(rect const& r);
+rect           union_(rect const& a, rect const& b);
+rect           intersection(rect const& a, rect const& b);
+
+rect           center(rect const& r, rect const& encl);
+rect           center_h(rect const& r, rect const& encl);
+rect           center_v(rect const& r, rect const& encl);
+rect           align(rect const& r, rect const& encl, float x, float y);
+rect           align_h(rect const& r, rect const& encl, float x);
+rect           align_v(rect const& r, rect const& encl, float y);
+----
+
+=== Expressions
+
+==== Notation
+
+[cols="1,3"]
+|===
+| `left`, `top`, `right`, `bottom` | Scalar coordinates.
+| `x`, `y`, `w`, `h` | Scalar coordinates.
+| `dx`, `dy` | Relative scalar coordinates.
+| `origin`, `top_left`, `bottom_right` | Instance of `point`.
+| `size` | Instance of `extent`.
+| `r`, `r2` | Instance of `rect`.
+|===
+
+==== Constructors and assignment
+
+[source,c++]
+----
+// Default constructor [1].
+rect{}
+
+// Constructor [2].
+rect{ left, top, right, bottom }
+
+// Constructor [3].
+rect{ origin, right, bottom }
+
+// Constructor [4].
+rect{ top_left, bottom_right }
+
+// Constructor [5].
+rect{ left, top, size }
+
+// Constructor [6].
+rect{ origin, size }
+
+// Copy constructor [7].
+rect{ r }
+
+// Assignment [8]
+r = r2
+----
+
+==== Semantics
+
+. Default construct a `rect` with initial values `{ 0, 0, 0, 0 }`
+. Construct a `rect` given initial values `left`, `top`, `right`, and `bottom`.
+. Construct a `rect` given `origin` (point), `right` and bottom`.
+. Construct a `rect` given `top_left`, `bottom_right` points.
+. Construct a `rect` given `left`, `top`, and `size` (extent).
+. Construct a `rect` given `origin`, and `size` (extent).
+. Copy construct a `rect `, `r`.
+. Assign `r2` to `r`.
+
+==== Equality
+
+[source,c++]
+----
+// Equality [1]
+r == r2
+
+// Non-equality [2]
+r != r2
+----
+
+==== Semantics
+
+. Returns `true` if a `r2` is equal `r`.
+. Returns `true` if a `r2` is not equal to `r`.
+
+==== Query
+
+[source,c++]
+----
+// Check for empty rectangle [1]
+r.empty()
+
+// Check for inclusion [2]
+r.includes(p)
+r.includes(r2)
+
+// Get the width and height [3]
+r.width()
+r.height()
+
+// Get the size [4]
+r.size()
+
+// Get the rectangle corners [5]
+r.top_left()
+r.bottom_right()
+r.top_right()
+r.bottom_left()
+----
+
+==== Semantics
+
+. Returns `true` if `r` is empty. Equivalent to `r.size() == extent{ 0, 0 }`.
+. Inclusion:
+.. Returns true if `p` is inside `r`.
+.. Returns true if `r2` is completely inside `r`.
+. Returns the width and height of the `r`. Returns a scalar value.
+. Get the size of `r`. Returns an instance of `extent`.
+. Get the top-left, bottom-right, top-right, and bottom-left corners or
+  rectangle, `r`. Returns an instance of `point`.
+
+==== Mutation
+
+[source,c++]
+----
+// Set the width and height [1]
+r.height(w)
+r.width(h)
+----
+
+==== Semantics
+
+. Sets the width and height of `r` to `w` and `h`, respectively.
+
+==== Transformation
+
+[source,c++]
+----
+// Move [1]
+r.move(dx, dy)
+
+// Move To [2]
+r.move_to(x, y)
+
+// Inset [3]
+r.inset(x, y)
+r.inset(xy)
+----
+
+==== Semantics
+
+. Move origin of `r` by `dx` and `dy` distance. Non-mutating. Returns the
+  moved instance of `rect`.
+. Move origin of `r` to absolute coordinates `x` and `y`. Non-mutating.
+  Returns the moved instance of `rect`.
+. Inset `r` by `x` and `y` (in each dimension), or by `xy` (in both x and y
+  dimensions). The rect `r` is shrunk if `x`, `y` or `xy` are positive,
+  otherwise, expanded if negative. Non-mutating. Returns the inset instance
+  of `rect`.
+
+==== Free Query Functions
+
+[source,c++]
+----
+// Check for validity [1]
+is_valid(r)
+
+// Check for size equality [2]
+is_same_size(r, r2)
+
+// Check for intersection [3]
+intersects(r, r2)
+
+// Compute the center point [4]
+center_point(r)
+
+// Compute the area [5]
+area(r)
+
+// Compute the union of two rectangles [6]
+union_(r, r2)
+
+// Compute the intersection of two rectangles [7]
+intersection(r, r2)
+----
+
+==== Semantics
+
+. Return `true` if `r` is a valid rectangle (left <= right && top <=
+  bottom).
+. Return `true` if `r` and `r2` have the same size. Equivalent to `r.size()
+  == r2.size()`.
+. Return `true` if `r` intersects with `r2`.
+. Returns the center point of `r`. returns an instance of `point`.
+. Returns the area of `r`. Equivalent to `r.width() * r.height()`. Returns
+  a scalar value.
+. Compute the union of two rectangles. Returns an instance of `rect`.
+. Compute the intersection of two rectangles. Returns an instance of
+  `rect`.
+
+==== Free Transformation Functions
+
+[source,c++]
+----
+// Center a rectangle [1]
+center(r, r2)
+center_h(r, r2)
+center_v(r, r2)
+
+// Align a rectangle [2]
+align(r, r2, x, y)
+align_h(r, r2, x)
+align_v(r, r2, y)
+----
+
+=== Semantics
+
+. Center `r` in `r2`. Returns an instance of `rect`.
+.. `center`: In both dimensions
+.. `center_h`: Horizontally
+.. `center_v`: Vertically
+. Align `r` in `r2`. Given scalar `x` and `y` values, 0.0 aligns `r` to the
+  left or top, 1.0 aligns `r` to the right or bottom, 0.5 aligns `r` center
+  or middle. Returns an instance of `rect`.
+.. `align`: In both dimensions by `x` and `y`, where `x` and `y` are
+   fractional values from 0.0 to 1.0.
+.. `align_h`: Horizontally by `x`, where `x` is a fractional value from
+   0.0 to 1.0.
+.. `align_v`: Vertically by `y`, where `y` is a fractional value from 0.0
+   to 1.0.
+
+==== Member Access
+
+[source,c++]
+----
+// Member access [1]
+r.left
+r.top
+r.right
+r.bottom
+----
+
+==== Semantic
+
+. Direct access to members `left`, `top`, `right`, and `bottom`

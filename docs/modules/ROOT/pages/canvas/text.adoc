@@ -24,7 +24,7 @@ cnv.font(f)
 === Semantics
 
 . Text drawn afterwards uses `f`.
-. See xref:foundation.adoc[Foundation] for constructing a `font`.
+. See xref:foundation/font.adoc[Font] for constructing a `font`.
 
 '''
 

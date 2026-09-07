@@ -1,0 +1,105 @@
+= Circle
+
+== Overview
+
+The `circle` is given by a centre and a radius.
+
+== circle
+
+The circle is represented by a center point and radius:
+
+[source,c++]
+----
+struct circle
+{
+               circle();
+               circle(float cx, float cy, float radius);
+               circle(point c, float radius);
+               circle(rect const& r);
+               circle(circle const&) = default;
+   circle&     operator=(circle const&) = default;
+
+   rect        bounds() const;
+   bool        operator==(circle const& other) const;
+   bool        operator!=(circle const& other) const;
+
+   point       center() const;
+   circle      inset(float x) const;
+   circle      move(float dx, float dy) const;
+   circle      move_to(float x, float y) const;
+
+   float       cx;
+   float       cy;
+   float       radius;
+};
+----
+
+=== Expressions
+
+[source,c++]
+----
+// Default constructor [1].
+circle{}
+
+// Constructor [2].
+circle{ x, y, radius }
+
+// Copy constructor. [3]
+circle{ c }
+
+// Assignment [4]
+c = c2
+
+// Equality [5]
+c == c2
+
+// Non-equality [6]
+c != c2
+
+// Bounds [7]
+c.bounds()
+
+// Get the center [8]
+c.center()
+
+// Inset [9]
+c.inset(x)
+
+// Move [10]
+c.move(dx, dy)
+
+// Move To [11]
+c.move_to(x, y)
+
+// Member access [12]
+c.cx
+c.cy
+c.radius
+----
+
+=== Notation
+
+[cols="1,3"]
+|===
+| `x`, `y`, `radius` | Scalar coordinates.
+| `dx`, `dy`, `radius` | Scalar coordinates.
+| `c`, `c2` | Instance of `circle`.
+|===
+
+=== Semantics
+
+. Default construct a `circle` with initial values `{ 0, 0, 0 }`
+. Construct a `circle` given initial values `x`, `y`, and `radius`.
+. Copy construct a `circle`, `c`.
+. Assign `c2` to `c`.
+. Returns `true` if a `c2` is equal `c`.
+. Returns `true` if a `c2` is not equal to `c`.
+. Get the bounds: smallest `rect` that encloses `c`. Returns an instance of
+  `rect`.
+. Get the center of `c`. Returns an instance of `point`.
+. Inset `c` by `x`.
+. Move center of `c` by `dx` and `dy` distance. Returns the moved instance
+  of `circle`.
+. Move center of `c` to absolute coordinates `x` and `y`. Returns the
+  moved instance of `circle`.
+. Direct access to members `cx`, `cy`, and `radius`
