@@ -7,6 +7,7 @@
 *** xref:foundation/point.adoc[Point and Extent]
 *** xref:foundation/rect.adoc[Rect]
 *** xref:foundation/circle.adoc[Circle]
+*** xref:foundation/affine_transform.adoc[Affine Transform]
 *** xref:foundation/color.adoc[Color]
 *** xref:foundation/font.adoc[Font]
 *** xref:foundation/resources.adoc[Resources]

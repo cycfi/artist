@@ -149,7 +149,7 @@ Gets or replaces the current transform outright.
 
 === Notation
 
-`mat`:: Instance of `affine_transform`
+`mat`:: Instance of xref:foundation/affine_transform.adoc[`affine_transform`]
 `a`, `b`, `c`, `d`, `tx`, `ty`:: `double`
 
 === Expressions
@@ -168,7 +168,8 @@ cnv.transform(a, b, c, d, tx, ty)
 
 === Semantics
 
-. Returns the current transform as an `affine_transform`.
+. Returns the current transform as an
+xref:foundation/affine_transform.adoc[`affine_transform`].
 . Replaces the current transform with `mat`.
 . Replaces the current transform with the six values of a transformation
 matrix.

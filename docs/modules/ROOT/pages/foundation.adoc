@@ -7,6 +7,8 @@ the drawing calls are expressed in.
 * xref:foundation/point.adoc[Point and Extent] give a position and a size.
 * xref:foundation/rect.adoc[Rect] gives a rectangle.
 * xref:foundation/circle.adoc[Circle] gives a circle.
+* xref:foundation/affine_transform.adoc[Affine Transform] gives the
+  matrix behind the canvas transforms.
 * xref:foundation/color.adoc[Color] gives a color, with named constants.
 * xref:foundation/font.adoc[Font] describes and resolves a font.
 * xref:foundation/resources.adoc[Resources] finds fonts and images on disk.
