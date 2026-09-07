@@ -41,10 +41,11 @@ Heads up! This will be merged to master in the near future.
 
 Documentation is work in progress. Stay tuned...
 
-1. [Gallery](http://cycfi.github.io/artist/gallery)
-2. [Setup and Installation](http://cycfi.github.io/artist/setup)
-3. [Backends](http://cycfi.github.io/artist/backends)
-3. [Foundation](http://cycfi.github.io/artist/foundation)
+1. [Setup and Installation](https://cycfi.github.io/artist/artist/develop/setup.html)
+2. [Backends](https://cycfi.github.io/artist/artist/develop/backends.html)
+3. [Gallery](https://cycfi.github.io/artist/artist/develop/gallery.html)
+4. [Canvas](https://cycfi.github.io/artist/artist/develop/canvas.html)
+5. [Foundation](https://cycfi.github.io/artist/artist/develop/foundation.html)
 
 ## <a name="jdeguzman"></a>About the Author
 
