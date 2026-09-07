@@ -6,5 +6,9 @@ asciidoc:
   attributes:
     source-language: asciidoc@
     table-caption: false
+    note-caption: ✏️  NOTE
+    tip-caption: 💡  TIP
+    important-caption: 📢  IMPORTANT
+    warning-caption: ⚠️  WARNING
 nav:
 - modules/ROOT/nav.adoc
