@@ -4,7 +4,7 @@
 #
 #    cd docs/antora
 #    npx antora antora-playbook-local.yml
-#    open build/local/artist/develop/index.html
+#    open build/local/artist/v1.0-dev/index.html
 #
 site:
   title: Artist Docs

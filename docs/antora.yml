@@ -1,6 +1,6 @@
 name: artist
 title: Artist 2D Canvas Library
-version: develop
+version: v1.0-dev
 start_page: index.adoc
 asciidoc:
   attributes:
