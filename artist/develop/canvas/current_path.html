@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Current Path :: Artist Docs</title>
+    <link rel="canonical" href="https://www.cycfi.com/artist/develop/canvas/current_path.html">
+    <meta name="generator" content="Antora 3.1.15">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+<meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
+<link rel="icon" type="image/png" sizes="16x16" href="https://cycfi.com/assets/icons/favicon-16x16.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="https://cycfi.com/assets/icons/favicon-32x32.png"/>
+<link rel="icon" type="image/png" sizes="96x96" href="https://cycfi.com/assets/icons/favicon-96x96.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="https://cycfi.com/assets/icons/android-chrome-192x192.png"/>
+<link rel="icon" type="image/png" sizes="256x256" href="https://cycfi.com/assets/icons/android-chrome-256x256.png"/>
+<link rel="apple-touch-icon" type="image/png" href="https://cycfi.com/assets/icons/apple-touch-icon.png"/>
+
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <!--  Cycfi Logo -->
+      <a class="m-nav__logo" href="https://www.cycfi.com">
+        <svg version="1.1" x="0px" y="0px" width="200" viewBox="0 0 600 100" style="padding-top: 15;" xmlns="http://www.w3.org/2000/svg">
+          <g transform="matrix(2.55, 0, 0, 2.62, -464.010406, -1042.918213)" fill="#202020">
+            <path d="M234.37,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.7-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-3.5-0.04-4.6,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.59,0.66-0.76,1.35c-0.14,0.84-0.18,1.03-0.19,1.43l-0.14,3.91 c-0.01,0.39,0.04,0.84,0.09,1.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h33.85 c0.8,0,1.45,0.67,1.42,1.47L234.37,431.65z"/>
+            <path d="M276.06,433.02H257.9c-0.8,0-1.45-0.67-1.42-1.47l0.15-4.18c0.03-0.76,0.65-1.37,1.42-1.37h14.16 c1.91,0,3.52,0,4.61-0.12c1.23-0.13,1.75-0.25,2.17-0.71c0.36-0.39,0.4-2.52,0.4-2.52h-27.92c-11.11,0-13.26-5.13-13.1-9.44 l0.12-3.38c0.03-0.76,0.65-1.37,1.42-1.37h8.43c0.8,0,1.45,0.67,1.42,1.47l-0.05,1.36c-0.02,0.46-0.01,2.03,0.11,2.51 c0.1,0.42,0.44,0.82,0.78,1.07c0.47,0.35,0.83,0.42,1.64,0.54c0.9,0.14,2.09,0.21,3.54,0.21h24.09l0.21-5.8 c0.03-0.76,0.65-1.37,1.42-1.37h8.46c0.8,0,1.45,0.67,1.42,1.47l-0.49,13.57c-0.06,1.58-0.46,3.96-1.12,5.07 c-0.68,1.15-1.71,2.08-3.04,2.76c-1.23,0.63-2.76,1.07-4.56,1.32C280.44,432.9,278.4,433.02,276.06,433.02L276.06,433.02z"/>
+            <path d="M401.95,431.55l0.78-21.72c0.03-0.76,0.65-1.37,1.42-1.37h8.59c0.8,0,1.45,0.67,1.42,1.47l-0.78,21.72 c-0.03,0.76-0.65,1.37-1.42,1.37h-8.59C402.56,433.02,401.92,432.35,401.95,431.55z"/>
+            <path d="M346.77,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.71-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-2.47-0.04-3.58,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.58,0.66-0.76,1.35c-0.14,0.84-0.22,2.03-0.23,2.43l-0.07,1.91 c-0.01,0.39,0.01,1.84,0.06,2.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h32.83 c0.8,0,1.45,0.67,1.42,1.47L346.77,431.65z"/>
+            <path d="M386.2,425.88l-24.93-0.03l-0.21,5.8c-0.03,0.76-0.65,1.37-1.42,1.37h-8.46c-0.8,0-1.45-0.67-1.42-1.47 l0.49-13.57c0.06-1.58,0.46-3.96,1.12-5.07c0.68-1.15,1.71-2.08,3.04-2.76c1.23-0.63,2.76-1.07,4.56-1.32 c1.7-0.24,3.75-0.36,6.08-0.36l0,0h33.68c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.18c-0.03,0.76-0.65,1.37-1.42,1.37H368.9 c-1.91,0-3.52,0-4.61,0.12c-1.23,0.13-1.75,0.25-2.17,0.71c-0.36,0.39-0.4,2.52-0.4,2.52h24.63c0.8,0,1.45,0.67,1.42,1.47 l-0.15,4.22C387.59,425.28,386.96,425.88,386.2,425.88z"/>
+          </g>
+        </svg>
+      </a>
+      <a class="navbar-item" href="https://www.cycfi.com">Artist Docs</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="artist" data-version="develop">
+  <aside class="nav">
+    <div class="panels">
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs">
+        </div>
+      </div>
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">Artist 2D Canvas Library</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../setup.html">Setup and Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../backends.html">Backends</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../gallery.html">Gallery</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../foundation.html">Foundation</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/point.html">Point and Extent</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/rect.html">Rect</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/circle.html">Circle</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/affine_transform.html">Affine Transform</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/color.html">Color</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/font.html">Font</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/resources.html">Resources</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../path.html">Path</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../canvas.html">Canvas</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="transforms.html">Transforms</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="current_path.html">Current Path</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="styles.html">Styles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="gradients.html">Gradients</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="rectangles.html">Rectangles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="text.html">Text</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="images.html">Images</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="states.html">States</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Artist 2D Canvas Library</span>
+    <span class="version">develop</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../index.html">Artist 2D Canvas Library</a></div>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="../index.html">develop</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Artist 2D Canvas Library</a></li>
+    <li>Reference</li>
+    <li><a href="../canvas.html">Canvas</a></li>
+    <li><a href="current_path.html">Current Path</a></li>
+  </ul>
+</nav>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Current Path</h1>
+<div class="sect1">
+<h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The canvas holds one path at a time, its <em>current path</em>. The calls below
+build geometry into it, and <code>fill</code> or <code>stroke</code> paints and then clears it.</p>
+</div>
+<div class="paragraph">
+<p>This is the same geometry the <a href="../path.html" class="xref page"><code>path</code> class</a>
+describes, expressed as a sequence of calls rather than as an object. Build
+it here when the shape changes on every draw; build a <code>path</code> when the shape
+is fixed and worth keeping, then hand it over with <code>add_path</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_begin_path_close_path"><a class="anchor" href="#_begin_path_close_path"></a>begin_path / close_path</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Starts a new path, and closes the current shape within it.</p>
+</div>
+<div class="sect2">
+<h3 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
+cnv.begin_path()
+
+// variant 2
+cnv.close_path()</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_semantics"><a class="anchor" href="#_semantics"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Discards the current path and starts a new one.</p>
+</li>
+<li>
+<p>Closes the current shape by drawing a straight line back to where it
+began. A path may hold several closed shapes.</p>
+</li>
+</ol>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_fill_stroke"><a class="anchor" href="#_fill_stroke"></a>fill / stroke</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Paints the current path, filled or outlined.</p>
+</div>
+<div class="sect2">
+<h3 id="_expressions_2"><a class="anchor" href="#_expressions_2"></a>Expressions</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
+cnv.fill()
+cnv.stroke()
+
+// variant 2
+cnv.fill_preserve()
+cnv.stroke_preserve()</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_semantics_2"><a class="anchor" href="#_semantics_2"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Fills the current path with the current fill style, or strokes it with
+the current stroke style. The path is consumed: the canvas begins a new one
+afterwards.</p>
+</li>
+<li>
+<p>The same, but the path is left in place so it can be painted again. This
+is how a shape is given both a fill and an outline.</p>
+</li>
+</ol>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">cnv.fill_preserve();   // fill, keeping the path
+cnv.stroke();          // then outline the same path</code></pre>
+</div>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_move_to_line_to"><a class="anchor" href="#_move_to_line_to"></a>move_to / line_to</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Moves the current point, and draws a straight line to it.</p>
+</div>
+<div class="sect2">
+<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>p</code></dt>
+<dd>
+<p>Instance of <code>point</code></p>
+</dd>
+<dt class="hdlist1"><code>x</code>, <code>y</code></dt>
+<dd>
+<p><code>float</code></p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions_3"><a class="anchor" href="#_expressions_3"></a>Expressions</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
+cnv.move_to(p)
+cnv.move_to(x, y)
+
+// variant 2
+cnv.line_to(p)
+cnv.line_to(x, y)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_semantics_3"><a class="anchor" href="#_semantics_3"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Moves the current point to <code>p</code> (or <code>x, y</code>) without drawing.</p>
+</li>
+<li>
+<p>Adds a straight line from the current point to <code>p</code> (or <code>x, y</code>), which
+becomes the new current point.</p>
+</li>
+</ol>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_arc"><a class="anchor" href="#_arc"></a>arc</h2>
+<div class="sectionbody">
+<div class="imageblock center">
+<div class="content">
+<img src="../_images/canvas/arc.svg" alt="arc" width="260px">
+</div>
+</div>
+<div class="paragraph">
+<p>Adds an arc of a circle, given its centre.</p>
+</div>
+<div class="sect2">
+<h3 id="_notation_2"><a class="anchor" href="#_notation_2"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>p</code></dt>
+<dd>
+<p>Instance of <code>point</code>, the centre</p>
+</dd>
+<dt class="hdlist1"><code>x</code>, <code>y</code>, <code>radius</code></dt>
+<dd>
+<p><code>float</code></p>
+</dd>
+<dt class="hdlist1"><code>start_angle</code>, <code>end_angle</code></dt>
+<dd>
+<p><code>float</code>, angles in radians</p>
+</dd>
+<dt class="hdlist1"><code>ccw</code></dt>
+<dd>
+<p><code>bool</code></p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions_4"><a class="anchor" href="#_expressions_4"></a>Expressions</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
+cnv.arc(p, radius, start_angle, end_angle, ccw)
+cnv.arc(p, radius, start_angle, end_angle)
+
+// variant 2
+cnv.arc(x, y, radius, start_angle, end_angle, ccw)
+cnv.arc(x, y, radius, start_angle, end_angle)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_semantics_4"><a class="anchor" href="#_semantics_4"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Adds an arc centred on <code>p</code> (or <code>x, y</code>) with the given <code>radius</code>, running
+from <code>start_angle</code> to <code>end_angle</code>.</p>
+</li>
+<li>
+<p><code>ccw</code> selects the direction and defaults to <code>false</code>, clockwise.</p>
+</li>
+<li>
+<p>Angles are in radians.</p>
+</li>
+</ol>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_arc_to"><a class="anchor" href="#_arc_to"></a>arc_to</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Adds an arc of a circle, given two tangents.</p>
+</div>
+<div class="sect2">
+<h3 id="_notation_3"><a class="anchor" href="#_notation_3"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>p1</code>, <code>p2</code></dt>
+<dd>
+<p>Instance of <code>point</code></p>
+</dd>
+<dt class="hdlist1"><code>x1</code>, <code>y1</code>, <code>x2</code>, <code>y2</code>, <code>radius</code></dt>
+<dd>
+<p><code>float</code></p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions_5"><a class="anchor" href="#_expressions_5"></a>Expressions</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
+cnv.arc_to(p1, p2, radius)
+
+// variant 2
+cnv.arc_to(x1, y1, x2, y2, radius)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_semantics_5"><a class="anchor" href="#_semantics_5"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Adds an arc of the given <code>radius</code> tangent to both the line from the
+current point to <code>p1</code> and the line from <code>p1</code> to <code>p2</code>.</p>
+</li>
+<li>
+<p>A straight line is added from the current point to where the arc begins,
+if they differ.</p>
+</li>
+<li>
+<p>This is the call that rounds a corner: <code>p1</code> is the corner, and the arc
+replaces it.</p>
+</li>
+</ol>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_quadratic_curve_to_bezier_curve_to"><a class="anchor" href="#_quadratic_curve_to_bezier_curve_to"></a>quadratic_curve_to / bezier_curve_to</h2>
+<div class="sectionbody">
+<div class="imageblock center">
+<div class="content">
+<img src="../_images/canvas/bezier.svg" alt="bezier" width="460px">
+</div>
+</div>
+<div class="paragraph">
+<p>Adds a Bézier curve from the current point.</p>
+</div>
+<div class="sect2">
+<h3 id="_notation_4"><a class="anchor" href="#_notation_4"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>cp</code>, <code>cp1</code>, <code>cp2</code>, <code>end</code></dt>
+<dd>
+<p>Instance of <code>point</code></p>
+</dd>
+<dt class="hdlist1"><code>cpx</code>, <code>cpy</code>, <code>cp1x</code>, <code>cp1y</code>, <code>cp2x</code>, <code>cp2y</code>, <code>x</code>, <code>y</code></dt>
+<dd>
+<p><code>float</code></p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions_6"><a class="anchor" href="#_expressions_6"></a>Expressions</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
+cnv.quadratic_curve_to(cp, end)
+cnv.quadratic_curve_to(cpx, cpy, x, y)
+
+// variant 2
+cnv.bezier_curve_to(cp1, cp2, end)
+cnv.bezier_curve_to(cp1x, cp1y, cp2x, cp2y, x, y)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_semantics_6"><a class="anchor" href="#_semantics_6"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Adds a quadratic Bézier curve to <code>end</code>, shaped by the single control
+point <code>cp</code>.</p>
+</li>
+<li>
+<p>Adds a cubic Bézier curve to <code>end</code>, shaped by the two control points
+<code>cp1</code> and <code>cp2</code>.</p>
+</li>
+<li>
+<p>Both start at the current point, which the curve leaves in the direction
+of the first control point. <code>end</code> becomes the new current point.</p>
+</li>
+</ol>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_add_rect_add_round_rect_add_circle"><a class="anchor" href="#_add_rect_add_round_rect_add_circle"></a>add_rect / add_round_rect / add_circle</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Adds a whole shape to the current path.</p>
+</div>
+<div class="sect2">
+<h3 id="_notation_5"><a class="anchor" href="#_notation_5"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>r</code></dt>
+<dd>
+<p>Instance of <code>rect</code></p>
+</dd>
+<dt class="hdlist1"><code>c</code></dt>
+<dd>
+<p>Instance of <code>circle</code></p>
+</dd>
+<dt class="hdlist1"><code>x</code>, <code>y</code>, <code>width</code>, <code>height</code>, <code>radius</code>, <code>cx</code>, <code>cy</code></dt>
+<dd>
+<p><code>float</code></p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions_7"><a class="anchor" href="#_expressions_7"></a>Expressions</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
+cnv.add_rect(r)
+cnv.add_rect(x, y, width, height)
+
+// variant 2
+cnv.add_round_rect(r, radius)
+cnv.add_round_rect(x, y, width, height, radius)
+
+// variant 3
+cnv.add_circle(c)
+cnv.add_circle(cx, cy, radius)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_semantics_7"><a class="anchor" href="#_semantics_7"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Adds the rectangle <code>r</code> (or <code>x, y, width, height</code>).</p>
+</li>
+<li>
+<p>Adds the same rectangle with its corners rounded to <code>radius</code>.</p>
+</li>
+<li>
+<p>Adds the circle <code>c</code> (or centre <code>cx, cy</code> and <code>radius</code>).</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+<code>round_rect</code> and <code>circle</code> remain for code written against the
+Cairo-only canvas, but are deprecated. Use <code>add_round_rect</code> and
+<code>add_circle</code>.
+</td>
+</tr>
+</table>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_add_path"><a class="anchor" href="#_add_path"></a>add_path</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Adds an entire <code>path</code>, built separately, to the current path.</p>
+</div>
+<div class="sect2">
+<h3 id="_notation_6"><a class="anchor" href="#_notation_6"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>p</code></dt>
+<dd>
+<p>Instance of <code>path</code></p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expression"><a class="anchor" href="#_expression"></a>Expression</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">cnv.add_path(p)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_semantics_8"><a class="anchor" href="#_semantics_8"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>The geometry of <code>p</code> is added to the current path.</p>
+</li>
+<li>
+<p>Building a <code>path</code> once and adding it on each draw is cheaper than
+rebuilding the geometry call by call, especially on GPU backends.</p>
+</li>
+</ol>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_clear_rect"><a class="anchor" href="#_clear_rect"></a>clear_rect</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Erases a rectangular region.</p>
+</div>
+<div class="sect2">
+<h3 id="_notation_7"><a class="anchor" href="#_notation_7"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>r</code></dt>
+<dd>
+<p>Instance of <code>rect</code></p>
+</dd>
+<dt class="hdlist1"><code>x</code>, <code>y</code>, <code>width</code>, <code>height</code></dt>
+<dd>
+<p><code>float</code></p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions_8"><a class="anchor" href="#_expressions_8"></a>Expressions</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
+cnv.clear_rect(r)
+
+// variant 2
+cnv.clear_rect(x, y, width, height)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_semantics_9"><a class="anchor" href="#_semantics_9"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>The region <code>r</code> (or <code>x, y, width, height</code>) is left transparent.</p>
+</li>
+</ol>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_clip"><a class="anchor" href="#_clip"></a>clip</h2>
+<div class="sectionbody">
+<div class="imageblock center">
+<div class="content">
+<img src="../_images/canvas/clip.svg" alt="clip" width="460px">
+</div>
+</div>
+<div class="paragraph">
+<p>Restricts subsequent drawing to a region.</p>
+</div>
+<div class="sect2">
+<h3 id="_notation_8"><a class="anchor" href="#_notation_8"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>p</code></dt>
+<dd>
+<p>Instance of <code>path</code></p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions_9"><a class="anchor" href="#_expressions_9"></a>Expressions</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
+cnv.clip()
+
+// variant 2
+cnv.clip(p)
+
+// variant 3
+cnv.clip_extent()</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_semantics_10"><a class="anchor" href="#_semantics_10"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Clips subsequent drawing to the current path.</p>
+</li>
+<li>
+<p>Clips subsequent drawing to <code>p</code>.</p>
+</li>
+<li>
+<p>Returns the smallest <code>rect</code> containing the current clip region.</p>
+</li>
+<li>
+<p>Clipping intersects with whatever clip is already in effect, so it only
+ever narrows the drawable area. Save the state beforehand to get it back.</p>
+</li>
+</ol>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_point_in_path_fill_extent"><a class="anchor" href="#_point_in_path_fill_extent"></a>point_in_path / fill_extent</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Queries the current path.</p>
+</div>
+<div class="sect2">
+<h3 id="_notation_9"><a class="anchor" href="#_notation_9"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>p</code></dt>
+<dd>
+<p>Instance of <code>point</code></p>
+</dd>
+<dt class="hdlist1"><code>x</code>, <code>y</code></dt>
+<dd>
+<p><code>float</code></p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions_10"><a class="anchor" href="#_expressions_10"></a>Expressions</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
+cnv.point_in_path(p)
+cnv.point_in_path(x, y)
+
+// variant 2
+cnv.fill_extent()</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_semantics_11"><a class="anchor" href="#_semantics_11"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Returns <code>true</code> if <code>p</code> (or <code>x, y</code>) lies inside the current path, by the
+current fill rule.</p>
+</li>
+<li>
+<p>Returns the smallest <code>rect</code> that the current path&#8217;s fill would cover.</p>
+</li>
+</ol>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_fill_rule"><a class="anchor" href="#_fill_rule"></a>fill_rule</h2>
+<div class="sectionbody">
+<div class="imageblock center">
+<div class="content">
+<img src="../_images/canvas/fill_rule.svg" alt="fill_rule" width="480px">
+</div>
+</div>
+<div class="paragraph">
+<p>Sets the rule that decides what counts as inside a self-intersecting path.</p>
+</div>
+<div class="sect2">
+<h3 id="_notation_10"><a class="anchor" href="#_notation_10"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>rule</code></dt>
+<dd>
+<p><code>path::fill_rule_enum</code></p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expression_2"><a class="anchor" href="#_expression_2"></a>Expression</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">cnv.fill_rule(rule)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_semantics_12"><a class="anchor" href="#_semantics_12"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><code>path::fill_winding</code> counts the direction of each crossing, so
+overlapping regions of a single shape stay filled.</p>
+</li>
+<li>
+<p><code>path::fill_odd_even</code> counts crossings alone, so every second region is
+left empty.</p>
+</li>
+<li>
+<p>The default is <code>path::fill_winding</code>.</p>
+</li>
+</ol>
+</div>
+<hr>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+<script src="../../../_/js/vendor/lunr.js"></script>
+<script src="../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../.." data-snippet-length="100" data-stylesheet="../../../_/css/search.css"></script>
+<script async src="../../../search-index.js"></script>
+  </body>
+</html>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 180"
+     font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'>
+  <defs>
+    <style>
+      .guide { fill: none; stroke: #cccccc; stroke-width: 1.5; }
+      .arc   { fill: none; stroke: #1565c0; stroke-width: 3; }
+      .rad   { stroke: #1a1a1a; stroke-width: 1; stroke-dasharray: 0 0 3 3; }
+      .pt    { fill: #1a1a1a; }
+      .label { font-size: 13px; fill: #1a1a1a; }
+    </style>
+  </defs>
+  <circle class="guide" cx="130" cy="100" r="70"/>
+  <line class="rad" x1="130" y1="100" x2="130" y2="30"/>
+  <line class="rad" x1="130" y1="100" x2="188.6" y2="135"/>
+  <path class="arc" d="M 130 30 A 70 70 0 0 1 188.6 135"/>
+  <circle class="pt" cx="130" cy="100" r="3"/>
+  <text class="label" x="138" y="96">p</text>
+  <text class="label" x="136" y="68">radius</text>
+  <text class="label" x="136" y="24">start_angle</text>
+  <text class="label" x="194" y="140">end_angle</text>
+</svg>

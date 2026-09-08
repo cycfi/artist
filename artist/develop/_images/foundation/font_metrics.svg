@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 196"
+     font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'>
+  <defs>
+    <style>
+      .sample { font-size: 62px; fill: #1565c0; }
+      .lbl    { font-size: 12px; fill: #1a1a1a; }
+      .lbl-a  { font-size: 12px; fill: #1565c0; }
+      .guide  { stroke: #cccccc; stroke-width: 1; stroke-dasharray: 4 3; }
+      .base   { stroke: #5d5d5d; stroke-width: 1.5; }
+      .dim    { stroke: #5d5d5d; stroke-width: 1;
+                marker-start: url(#a1); marker-end: url(#a2); }
+      .brk    { stroke: #1565c0; stroke-width: 1.5; fill: none; }
+      .plate  { fill: #f3f3f3; }
+    </style>
+    <marker id="a1" viewBox="0 0 8 8" refX="7" refY="4"
+            markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 8,1 L 1,4 L 8,7 z" fill="#5d5d5d"/>
+    </marker>
+    <marker id="a2" viewBox="0 0 8 8" refX="1" refY="4"
+            markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0,1 L 7,4 L 0,7 z" fill="#5d5d5d"/>
+    </marker>
+  </defs>
+
+  <rect class="plate" x="16" y="16" width="528" height="164" rx="8"/>
+
+  <line class="guide" x1="60" y1="44"  x2="390" y2="44"/>
+  <line class="base"  x1="60" y1="102" x2="390" y2="102"/>
+  <line class="guide" x1="60" y1="122" x2="390" y2="122"/>
+  <line class="guide" x1="60" y1="142" x2="390" y2="142"/>
+
+  <text class="sample" x="118" y="102">Hxpg</text>
+
+  <line class="dim" x1="100" y1="44"  x2="100" y2="102"/>
+  <line class="dim" x1="100" y1="102" x2="100" y2="122"/>
+  <line class="dim" x1="100" y1="122" x2="100" y2="142"/>
+
+  <text class="lbl" x="92" y="77"  text-anchor="end">ascent</text>
+  <text class="lbl" x="92" y="117" text-anchor="end">descent</text>
+  <text class="lbl" x="92" y="139" text-anchor="end">leading</text>
+
+  <text class="lbl" x="386" y="96" text-anchor="end">baseline</text>
+
+  <path class="brk" d="M 398,44 L 408,44 L 408,142 L 398,142"/>
+  <text class="lbl-a" x="416" y="87">line_height()</text>
+
+  <line class="dim" x1="118" y1="160" x2="284" y2="160"/>
+  <text class="lbl-a" x="292" y="164">measure_text("Hxpg")</text>
+</svg>

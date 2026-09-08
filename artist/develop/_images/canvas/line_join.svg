@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 130"
+     font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'>
+  <defs>
+    <style>
+      .stroke { fill: none; stroke: #1565c0; stroke-width: 16; }
+      .label  { font-size: 13px; fill: #1a1a1a; }
+    </style>
+  </defs>
+  <g>
+    <path class="stroke" d="M 45 80 L 80 30 L 115 80" stroke-linejoin="bevel"/>
+    <text class="label" x="80" y="110" text-anchor="middle">bevel_join</text>
+  </g>
+  <g>
+    <path class="stroke" d="M 205 80 L 240 30 L 275 80" stroke-linejoin="round"/>
+    <text class="label" x="240" y="110" text-anchor="middle">round_join</text>
+  </g>
+  <g>
+    <path class="stroke" d="M 365 80 L 400 30 L 435 80" stroke-linejoin="miter" stroke-miterlimit="10"/>
+    <text class="label" x="400" y="110" text-anchor="middle">miter_join</text>
+  </g>
+</svg>

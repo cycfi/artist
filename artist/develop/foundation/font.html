@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Font :: Artist Docs</title>
+    <link rel="canonical" href="https://www.cycfi.com/artist/develop/foundation/font.html">
+    <meta name="generator" content="Antora 3.1.15">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+<meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
+<link rel="icon" type="image/png" sizes="16x16" href="https://cycfi.com/assets/icons/favicon-16x16.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="https://cycfi.com/assets/icons/favicon-32x32.png"/>
+<link rel="icon" type="image/png" sizes="96x96" href="https://cycfi.com/assets/icons/favicon-96x96.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="https://cycfi.com/assets/icons/android-chrome-192x192.png"/>
+<link rel="icon" type="image/png" sizes="256x256" href="https://cycfi.com/assets/icons/android-chrome-256x256.png"/>
+<link rel="apple-touch-icon" type="image/png" href="https://cycfi.com/assets/icons/apple-touch-icon.png"/>
+
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <!--  Cycfi Logo -->
+      <a class="m-nav__logo" href="https://www.cycfi.com">
+        <svg version="1.1" x="0px" y="0px" width="200" viewBox="0 0 600 100" style="padding-top: 15;" xmlns="http://www.w3.org/2000/svg">
+          <g transform="matrix(2.55, 0, 0, 2.62, -464.010406, -1042.918213)" fill="#202020">
+            <path d="M234.37,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.7-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-3.5-0.04-4.6,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.59,0.66-0.76,1.35c-0.14,0.84-0.18,1.03-0.19,1.43l-0.14,3.91 c-0.01,0.39,0.04,0.84,0.09,1.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h33.85 c0.8,0,1.45,0.67,1.42,1.47L234.37,431.65z"/>
+            <path d="M276.06,433.02H257.9c-0.8,0-1.45-0.67-1.42-1.47l0.15-4.18c0.03-0.76,0.65-1.37,1.42-1.37h14.16 c1.91,0,3.52,0,4.61-0.12c1.23-0.13,1.75-0.25,2.17-0.71c0.36-0.39,0.4-2.52,0.4-2.52h-27.92c-11.11,0-13.26-5.13-13.1-9.44 l0.12-3.38c0.03-0.76,0.65-1.37,1.42-1.37h8.43c0.8,0,1.45,0.67,1.42,1.47l-0.05,1.36c-0.02,0.46-0.01,2.03,0.11,2.51 c0.1,0.42,0.44,0.82,0.78,1.07c0.47,0.35,0.83,0.42,1.64,0.54c0.9,0.14,2.09,0.21,3.54,0.21h24.09l0.21-5.8 c0.03-0.76,0.65-1.37,1.42-1.37h8.46c0.8,0,1.45,0.67,1.42,1.47l-0.49,13.57c-0.06,1.58-0.46,3.96-1.12,5.07 c-0.68,1.15-1.71,2.08-3.04,2.76c-1.23,0.63-2.76,1.07-4.56,1.32C280.44,432.9,278.4,433.02,276.06,433.02L276.06,433.02z"/>
+            <path d="M401.95,431.55l0.78-21.72c0.03-0.76,0.65-1.37,1.42-1.37h8.59c0.8,0,1.45,0.67,1.42,1.47l-0.78,21.72 c-0.03,0.76-0.65,1.37-1.42,1.37h-8.59C402.56,433.02,401.92,432.35,401.95,431.55z"/>
+            <path d="M346.77,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.71-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-2.47-0.04-3.58,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.58,0.66-0.76,1.35c-0.14,0.84-0.22,2.03-0.23,2.43l-0.07,1.91 c-0.01,0.39,0.01,1.84,0.06,2.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h32.83 c0.8,0,1.45,0.67,1.42,1.47L346.77,431.65z"/>
+            <path d="M386.2,425.88l-24.93-0.03l-0.21,5.8c-0.03,0.76-0.65,1.37-1.42,1.37h-8.46c-0.8,0-1.45-0.67-1.42-1.47 l0.49-13.57c0.06-1.58,0.46-3.96,1.12-5.07c0.68-1.15,1.71-2.08,3.04-2.76c1.23-0.63,2.76-1.07,4.56-1.32 c1.7-0.24,3.75-0.36,6.08-0.36l0,0h33.68c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.18c-0.03,0.76-0.65,1.37-1.42,1.37H368.9 c-1.91,0-3.52,0-4.61,0.12c-1.23,0.13-1.75,0.25-2.17,0.71c-0.36,0.39-0.4,2.52-0.4,2.52h24.63c0.8,0,1.45,0.67,1.42,1.47 l-0.15,4.22C387.59,425.28,386.96,425.88,386.2,425.88z"/>
+          </g>
+        </svg>
+      </a>
+      <a class="navbar-item" href="https://www.cycfi.com">Artist Docs</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="artist" data-version="develop">
+  <aside class="nav">
+    <div class="panels">
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs">
+        </div>
+      </div>
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">Artist 2D Canvas Library</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../setup.html">Setup and Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../backends.html">Backends</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../gallery.html">Gallery</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../foundation.html">Foundation</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="point.html">Point and Extent</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="rect.html">Rect</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="circle.html">Circle</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="affine_transform.html">Affine Transform</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="color.html">Color</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="font.html">Font</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="resources.html">Resources</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../path.html">Path</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../canvas.html">Canvas</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/transforms.html">Transforms</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/current_path.html">Current Path</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/styles.html">Styles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/gradients.html">Gradients</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/rectangles.html">Rectangles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/text.html">Text</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/images.html">Images</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/states.html">States</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Artist 2D Canvas Library</span>
+    <span class="version">develop</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../index.html">Artist 2D Canvas Library</a></div>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="../index.html">develop</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Artist 2D Canvas Library</a></li>
+    <li>Reference</li>
+    <li><a href="../foundation.html">Foundation</a></li>
+    <li><a href="font.html">Font</a></li>
+  </ul>
+</nav>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Font</h1>
+<div class="sect1">
+<h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A <code>font_descr</code> says what font you want: one or more family names, a size,
+and the attributes that pick a face within a family. A <code>font</code> is what that
+description resolved to, a handle on a real face that the canvas can draw
+with. You build the first, hand it to the second, and keep the result. It
+is what <code>canvas::font()</code> takes, and it selects the face used by every
+<a href="../canvas/text.html" class="xref page">Text</a> call that follows.</p>
+</div>
+<div class="paragraph">
+<p><code>font_descr</code> is a plain aggregate of five members with a chainable modifier
+API. Every modifier is <code>const</code> and returns a modified copy, so a
+description reads as one expression:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   font_descr{"Open Sans", 14}.bold().italic()</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>_families</code> member is a comma separated list, searched left to right.
+The first family the system offers wins, and within that family the
+backend picks the face closest to the requested slant, weight and stretch,
+in that order of importance. If none of the listed families is present,
+construction still succeeds: every backend falls back to a default face.
+A <code>font</code> built from a descriptor is therefore always usable, and never
+reports a failed lookup.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/foundation/font_metrics.svg"><img src="../_images/foundation/font_metrics.svg" alt="Font metrics" width="560px"></a>
+</div>
+<div class="title">Figure 1. The three values metrics() reports, the line height they sum to, and the advance width measure_text() returns.</div>
+</div>
+<div class="paragraph">
+<p>Both <code>ascent</code> and <code>descent</code> are positive distances from the baseline, and
+<code>leading</code> is the extra gap between one line&#8217;s descent and the next line&#8217;s
+ascent. All four values, and the width <code>measure_text</code> returns, are in the
+same units as <code>_size</code>, which is device units before the canvas
+transformation matrix is applied.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+Fonts bundled with an application are found through
+<code>get_user_fonts_directory()</code>. The library declares that function but does
+not define it: the host application supplies it, and the backends call it
+once to register every font file in that directory alongside the system
+fonts.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="💡  TIP"></i>
+</td>
+<td class="content">
+On the Skia and Cairo backends the first <code>font</code> you construct scans
+the system and application font directories to build a family map. That
+first construction is much more expensive than the ones after it, so
+build the fonts you need up front rather than inside a draw call.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_include"><a class="anchor" href="#_include"></a>Include</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/font.hpp&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   namespace font_constants
+   {
+      enum weight_enum
+      {
+         thin              = 10,
+         extra_light       = 20,
+         light             = 30,
+         weight_normal     = 40,
+         medium            = 50,
+         semi_bold         = 60,
+         bold              = 70,
+         extra_bold        = 80,
+         black             = 90,
+         extra_black       = 95,
+      };
+
+      enum slant_enum
+      {
+         slant_normal      = 0,
+         italic            = 90,
+         oblique           = 100
+      };
+
+      enum stretch_enum
+      {
+         ultra_condensed   = 25,
+         extra_condensed   = 31,
+         condensed         = 38,
+         semi_condensed    = 44,
+         stretch_normal    = 50,
+         semi_expanded     = 57,
+         expanded          = 63,
+         extra_expanded    = 75,
+         ultra_expanded    = 100
+      };
+   }</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   struct font_descr
+   {
+      font_descr           normal() const;
+      font_descr           size(float size_) const;
+
+      font_descr           weight(font_constants::weight_enum w) const;
+      font_descr           thin() const;
+      font_descr           extra_light() const;
+      font_descr           light() const;
+      font_descr           weight_normal() const;
+      font_descr           medium() const;
+      font_descr           semi_bold() const;
+      font_descr           bold() const;
+      font_descr           extra_bold() const;
+      font_descr           black() const;
+      font_descr           extra_black() const;
+
+      font_descr           style(font_constants::slant_enum s) const;
+      font_descr           slant_normal() const;
+      font_descr           italic() const;
+      font_descr           oblique() const;
+
+      font_descr           stretch(font_constants::stretch_enum s) const;
+      font_descr           ultra_condensed() const;
+      font_descr           extra_condensed() const;
+      font_descr           condensed() const;
+      font_descr           semi_condensed() const;
+      font_descr           stretch_normal() const;
+      font_descr           semi_expanded() const;
+      font_descr           expanded() const;
+      font_descr           extra_expanded() const;
+      font_descr           ultra_expanded() const;
+
+      using slant_enum = font_constants::slant_enum;
+
+      std::string_view     _families;
+      float                _size = 12;
+      uint8_t              _weight = font_constants::weight_normal;
+      slant_enum           _slant = font_constants::slant_normal;
+      uint8_t              _stretch = font_constants::stretch_normal;
+   };</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   class font
+   {
+   public:
+                           font();
+                           font(font_descr descr);
+                           font(font const&amp; rhs);
+                           font(font&amp;&amp; rhs) noexcept;
+                           ~font();
+
+      font&amp;                operator=(font const&amp; rhs);
+      font&amp;                operator=(font&amp;&amp; rhs) noexcept;
+      explicit             operator bool() const;
+      font_impl_ptr        impl() const;
+
+      struct metrics_info
+      {
+         float             ascent;
+         float             descent;
+         float             leading;
+      };
+
+      metrics_info         metrics() const;
+      float                line_height() const;
+      float                measure_text(std::string_view str) const;
+   };</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   // Supplied by the host application
+   fs::path get_user_fonts_directory();</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>fd</code>, <code>fd2</code>    </dt>
+<dd>
+<p>Objects of type <code>font_descr</code>.</p>
+</dd>
+<dt class="hdlist1"><code>f</code>, <code>f2</code>      </dt>
+<dd>
+<p>Objects of type <code>font</code>.</p>
+</dd>
+<dt class="hdlist1"><code>fam</code>          </dt>
+<dd>
+<p>A <code>std::string_view</code>, a comma separated list of font
+family names.</p>
+</dd>
+<dt class="hdlist1"><code>sz</code>           </dt>
+<dd>
+<p>A <code>float</code>, the font size.</p>
+</dd>
+<dt class="hdlist1"><code>w</code>            </dt>
+<dd>
+<p>A <code>font_constants::weight_enum</code>.</p>
+</dd>
+<dt class="hdlist1"><code>sl</code>           </dt>
+<dd>
+<p>A <code>font_constants::slant_enum</code>.</p>
+</dd>
+<dt class="hdlist1"><code>st</code>           </dt>
+<dd>
+<p>A <code>font_constants::stretch_enum</code>.</p>
+</dd>
+<dt class="hdlist1"><code>str</code>          </dt>
+<dd>
+<p>An object of type <code>std::string_view</code>.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_descriptor_construction"><a class="anchor" href="#_descriptor_construction"></a>Descriptor Construction</h3>
+<div class="paragraph">
+<p><code>font_descr</code> has no user declared constructors. It is an aggregate,
+initialised member by member in declaration order, and any member left out
+takes its default.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr{}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Default construct: no families,
+                                      size 12, normal weight, slant and
+                                      stretch.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr{fam}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct with the family list
+                                      <code>fam</code> and the defaults for the rest.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr{fam, sz}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">As above, with size <code>sz</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr{fam, sz, w}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">As above, with weight <code>w</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr{fam, sz, w, sl}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">As above, with slant <code>sl</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr{fam, sz, w, sl, st}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">As above, with stretch <code>st</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr(fd)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Copy construct from <code>fd</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd = fd2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Assign <code>fd2</code> to <code>fd</code>.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="📢  IMPORTANT"></i>
+</td>
+<td class="content">
+<code>_weight</code> and <code>_stretch</code> are stored as <code>uint8_t</code>, so brace
+initialisation accepts <code>w</code> and <code>st</code> only when they are constant
+expressions; a runtime value is a narrowing conversion and will not
+compile. <code>_slant</code> is stored as the enum itself, so an integer is never
+accepted there. Use the modifiers below for values computed at run time.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="⚠️  WARNING"></i>
+</td>
+<td class="content">
+<code>_families</code> is a <code>std::string_view</code> and does not own its
+characters. A <code>font_descr</code> built from a temporary <code>std::string</code> dangles as
+soon as that string dies. String literals are safe.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_size_and_defaults"><a class="anchor" href="#_size_and_defaults"></a>Size and Defaults</h3>
+<div class="paragraph">
+<p>Each returns a modified copy; <code>fd</code> is not touched.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.size(sz)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Copy of <code>fd</code> with size <code>sz</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.normal()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Copy of <code>fd</code> with weight, slant
+                      and stretch reset to their normal
+                      values. Families and size are
+                      left alone.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_weight"><a class="anchor" href="#_weight"></a>Weight</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.weight(w)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Copy of <code>fd</code> with weight <code>w</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.thin()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Weight 10.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.extra_light()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Weight 20.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.light()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Weight 30.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.weight_normal()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Weight 40.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.medium()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Weight 50.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.semi_bold()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Weight 60.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.bold()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Weight 70.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.extra_bold()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Weight 80.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.black()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Weight 90.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.extra_black()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Weight 95.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_slant"><a class="anchor" href="#_slant"></a>Slant</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.style(sl)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Copy of <code>fd</code> with slant <code>sl</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.slant_normal()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Slant 0, upright.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.italic()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Slant 90.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.oblique()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Slant 100.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_stretch"><a class="anchor" href="#_stretch"></a>Stretch</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.stretch(st)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Copy of <code>fd</code> with stretch
+                              <code>st</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.ultra_condensed()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stretch 25.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.extra_condensed()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stretch 31.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.condensed()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stretch 38.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.semi_condensed()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stretch 44.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.stretch_normal()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stretch 50.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.semi_expanded()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stretch 57.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.expanded()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stretch 63.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.extra_expanded()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stretch 75.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd.ultra_expanded()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stretch 100.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_descr</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_descriptor_members"><a class="anchor" href="#_descriptor_members"></a>Descriptor Members</h3>
+<div class="paragraph">
+<p>The members are public and may be read or written directly.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd._families</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The comma separated family
+                     list.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>std::string_view</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd._size</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The font size.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd._weight</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The weight, 10 to 95.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>uint8_t</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd._slant</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The slant, 0 to 100.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>slant_enum</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fd._stretch</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The stretch, 25 to 100.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>uint8_t</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_font_construction_and_assignment"><a class="anchor" href="#_font_construction_and_assignment"></a>Font Construction and Assignment</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font{}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Default construct. The result names no face
+                            and is not usable for drawing.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font(fd)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Resolve the descriptor <code>fd</code> and hold the face
+                            it names, or the backend&#8217;s fallback face if no
+                            listed family is present.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font(f)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Copy construct from <code>f</code>. The copy names the
+                            same face.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font(std::move(f))</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Move construct from <code>f</code>, which is left
+                            holding no face.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>f = f2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Assign <code>f2</code> to <code>f</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>f = std::move(f2)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Move assign <code>f2</code> to <code>f</code>, which is left
+                            holding no face.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="⚠️  WARNING"></i>
+</td>
+<td class="content">
+A moved from <code>font</code> holds no face. Calling <code>metrics()</code>,
+<code>line_height()</code> or <code>measure_text()</code> on it is undefined behaviour.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_font_validity_and_access"><a class="anchor" href="#_font_validity_and_access"></a>Font Validity and Access</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool(f)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Whether <code>f</code> holds a backend handle.
+                 The conversion is <code>explicit</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>f.impl()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The backend handle, for code that
+                 needs to talk to the backend
+                 directly. An <code>SkFont</code> shared
+                 pointer under Skia, an opaque
+                 <code>font_impl*</code> otherwise.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font_impl_ptr</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+What <code>bool(f)</code> reports for a default constructed <code>font</code> depends on
+the backend: Quartz 2D leaves the handle null, while Skia and Cairo build
+an empty one. Construction from a descriptor always yields a handle on
+every backend. Use the conversion to test a moved from <code>font</code>, not to
+check whether a family was found.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_font_metrics"><a class="anchor" href="#_font_metrics"></a>Font Metrics</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>f.metrics()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The ascent, descent and
+                            leading of <code>f</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>font::metrics_info</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>f.metrics().ascent</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Distance from the baseline
+                            up to the top of the
+                            face, positive.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>f.metrics().descent</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Distance from the baseline
+                            down to the bottom of the
+                            face, positive.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>f.metrics().leading</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Extra space between one
+                            line&#8217;s descent and the
+                            next line&#8217;s ascent.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>f.line_height()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The sum of the three, the
+                            baseline to baseline
+                            distance for single
+                            spaced text.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>f.measure_text(str)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The advance width <code>str</code>
+                            occupies when drawn with
+                            <code>f</code>. The canvas
+                            transformation matrix is
+                            not taken into account.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_free_functions"><a class="anchor" href="#_free_functions"></a>Free Functions</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>get_user_fonts_directory()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The directory holding
+                                  the application&#8217;s own
+                                  font files. Declared
+                                  by the library and
+                                  defined by the host
+                                  application.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fs::path</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Build a heading font once, then use its metrics to stack two lines and
+right align the second under the first:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   auto heading = font{font_descr{"Open Sans, Helvetica", 24}.bold()};
+
+   cnv.font(heading);
+   cnv.fill_text("Artist", {x, y});
+
+   auto lh = heading.line_height();
+   auto dx = heading.measure_text("Artist")
+           - heading.measure_text("2D Canvas");
+
+   cnv.fill_text("2D Canvas", {x + dx, y + lh});</code></pre>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+<script src="../../../_/js/vendor/lunr.js"></script>
+<script src="../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../.." data-snippet-length="100" data-stylesheet="../../../_/css/search.css"></script>
+<script async src="../../../search-index.js"></script>
+  </body>
+</html>

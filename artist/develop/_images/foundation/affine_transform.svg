@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="22 0 398 170"
+     font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'>
+  <defs>
+    <style>
+      .m     { font-size: 15px; fill: #1a1a1a; }
+      .eq    { font-size: 14px; fill: #1a1a1a; }
+      .lbl   { font-size: 12px; fill: #1565c0; }
+      .brk   { stroke: #5d5d5d; stroke-width: 1.5; fill: none; }
+      .box   { stroke: #1565c0; stroke-width: 1; fill: none;
+               stroke-dasharray: 3 3; }
+      .plate { fill: #f3f3f3; }
+    </style>
+  </defs>
+
+  <rect class="plate" x="30" y="28" width="185" height="104" rx="8"/>
+
+  <path class="brk" d="M 52,34 L 42,34 L 42,126 L 52,126"/>
+  <path class="brk" d="M 193,34 L 203,34 L 203,126 L 193,126"/>
+
+  <text class="m" x="72"  y="58" text-anchor="middle">a</text>
+  <text class="m" x="122" y="58" text-anchor="middle">b</text>
+  <text class="m" x="172" y="58" text-anchor="middle">0</text>
+
+  <text class="m" x="72"  y="88" text-anchor="middle">c</text>
+  <text class="m" x="122" y="88" text-anchor="middle">d</text>
+  <text class="m" x="172" y="88" text-anchor="middle">0</text>
+
+  <text class="m" x="72"  y="118" text-anchor="middle">tx</text>
+  <text class="m" x="122" y="118" text-anchor="middle">ty</text>
+  <text class="m" x="172" y="118" text-anchor="middle">1</text>
+
+  <rect class="box" x="56" y="42" width="82" height="54"/>
+  <rect class="box" x="56" y="102" width="82" height="22"/>
+
+  <text class="lbl" x="97" y="22"  text-anchor="middle">linear part</text>
+  <text class="lbl" x="97" y="150" text-anchor="middle">translation</text>
+
+  <text class="eq" x="260" y="72">x' = a&#183;x + c&#183;y + tx</text>
+  <text class="eq" x="260" y="98">y' = b&#183;x + d&#183;y + ty</text>
+</svg>
