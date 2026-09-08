@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Transforms :: Artist Docs</title>
-    <link rel="canonical" href="https://www.cycfi.com/artist/develop/canvas/transforms.html">
+    <title>Circle :: Artist Docs</title>
+    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0-dev/foundation/circle.html">
     <meta name="generator" content="Antora 3.1.15">
     <link rel="stylesheet" href="../../../_/css/site.css">
 <meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
@@ -46,7 +46,7 @@
   </nav>
 </header>
 <div class="body">
-<div class="nav-container" data-component="artist" data-version="develop">
+<div class="nav-container" data-component="artist" data-version="v1.0-dev">
   <aside class="nav">
     <div class="panels">
       <div class="navbar-item search hide-for-print">
@@ -82,25 +82,25 @@
     <a class="nav-link" href="../foundation.html">Foundation</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/point.html">Point and Extent</a>
+    <a class="nav-link" href="point.html">Point and Extent</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/rect.html">Rect</a>
+    <a class="nav-link" href="rect.html">Rect</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="circle.html">Circle</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/circle.html">Circle</a>
+    <a class="nav-link" href="affine_transform.html">Affine Transform</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/affine_transform.html">Affine Transform</a>
+    <a class="nav-link" href="color.html">Color</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/color.html">Color</a>
+    <a class="nav-link" href="font.html">Font</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/font.html">Font</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/resources.html">Resources</a>
+    <a class="nav-link" href="resources.html">Resources</a>
   </li>
 </ul>
   </li>
@@ -111,29 +111,29 @@
     <button class="nav-item-toggle"></button>
     <a class="nav-link" href="../canvas.html">Canvas</a>
 <ul class="nav-list">
-  <li class="nav-item is-current-page" data-depth="3">
-    <a class="nav-link" href="transforms.html">Transforms</a>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/transforms.html">Transforms</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="current_path.html">Current Path</a>
+    <a class="nav-link" href="../canvas/current_path.html">Current Path</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="styles.html">Styles</a>
+    <a class="nav-link" href="../canvas/styles.html">Styles</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="gradients.html">Gradients</a>
+    <a class="nav-link" href="../canvas/gradients.html">Gradients</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="rectangles.html">Rectangles</a>
+    <a class="nav-link" href="../canvas/rectangles.html">Rectangles</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="text.html">Text</a>
+    <a class="nav-link" href="../canvas/text.html">Text</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="images.html">Images</a>
+    <a class="nav-link" href="../canvas/images.html">Images</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="states.html">States</a>
+    <a class="nav-link" href="../canvas/states.html">States</a>
   </li>
 </ul>
   </li>
@@ -147,14 +147,14 @@
 <div class="nav-panel-explore" data-panel="explore">
   <div class="context">
     <span class="title">Artist 2D Canvas Library</span>
-    <span class="version">develop</span>
+    <span class="version">v1.0-dev</span>
   </div>
   <ul class="components">
     <li class="component is-current">
       <div class="title"><a href="../index.html">Artist 2D Canvas Library</a></div>
       <ul class="versions">
         <li class="version is-current is-latest">
-          <a href="../index.html">develop</a>
+          <a href="../index.html">v1.0-dev</a>
         </li>
       </ul>
     </li>
@@ -171,8 +171,8 @@
   <ul>
     <li><a href="../index.html">Artist 2D Canvas Library</a></li>
     <li>Reference</li>
-    <li><a href="../canvas.html">Canvas</a></li>
-    <li><a href="transforms.html">Transforms</a></li>
+    <li><a href="../foundation.html">Foundation</a></li>
+    <li><a href="circle.html">Circle</a></li>
   </ul>
 </nav>
 </div>
@@ -181,316 +181,159 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Transforms</h1>
+<h1 class="page">Circle</h1>
 <div class="sect1">
 <h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The transform maps the coordinates you draw in, called user space, onto
-the coordinates of the surface, called device space. <code>translate</code>,
-<code>rotate</code>, <code>scale</code> and <code>skew</code> compose, each applying on top of the
-transform already in effect, while <code>transform</code> replaces it outright.</p>
+<p>The <code>circle</code> is given by a centre and a radius.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_translate"><a class="anchor" href="#_translate"></a>translate</h2>
+<h2 id="_circle"><a class="anchor" href="#_circle"></a>circle</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Moves the origin of user space.</p>
+<p>The circle is represented by a center point and radius:</p>
 </div>
-<div class="sect2">
-<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>p</code></dt>
-<dd>
-<p>Instance of <code>point</code></p>
-</dd>
-<dt class="hdlist1"><code>x</code>, <code>y</code></dt>
-<dd>
-<p><code>float</code></p>
-</dd>
-</dl>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">struct circle
+{
+               circle();
+               circle(float cx, float cy, float radius);
+               circle(point c, float radius);
+               circle(rect const&amp; r);
+               circle(circle const&amp;) = default;
+   circle&amp;     operator=(circle const&amp;) = default;
+
+   rect        bounds() const;
+   bool        operator==(circle const&amp; other) const;
+   bool        operator!=(circle const&amp; other) const;
+
+   point       center() const;
+   circle      inset(float x) const;
+   circle      move(float dx, float dy) const;
+   circle      move_to(float x, float y) const;
+
+   float       cx;
+   float       cy;
+   float       radius;
+};</code></pre>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
-cnv.translate(p)
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Default constructor [1].
+circle{}
 
-// variant 2
-cnv.translate(x, y)</code></pre>
+// Constructor [2].
+circle{ x, y, radius }
+
+// Copy constructor. [3]
+circle{ c }
+
+// Assignment [4]
+c = c2
+
+// Equality [5]
+c == c2
+
+// Non-equality [6]
+c != c2
+
+// Bounds [7]
+c.bounds()
+
+// Get the center [8]
+c.center()
+
+// Inset [9]
+c.inset(x)
+
+// Move [10]
+c.move(dx, dy)
+
+// Move To [11]
+c.move_to(x, y)
+
+// Member access [12]
+c.cx
+c.cy
+c.radius</code></pre>
 </div>
 </div>
+</div>
+<div class="sect2">
+<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>x</code>, <code>y</code>, <code>radius</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scalar coordinates.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>dx</code>, <code>dy</code>, <code>radius</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scalar coordinates.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c</code>, <code>c2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>circle</code>.</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="sect2">
 <h3 id="_semantics"><a class="anchor" href="#_semantics"></a>Semantics</h3>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>The origin is moved by <code>p</code> (or <code>x, y</code>).</p>
+<p>Default construct a <code>circle</code> with initial values <code>{ 0, 0, 0 }</code></p>
 </li>
 <li>
-<p>Transforms compose: the move applies on top of the transform already in
-effect.</p>
+<p>Construct a <code>circle</code> given initial values <code>x</code>, <code>y</code>, and <code>radius</code>.</p>
+</li>
+<li>
+<p>Copy construct a <code>circle</code>, <code>c</code>.</p>
+</li>
+<li>
+<p>Assign <code>c2</code> to <code>c</code>.</p>
+</li>
+<li>
+<p>Returns <code>true</code> if a <code>c2</code> is equal <code>c</code>.</p>
+</li>
+<li>
+<p>Returns <code>true</code> if a <code>c2</code> is not equal to <code>c</code>.</p>
+</li>
+<li>
+<p>Get the bounds: smallest <code>rect</code> that encloses <code>c</code>. Returns an instance of
+<code>rect</code>.</p>
+</li>
+<li>
+<p>Get the center of <code>c</code>. Returns an instance of <code>point</code>.</p>
+</li>
+<li>
+<p>Inset <code>c</code> by <code>x</code>.</p>
+</li>
+<li>
+<p>Move center of <code>c</code> by <code>dx</code> and <code>dy</code> distance. Returns the moved instance
+of <code>circle</code>.</p>
+</li>
+<li>
+<p>Move center of <code>c</code> to absolute coordinates <code>x</code> and <code>y</code>. Returns the
+moved instance of <code>circle</code>.</p>
+</li>
+<li>
+<p>Direct access to members <code>cx</code>, <code>cy</code>, and <code>radius</code></p>
 </li>
 </ol>
 </div>
-<hr>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_rotate"><a class="anchor" href="#_rotate"></a>rotate</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Rotates user space about the origin.</p>
-</div>
-<div class="sect2">
-<h3 id="_notation_2"><a class="anchor" href="#_notation_2"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>rad</code></dt>
-<dd>
-<p><code>float</code>, an angle in radians</p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_expression"><a class="anchor" href="#_expression"></a>Expression</h3>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">cnv.rotate(rad)</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_semantics_2"><a class="anchor" href="#_semantics_2"></a>Semantics</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>User space is rotated about the origin by <code>rad</code>.</p>
-</li>
-<li>
-<p>Rotation is about the origin, not the centre of what you are drawing.
-Translate first to rotate about some other point.</p>
-</li>
-</ol>
-</div>
-<hr>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_scale"><a class="anchor" href="#_scale"></a>scale</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Scales user space.</p>
-</div>
-<div class="sect2">
-<h3 id="_notation_3"><a class="anchor" href="#_notation_3"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>p</code></dt>
-<dd>
-<p>Instance of <code>point</code></p>
-</dd>
-<dt class="hdlist1"><code>xy</code>, <code>x</code>, <code>y</code></dt>
-<dd>
-<p><code>float</code></p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_expressions_2"><a class="anchor" href="#_expressions_2"></a>Expressions</h3>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
-cnv.scale(p)
-
-// variant 2
-cnv.scale(xy)
-
-// variant 3
-cnv.scale(x, y)</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_semantics_3"><a class="anchor" href="#_semantics_3"></a>Semantics</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>User space is scaled by <code>p</code>, by <code>xy</code> on both axes, or by <code>x</code> and <code>y</code>
-independently.</p>
-</li>
-<li>
-<p>A value greater than 1.0 scales up, a value less than 1.0 scales down.</p>
-</li>
-<li>
-<p>Line widths, fonts and everything else drawn afterwards scale with it.</p>
-</li>
-</ol>
-</div>
-<hr>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_skew"><a class="anchor" href="#_skew"></a>skew</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Skews user space.</p>
-</div>
-<div class="sect2">
-<h3 id="_notation_4"><a class="anchor" href="#_notation_4"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>sx</code>, <code>sy</code></dt>
-<dd>
-<p><code>double</code></p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_expression_2"><a class="anchor" href="#_expression_2"></a>Expression</h3>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">cnv.skew(sx, sy)</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_semantics_4"><a class="anchor" href="#_semantics_4"></a>Semantics</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>User space is skewed by <code>sx</code> in x and <code>sy</code> in y.</p>
-</li>
-</ol>
-</div>
-<hr>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_device_to_user_user_to_device"><a class="anchor" href="#_device_to_user_user_to_device"></a>device_to_user / user_to_device</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Converts a point between the coordinates you draw in (user space) and the
-coordinates of the surface (device space).</p>
-</div>
-<div class="sect2">
-<h3 id="_notation_5"><a class="anchor" href="#_notation_5"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>p</code></dt>
-<dd>
-<p>Instance of <code>point</code></p>
-</dd>
-<dt class="hdlist1"><code>x</code>, <code>y</code></dt>
-<dd>
-<p><code>float</code></p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_expressions_3"><a class="anchor" href="#_expressions_3"></a>Expressions</h3>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
-cnv.device_to_user(p)
-cnv.device_to_user(x, y)
-
-// variant 2
-cnv.user_to_device(p)
-cnv.user_to_device(x, y)</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_semantics_5"><a class="anchor" href="#_semantics_5"></a>Semantics</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Returns the <code>point</code> in user space corresponding to a device space
-point. Useful for a mouse position, which arrives in device space, that has
-to be compared against something you drew.</p>
-</li>
-<li>
-<p>Returns the <code>point</code> in device space corresponding to a user space point.</p>
-</li>
-</ol>
-</div>
-<hr>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_transform"><a class="anchor" href="#_transform"></a>transform</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Gets or replaces the current transform outright.</p>
-</div>
-<div class="sect2">
-<h3 id="_notation_6"><a class="anchor" href="#_notation_6"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>mat</code></dt>
-<dd>
-<p>Instance of <a href="../foundation/affine_transform.html" class="xref page"><code>affine_transform</code></a></p>
-</dd>
-<dt class="hdlist1"><code>a</code>, <code>b</code>, <code>c</code>, <code>d</code>, <code>tx</code>, <code>ty</code></dt>
-<dd>
-<p><code>double</code></p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_expressions_4"><a class="anchor" href="#_expressions_4"></a>Expressions</h3>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
-cnv.transform()
-
-// variant 2
-cnv.transform(mat)
-
-// variant 3
-cnv.transform(a, b, c, d, tx, ty)</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_semantics_6"><a class="anchor" href="#_semantics_6"></a>Semantics</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Returns the current transform as an
-<a href="../foundation/affine_transform.html" class="xref page"><code>affine_transform</code></a>.</p>
-</li>
-<li>
-<p>Replaces the current transform with <code>mat</code>.</p>
-</li>
-<li>
-<p>Replaces the current transform with the six values of a transformation
-matrix.</p>
-</li>
-<li>
-<p>Unlike <code>translate</code>, <code>rotate</code>, <code>scale</code> and <code>skew</code>, which compose, setting
-the transform replaces whatever is in effect.</p>
-</li>
-</ol>
-</div>
-<hr>
 </div>
 </div>
 </div>

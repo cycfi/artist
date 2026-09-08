@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Backends :: Artist Docs</title>
-    <link rel="canonical" href="https://www.cycfi.com/artist/develop/backends.html">
+    <title>Foundation :: Artist Docs</title>
+    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0-dev/foundation.html">
     <meta name="generator" content="Antora 3.1.15">
     <link rel="stylesheet" href="../../_/css/site.css">
 <meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
@@ -46,7 +46,7 @@
   </nav>
 </header>
 <div class="body">
-<div class="nav-container" data-component="artist" data-version="develop">
+<div class="nav-container" data-component="artist" data-version="v1.0-dev">
   <aside class="nav">
     <div class="panels">
       <div class="navbar-item search hide-for-print">
@@ -67,7 +67,7 @@
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="setup.html">Setup and Installation</a>
   </li>
-  <li class="nav-item is-current-page" data-depth="1">
+  <li class="nav-item" data-depth="1">
     <a class="nav-link" href="backends.html">Backends</a>
   </li>
   <li class="nav-item" data-depth="1">
@@ -77,7 +77,7 @@
     <button class="nav-item-toggle"></button>
     <span class="nav-text">Reference</span>
 <ul class="nav-list">
-  <li class="nav-item" data-depth="2">
+  <li class="nav-item is-current-page" data-depth="2">
     <button class="nav-item-toggle"></button>
     <a class="nav-link" href="foundation.html">Foundation</a>
 <ul class="nav-list">
@@ -147,14 +147,14 @@
 <div class="nav-panel-explore" data-panel="explore">
   <div class="context">
     <span class="title">Artist 2D Canvas Library</span>
-    <span class="version">develop</span>
+    <span class="version">v1.0-dev</span>
   </div>
   <ul class="components">
     <li class="component is-current">
       <div class="title"><a href="index.html">Artist 2D Canvas Library</a></div>
       <ul class="versions">
         <li class="version is-current is-latest">
-          <a href="index.html">develop</a>
+          <a href="index.html">v1.0-dev</a>
         </li>
       </ul>
     </li>
@@ -170,7 +170,8 @@
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="index.html">Artist 2D Canvas Library</a></li>
-    <li><a href="backends.html">Backends</a></li>
+    <li>Reference</li>
+    <li><a href="foundation.html">Foundation</a></li>
   </ul>
 </nav>
 </div>
@@ -179,71 +180,37 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Backends</h1>
-<div id="preamble">
-<div class="sectionbody">
+<h1 class="page">Foundation</h1>
 <div class="paragraph">
-<p>Artist supports three rendering backends: <a href="https://skia.org/">Skia</a>,
-<a href="https://apple.co/2SljYHw">Quartz-2D</a>, and
-<a href="https://www.cairographics.org/">Cairo</a>. Only one backend is active per build,
-selected with a CMake option (see <a href="setup.html" class="xref page">Setup and Installation</a>).</p>
+<p>The Foundation classes provide support for the Artist library, especially
+for the <code>canvas</code> class. They are the geometry, color and font types that
+the drawing calls are expressed in.</p>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_history"><a class="anchor" href="#_history"></a>History</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Historically, the Artist library was the 2D vector graphics component for the
-<a href="https://cycfi.github.io/elements/">Elements Library</a>, implemented using the
-<a href="https://www.cairographics.org/">Cairo 2D graphics library</a> as the sole backend.
-For a long time, Cairo&#8217;s lack of support for path effects — needed for modern
-GUI applications — combined with a stalled development cadence (see the
-<a href="https://www.cairographics.org/roadmap/">Cairo Roadmap</a>) made it look likely
-that Cairo support would be dropped.</p>
-</div>
-<div class="paragraph">
-<p>Cairo has since been brought back as a fully supported Artist backend, with
-HarfBuzz-based text shaping, drop-shadow support, and live window hosts on
-macOS, Linux, and Windows. See <a href="setup.html#_building_with_cairo" class="xref page">Building
-with Cairo</a> for its supported platforms and known limitations.</p>
-</div>
-<div class="paragraph">
-<p>Before Cairo, the precursor of the Artist library used
-<a href="https://github.com/memononen/nanovg">NanoVG</a>. It was then that the basic design
-principles took shape. Like Artist, the NanoVG API is modeled after the HTML5
-canvas API. NanoVG was dropped early on due to lack of support from its
-author,
-<a href="https://blog.johnnovak.net/2016/05/29/cross-platform-gui-trainwreck-2016-edition/#enter-nanovg">poor
-text rendering quality</a>, and inferior rendering quality (in general) compared
-to the gold standard: Quartz-2D. The NanoVG project is no longer actively
-maintained.</p>
-</div>
-<div class="paragraph">
-<p>It was a good decision to isolate the NanoVG backend behind a clean-cut C++
-canvas API. NanoVG had a C interface to begin with, so it was a necessary
-step. But isolating it behind a well-defined API also meant it could be
-replaced at any time. Had application code been hard-coded to use NanoVG
-directly, it would have been locked to that specific library. Abstraction is
-the key. Libraries come and go: the king of the hill now may be superseded by
-a "better" library in the future. Case in point: Cairo.</p>
-</div>
-<div class="paragraph">
-<p>There is also a half-baked
-<a href="https://docs.microsoft.com/en-us/windows/win32/direct2d/direct2d-portal">Direct-2D</a>
-port on Windows, currently shelved. It works, except for the text layout
-part, which has its own text-layout engine. Direct-2D is painful to work with
-compared to other graphics libraries, and for lack of time it is, for now,
-indefinitely shelved (contributions welcome if anyone wants to continue where
-it stopped).</p>
-</div>
-<div class="paragraph">
-<p>A few graphics libraries have splendid support for text layout; some don&#8217;t —
-in particular, Skia. For Skia, Artist uses the
-<a href="https://www.freedesktop.org/wiki/Software/HarfBuzz/">HarfBuzz</a> library for text
-layout.</p>
-</div>
-</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="foundation/point.html" class="xref page">Point and Extent</a> give a position and a size.</p>
+</li>
+<li>
+<p><a href="foundation/rect.html" class="xref page">Rect</a> gives a rectangle.</p>
+</li>
+<li>
+<p><a href="foundation/circle.html" class="xref page">Circle</a> gives a circle.</p>
+</li>
+<li>
+<p><a href="foundation/affine_transform.html" class="xref page">Affine Transform</a> gives the
+matrix behind the canvas transforms.</p>
+</li>
+<li>
+<p><a href="foundation/color.html" class="xref page">Color</a> gives a color, with named constants.</p>
+</li>
+<li>
+<p><a href="foundation/font.html" class="xref page">Font</a> describes and resolves a font.</p>
+</li>
+<li>
+<p><a href="foundation/resources.html" class="xref page">Resources</a> finds fonts and images on disk.</p>
+</li>
+</ul>
 </div>
 </article>
   </div>

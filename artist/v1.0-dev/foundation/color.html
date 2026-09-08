@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Rectangles :: Artist Docs</title>
-    <link rel="canonical" href="https://www.cycfi.com/artist/develop/canvas/rectangles.html">
+    <title>Color :: Artist Docs</title>
+    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0-dev/foundation/color.html">
     <meta name="generator" content="Antora 3.1.15">
     <link rel="stylesheet" href="../../../_/css/site.css">
 <meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
@@ -46,7 +46,7 @@
   </nav>
 </header>
 <div class="body">
-<div class="nav-container" data-component="artist" data-version="develop">
+<div class="nav-container" data-component="artist" data-version="v1.0-dev">
   <aside class="nav">
     <div class="panels">
       <div class="navbar-item search hide-for-print">
@@ -82,25 +82,25 @@
     <a class="nav-link" href="../foundation.html">Foundation</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/point.html">Point and Extent</a>
+    <a class="nav-link" href="point.html">Point and Extent</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/rect.html">Rect</a>
+    <a class="nav-link" href="rect.html">Rect</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/circle.html">Circle</a>
+    <a class="nav-link" href="circle.html">Circle</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/affine_transform.html">Affine Transform</a>
+    <a class="nav-link" href="affine_transform.html">Affine Transform</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="color.html">Color</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/color.html">Color</a>
+    <a class="nav-link" href="font.html">Font</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/font.html">Font</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/resources.html">Resources</a>
+    <a class="nav-link" href="resources.html">Resources</a>
   </li>
 </ul>
   </li>
@@ -112,28 +112,28 @@
     <a class="nav-link" href="../canvas.html">Canvas</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="transforms.html">Transforms</a>
+    <a class="nav-link" href="../canvas/transforms.html">Transforms</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="current_path.html">Current Path</a>
+    <a class="nav-link" href="../canvas/current_path.html">Current Path</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="styles.html">Styles</a>
+    <a class="nav-link" href="../canvas/styles.html">Styles</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="gradients.html">Gradients</a>
-  </li>
-  <li class="nav-item is-current-page" data-depth="3">
-    <a class="nav-link" href="rectangles.html">Rectangles</a>
+    <a class="nav-link" href="../canvas/gradients.html">Gradients</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="text.html">Text</a>
+    <a class="nav-link" href="../canvas/rectangles.html">Rectangles</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="images.html">Images</a>
+    <a class="nav-link" href="../canvas/text.html">Text</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="states.html">States</a>
+    <a class="nav-link" href="../canvas/images.html">Images</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/states.html">States</a>
   </li>
 </ul>
   </li>
@@ -147,14 +147,14 @@
 <div class="nav-panel-explore" data-panel="explore">
   <div class="context">
     <span class="title">Artist 2D Canvas Library</span>
-    <span class="version">develop</span>
+    <span class="version">v1.0-dev</span>
   </div>
   <ul class="components">
     <li class="component is-current">
       <div class="title"><a href="../index.html">Artist 2D Canvas Library</a></div>
       <ul class="versions">
         <li class="version is-current is-latest">
-          <a href="../index.html">develop</a>
+          <a href="../index.html">v1.0-dev</a>
         </li>
       </ul>
     </li>
@@ -171,8 +171,8 @@
   <ul>
     <li><a href="../index.html">Artist 2D Canvas Library</a></li>
     <li>Reference</li>
-    <li><a href="../canvas.html">Canvas</a></li>
-    <li><a href="rectangles.html">Rectangles</a></li>
+    <li><a href="../foundation.html">Foundation</a></li>
+    <li><a href="color.html">Color</a></li>
   </ul>
 </nav>
 </div>
@@ -181,78 +181,327 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Rectangles</h1>
+<h1 class="page">Color</h1>
 <div class="sect1">
 <h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Rectangles are common enough to be worth their own calls, which build
-and paint the shape in one step, leaving the current path untouched.</p>
+<p>The <code>color</code> is a red, green, blue and alpha quadruple, with a set of
+named constants and the operations needed to derive one color from
+another.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_fill_rect_stroke_rect"><a class="anchor" href="#_fill_rect_stroke_rect"></a>fill_rect / stroke_rect</h2>
+<h2 id="_color"><a class="anchor" href="#_color"></a>color</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Builds and paints a rectangle in one step, leaving the current path untouched.</p>
+<p>Color is represented by <code>red</code>, <code>green</code>, <code>blue</code>, and <code>alpha</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">struct color
+{
+               color();
+               color(float red, float green, float blue, float alpha = 1.0f);
+
+   color       opacity(float alpha_) const;
+   color       level(float amount) const;
+
+   float       red   = 0.0f;
+   float       green = 0.0f;
+   float       blue  = 0.0f;
+   float       alpha = 0.0f;
+};</code></pre>
+</div>
 </div>
 <div class="sect2">
-<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>r</code></dt>
-<dd>
-<p>Instance of <code>rect</code></p>
-</dd>
-<dt class="hdlist1"><code>x</code>, <code>y</code>, <code>width</code>, <code>height</code>, <code>radius</code></dt>
-<dd>
-<p><code>float</code></p>
-</dd>
-</dl>
+<h3 id="_free_functions"><a class="anchor" href="#_free_functions"></a>Free Functions</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">bool     operator==(color const&amp; a, color const&amp; b);
+bool     operator!=(color const&amp; a, color const&amp; b);
+color    rgb(std::uint32_t rgb);
+color    rgba(std::uint32_t rgba);
+color    rgb(std::uint8_t r, std::uint8_t g, std::uint8_t b);
+color    rgba(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a);
+color    hsl(float h, float sl, float l);</code></pre>
+</div>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
-cnv.fill_rect(r)
-cnv.fill_rect(x, y, width, height)
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Default constructor [1].
+color{}
 
-// variant 2
-cnv.fill_round_rect(r, radius)
-cnv.fill_round_rect(x, y, width, height, radius)
+// Constructor [2].
+color{ red, green, blue, alpha }
 
-// variant 3
-cnv.stroke_rect(r)
-cnv.stroke_rect(x, y, width, height)
+// Copy constructor. [3]
+color{ c }
 
-// variant 4
-cnv.stroke_round_rect(r, radius)
-cnv.stroke_round_rect(x, y, width, height, radius)</code></pre>
+// Assignment [4]
+c = c2
+
+// Equality [5]
+c == c2
+
+// Non-equality [6]
+c != c2
+
+// Opacity
+opacity(val) [7]
+
+// Linear level
+level(amount) [8]
+
+// RGB and RGBA from uint32_t [9]
+rgb(urgb);
+rgba(urgb);
+
+// RGB and RGBA from uint8_t reg, green, blue, and alpha components [10]
+rgb(ured, ugreen, ublue);
+rgba(ured, ugreen, ublue, ualpha);
+
+// RGB from HSL [11]
+hsl(h, sl, l);</code></pre>
 </div>
 </div>
+</div>
+<div class="sect2">
+<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>red</code>, <code>red</code>, <code>red</code>, <code>alpha</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scalar values.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>val</code>, <code>amount</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scalar values.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c</code>, <code>c2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>color</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>urgb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of `std::uint32_t</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ured</code>, <code>ugreen</code>, <code>ublue</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of `std::uint8_t</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="sect2">
 <h3 id="_semantics"><a class="anchor" href="#_semantics"></a>Semantics</h3>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Fills the rectangle <code>r</code> (or <code>x, y, width, height</code>).</p>
+<p>Default construct a <code>color</code> with initial values <code>{ 0, 0, 0, 0 }</code></p>
 </li>
 <li>
-<p>Fills it with corners rounded to <code>radius</code>.</p>
+<p>Construct a <code>color</code> given initial values <code>red</code>, <code>green</code>, <code>blue</code>, and
+<code>alpha</code>. The floating point values range from 0.0 to 1.0.</p>
 </li>
 <li>
-<p>Strokes the rectangle.</p>
+<p>Copy construct a <code>color</code>, <code>c</code>.</p>
 </li>
 <li>
-<p>Strokes it with rounded corners.</p>
+<p>Assign <code>c2</code> to <code>c</code>.</p>
+</li>
+<li>
+<p>Returns <code>true</code> if a <code>c2</code> is equal <code>c</code>.</p>
+</li>
+<li>
+<p>Returns <code>true</code> if a <code>c2</code> is not equal to <code>c</code>.</p>
+</li>
+<li>
+<p>Sets the opacity (alpha) to <code>val</code>. Returns an instance of <code>color</code>.</p>
+</li>
+<li>
+<p>Multiplies all color components by <code>amount</code>. Returns an instance of <code>color</code>.</p>
+</li>
+<li>
+<p>Create an RGB or RGBA color from a <code>uint32_t</code> or the form rrggbb or
+rrggbbaa respectively, typically with using hex literals (e.g.
+0xffffffff).</p>
+</li>
+<li>
+<p>Create an RGB or RGBA color from <code>uint8_t</code> reg, green, blue, and alpha
+components, where each component range from <code>0</code> to <code>255</code>.</p>
+</li>
+<li>
+<p>Create an RBB color from HSL.</p>
 </li>
 </ol>
 </div>
-<hr>
+</div>
+<div class="sect2">
+<h3 id="_predefined_colors"><a class="anchor" href="#_predefined_colors"></a>Predefined Colors</h3>
+<div class="paragraph">
+<p>Namespace <code>cycfi::artist::colors</code> contains some predefined colors, including
+256 levels of grays. You normally use the colors, by hoisting the namespace
+into your own namespace:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">namespace colors = cycfi::artist::colors;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The colors provided are from CSS: <a href="https://css-tricks.com/snippets/css/named-colors-and-hex-equivalents/">Named Colors and Hex Equivalents</a></p>
+</div>
+<div class="sect3">
+<h4 id="_the_colors"><a class="anchor" href="#_the_colors"></a>The colors</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">alice_blue,
+antique_white,
+aquamarine,
+azure,
+beige,
+bisque,
+black,
+blanched_almond,
+blue,
+blue_violet,
+brown,
+burly_wood,
+cadet_blue,
+chartreuse,
+chocolate,
+coral,
+cornflower_blue,
+corn_silk,
+cyan,
+dark_goldenrod,
+dark_green,
+dark_khaki,
+dark_olive_green,
+dark_orange,
+dark_orchid,
+dark_salmon,
+dark_sea_green,
+dark_slate_blue,
+dark_slate_gray,
+dark_turquoise,
+dark_violet,
+deep_pink,
+deep_sky_blue,
+dim_gray,
+dodger_blue,
+firebrick,
+floral_white,
+forest_green,
+gains_boro,
+ghost_white,
+gold,
+goldenrod,
+green,
+green_yellow,
+honeydew,
+hot_pink,
+indian_red,
+ivory,
+khaki,
+lavender,
+lavender_blush,
+lawn_green,
+lemon_chiffon,
+light_blue,
+light_coral,
+light_cyan,
+light_goldenrod,
+light_goldenrod_yellow,
+light_gray,
+light_pink,
+light_salmon,
+light_sea_green,
+light_sky_blue,
+light_slate_blue,
+light_slate_gray,
+light_steel_blue,
+light_yellow,
+lime_green,
+linen,
+magenta,
+maroon,
+medium_aquamarine,
+medium_blue,
+medium_forest_green,
+medium_goldenrod,
+medium_orchid,
+medium_purple,
+medium_sea_green,
+medium_slate_blue,
+medium_spring_green,
+medium_turquoise,
+medium_violet_red,
+midnight_blue,
+mint_cream,
+misty_rose,
+moccasin,
+navajo_white,
+navy,
+navy_blue,
+old_lace,
+olive_drab,
+orange,
+orange_red,
+orchid,
+pale_goldenrod,
+pale_green,
+pale_turquoise,
+pale_violet_red,
+papaya_whip,
+peach_puff,
+peru,
+pink,
+plum,
+powder_blue,
+purple,
+red,
+rosy_brown,
+royal_blue,
+saddle_brown,
+salmon,
+sandy_brown,
+sea_green,
+sea_shell,
+sienna,
+sky_blue,
+slate_blue,
+slate_gray,
+snow,
+spring_green,
+steel_blue,
+tan,
+thistle,
+tomato,
+turquoise,
+violet,
+violet_red,
+wheat,
+white,
+white_smoke,
+yellow,
+yellow_green
+
+// greys
+gray[0] ... gray[255]
+auto grey = gray; // Synonym</code></pre>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>

@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Gradients :: Artist Docs</title>
-    <link rel="canonical" href="https://www.cycfi.com/artist/develop/canvas/gradients.html">
+    <title>Transforms :: Artist Docs</title>
+    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0-dev/canvas/transforms.html">
     <meta name="generator" content="Antora 3.1.15">
     <link rel="stylesheet" href="../../../_/css/site.css">
 <meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
@@ -46,7 +46,7 @@
   </nav>
 </header>
 <div class="body">
-<div class="nav-container" data-component="artist" data-version="develop">
+<div class="nav-container" data-component="artist" data-version="v1.0-dev">
   <aside class="nav">
     <div class="panels">
       <div class="navbar-item search hide-for-print">
@@ -111,7 +111,7 @@
     <button class="nav-item-toggle"></button>
     <a class="nav-link" href="../canvas.html">Canvas</a>
 <ul class="nav-list">
-  <li class="nav-item" data-depth="3">
+  <li class="nav-item is-current-page" data-depth="3">
     <a class="nav-link" href="transforms.html">Transforms</a>
   </li>
   <li class="nav-item" data-depth="3">
@@ -120,7 +120,7 @@
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="styles.html">Styles</a>
   </li>
-  <li class="nav-item is-current-page" data-depth="3">
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="gradients.html">Gradients</a>
   </li>
   <li class="nav-item" data-depth="3">
@@ -147,14 +147,14 @@
 <div class="nav-panel-explore" data-panel="explore">
   <div class="context">
     <span class="title">Artist 2D Canvas Library</span>
-    <span class="version">develop</span>
+    <span class="version">v1.0-dev</span>
   </div>
   <ul class="components">
     <li class="component is-current">
       <div class="title"><a href="../index.html">Artist 2D Canvas Library</a></div>
       <ul class="versions">
         <li class="version is-current is-latest">
-          <a href="../index.html">develop</a>
+          <a href="../index.html">v1.0-dev</a>
         </li>
       </ul>
     </li>
@@ -172,7 +172,7 @@
     <li><a href="../index.html">Artist 2D Canvas Library</a></li>
     <li>Reference</li>
     <li><a href="../canvas.html">Canvas</a></li>
-    <li><a href="gradients.html">Gradients</a></li>
+    <li><a href="transforms.html">Transforms</a></li>
   </ul>
 </nav>
 </div>
@@ -181,46 +181,35 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Gradients</h1>
+<h1 class="page">Transforms</h1>
 <div class="sect1">
 <h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>A gradient may be used anywhere a color may, as the fill or the stroke.
-You build one by giving it its geometry, then adding color stops along
-it.</p>
+<p>The transform maps the coordinates you draw in, called user space, onto
+the coordinates of the surface, called device space. <code>translate</code>,
+<code>rotate</code>, <code>scale</code> and <code>skew</code> compose, each applying on top of the
+transform already in effect, while <code>transform</code> replaces it outright.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_linear_gradient"><a class="anchor" href="#_linear_gradient"></a>linear_gradient</h2>
+<h2 id="_translate"><a class="anchor" href="#_translate"></a>translate</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>A gradient that runs along a line. May be used anywhere a color may.</p>
+<p>Moves the origin of user space.</p>
 </div>
 <div class="sect2">
 <h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
 <div class="dlist">
 <dl>
-<dt class="hdlist1"><code>start</code>, <code>end</code></dt>
+<dt class="hdlist1"><code>p</code></dt>
 <dd>
 <p>Instance of <code>point</code></p>
 </dd>
-<dt class="hdlist1"><code>startx</code>, <code>starty</code>, <code>endx</code>, <code>endy</code></dt>
+<dt class="hdlist1"><code>x</code>, <code>y</code></dt>
 <dd>
 <p><code>float</code></p>
-</dd>
-<dt class="hdlist1"><code>cs</code></dt>
-<dd>
-<p>Instance of <code>canvas::color_stop</code></p>
-</dd>
-<dt class="hdlist1"><code>offset</code></dt>
-<dd>
-<p><code>float</code>, from 0.0 at the start to 1.0 at the end</p>
-</dd>
-<dt class="hdlist1"><code>c</code></dt>
-<dd>
-<p>Instance of <code>color</code></p>
 </dd>
 </dl>
 </div>
@@ -230,14 +219,10 @@ it.</p>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
-canvas::linear_gradient{start, end}
+cnv.translate(p)
 
 // variant 2
-canvas::linear_gradient{startx, starty, endx, endy}
-
-// variant 3
-gr.add_color_stop(cs)
-gr.add_color_stop(offset, c)</code></pre>
+cnv.translate(x, y)</code></pre>
 </div>
 </div>
 </div>
@@ -246,48 +231,75 @@ gr.add_color_stop(offset, c)</code></pre>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Constructs a gradient running from <code>start</code> to <code>end</code>.</p>
+<p>The origin is moved by <code>p</code> (or <code>x, y</code>).</p>
 </li>
 <li>
-<p>The same, with the two points given as four scalars.</p>
-</li>
-<li>
-<p>Adds a color stop: <code>offset</code> is the position along the gradient and <code>c</code> is
-the color there. A <code>color_stop</code> is the pair as a struct.</p>
+<p>Transforms compose: the move applies on top of the transform already in
+effect.</p>
 </li>
 </ol>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">auto gr = canvas::linear_gradient{{0, 0}, {0, 100}};
-gr.add_color_stop({0.0, colors::black});
-gr.add_color_stop({1.0, colors::white});
-cnv.fill_style(gr);</code></pre>
-</div>
 </div>
 <hr>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_radial_gradient"><a class="anchor" href="#_radial_gradient"></a>radial_gradient</h2>
+<h2 id="_rotate"><a class="anchor" href="#_rotate"></a>rotate</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>A gradient that runs between two circles.</p>
+<p>Rotates user space about the origin.</p>
 </div>
 <div class="sect2">
 <h3 id="_notation_2"><a class="anchor" href="#_notation_2"></a>Notation</h3>
 <div class="dlist">
 <dl>
-<dt class="hdlist1"><code>c1</code>, <code>c2</code></dt>
+<dt class="hdlist1"><code>rad</code></dt>
 <dd>
-<p>Instance of <code>point</code>, the two centres</p>
+<p><code>float</code>, an angle in radians</p>
 </dd>
-<dt class="hdlist1"><code>c1r</code>, <code>c2r</code></dt>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expression"><a class="anchor" href="#_expression"></a>Expression</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">cnv.rotate(rad)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_semantics_2"><a class="anchor" href="#_semantics_2"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>User space is rotated about the origin by <code>rad</code>.</p>
+</li>
+<li>
+<p>Rotation is about the origin, not the centre of what you are drawing.
+Translate first to rotate about some other point.</p>
+</li>
+</ol>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_scale"><a class="anchor" href="#_scale"></a>scale</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Scales user space.</p>
+</div>
+<div class="sect2">
+<h3 id="_notation_3"><a class="anchor" href="#_notation_3"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>p</code></dt>
 <dd>
-<p><code>float</code>, the two radii</p>
+<p>Instance of <code>point</code></p>
 </dd>
-<dt class="hdlist1"><code>c1x</code>, <code>c1y</code>, <code>c2x</code>, <code>c2y</code></dt>
+<dt class="hdlist1"><code>xy</code>, <code>x</code>, <code>y</code></dt>
 <dd>
 <p><code>float</code></p>
 </dd>
@@ -299,30 +311,182 @@ cnv.fill_style(gr);</code></pre>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
-canvas::radial_gradient{c1, c1r, c2, c2r}
+cnv.scale(p)
 
 // variant 2
-canvas::radial_gradient{c1x, c1y, c1r, c2x, c2y, c2r}</code></pre>
+cnv.scale(xy)
+
+// variant 3
+cnv.scale(x, y)</code></pre>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_semantics_2"><a class="anchor" href="#_semantics_2"></a>Semantics</h3>
+<h3 id="_semantics_3"><a class="anchor" href="#_semantics_3"></a>Semantics</h3>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Constructs a gradient running from the circle centred at <code>c1</code> with
-radius <code>c1r</code> to the circle centred at <code>c2</code> with radius <code>c2r</code>.</p>
+<p>User space is scaled by <code>p</code>, by <code>xy</code> on both axes, or by <code>x</code> and <code>y</code>
+independently.</p>
 </li>
 <li>
-<p>The same, with the centres given as scalars.</p>
+<p>A value greater than 1.0 scales up, a value less than 1.0 scales down.</p>
 </li>
 <li>
-<p>Give both circles the same centre for the usual radial fill; offset them
-for a cone-like effect.</p>
+<p>Line widths, fonts and everything else drawn afterwards scale with it.</p>
+</li>
+</ol>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_skew"><a class="anchor" href="#_skew"></a>skew</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Skews user space.</p>
+</div>
+<div class="sect2">
+<h3 id="_notation_4"><a class="anchor" href="#_notation_4"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>sx</code>, <code>sy</code></dt>
+<dd>
+<p><code>double</code></p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expression_2"><a class="anchor" href="#_expression_2"></a>Expression</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">cnv.skew(sx, sy)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_semantics_4"><a class="anchor" href="#_semantics_4"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>User space is skewed by <code>sx</code> in x and <code>sy</code> in y.</p>
+</li>
+</ol>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_device_to_user_user_to_device"><a class="anchor" href="#_device_to_user_user_to_device"></a>device_to_user / user_to_device</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Converts a point between the coordinates you draw in (user space) and the
+coordinates of the surface (device space).</p>
+</div>
+<div class="sect2">
+<h3 id="_notation_5"><a class="anchor" href="#_notation_5"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>p</code></dt>
+<dd>
+<p>Instance of <code>point</code></p>
+</dd>
+<dt class="hdlist1"><code>x</code>, <code>y</code></dt>
+<dd>
+<p><code>float</code></p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions_3"><a class="anchor" href="#_expressions_3"></a>Expressions</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
+cnv.device_to_user(p)
+cnv.device_to_user(x, y)
+
+// variant 2
+cnv.user_to_device(p)
+cnv.user_to_device(x, y)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_semantics_5"><a class="anchor" href="#_semantics_5"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Returns the <code>point</code> in user space corresponding to a device space
+point. Useful for a mouse position, which arrives in device space, that has
+to be compared against something you drew.</p>
 </li>
 <li>
-<p>Color stops are added as for <code>linear_gradient</code>.</p>
+<p>Returns the <code>point</code> in device space corresponding to a user space point.</p>
+</li>
+</ol>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_transform"><a class="anchor" href="#_transform"></a>transform</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Gets or replaces the current transform outright.</p>
+</div>
+<div class="sect2">
+<h3 id="_notation_6"><a class="anchor" href="#_notation_6"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>mat</code></dt>
+<dd>
+<p>Instance of <a href="../foundation/affine_transform.html" class="xref page"><code>affine_transform</code></a></p>
+</dd>
+<dt class="hdlist1"><code>a</code>, <code>b</code>, <code>c</code>, <code>d</code>, <code>tx</code>, <code>ty</code></dt>
+<dd>
+<p><code>double</code></p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions_4"><a class="anchor" href="#_expressions_4"></a>Expressions</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
+cnv.transform()
+
+// variant 2
+cnv.transform(mat)
+
+// variant 3
+cnv.transform(a, b, c, d, tx, ty)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_semantics_6"><a class="anchor" href="#_semantics_6"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Returns the current transform as an
+<a href="../foundation/affine_transform.html" class="xref page"><code>affine_transform</code></a>.</p>
+</li>
+<li>
+<p>Replaces the current transform with <code>mat</code>.</p>
+</li>
+<li>
+<p>Replaces the current transform with the six values of a transformation
+matrix.</p>
+</li>
+<li>
+<p>Unlike <code>translate</code>, <code>rotate</code>, <code>scale</code> and <code>skew</code>, which compose, setting
+the transform replaces whatever is in effect.</p>
 </li>
 </ol>
 </div>

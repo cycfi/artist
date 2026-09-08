@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>States :: Artist Docs</title>
-    <link rel="canonical" href="https://www.cycfi.com/artist/develop/canvas/states.html">
+    <title>Images :: Artist Docs</title>
+    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0-dev/canvas/images.html">
     <meta name="generator" content="Antora 3.1.15">
     <link rel="stylesheet" href="../../../_/css/site.css">
 <meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
@@ -46,7 +46,7 @@
   </nav>
 </header>
 <div class="body">
-<div class="nav-container" data-component="artist" data-version="develop">
+<div class="nav-container" data-component="artist" data-version="v1.0-dev">
   <aside class="nav">
     <div class="panels">
       <div class="navbar-item search hide-for-print">
@@ -129,10 +129,10 @@
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="text.html">Text</a>
   </li>
-  <li class="nav-item" data-depth="3">
+  <li class="nav-item is-current-page" data-depth="3">
     <a class="nav-link" href="images.html">Images</a>
   </li>
-  <li class="nav-item is-current-page" data-depth="3">
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="states.html">States</a>
   </li>
 </ul>
@@ -147,14 +147,14 @@
 <div class="nav-panel-explore" data-panel="explore">
   <div class="context">
     <span class="title">Artist 2D Canvas Library</span>
-    <span class="version">develop</span>
+    <span class="version">v1.0-dev</span>
   </div>
   <ul class="components">
     <li class="component is-current">
       <div class="title"><a href="../index.html">Artist 2D Canvas Library</a></div>
       <ul class="versions">
         <li class="version is-current is-latest">
-          <a href="../index.html">develop</a>
+          <a href="../index.html">v1.0-dev</a>
         </li>
       </ul>
     </li>
@@ -172,7 +172,7 @@
     <li><a href="../index.html">Artist 2D Canvas Library</a></li>
     <li>Reference</li>
     <li><a href="../canvas.html">Canvas</a></li>
-    <li><a href="states.html">States</a></li>
+    <li><a href="images.html">Images</a></li>
   </ul>
 </nav>
 </div>
@@ -181,31 +181,46 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">States</h1>
+<h1 class="page">Images</h1>
 <div class="sect1">
 <h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The canvas holds its styles, transform and clip as one bundle of state.
-Saving pushes a copy of that bundle; restoring pops it. This is how you
-draw under a transform or a clip without disturbing what comes after.</p>
+<p>An <code>image</code> is drawn onto the canvas with <code>draw</code>. The overloads differ in
+how much of the image is drawn, where it lands, and at what size.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_new_state_save_restore"><a class="anchor" href="#_new_state_save_restore"></a>new_state / save / restore</h2>
+<h2 id="_draw"><a class="anchor" href="#_draw"></a>draw</h2>
 <div class="sectionbody">
+<div class="imageblock center">
+<div class="content">
+<img src="../_images/canvas/draw.svg" alt="draw" width="460px">
+</div>
+</div>
 <div class="paragraph">
-<p>Saves and restores the canvas state: its styles, transform and clip, taken
-together.</p>
+<p>Draws an <code>image</code> onto the canvas.</p>
 </div>
 <div class="sect2">
 <h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
 <div class="dlist">
 <dl>
-<dt class="hdlist1"><code>cnv</code></dt>
+<dt class="hdlist1"><code>pic</code></dt>
 <dd>
-<p>Instance of <code>canvas</code></p>
+<p>Instance of <code>image</code></p>
+</dd>
+<dt class="hdlist1"><code>src</code>, <code>dest</code></dt>
+<dd>
+<p>Instance of <code>rect</code></p>
+</dd>
+<dt class="hdlist1"><code>pos</code></dt>
+<dd>
+<p>Instance of <code>point</code></p>
+</dd>
+<dt class="hdlist1"><code>posx</code>, <code>posy</code>, <code>scale</code></dt>
+<dd>
+<p><code>float</code></p>
 </dd>
 </dl>
 </div>
@@ -215,11 +230,19 @@ together.</p>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
-cnv.new_state()
+cnv.draw(pic)
+cnv.draw(pic, pos)
+cnv.draw(pic, posx, posy)
 
 // variant 2
-cnv.save()
-cnv.restore()</code></pre>
+cnv.draw(pic, pos, scale)
+cnv.draw(pic, posx, posy, scale)
+
+// variant 3
+cnv.draw(pic, dest)
+
+// variant 4
+cnv.draw(pic, src, dest)</code></pre>
 </div>
 </div>
 </div>
@@ -228,28 +251,20 @@ cnv.restore()</code></pre>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Saves the state and returns a <code>canvas::state</code> that restores it when
-destroyed, including when an exception carries you out of the block. It may
-be moved but not copied.</p>
+<p>Draws the whole image with its top left corner at <code>pos</code> (or
+<code>posx, posy</code>), which defaults to the origin.</p>
 </li>
 <li>
-<p>Saves and restores the state by hand. Every <code>save</code> needs a matching
-<code>restore</code>.</p>
+<p>The same, scaled by <code>scale</code>.</p>
 </li>
 <li>
-<p>Variant 1 is preferable for that reason.</p>
+<p>Draws the whole image stretched to fill <code>dest</code>.</p>
+</li>
+<li>
+<p>Draws the region <code>src</code> of the image stretched to fill <code>dest</code>. This is how
+a single frame is taken from a sprite sheet.</p>
 </li>
 </ol>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">{
-   auto state = cnv.new_state();
-   cnv.clip(p);
-   cnv.translate(offset);
-   // draw
-}  // the clip and the transform are undone here</code></pre>
-</div>
 </div>
 <hr>
 </div>

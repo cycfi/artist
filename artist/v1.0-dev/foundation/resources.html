@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Text :: Artist Docs</title>
-    <link rel="canonical" href="https://www.cycfi.com/artist/develop/canvas/text.html">
+    <title>Resources :: Artist Docs</title>
+    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0-dev/foundation/resources.html">
     <meta name="generator" content="Antora 3.1.15">
     <link rel="stylesheet" href="../../../_/css/site.css">
 <meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
@@ -46,7 +46,7 @@
   </nav>
 </header>
 <div class="body">
-<div class="nav-container" data-component="artist" data-version="develop">
+<div class="nav-container" data-component="artist" data-version="v1.0-dev">
   <aside class="nav">
     <div class="panels">
       <div class="navbar-item search hide-for-print">
@@ -82,25 +82,25 @@
     <a class="nav-link" href="../foundation.html">Foundation</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/point.html">Point and Extent</a>
+    <a class="nav-link" href="point.html">Point and Extent</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/rect.html">Rect</a>
+    <a class="nav-link" href="rect.html">Rect</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/circle.html">Circle</a>
+    <a class="nav-link" href="circle.html">Circle</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/affine_transform.html">Affine Transform</a>
+    <a class="nav-link" href="affine_transform.html">Affine Transform</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/color.html">Color</a>
+    <a class="nav-link" href="color.html">Color</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/font.html">Font</a>
+    <a class="nav-link" href="font.html">Font</a>
   </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/resources.html">Resources</a>
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="resources.html">Resources</a>
   </li>
 </ul>
   </li>
@@ -112,28 +112,28 @@
     <a class="nav-link" href="../canvas.html">Canvas</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="transforms.html">Transforms</a>
+    <a class="nav-link" href="../canvas/transforms.html">Transforms</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="current_path.html">Current Path</a>
+    <a class="nav-link" href="../canvas/current_path.html">Current Path</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="styles.html">Styles</a>
+    <a class="nav-link" href="../canvas/styles.html">Styles</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="gradients.html">Gradients</a>
+    <a class="nav-link" href="../canvas/gradients.html">Gradients</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="rectangles.html">Rectangles</a>
-  </li>
-  <li class="nav-item is-current-page" data-depth="3">
-    <a class="nav-link" href="text.html">Text</a>
+    <a class="nav-link" href="../canvas/rectangles.html">Rectangles</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="images.html">Images</a>
+    <a class="nav-link" href="../canvas/text.html">Text</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="states.html">States</a>
+    <a class="nav-link" href="../canvas/images.html">Images</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/states.html">States</a>
   </li>
 </ul>
   </li>
@@ -147,14 +147,14 @@
 <div class="nav-panel-explore" data-panel="explore">
   <div class="context">
     <span class="title">Artist 2D Canvas Library</span>
-    <span class="version">develop</span>
+    <span class="version">v1.0-dev</span>
   </div>
   <ul class="components">
     <li class="component is-current">
       <div class="title"><a href="../index.html">Artist 2D Canvas Library</a></div>
       <ul class="versions">
         <li class="version is-current is-latest">
-          <a href="../index.html">develop</a>
+          <a href="../index.html">v1.0-dev</a>
         </li>
       </ul>
     </li>
@@ -171,8 +171,8 @@
   <ul>
     <li><a href="../index.html">Artist 2D Canvas Library</a></li>
     <li>Reference</li>
-    <li><a href="../canvas.html">Canvas</a></li>
-    <li><a href="text.html">Text</a></li>
+    <li><a href="../foundation.html">Foundation</a></li>
+    <li><a href="resources.html">Resources</a></li>
   </ul>
 </nav>
 </div>
@@ -181,242 +181,81 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Text</h1>
+<h1 class="page">Resources</h1>
 <div class="sect1">
 <h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Text is drawn in the font set by <code>font</code>, positioned by the current
-alignment. <code>measure_text</code> reports what a string will occupy without
-drawing it, which is what you need to lay text out.</p>
+<p>Artist finds fonts and images by searching a list of directories. These
+are the calls that manage that list and search it.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_font"><a class="anchor" href="#_font"></a>font</h2>
+<h2 id="_resources"><a class="anchor" href="#_resources"></a>resources</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Sets the font that <code>fill_text</code> and <code>stroke_text</code> will use.</p>
+<p>Resources (e.g. images) that are identified by file names can be absolute or
+relative paths. For relative paths, a vector of paths is searched, in the
+order they appear in the vector. Platform code provides the initial paths as
+appropriate. Applications may add additional paths as needed, using the
+add_search_path function. search_first=true puts the path at the top of the
+vector and will be searched first.</p>
 </div>
-<div class="sect2">
-<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>f</code></dt>
-<dd>
-<p>Instance of <code>font</code></p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_expression"><a class="anchor" href="#_expression"></a>Expression</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">cnv.font(f)</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_semantics"><a class="anchor" href="#_semantics"></a>Semantics</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Text drawn afterwards uses <code>f</code>.</p>
-</li>
-<li>
-<p>See <a href="../foundation/font.html" class="xref page">Font</a> for constructing a <code>font</code>.</p>
-</li>
-</ol>
-</div>
-<hr>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_fill_text_stroke_text"><a class="anchor" href="#_fill_text_stroke_text"></a>fill_text / stroke_text</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Draws text at a point, filled or outlined.</p>
-</div>
-<div class="sect2">
-<h3 id="_notation_2"><a class="anchor" href="#_notation_2"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>utf8</code></dt>
-<dd>
-<p>Instance of <code>std::string_view</code>, holding UTF-8 text</p>
-</dd>
-<dt class="hdlist1"><code>p</code></dt>
-<dd>
-<p>Instance of <code>point</code></p>
-</dd>
-<dt class="hdlist1"><code>x</code>, <code>y</code></dt>
-<dd>
-<p><code>float</code></p>
-</dd>
-</dl>
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">void        add_search_path(fs::path const&amp; path, bool search_first = false);
+fs::path    find_file(fs::path const&amp; file);
+fs::path    app_data_path();</code></pre>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
-cnv.fill_text(utf8, p)
-cnv.fill_text(utf8, x, y)
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Add a search path [1]
+add_search_path(path)
+add_search_path(path, true)
 
-// variant 2
-cnv.stroke_text(utf8, p)
-cnv.stroke_text(utf8, x, y)</code></pre>
+// Search for a file [2]
+find_file(path)</code></pre>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_semantics_2"><a class="anchor" href="#_semantics_2"></a>Semantics</h3>
+<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>path</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>std::filesystem::path</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_semantics"><a class="anchor" href="#_semantics"></a>Semantics</h3>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Fills the text at <code>p</code> (or <code>x, y</code>), in the current font and fill style.</p>
+<p>Add a directory search path. This path, and all paths added via
+<code>add_search_path</code>,  will be used when searching for a resource file. The
+second variant, with the second argument, specifies if the directory
+search path will be pushed into the end (default <code>false</code>) or pushed to the
+front (second argument is <code>true</code>) of the list. If <code>true</code>, the directory
+search path will be searched first.</p>
 </li>
 <li>
-<p>Strokes it instead, in the current stroke style.</p>
-</li>
-<li>
-<p>Where <code>p</code> sits relative to the text is decided by <code>text_align</code> and
-<code>text_baseline</code>.</p>
-</li>
-<li>
-<p>The text is UTF-8 and is shaped by HarfBuzz, so scripts requiring
-ligatures and reordering render correctly.</p>
+<p>Find a resource file by searching the list of directory search paths.
+Returns an empty path if file is not found. returns an instance of
+<code>std::filesystem::path</code>.</p>
 </li>
 </ol>
 </div>
-<hr>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_measure_text"><a class="anchor" href="#_measure_text"></a>measure_text</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Reports what a string will occupy, without drawing it.</p>
-</div>
-<div class="sect2">
-<h3 id="_notation_3"><a class="anchor" href="#_notation_3"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>utf8</code></dt>
-<dd>
-<p>Instance of <code>std::string_view</code>, holding UTF-8 text</p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_expression_2"><a class="anchor" href="#_expression_2"></a>Expression</h3>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">cnv.measure_text(utf8)</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_semantics_3"><a class="anchor" href="#_semantics_3"></a>Semantics</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Returns a <code>canvas::text_metrics</code> for <code>utf8</code> in the current font, with
-members <code>ascent</code>, <code>descent</code>, <code>leading</code> and <code>size</code>.</p>
-</li>
-<li>
-<p>This is what you need to lay text out, or to size an element around it.</p>
-</li>
-</ol>
-</div>
-<hr>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_text_align_text_baseline"><a class="anchor" href="#_text_align_text_baseline"></a>text_align / text_baseline</h2>
-<div class="sectionbody">
-<div class="imageblock center">
-<div class="content">
-<img src="../_images/canvas/text_align.svg" alt="text_align" width="400px">
-</div>
-</div>
-<div class="paragraph">
-<p>Sets where the point given to <code>fill_text</code> sits relative to the text.</p>
-</div>
-<div class="sect2">
-<h3 id="_notation_4"><a class="anchor" href="#_notation_4"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>halign</code></dt>
-<dd>
-<p><code>canvas::text_halign</code></p>
-</dd>
-<dt class="hdlist1"><code>valign</code></dt>
-<dd>
-<p><code>canvas::text_valign</code></p>
-</dd>
-<dt class="hdlist1"><code>align</code></dt>
-<dd>
-<p><code>int</code></p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_expressions_2"><a class="anchor" href="#_expressions_2"></a>Expressions</h3>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
-cnv.text_align(halign)
-
-// variant 2
-cnv.text_baseline(valign)
-
-// variant 3
-cnv.text_align(align)</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_semantics_4"><a class="anchor" href="#_semantics_4"></a>Semantics</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Sets the horizontal alignment: <code>canvas::left</code> (the default),
-<code>canvas::center</code> or <code>canvas::right</code>.</p>
-</li>
-<li>
-<p>Sets the vertical alignment: <code>canvas::baseline</code> (the default),
-<code>canvas::top</code>, <code>canvas::middle</code> or <code>canvas::bottom</code>.</p>
-</li>
-<li>
-<p>Sets both at once, combined with <code>|</code>.</p>
-</li>
-</ol>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_examples"><a class="anchor" href="#_examples"></a>Examples</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p><code>cnv.text_align(canvas::center)</code></p>
-</li>
-<li>
-<p><code>cnv.text_baseline(canvas::middle)</code></p>
-</li>
-<li>
-<p><code>cnv.text_align(canvas::center | canvas::middle)</code></p>
-</li>
-</ol>
-</div>
-<hr>
 </div>
 </div>
 </div>

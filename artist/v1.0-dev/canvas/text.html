@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Styles :: Artist Docs</title>
-    <link rel="canonical" href="https://www.cycfi.com/artist/develop/canvas/styles.html">
+    <title>Text :: Artist Docs</title>
+    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0-dev/canvas/text.html">
     <meta name="generator" content="Antora 3.1.15">
     <link rel="stylesheet" href="../../../_/css/site.css">
 <meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
@@ -46,7 +46,7 @@
   </nav>
 </header>
 <div class="body">
-<div class="nav-container" data-component="artist" data-version="develop">
+<div class="nav-container" data-component="artist" data-version="v1.0-dev">
   <aside class="nav">
     <div class="panels">
       <div class="navbar-item search hide-for-print">
@@ -117,7 +117,7 @@
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="current_path.html">Current Path</a>
   </li>
-  <li class="nav-item is-current-page" data-depth="3">
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="styles.html">Styles</a>
   </li>
   <li class="nav-item" data-depth="3">
@@ -126,7 +126,7 @@
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="rectangles.html">Rectangles</a>
   </li>
-  <li class="nav-item" data-depth="3">
+  <li class="nav-item is-current-page" data-depth="3">
     <a class="nav-link" href="text.html">Text</a>
   </li>
   <li class="nav-item" data-depth="3">
@@ -147,14 +147,14 @@
 <div class="nav-panel-explore" data-panel="explore">
   <div class="context">
     <span class="title">Artist 2D Canvas Library</span>
-    <span class="version">develop</span>
+    <span class="version">v1.0-dev</span>
   </div>
   <ul class="components">
     <li class="component is-current">
       <div class="title"><a href="../index.html">Artist 2D Canvas Library</a></div>
       <ul class="versions">
         <li class="version is-current is-latest">
-          <a href="../index.html">develop</a>
+          <a href="../index.html">v1.0-dev</a>
         </li>
       </ul>
     </li>
@@ -172,7 +172,7 @@
     <li><a href="../index.html">Artist 2D Canvas Library</a></li>
     <li>Reference</li>
     <li><a href="../canvas.html">Canvas</a></li>
-    <li><a href="styles.html">Styles</a></li>
+    <li><a href="text.html">Text</a></li>
   </ul>
 </nav>
 </div>
@@ -181,34 +181,79 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Styles</h1>
+<h1 class="page">Text</h1>
 <div class="sect1">
 <h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The styles decide how <code>fill</code> and <code>stroke</code> render. They are canvas state:
-set one and it stays in effect until it is set again, or until a saved
-state is restored over it.</p>
+<p>Text is drawn in the font set by <code>font</code>, positioned by the current
+alignment. <code>measure_text</code> reports what a string will occupy without
+drawing it, which is what you need to lay text out.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_fill_style_stroke_style"><a class="anchor" href="#_fill_style_stroke_style"></a>fill_style / stroke_style</h2>
+<h2 id="_font"><a class="anchor" href="#_font"></a>font</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Sets the paint used by <code>fill</code> and by <code>stroke</code>.</p>
+<p>Sets the font that <code>fill_text</code> and <code>stroke_text</code> will use.</p>
 </div>
 <div class="sect2">
 <h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
 <div class="dlist">
 <dl>
-<dt class="hdlist1"><code>c</code></dt>
+<dt class="hdlist1"><code>f</code></dt>
 <dd>
-<p>Instance of <code>color</code></p>
+<p>Instance of <code>font</code></p>
 </dd>
-<dt class="hdlist1"><code>gr</code></dt>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expression"><a class="anchor" href="#_expression"></a>Expression</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">cnv.font(f)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_semantics"><a class="anchor" href="#_semantics"></a>Semantics</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Text drawn afterwards uses <code>f</code>.</p>
+</li>
+<li>
+<p>See <a href="../foundation/font.html" class="xref page">Font</a> for constructing a <code>font</code>.</p>
+</li>
+</ol>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_fill_text_stroke_text"><a class="anchor" href="#_fill_text_stroke_text"></a>fill_text / stroke_text</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Draws text at a point, filled or outlined.</p>
+</div>
+<div class="sect2">
+<h3 id="_notation_2"><a class="anchor" href="#_notation_2"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>utf8</code></dt>
 <dd>
-<p>Instance of <code>linear_gradient</code> or <code>radial_gradient</code></p>
+<p>Instance of <code>std::string_view</code>, holding UTF-8 text</p>
+</dd>
+<dt class="hdlist1"><code>p</code></dt>
+<dd>
+<p>Instance of <code>point</code></p>
+</dd>
+<dt class="hdlist1"><code>x</code>, <code>y</code></dt>
+<dd>
+<p><code>float</code></p>
 </dd>
 </dl>
 </div>
@@ -218,65 +263,12 @@ state is restored over it.</p>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
-cnv.fill_style(c)
-cnv.stroke_style(c)
+cnv.fill_text(utf8, p)
+cnv.fill_text(utf8, x, y)
 
 // variant 2
-cnv.fill_style(gr)
-cnv.stroke_style(gr)
-
-// variant 3
-cnv.fill_color(c)
-cnv.stroke_color(c)</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_semantics"><a class="anchor" href="#_semantics"></a>Semantics</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Fills or strokes with a flat color.</p>
-</li>
-<li>
-<p>Fills or strokes with a gradient.</p>
-</li>
-<li>
-<p><code>fill_color</code> and <code>stroke_color</code> are the same operations as variant 1,
-under names that read better beside the gradient overloads.</p>
-</li>
-<li>
-<p>The style is canvas state: it stays in effect until set again, or until a
-saved state is restored over it.</p>
-</li>
-</ol>
-</div>
-<hr>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_line_width"><a class="anchor" href="#_line_width"></a>line_width</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Sets the width of a stroke.</p>
-</div>
-<div class="sect2">
-<h3 id="_notation_2"><a class="anchor" href="#_notation_2"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>w</code></dt>
-<dd>
-<p><code>float</code></p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_expression"><a class="anchor" href="#_expression"></a>Expression</h3>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">cnv.line_width(w)</code></pre>
+cnv.stroke_text(utf8, p)
+cnv.stroke_text(utf8, x, y)</code></pre>
 </div>
 </div>
 </div>
@@ -285,8 +277,18 @@ saved state is restored over it.</p>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Strokes drawn afterwards are <code>w</code> units wide, measured in user space,
-so the transform scales it.</p>
+<p>Fills the text at <code>p</code> (or <code>x, y</code>), in the current font and fill style.</p>
+</li>
+<li>
+<p>Strokes it instead, in the current stroke style.</p>
+</li>
+<li>
+<p>Where <code>p</code> sits relative to the text is decided by <code>text_align</code> and
+<code>text_baseline</code>.</p>
+</li>
+<li>
+<p>The text is UTF-8 and is shaped by HarfBuzz, so scripts requiring
+ligatures and reordering render correctly.</p>
 </li>
 </ol>
 </div>
@@ -295,23 +297,18 @@ so the transform scales it.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_line_cap"><a class="anchor" href="#_line_cap"></a>line_cap</h2>
+<h2 id="_measure_text"><a class="anchor" href="#_measure_text"></a>measure_text</h2>
 <div class="sectionbody">
-<div class="imageblock center">
-<div class="content">
-<img src="../_images/canvas/line_cap.svg" alt="line_cap" width="480px">
-</div>
-</div>
 <div class="paragraph">
-<p>Sets the shape drawn at the ends of an open stroke.</p>
+<p>Reports what a string will occupy, without drawing it.</p>
 </div>
 <div class="sect2">
 <h3 id="_notation_3"><a class="anchor" href="#_notation_3"></a>Notation</h3>
 <div class="dlist">
 <dl>
-<dt class="hdlist1"><code>cap</code></dt>
+<dt class="hdlist1"><code>utf8</code></dt>
 <dd>
-<p><code>canvas::line_cap_enum</code></p>
+<p>Instance of <code>std::string_view</code>, holding UTF-8 text</p>
 </dd>
 </dl>
 </div>
@@ -320,7 +317,7 @@ so the transform scales it.</p>
 <h3 id="_expression_2"><a class="anchor" href="#_expression_2"></a>Expression</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">cnv.line_cap(cap)</code></pre>
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">cnv.measure_text(utf8)</code></pre>
 </div>
 </div>
 </div>
@@ -329,16 +326,11 @@ so the transform scales it.</p>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><code>canvas::butt</code> ends the stroke exactly at the endpoint.</p>
+<p>Returns a <code>canvas::text_metrics</code> for <code>utf8</code> in the current font, with
+members <code>ascent</code>, <code>descent</code>, <code>leading</code> and <code>size</code>.</p>
 </li>
 <li>
-<p><code>canvas::round</code> extends it by a half-circle of half the line width.</p>
-</li>
-<li>
-<p><code>canvas::square</code> extends it by a square of half the line width.</p>
-</li>
-<li>
-<p>The dashed guides above mark the true endpoints.</p>
+<p>This is what you need to lay text out, or to size an element around it.</p>
 </li>
 </ol>
 </div>
@@ -347,27 +339,31 @@ so the transform scales it.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_line_join_miter_limit"><a class="anchor" href="#_line_join_miter_limit"></a>line_join / miter_limit</h2>
+<h2 id="_text_align_text_baseline"><a class="anchor" href="#_text_align_text_baseline"></a>text_align / text_baseline</h2>
 <div class="sectionbody">
 <div class="imageblock center">
 <div class="content">
-<img src="../_images/canvas/line_join.svg" alt="line_join" width="480px">
+<img src="../_images/canvas/text_align.svg" alt="text_align" width="400px">
 </div>
 </div>
 <div class="paragraph">
-<p>Sets the shape drawn where two stroke segments meet.</p>
+<p>Sets where the point given to <code>fill_text</code> sits relative to the text.</p>
 </div>
 <div class="sect2">
 <h3 id="_notation_4"><a class="anchor" href="#_notation_4"></a>Notation</h3>
 <div class="dlist">
 <dl>
-<dt class="hdlist1"><code>join</code></dt>
+<dt class="hdlist1"><code>halign</code></dt>
 <dd>
-<p><code>canvas::join_enum</code></p>
+<p><code>canvas::text_halign</code></p>
 </dd>
-<dt class="hdlist1"><code>limit</code></dt>
+<dt class="hdlist1"><code>valign</code></dt>
 <dd>
-<p><code>float</code></p>
+<p><code>canvas::text_valign</code></p>
+</dd>
+<dt class="hdlist1"><code>align</code></dt>
+<dd>
+<p><code>int</code></p>
 </dd>
 </dl>
 </div>
@@ -377,10 +373,13 @@ so the transform scales it.</p>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
-cnv.line_join(join)
+cnv.text_align(halign)
 
 // variant 2
-cnv.miter_limit(limit)</code></pre>
+cnv.text_baseline(valign)
+
+// variant 3
+cnv.text_align(align)</code></pre>
 </div>
 </div>
 </div>
@@ -389,142 +388,33 @@ cnv.miter_limit(limit)</code></pre>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><code>canvas::bevel_join</code> cuts the corner flat, <code>canvas::round_join</code> rounds
-it, and <code>canvas::miter_join</code> extends both edges to a point.</p>
+<p>Sets the horizontal alignment: <code>canvas::left</code> (the default),
+<code>canvas::center</code> or <code>canvas::right</code>.</p>
 </li>
 <li>
-<p>Sets how far a miter may extend before it is cut back to a bevel, as a
-multiple of the line width. Sharp angles produce very long miters without
-it. Defaults to 10.</p>
+<p>Sets the vertical alignment: <code>canvas::baseline</code> (the default),
+<code>canvas::top</code>, <code>canvas::middle</code> or <code>canvas::bottom</code>.</p>
+</li>
+<li>
+<p>Sets both at once, combined with <code>|</code>.</p>
 </li>
 </ol>
 </div>
-<hr>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_shadow_style"><a class="anchor" href="#_shadow_style"></a>shadow_style</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Casts a shadow behind whatever is filled or stroked.</p>
 </div>
 <div class="sect2">
-<h3 id="_notation_5"><a class="anchor" href="#_notation_5"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>offset</code></dt>
-<dd>
-<p>Instance of <code>point</code></p>
-</dd>
-<dt class="hdlist1"><code>offsetx</code>, <code>offsety</code>, <code>blur</code></dt>
-<dd>
-<p><code>float</code></p>
-</dd>
-<dt class="hdlist1"><code>c</code></dt>
-<dd>
-<p>Instance of <code>color</code></p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_expressions_3"><a class="anchor" href="#_expressions_3"></a>Expressions</h3>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
-cnv.shadow_style(offset, blur, c)
-
-// variant 2
-cnv.shadow_style(offsetx, offsety, blur, c)
-
-// variant 3
-cnv.shadow_style(blur, c)</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_semantics_5"><a class="anchor" href="#_semantics_5"></a>Semantics</h3>
+<h3 id="_examples"><a class="anchor" href="#_examples"></a>Examples</h3>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>The shadow is displaced by <code>offset</code>, softened by <code>blur</code>, in color <code>c</code>.</p>
+<p><code>cnv.text_align(canvas::center)</code></p>
 </li>
 <li>
-<p>The same, with the displacement given as two scalars.</p>
+<p><code>cnv.text_baseline(canvas::middle)</code></p>
 </li>
 <li>
-<p>The same, with no displacement, so the shadow spreads evenly around what
-is drawn, giving a glow.</p>
+<p><code>cnv.text_align(canvas::center | canvas::middle)</code></p>
 </li>
 </ol>
-</div>
-<hr>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_composite_op"><a class="anchor" href="#_composite_op"></a>composite_op</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Sets how new drawing combines with what is already on the canvas.</p>
-</div>
-<div class="sect2">
-<h3 id="_notation_6"><a class="anchor" href="#_notation_6"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>mode</code></dt>
-<dd>
-<p><code>canvas::composite_op_enum</code></p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_expressions_4"><a class="anchor" href="#_expressions_4"></a>Expressions</h3>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
-cnv.composite_op(mode)
-
-// variant 2
-cnv.global_composite_operation(mode)</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_semantics_6"><a class="anchor" href="#_semantics_6"></a>Semantics</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Sets the compositing mode. Variant 2 is the same operation under its
-HTML5 name.</p>
-</li>
-<li>
-<p>The Porter-Duff operators are <code>source_over</code> (the default),
-<code>source_atop</code>, <code>source_in</code>, <code>source_out</code>, their four <code>destination_</code>
-counterparts, <code>copy</code> and <code>xor_</code>.</p>
-</li>
-<li>
-<p>The blend modes are <code>lighter</code>, <code>darker</code>, <code>difference</code>, <code>exclusion</code>,
-<code>multiply</code>, <code>screen</code>, <code>color_dodge</code>, <code>color_burn</code>, <code>soft_light</code>,
-<code>hard_light</code>, <code>hue</code>, <code>saturation</code>, <code>color_op</code> and <code>luminosity</code>.</p>
-</li>
-</ol>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="✏️  NOTE"></i>
-</td>
-<td class="content">
-<code>darker</code> is the one mode the backends do not agree on. Quartz2D
-implements the W3C PlusDarker rule exactly; Skia and Cairo approximate it
-with a per-channel minimum.
-</td>
-</tr>
-</table>
 </div>
 <hr>
 </div>

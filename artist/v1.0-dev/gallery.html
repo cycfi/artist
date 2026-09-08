@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Canvas :: Artist Docs</title>
-    <link rel="canonical" href="https://www.cycfi.com/artist/develop/canvas.html">
+    <title>Gallery :: Artist Docs</title>
+    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0-dev/gallery.html">
     <meta name="generator" content="Antora 3.1.15">
     <link rel="stylesheet" href="../../_/css/site.css">
 <meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
@@ -46,7 +46,7 @@
   </nav>
 </header>
 <div class="body">
-<div class="nav-container" data-component="artist" data-version="develop">
+<div class="nav-container" data-component="artist" data-version="v1.0-dev">
   <aside class="nav">
     <div class="panels">
       <div class="navbar-item search hide-for-print">
@@ -70,7 +70,7 @@
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="backends.html">Backends</a>
   </li>
-  <li class="nav-item" data-depth="1">
+  <li class="nav-item is-current-page" data-depth="1">
     <a class="nav-link" href="gallery.html">Gallery</a>
   </li>
   <li class="nav-item" data-depth="1">
@@ -107,7 +107,7 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="path.html">Path</a>
   </li>
-  <li class="nav-item is-current-page" data-depth="2">
+  <li class="nav-item" data-depth="2">
     <button class="nav-item-toggle"></button>
     <a class="nav-link" href="canvas.html">Canvas</a>
 <ul class="nav-list">
@@ -147,14 +147,14 @@
 <div class="nav-panel-explore" data-panel="explore">
   <div class="context">
     <span class="title">Artist 2D Canvas Library</span>
-    <span class="version">develop</span>
+    <span class="version">v1.0-dev</span>
   </div>
   <ul class="components">
     <li class="component is-current">
       <div class="title"><a href="index.html">Artist 2D Canvas Library</a></div>
       <ul class="versions">
         <li class="version is-current is-latest">
-          <a href="index.html">develop</a>
+          <a href="index.html">v1.0-dev</a>
         </li>
       </ul>
     </li>
@@ -170,8 +170,7 @@
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="index.html">Artist 2D Canvas Library</a></li>
-    <li>Reference</li>
-    <li><a href="canvas.html">Canvas</a></li>
+    <li><a href="gallery.html">Gallery</a></li>
   </ul>
 </nav>
 </div>
@@ -180,135 +179,36 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Canvas</h1>
+<h1 class="page">Gallery</h1>
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>The canvas API is a derivative of and in line with the spirit of the HTML5
-canvas API, but using a slightly different syntax and naming convention
-following standard C&#43;&#43; style (e.g. using lower-case and underscores as
-word separators instead of camelCase).</p>
+<p>It&#8217;s always nice to have some pretty pictures. Click an image to open the
+high-resolution (HiDPI) version, or follow the links to play the video clips.</p>
 </div>
-<div class="paragraph">
-<p>The canvas API is built on top of <a href="foundation.html" class="xref page">Foundation classes</a>
-such as points and rectangles, and on the drawable classes documented in
-this section, such as paths and images.</p>
+<div class="paragraph gallery">
+<p><span class="image"><a class="image" href="https://cycfi.github.io/assets/img/artist/shapes.png"><img src="https://cycfi.github.io/assets/img/artist/shapes.jpg" alt="Shapes" width="150"></a></span>
+<span class="image"><a class="image" href="https://cycfi.github.io/assets/img/artist/tauri.png"><img src="https://cycfi.github.io/assets/img/artist/tauri.jpg" alt="Tau" width="150"></a></span>
+<span class="image"><a class="image" href="https://cycfi.github.io/assets/img/artist/paths.png"><img src="https://cycfi.github.io/assets/img/artist/paths.jpg" alt="Paths" width="150"></a></span>
+<span class="image"><a class="image" href="https://cycfi.github.io/assets/img/artist/typography.png"><img src="https://cycfi.github.io/assets/img/artist/typography.jpg" alt="Typography" width="150"></a></span>
+<span class="image"><a class="image" href="https://cycfi.github.io/assets/img/artist/composite_ops.png"><img src="https://cycfi.github.io/assets/img/artist/composite_ops.jpg" alt="Composite ops" width="150"></a></span></p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
+<h2 id="_video_clips"><a class="anchor" href="#_video_clips"></a>Video clips</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>The <code>canvas</code> is the surface you draw on. You do not construct one: the host
-window creates a canvas for its drawing area and hands it to you for the
-duration of the draw call.</p>
-</div>
-<div class="paragraph">
-<p>Drawing follows the pattern of the HTML5 canvas. You set the styles you
-want, build a path, then fill or stroke it. The styles are state held by
-the canvas rather than arguments to each call, so a fill color set once
-applies to every fill that follows until you set another.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">cnv.fill_style(colors::navy_blue);
-cnv.add_round_rect(bounds, 5);
-cnv.fill();</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The pages in this section catalogue the canvas interface.</p>
-</div>
 <div class="ulist">
 <ul>
 <li>
-<p><a href="canvas/transforms.html" class="xref page">Transforms</a> map user space onto the surface.</p>
+<p><a href="https://vimeo.com/413657459">Rain</a> —
+<span class="image"><a class="image" href="https://vimeo.com/413657459"><img src="https://cycfi.github.io/assets/img/artist/rain_video_thumb.jpg" alt="Rain" width="150"></a></span></p>
 </li>
 <li>
-<p><a href="canvas/current_path.html" class="xref page">Current Path</a> builds geometry into the
-canvas itself, then paints it. For geometry kept as an object, see
-<a href="path.html" class="xref page">Path</a>.</p>
-</li>
-<li>
-<p><a href="canvas/styles.html" class="xref page">Styles</a> decide how fills and strokes render.</p>
-</li>
-<li>
-<p><a href="canvas/gradients.html" class="xref page">Gradients</a> fill and stroke with a ramp of
-color.</p>
-</li>
-<li>
-<p><a href="canvas/rectangles.html" class="xref page">Rectangles</a> build and paint in one step.</p>
-</li>
-<li>
-<p><a href="canvas/text.html" class="xref page">Text</a> draws and measures strings.</p>
-</li>
-<li>
-<p><a href="canvas/images.html" class="xref page">Images</a> draws pixmaps.</p>
-</li>
-<li>
-<p><a href="canvas/states.html" class="xref page">States</a> save and restore the canvas.</p>
+<p><a href="https://vimeo.com/413797835">Space</a> —
+<span class="image"><a class="image" href="https://vimeo.com/413797835"><img src="https://cycfi.github.io/assets/img/artist/space_video_thumb.jpg" alt="Space" width="150"></a></span></p>
 </li>
 </ul>
-</div>
-<div class="paragraph">
-<p>Throughout, <code>cnv</code> is an instance of <code>canvas</code>.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_validity"><a class="anchor" href="#_validity"></a>Validity</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Tests whether the canvas wraps a real drawing surface, and reaches the
-backend handle underneath.</p>
-</div>
-<div class="sect2">
-<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>cnv</code></dt>
-<dd>
-<p>Instance of <code>canvas</code></p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h3>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
-bool(cnv)
-
-// variant 2
-!cnv
-
-// variant 3
-cnv.impl()</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_semantics"><a class="anchor" href="#_semantics"></a>Semantics</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Returns <code>true</code> if the canvas wraps a real drawing surface. A canvas
-handed to you by the host is always valid for the duration of the draw
-call; the check exists for code that may run before a surface is ready.</p>
-</li>
-<li>
-<p>The negation of the above.</p>
-</li>
-<li>
-<p>Returns the backend handle: <code>SkCanvas*</code> for Skia, <code>cairo_t*</code> for Cairo,
-<code>canvas_impl*</code> for Quartz2D. Reach for this only when you need a facility
-of the backend that Artist does not expose.</p>
-</li>
-</ol>
-</div>
-<hr>
 </div>
 </div>
 </div>
