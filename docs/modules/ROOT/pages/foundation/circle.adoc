@@ -6,8 +6,6 @@ A `circle` is a centre and a radius: `cx`, `cy` and `radius`, all `float`.
 It is a value type with no invariant, so nothing stops a negative radius;
 see the note under <<Derivation>>.
 
-image::foundation/circle.svg[alt="The circle members and the values its accessors report", width=560px, align=center, title="The three members, the centre the accessors report, the bounding rect, and the smaller circle inset returns.", link={imagesdir}/foundation/circle.svg]
-
 Only the constructors are `constexpr`. The accessors and the derivation
 members are plain `inline`, so a `circle` can be built at compile time but
 not queried or transformed there. This differs from
