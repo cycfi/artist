@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 712"
+     font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'>
+  <defs>
+    <style>
+      .nm    { font-size: 9px; fill: #1a1a1a; }
+      .plate { fill: #f3f3f3; }
+      .chip  { stroke: #b0b0b0; stroke-width: 0.5; }
+    </style>
+  </defs>
+  <rect class="plate" x="6" y="6" width="548" height="700" rx="8"/>
+  <rect class="chip" x="16" y="34" width="22" height="14" rx="2" fill="#f0f8ff"/>
+  <text class="nm" x="43" y="45">alice_blue</text>
+  <rect class="chip" x="148" y="34" width="22" height="14" rx="2" fill="#faebd7"/>
+  <text class="nm" x="175" y="45">antique_white</text>
+  <rect class="chip" x="280" y="34" width="22" height="14" rx="2" fill="#32bfc1"/>
+  <text class="nm" x="307" y="45">aquamarine</text>
+  <rect class="chip" x="412" y="34" width="22" height="14" rx="2" fill="#f0ffff"/>
+  <text class="nm" x="439" y="45">azure</text>
+  <rect class="chip" x="16" y="54" width="22" height="14" rx="2" fill="#f5f5dc"/>
+  <text class="nm" x="43" y="65">beige</text>
+  <rect class="chip" x="148" y="54" width="22" height="14" rx="2" fill="#ffe4c4"/>
+  <text class="nm" x="175" y="65">bisque</text>
+  <rect class="chip" x="280" y="54" width="22" height="14" rx="2" fill="#000000"/>
+  <text class="nm" x="307" y="65">black</text>
+  <rect class="chip" x="412" y="54" width="22" height="14" rx="2" fill="#ffebcd"/>
+  <text class="nm" x="439" y="65">blanched_almond</text>
+  <rect class="chip" x="16" y="74" width="22" height="14" rx="2" fill="#0000ff"/>
+  <text class="nm" x="43" y="85">blue</text>
+  <rect class="chip" x="148" y="74" width="22" height="14" rx="2" fill="#8a2be2"/>
+  <text class="nm" x="175" y="85">blue_violet</text>
+  <rect class="chip" x="280" y="74" width="22" height="14" rx="2" fill="#a52a2a"/>
+  <text class="nm" x="307" y="85">brown</text>
+  <rect class="chip" x="412" y="74" width="22" height="14" rx="2" fill="#deb887"/>
+  <text class="nm" x="439" y="85">burly_wood</text>
+  <rect class="chip" x="16" y="94" width="22" height="14" rx="2" fill="#5f929e"/>
+  <text class="nm" x="43" y="105">cadet_blue</text>
+  <rect class="chip" x="148" y="94" width="22" height="14" rx="2" fill="#7fff00"/>
+  <text class="nm" x="175" y="105">chartreuse</text>
+  <rect class="chip" x="280" y="94" width="22" height="14" rx="2" fill="#d2691e"/>
+  <text class="nm" x="307" y="105">chocolate</text>
+  <rect class="chip" x="412" y="94" width="22" height="14" rx="2" fill="#ff7256"/>
+  <text class="nm" x="439" y="105">coral</text>
+  <rect class="chip" x="16" y="114" width="22" height="14" rx="2" fill="#222298"/>
+  <text class="nm" x="43" y="125">cornflower_blue</text>
+  <rect class="chip" x="148" y="114" width="22" height="14" rx="2" fill="#fff8dc"/>
+  <text class="nm" x="175" y="125">corn_silk</text>
+  <rect class="chip" x="280" y="114" width="22" height="14" rx="2" fill="#00ffff"/>
+  <text class="nm" x="307" y="125">cyan</text>
+  <rect class="chip" x="412" y="114" width="22" height="14" rx="2" fill="#b8860b"/>
+  <text class="nm" x="439" y="125">dark_goldenrod</text>
+  <rect class="chip" x="16" y="134" width="22" height="14" rx="2" fill="#00562d"/>
+  <text class="nm" x="43" y="145">dark_green</text>
+  <rect class="chip" x="148" y="134" width="22" height="14" rx="2" fill="#bdb76b"/>
+  <text class="nm" x="175" y="145">dark_khaki</text>
+  <rect class="chip" x="280" y="134" width="22" height="14" rx="2" fill="#55562f"/>
+  <text class="nm" x="307" y="145">dark_olive_green</text>
+  <rect class="chip" x="412" y="134" width="22" height="14" rx="2" fill="#ff8c00"/>
+  <text class="nm" x="439" y="145">dark_orange</text>
+  <rect class="chip" x="16" y="154" width="22" height="14" rx="2" fill="#8b208b"/>
+  <text class="nm" x="43" y="165">dark_orchid</text>
+  <rect class="chip" x="148" y="154" width="22" height="14" rx="2" fill="#e9967a"/>
+  <text class="nm" x="175" y="165">dark_salmon</text>
+  <rect class="chip" x="280" y="154" width="22" height="14" rx="2" fill="#8fbc8f"/>
+  <text class="nm" x="307" y="165">dark_sea_green</text>
+  <rect class="chip" x="412" y="154" width="22" height="14" rx="2" fill="#384b66"/>
+  <text class="nm" x="439" y="165">dark_slate_blue</text>
+  <rect class="chip" x="16" y="174" width="22" height="14" rx="2" fill="#2f4f4f"/>
+  <text class="nm" x="43" y="185">dark_slate_gray</text>
+  <rect class="chip" x="148" y="174" width="22" height="14" rx="2" fill="#00a6a6"/>
+  <text class="nm" x="175" y="185">dark_turquoise</text>
+  <rect class="chip" x="280" y="174" width="22" height="14" rx="2" fill="#9400d3"/>
+  <text class="nm" x="307" y="185">dark_violet</text>
+  <rect class="chip" x="412" y="174" width="22" height="14" rx="2" fill="#ff1493"/>
+  <text class="nm" x="439" y="185">deep_pink</text>
+  <rect class="chip" x="16" y="194" width="22" height="14" rx="2" fill="#00bfff"/>
+  <text class="nm" x="43" y="205">deep_sky_blue</text>
+  <rect class="chip" x="148" y="194" width="22" height="14" rx="2" fill="#545454"/>
+  <text class="nm" x="175" y="205">dim_gray</text>
+  <rect class="chip" x="280" y="194" width="22" height="14" rx="2" fill="#1e90ff"/>
+  <text class="nm" x="307" y="205">dodger_blue</text>
+  <rect class="chip" x="412" y="194" width="22" height="14" rx="2" fill="#8e2323"/>
+  <text class="nm" x="439" y="205">firebrick</text>
+  <rect class="chip" x="16" y="214" width="22" height="14" rx="2" fill="#fffaf0"/>
+  <text class="nm" x="43" y="225">floral_white</text>
+  <rect class="chip" x="148" y="214" width="22" height="14" rx="2" fill="#509f69"/>
+  <text class="nm" x="175" y="225">forest_green</text>
+  <rect class="chip" x="280" y="214" width="22" height="14" rx="2" fill="#dcdcdc"/>
+  <text class="nm" x="307" y="225">gains_boro</text>
+  <rect class="chip" x="412" y="214" width="22" height="14" rx="2" fill="#f8f8ff"/>
+  <text class="nm" x="439" y="225">ghost_white</text>
+  <rect class="chip" x="16" y="234" width="22" height="14" rx="2" fill="#daaa00"/>
+  <text class="nm" x="43" y="245">gold</text>
+  <rect class="chip" x="148" y="234" width="22" height="14" rx="2" fill="#efdf84"/>
+  <text class="nm" x="175" y="245">goldenrod</text>
+  <rect class="chip" x="280" y="234" width="22" height="14" rx="2" fill="#00ff00"/>
+  <text class="nm" x="307" y="245">green</text>
+  <rect class="chip" x="412" y="234" width="22" height="14" rx="2" fill="#adff2f"/>
+  <text class="nm" x="439" y="245">green_yellow</text>
+  <rect class="chip" x="16" y="254" width="22" height="14" rx="2" fill="#f0fff0"/>
+  <text class="nm" x="43" y="265">honeydew</text>
+  <rect class="chip" x="148" y="254" width="22" height="14" rx="2" fill="#ff69b4"/>
+  <text class="nm" x="175" y="265">hot_pink</text>
+  <rect class="chip" x="280" y="254" width="22" height="14" rx="2" fill="#6b3939"/>
+  <text class="nm" x="307" y="265">indian_red</text>
+  <rect class="chip" x="412" y="254" width="22" height="14" rx="2" fill="#fffff0"/>
+  <text class="nm" x="439" y="265">ivory</text>
+  <rect class="chip" x="16" y="274" width="22" height="14" rx="2" fill="#b3b37e"/>
+  <text class="nm" x="43" y="285">khaki</text>
+  <rect class="chip" x="148" y="274" width="22" height="14" rx="2" fill="#e6e6fa"/>
+  <text class="nm" x="175" y="285">lavender</text>
+  <rect class="chip" x="280" y="274" width="22" height="14" rx="2" fill="#fff0f5"/>
+  <text class="nm" x="307" y="285">lavender_blush</text>
+  <rect class="chip" x="412" y="274" width="22" height="14" rx="2" fill="#7cfc00"/>
+  <text class="nm" x="439" y="285">lawn_green</text>
+  <rect class="chip" x="16" y="294" width="22" height="14" rx="2" fill="#fffacd"/>
+  <text class="nm" x="43" y="305">lemon_chiffon</text>
+  <rect class="chip" x="148" y="294" width="22" height="14" rx="2" fill="#b0e2ff"/>
+  <text class="nm" x="175" y="305">light_blue</text>
+  <rect class="chip" x="280" y="294" width="22" height="14" rx="2" fill="#f08080"/>
+  <text class="nm" x="307" y="305">light_coral</text>
+  <rect class="chip" x="412" y="294" width="22" height="14" rx="2" fill="#e0ffff"/>
+  <text class="nm" x="439" y="305">light_cyan</text>
+  <rect class="chip" x="16" y="314" width="22" height="14" rx="2" fill="#eedd82"/>
+  <text class="nm" x="43" y="325">light_goldenrod</text>
+  <rect class="chip" x="148" y="314" width="22" height="14" rx="2" fill="#fafad2"/>
+  <text class="nm" x="175" y="325">light_goldenrod_yellow</text>
+  <rect class="chip" x="280" y="314" width="22" height="14" rx="2" fill="#a8a8a8"/>
+  <text class="nm" x="307" y="325">light_gray</text>
+  <rect class="chip" x="412" y="314" width="22" height="14" rx="2" fill="#ffb6c1"/>
+  <text class="nm" x="439" y="325">light_pink</text>
+  <rect class="chip" x="16" y="334" width="22" height="14" rx="2" fill="#ffa07a"/>
+  <text class="nm" x="43" y="345">light_salmon</text>
+  <rect class="chip" x="148" y="334" width="22" height="14" rx="2" fill="#20b2aa"/>
+  <text class="nm" x="175" y="345">light_sea_green</text>
+  <rect class="chip" x="280" y="334" width="22" height="14" rx="2" fill="#87cefa"/>
+  <text class="nm" x="307" y="345">light_sky_blue</text>
+  <rect class="chip" x="412" y="334" width="22" height="14" rx="2" fill="#8470ff"/>
+  <text class="nm" x="439" y="345">light_slate_blue</text>
+  <rect class="chip" x="16" y="354" width="22" height="14" rx="2" fill="#778899"/>
+  <text class="nm" x="43" y="365">light_slate_gray</text>
+  <rect class="chip" x="148" y="354" width="22" height="14" rx="2" fill="#7c98d3"/>
+  <text class="nm" x="175" y="365">light_steel_blue</text>
+  <rect class="chip" x="280" y="354" width="22" height="14" rx="2" fill="#ffffe0"/>
+  <text class="nm" x="307" y="365">light_yellow</text>
+  <rect class="chip" x="412" y="354" width="22" height="14" rx="2" fill="#00af14"/>
+  <text class="nm" x="439" y="365">lime_green</text>
+  <rect class="chip" x="16" y="374" width="22" height="14" rx="2" fill="#faf0e6"/>
+  <text class="nm" x="43" y="385">linen</text>
+  <rect class="chip" x="148" y="374" width="22" height="14" rx="2" fill="#ff00ff"/>
+  <text class="nm" x="175" y="385">magenta</text>
+  <rect class="chip" x="280" y="374" width="22" height="14" rx="2" fill="#8f0052"/>
+  <text class="nm" x="307" y="385">maroon</text>
+  <rect class="chip" x="412" y="374" width="22" height="14" rx="2" fill="#00938f"/>
+  <text class="nm" x="439" y="385">medium_aquamarine</text>
+  <rect class="chip" x="16" y="394" width="22" height="14" rx="2" fill="#3232cc"/>
+  <text class="nm" x="43" y="405">medium_blue</text>
+  <rect class="chip" x="148" y="394" width="22" height="14" rx="2" fill="#32814b"/>
+  <text class="nm" x="175" y="405">medium_forest_green</text>
+  <rect class="chip" x="280" y="394" width="22" height="14" rx="2" fill="#d1c166"/>
+  <text class="nm" x="307" y="405">medium_goldenrod</text>
+  <rect class="chip" x="412" y="394" width="22" height="14" rx="2" fill="#bd52bd"/>
+  <text class="nm" x="439" y="405">medium_orchid</text>
+  <rect class="chip" x="16" y="414" width="22" height="14" rx="2" fill="#9370db"/>
+  <text class="nm" x="43" y="425">medium_purple</text>
+  <rect class="chip" x="148" y="414" width="22" height="14" rx="2" fill="#347766"/>
+  <text class="nm" x="175" y="425">medium_sea_green</text>
+  <rect class="chip" x="280" y="414" width="22" height="14" rx="2" fill="#6a6a8d"/>
+  <text class="nm" x="307" y="425">medium_slate_blue</text>
+  <rect class="chip" x="412" y="414" width="22" height="14" rx="2" fill="#238e23"/>
+  <text class="nm" x="439" y="425">medium_spring_green</text>
+  <rect class="chip" x="16" y="434" width="22" height="14" rx="2" fill="#00d2d2"/>
+  <text class="nm" x="43" y="445">medium_turquoise</text>
+  <rect class="chip" x="148" y="434" width="22" height="14" rx="2" fill="#d52079"/>
+  <text class="nm" x="175" y="445">medium_violet_red</text>
+  <rect class="chip" x="280" y="434" width="22" height="14" rx="2" fill="#2f2f64"/>
+  <text class="nm" x="307" y="445">midnight_blue</text>
+  <rect class="chip" x="412" y="434" width="22" height="14" rx="2" fill="#f5fffa"/>
+  <text class="nm" x="439" y="445">mint_cream</text>
+  <rect class="chip" x="16" y="454" width="22" height="14" rx="2" fill="#ffe4e1"/>
+  <text class="nm" x="43" y="465">misty_rose</text>
+  <rect class="chip" x="148" y="454" width="22" height="14" rx="2" fill="#ffe4b5"/>
+  <text class="nm" x="175" y="465">moccasin</text>
+  <rect class="chip" x="280" y="454" width="22" height="14" rx="2" fill="#ffdead"/>
+  <text class="nm" x="307" y="465">navajo_white</text>
+  <rect class="chip" x="412" y="454" width="22" height="14" rx="2" fill="#232375"/>
+  <text class="nm" x="439" y="465">navy</text>
+  <rect class="chip" x="16" y="474" width="22" height="14" rx="2" fill="#232375"/>
+  <text class="nm" x="43" y="485">navy_blue</text>
+  <rect class="chip" x="148" y="474" width="22" height="14" rx="2" fill="#fdf5e6"/>
+  <text class="nm" x="175" y="485">old_lace</text>
+  <rect class="chip" x="280" y="474" width="22" height="14" rx="2" fill="#6b8e23"/>
+  <text class="nm" x="307" y="485">olive_drab</text>
+  <rect class="chip" x="412" y="474" width="22" height="14" rx="2" fill="#ff8700"/>
+  <text class="nm" x="439" y="485">orange</text>
+  <rect class="chip" x="16" y="494" width="22" height="14" rx="2" fill="#ff4500"/>
+  <text class="nm" x="43" y="505">orange_red</text>
+  <rect class="chip" x="148" y="494" width="22" height="14" rx="2" fill="#ef84ef"/>
+  <text class="nm" x="175" y="505">orchid</text>
+  <rect class="chip" x="280" y="494" width="22" height="14" rx="2" fill="#eee8aa"/>
+  <text class="nm" x="307" y="505">pale_goldenrod</text>
+  <rect class="chip" x="412" y="494" width="22" height="14" rx="2" fill="#73de78"/>
+  <text class="nm" x="439" y="505">pale_green</text>
+  <rect class="chip" x="16" y="514" width="22" height="14" rx="2" fill="#afeeee"/>
+  <text class="nm" x="43" y="525">pale_turquoise</text>
+  <rect class="chip" x="148" y="514" width="22" height="14" rx="2" fill="#db7093"/>
+  <text class="nm" x="175" y="525">pale_violet_red</text>
+  <rect class="chip" x="280" y="514" width="22" height="14" rx="2" fill="#ffefd5"/>
+  <text class="nm" x="307" y="525">papaya_whip</text>
+  <rect class="chip" x="412" y="514" width="22" height="14" rx="2" fill="#ffdab9"/>
+  <text class="nm" x="439" y="525">peach_puff</text>
+  <rect class="chip" x="16" y="534" width="22" height="14" rx="2" fill="#cd853f"/>
+  <text class="nm" x="43" y="545">peru</text>
+  <rect class="chip" x="148" y="534" width="22" height="14" rx="2" fill="#ffb5c5"/>
+  <text class="nm" x="175" y="545">pink</text>
+  <rect class="chip" x="280" y="534" width="22" height="14" rx="2" fill="#c5489b"/>
+  <text class="nm" x="307" y="545">plum</text>
+  <rect class="chip" x="412" y="534" width="22" height="14" rx="2" fill="#b0e0e6"/>
+  <text class="nm" x="439" y="545">powder_blue</text>
+  <rect class="chip" x="16" y="554" width="22" height="14" rx="2" fill="#a020f0"/>
+  <text class="nm" x="43" y="565">purple</text>
+  <rect class="chip" x="148" y="554" width="22" height="14" rx="2" fill="#ff0000"/>
+  <text class="nm" x="175" y="565">red</text>
+  <rect class="chip" x="280" y="554" width="22" height="14" rx="2" fill="#bc8f8f"/>
+  <text class="nm" x="307" y="565">rosy_brown</text>
+  <rect class="chip" x="412" y="554" width="22" height="14" rx="2" fill="#4169e1"/>
+  <text class="nm" x="439" y="565">royal_blue</text>
+  <rect class="chip" x="16" y="574" width="22" height="14" rx="2" fill="#8b4513"/>
+  <text class="nm" x="43" y="585">saddle_brown</text>
+  <rect class="chip" x="148" y="574" width="22" height="14" rx="2" fill="#e9967a"/>
+  <text class="nm" x="175" y="585">salmon</text>
+  <rect class="chip" x="280" y="574" width="22" height="14" rx="2" fill="#f4a460"/>
+  <text class="nm" x="307" y="585">sandy_brown</text>
+  <rect class="chip" x="412" y="574" width="22" height="14" rx="2" fill="#529584"/>
+  <text class="nm" x="439" y="585">sea_green</text>
+  <rect class="chip" x="16" y="594" width="22" height="14" rx="2" fill="#fff5ee"/>
+  <text class="nm" x="43" y="605">sea_shell</text>
+  <rect class="chip" x="148" y="594" width="22" height="14" rx="2" fill="#96522d"/>
+  <text class="nm" x="175" y="605">sienna</text>
+  <rect class="chip" x="280" y="594" width="22" height="14" rx="2" fill="#729fff"/>
+  <text class="nm" x="307" y="605">sky_blue</text>
+  <rect class="chip" x="412" y="594" width="22" height="14" rx="2" fill="#7e88ab"/>
+  <text class="nm" x="439" y="605">slate_blue</text>
+  <rect class="chip" x="16" y="614" width="22" height="14" rx="2" fill="#708090"/>
+  <text class="nm" x="43" y="625">slate_gray</text>
+  <rect class="chip" x="148" y="614" width="22" height="14" rx="2" fill="#fffafa"/>
+  <text class="nm" x="175" y="625">snow</text>
+  <rect class="chip" x="280" y="614" width="22" height="14" rx="2" fill="#41ac41"/>
+  <text class="nm" x="307" y="625">spring_green</text>
+  <rect class="chip" x="412" y="614" width="22" height="14" rx="2" fill="#5470aa"/>
+  <text class="nm" x="439" y="625">steel_blue</text>
+  <rect class="chip" x="16" y="634" width="22" height="14" rx="2" fill="#deb887"/>
+  <text class="nm" x="43" y="645">tan</text>
+  <rect class="chip" x="148" y="634" width="22" height="14" rx="2" fill="#d8bfd8"/>
+  <text class="nm" x="175" y="645">thistle</text>
+  <rect class="chip" x="280" y="634" width="22" height="14" rx="2" fill="#ff6347"/>
+  <text class="nm" x="307" y="645">tomato</text>
+  <rect class="chip" x="412" y="634" width="22" height="14" rx="2" fill="#19ccdf"/>
+  <text class="nm" x="439" y="645">turquoise</text>
+  <rect class="chip" x="16" y="654" width="22" height="14" rx="2" fill="#9c3ece"/>
+  <text class="nm" x="43" y="665">violet</text>
+  <rect class="chip" x="148" y="654" width="22" height="14" rx="2" fill="#f33e96"/>
+  <text class="nm" x="175" y="665">violet_red</text>
+  <rect class="chip" x="280" y="654" width="22" height="14" rx="2" fill="#f5deb3"/>
+  <text class="nm" x="307" y="665">wheat</text>
+  <rect class="chip" x="412" y="654" width="22" height="14" rx="2" fill="#ffffff"/>
+  <text class="nm" x="439" y="665">white</text>
+  <rect class="chip" x="16" y="674" width="22" height="14" rx="2" fill="#f5f5f5"/>
+  <text class="nm" x="43" y="685">white_smoke</text>
+  <rect class="chip" x="148" y="674" width="22" height="14" rx="2" fill="#ffff00"/>
+  <text class="nm" x="175" y="685">yellow</text>
+  <rect class="chip" x="280" y="674" width="22" height="14" rx="2" fill="#32d838"/>
+  <text class="nm" x="307" y="685">yellow_green</text>
+</svg>
