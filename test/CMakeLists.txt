@@ -173,6 +173,16 @@ add_executable(foundation_test foundation_test.cpp)
 target_include_directories(foundation_test PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../lib/include)
 add_test(NAME foundation_test COMMAND foundation_test)
 
+# Resource search path. Links resources.cpp directly and defines the host's
+# init_paths() hook itself, so it needs the infra header paths too.
+add_executable(resources_test resources_test.cpp ${CMAKE_CURRENT_LIST_DIR}/../lib/src/artist/resources.cpp)
+target_include_directories(resources_test PRIVATE
+   ${CMAKE_CURRENT_LIST_DIR}/../lib/include
+   ${CMAKE_CURRENT_LIST_DIR}/../lib/infra/include
+   ${CMAKE_CURRENT_LIST_DIR}/../lib/infra/external/filesystem/include
+)
+add_test(NAME resources_test COMMAND resources_test)
+
 add_executable(rope_test rope_test.cpp)
 target_include_directories(rope_test PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../lib/include)
 add_test(NAME rope_test COMMAND rope_test)

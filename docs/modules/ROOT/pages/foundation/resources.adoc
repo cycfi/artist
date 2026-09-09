@@ -2,53 +2,125 @@
 
 == Overview
 
-Artist finds fonts and images by searching a list of directories. These
-are the calls that manage that list and search it.
+Artist loads images by file name, and the name may be relative. A relative
+name is resolved against a process wide list of search directories: the
+first directory in the list that contains the file wins. The host
+application seeds the list, and applications add to it with
+`add_search_path`. `find_file` and `find_directory` search it.
 
-== resources
+Only the `image` constructors consult this list. Fonts are located
+through `get_user_fonts_directory()` and the platform's own font
+machinery; see xref:foundation/font.adoc[Font].
 
-Resources (e.g. images) that are identified by file names can be absolute or
-relative paths. For relative paths, a vector of paths is searched, in the
-order they appear in the vector. Platform code provides the initial paths as
-appropriate. Applications may add additional paths as needed, using the
-add_search_path function. search_first=true puts the path at the top of the
-vector and will be searched first.
+The list is guarded by a mutex, so `add_search_path` may be called from
+any thread, including while another thread is searching.
 
-[source,c++]
-----
-void        add_search_path(fs::path const& path, bool search_first = false);
-fs::path    find_file(fs::path const& file);
-fs::path    app_data_path();
-----
+== Include
 
-=== Expressions
+```c++
+#include <artist/resources.hpp>
+```
 
-[source,c++]
-----
+== Declaration
 
-// Add a search path [1]
-add_search_path(path)
-add_search_path(path, true)
+```c++
+   void      add_search_path(
+                fs::path const& path
+              , bool search_first = false
+             );
+   fs::path  find_file(fs::path const& file);
+   fs::path  find_directory(fs::path const& dir);
+```
 
-// Search for a file [2]
-find_file(path)
-----
+```c++
+   // Declared by the library, defined by the host application
+   extern void init_paths();
+```
+
+`fs` is the alias `cycfi::fs`, which `<infra/filesystem.hpp>` sets to
+`std::filesystem`, or to `ghc::filesystem` on a toolchain without it. The
+header includes it, and the alias is visible inside `cycfi::artist`.
+
+== Expressions
 
 === Notation
 
-[cols="1,3"]
+`p`   :: Object of type `fs::path`, a directory to search.
+`f`   :: Object of type `fs::path`, a file name, relative or absolute.
+`d`   :: Object of type `fs::path`, a directory name, relative or absolute.
+
+=== Free Functions
+
+[cols="1,1,1"]
 |===
-| `path` | Instance of `std::filesystem::path`
+| Expression                 | Semantics                       | Return Type
+
+| `add_search_path(p)`       | Append `p` to the list. It is
+                               searched after every directory
+                               already present.                | `void`
+| `add_search_path(p, true)` | Insert `p` at the front of the
+                               list. It is searched first.      | `void`
+| `find_file(f)`             | If `f` is absolute, `f` itself
+                               when it exists. Otherwise the
+                               first `p` in the list for which
+                               `p / f` exists, returned as
+                               `p / f`. An empty path when
+                               nothing matches.                | `fs::path`
+| `find_directory(d)`        | As `find_file`, but a match must
+                               be a directory.                 | `fs::path`
 |===
 
-=== Semantics
+`add_search_path` does not check that `p` exists and does not remove
+duplicates. Adding the same directory twice searches it twice.
 
-. Add a directory search path. This path, and all paths added via
-  `add_search_path`,  will be used when searching for a resource file. The
-  second variant, with the second argument, specifies if the directory
-  search path will be pushed into the end (default `false`) or pushed to the
-  front (second argument is `true`) of the list. If `true`, the directory
-  search path will be searched first.
-. Find a resource file by searching the list of directory search paths.
-  Returns an empty path if file is not found. returns an instance of
-  `std::filesystem::path`.
+NOTE: `find_file` tests each candidate with `fs::exists`, which is true
+for a directory as well as a file, so a relative name that happens to
+match a directory is returned. `find_directory` is strict: it tests with
+`fs::is_directory` and never returns a file. There is no function that
+accepts only files.
+
+An absolute path bypasses the list entirely. It is returned when it
+exists and an empty path when it does not, whatever the list holds.
+
+=== Host Hook
+
+[cols="1,1,1"]
+|===
+| Expression      | Semantics                                   | Return Type
+
+| `init_paths()`  | Seed the search list. The library declares
+                    this and the host application defines it;
+                    every host under `examples/host/` provides
+                    one, typically adding the application's
+                    resource directory. The library calls it
+                    itself the first time `find_file` or
+                    `find_directory` runs. Do not call it.     | `void`
+|===
+
+IMPORTANT: A program that links Artist must define `init_paths()` or it
+does not link. The companion hook, `get_user_fonts_directory()`, is
+declared in `font.hpp` and is usually defined alongside it.
+
+NOTE: `find_file` and `find_directory` each carry their own one time
+initializer, so `init_paths()` runs once per function, up to twice in a
+process that calls both. A directory it adds then appears in the list
+twice. The header describes it as called only once; the discrepancy is
+recorded here as current behaviour and is not something to rely on.
+
+== Example
+
+```c++
+   // The host has already seeded the list from init_paths(). Add the
+   // application's own asset directory, then an optional override that
+   // must win over everything else.
+   add_search_path("assets/textures");
+   if (!user_override_dir.empty())
+      add_search_path(user_override_dir, true);
+
+   // image resolves a relative name through the same list.
+   image tex{"wood.png"};
+
+   // Or resolve it yourself and decide what to do on a miss.
+   if (auto p = find_file("wood.png"); !p.empty())
+      use(p);
+```
