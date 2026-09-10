@@ -167,11 +167,16 @@ add_test(NAME artist_test COMMAND artist_test)
 
 # Non-graphical unit tests (no window / graphics backend required).
 
-# Foundation value types (point, extent, affine_transform, color, circle).
-# Asserts the claims made by the reference pages under
-# docs/.../pages/foundation/.
-add_executable(foundation_test foundation_test.cpp)
-target_include_directories(foundation_test PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../lib/include)
+# Foundation value types (point, extent, rect, affine_transform, color,
+# circle). Asserts the claims made by the reference pages under
+# docs/.../pages/foundation/. Links rect.cpp because seven of rect's free
+# functions (intersects, union_, intersection, center*, align*) are defined
+# there rather than in the header, so it needs the infra header paths too.
+add_executable(foundation_test foundation_test.cpp ${CMAKE_CURRENT_LIST_DIR}/../lib/src/artist/rect.cpp)
+target_include_directories(foundation_test PRIVATE
+   ${CMAKE_CURRENT_LIST_DIR}/../lib/include
+   ${CMAKE_CURRENT_LIST_DIR}/../lib/infra/include
+)
 add_test(NAME foundation_test COMMAND foundation_test)
 
 # Resource search path. Links resources.cpp directly and defines the host's

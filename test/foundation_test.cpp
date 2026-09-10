@@ -3,7 +3,7 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 
-   Unit test for the foundation value types: point, extent,
+   Unit test for the foundation value types: point, extent, rect,
    affine_transform, color and circle. Every case here asserts a claim
    made by the corresponding
    reference page under docs/modules/ROOT/pages/foundation/, so the pages
@@ -14,6 +14,7 @@
 #include <artist/circle.hpp>
 #include <artist/color.hpp>
 #include <artist/point.hpp>
+#include <artist/rect.hpp>
 #include <cmath>
 #include <iostream>
 #include <iterator>
@@ -174,6 +175,255 @@ static void test_extent()
    // rect::size() is the extent the library hands back most often.
    rect r{0.0f, 0.0f, 100.0f, 60.0f};
    CHECK(r.size() == extent(100.0f, 60.0f));
+}
+
+///////////////////////////////////////////////////////////////////////////
+// rect
+///////////////////////////////////////////////////////////////////////////
+
+// The page's Overview: everything declared in the header is constexpr
+// except the seven functions defined in rect.cpp. Those seven cannot be
+// asserted here; the rest can.
+static_assert(!std::is_aggregate_v<rect>);
+static_assert(std::is_trivially_copyable_v<rect>);
+static_assert(rect{}.left == 0.0f && rect{}.right == 0.0f);
+static_assert(rect(0.0f, 0.0f, 100.0f, 60.0f).width() == 100.0f);
+static_assert(center_point(rect(0.0f, 0.0f, 100.0f, 60.0f))
+   == point(50.0f, 30.0f));
+
+// The Derivation CAUTION: inset is constexpr and clamps at compile time
+// too, so an over-inset rect is {0, 0, 0, 0}.
+static_assert(rect(0.0f, 0.0f, 100.0f, 60.0f).inset(40.0f) == rect{});
+
+static void test_rect_construction()
+{
+   rect r;
+   CHECK(r.left == 0.0f && r.top == 0.0f);
+   CHECK(r.right == 0.0f && r.bottom == 0.0f);
+   CHECK(r == rect(0.0f, 0.0f, 0.0f, 0.0f));
+
+   CHECK(rect(0.0f, 0.0f, 100.0f, 60.0f).width() == 100.0f);
+   CHECK(rect(0.0f, 0.0f, 100.0f, 60.0f).height() == 60.0f);
+
+   // The page's CAUTION: the point + two floats form takes ABSOLUTE right
+   // and bottom edges, while the point + extent form takes a size. The
+   // two look alike at the call site and mean different things.
+   rect absolute{point(10.0f, 10.0f), 100.0f, 100.0f};
+   CHECK(absolute.width() == 90.0f && absolute.height() == 90.0f);
+   rect sized{point(10.0f, 10.0f), extent(100.0f, 100.0f)};
+   CHECK(sized.width() == 100.0f && sized.height() == 100.0f);
+   CHECK(sized.right == 110.0f && sized.bottom == 110.0f);
+
+   CHECK((rect{point(1.0f, 2.0f), point(3.0f, 4.0f)})
+      == rect(1.0f, 2.0f, 3.0f, 4.0f));
+   CHECK((rect{5.0f, 6.0f, extent(10.0f, 20.0f)})
+      == rect(5.0f, 6.0f, 15.0f, 26.0f));
+
+   rect copy(sized);
+   CHECK(copy == sized);
+   r = sized;
+   CHECK(r == sized);
+
+   // The Comparison row: the comparison is exact.
+   rect almost{10.0f, 10.0f, 110.0f + 1e-3f, 110.0f};
+   CHECK(almost != sized);
+}
+
+static void test_rect_query()
+{
+   // The page's IMPORTANT: is_empty is an OR over the two degenerate
+   // cases, not size() == extent(0, 0). One flat dimension is enough.
+   rect flat{0.0f, 0.0f, 100.0f, 0.0f};
+   CHECK(flat.is_empty());
+   CHECK(flat.size() == extent(100.0f, 0.0f));
+   CHECK(!(flat.size() == extent(0.0f, 0.0f)));
+   CHECK(rect{}.is_empty());
+   CHECK(!rect(0.0f, 0.0f, 1.0f, 1.0f).is_empty());
+
+   // includes is inclusive on all four edges.
+   rect r{0.0f, 0.0f, 10.0f, 10.0f};
+   CHECK(r.includes(point(0.0f, 0.0f)));
+   CHECK(r.includes(point(10.0f, 10.0f)));
+   CHECK(r.includes(point(5.0f, 5.0f)));
+   CHECK(!r.includes(point(10.001f, 5.0f)));
+   CHECK(r.includes(r));
+   CHECK(r.includes(rect(2.0f, 2.0f, 8.0f, 8.0f)));
+   CHECK(!r.includes(rect(2.0f, 2.0f, 12.0f, 8.0f)));
+}
+
+static void test_rect_accessors()
+{
+   rect r{1.0f, 2.0f, 3.0f, 4.0f};
+   CHECK(r.width() == 2.0f && r.height() == 2.0f);
+   CHECK(r.size() == extent(2.0f, 2.0f));
+   CHECK(r.top_left() == point(1.0f, 2.0f));
+   CHECK(r.top_right() == point(3.0f, 2.0f));
+   CHECK(r.bottom_left() == point(1.0f, 4.0f));
+   CHECK(r.bottom_right() == point(3.0f, 4.0f));
+
+   // The page: width() and height() go negative on an invalid rect.
+   rect inverted{10.0f, 0.0f, 0.0f, 10.0f};
+   CHECK(!is_valid(inverted));
+   CHECK(inverted.width() == -10.0f);
+   CHECK(area(inverted) == -100.0f);
+}
+
+static void test_rect_mutators()
+{
+   // The page: the setters move the right and bottom edges. Left and top
+   // stay put.
+   rect r{10.0f, 20.0f, 30.0f, 40.0f};
+   r.width(100.0f);
+   r.height(200.0f);
+   CHECK(r == rect(10.0f, 20.0f, 110.0f, 220.0f));
+
+   rect r2{10.0f, 20.0f, 30.0f, 40.0f};
+   r2.size(extent(5.0f, 6.0f));
+   CHECK(r2 == rect(10.0f, 20.0f, 15.0f, 26.0f));
+
+   // clear zeroes all four, so the position goes too.
+   clear(r);
+   CHECK(r == rect{});
+   CHECK(r.is_empty() && is_valid(r));
+}
+
+static void test_rect_derivation()
+{
+   rect r{10.0f, 20.0f, 30.0f, 40.0f};
+
+   CHECK(r.move(5.0f, 5.0f) == rect(15.0f, 25.0f, 35.0f, 45.0f));
+   CHECK(is_same_size(r.move(5.0f, 5.0f), r));
+
+   // move_to places the TOP LEFT corner, unlike circle::move_to.
+   CHECK(r.move_to(0.0f, 0.0f) == rect(0.0f, 0.0f, 20.0f, 20.0f));
+   CHECK(r.move_to(0.0f, 0.0f).top_left() == point(0.0f, 0.0f));
+
+   // inset takes the distance off each side, so the width drops by 2x.
+   rect big{0.0f, 0.0f, 100.0f, 60.0f};
+   CHECK(big.inset(10.0f) == rect(10.0f, 10.0f, 90.0f, 50.0f));
+   CHECK(big.inset(10.0f).width() == 80.0f);
+   CHECK(big.inset(10.0f, 5.0f) == rect(10.0f, 5.0f, 90.0f, 55.0f));
+   CHECK(big.inset(-10.0f) == rect(-10.0f, -10.0f, 110.0f, 70.0f));
+
+   // The page's CAUTION: over-insetting does not give a negative rect, it
+   // gives {0, 0, 0, 0}. Over-insetting the SHORT axis alone is enough to
+   // zero the whole rect, position included.
+   auto over = big.inset(40.0f);
+   CHECK(over == rect{});
+   CHECK(is_valid(over) && over.is_empty());
+   CHECK(big.inset(0.0f, 40.0f) == rect{});
+
+   // Non-mutating: r is untouched by all four.
+   CHECK(r == rect(10.0f, 20.0f, 30.0f, 40.0f));
+}
+
+static void test_rect_free_query()
+{
+   CHECK(is_valid(rect(0.0f, 0.0f, 10.0f, 10.0f)));
+   CHECK(is_valid(rect{}));                     // empty but valid
+   CHECK(!is_valid(rect(10.0f, 0.0f, 0.0f, 10.0f)));
+   CHECK(!is_valid(rect(0.0f, 10.0f, 10.0f, 0.0f)));
+
+   CHECK(is_same_size(rect(0.0f, 0.0f, 10.0f, 10.0f),
+                      rect(50.0f, 50.0f, 60.0f, 60.0f)));
+   CHECK(!is_same_size(rect(0.0f, 0.0f, 10.0f, 10.0f),
+                       rect(0.0f, 0.0f, 10.0f, 11.0f)));
+
+   CHECK(near_(center_point(rect(0.0f, 0.0f, 100.0f, 60.0f)),
+      point(50.0f, 30.0f)));
+   CHECK(near_(area(rect(0.0f, 0.0f, 100.0f, 60.0f)), 6000.0));
+
+   // The page's CAUTION: intersects is strict where includes is
+   // inclusive, so rects that share an edge do not intersect even though
+   // both include the points on it.
+   rect a{0.0f, 0.0f, 10.0f, 10.0f};
+   rect b{10.0f, 0.0f, 20.0f, 10.0f};
+   CHECK(!intersects(a, b));
+   CHECK(a.includes(point(10.0f, 5.0f)));
+   CHECK(b.includes(point(10.0f, 5.0f)));
+   CHECK(intersects(a, rect(9.0f, 0.0f, 20.0f, 10.0f)));
+}
+
+static void test_rect_combination()
+{
+   rect a{0.0f, 0.0f, 10.0f, 10.0f};
+   rect far{100.0f, 100.0f, 110.0f, 110.0f};
+
+   CHECK(union_(a, far) == rect(0.0f, 0.0f, 110.0f, 110.0f));
+
+   // The page's NOTE: union_ takes no notice of emptiness, so folding in
+   // a default rect stretches the result back to the origin.
+   CHECK(union_(rect{}, far) == rect(0.0f, 0.0f, 110.0f, 110.0f));
+
+   // The page's IMPORTANT: intersection does not test for overlap. On
+   // disjoint rects it returns an inverted rect.
+   auto none = intersection(a, far);
+   CHECK(!is_valid(none));
+   CHECK(none == rect(100.0f, 100.0f, 10.0f, 10.0f));
+
+   CHECK(intersection(a, rect(5.0f, 5.0f, 20.0f, 20.0f))
+      == rect(5.0f, 5.0f, 10.0f, 10.0f));
+}
+
+static void test_rect_placement()
+{
+   rect r{0.0f, 0.0f, 20.0f, 10.0f};
+   rect encl{0.0f, 0.0f, 100.0f, 60.0f};
+
+   // The page: center is align at 0.5, 0.5.
+   CHECK(center(r, encl) == rect(40.0f, 25.0f, 60.0f, 35.0f));
+   CHECK(center(r, encl) == align(r, encl, 0.5f, 0.5f));
+   CHECK(is_same_size(center(r, encl), r));
+
+   CHECK(align(r, encl, 0.0f, 0.0f) == rect(0.0f, 0.0f, 20.0f, 10.0f));
+   CHECK(align(r, encl, 1.0f, 1.0f) == rect(80.0f, 50.0f, 100.0f, 60.0f));
+
+   // The page: the one axis forms keep the other coordinate.
+   rect off{5.0f, 7.0f, 25.0f, 17.0f};
+   CHECK(center_h(off, encl) == rect(40.0f, 7.0f, 60.0f, 17.0f));
+   CHECK(center_v(off, encl) == rect(5.0f, 25.0f, 25.0f, 35.0f));
+   CHECK(align_h(off, encl, 1.0f) == rect(80.0f, 7.0f, 100.0f, 17.0f));
+   CHECK(align_v(off, encl, 1.0f) == rect(5.0f, 50.0f, 25.0f, 60.0f));
+
+   // The page's NOTE: the fractions are not clamped.
+   CHECK(align(r, encl, 2.0f, 0.0f) == rect(160.0f, 0.0f, 180.0f, 10.0f));
+   CHECK(!encl.includes(align(r, encl, 2.0f, 0.0f)));
+}
+
+static void test_rect_axis()
+{
+   rect r{1.0f, 2.0f, 3.0f, 4.0f};
+   rect wide{0.0f, 0.0f, 100.0f, 60.0f};
+
+   CHECK(axis_extent(wide, axis::x) == 100.0f);
+   CHECK(axis_extent(wide, axis::y) == 60.0f);
+   CHECK(axis_min(r, axis::x) == 1.0f && axis_min(r, axis::y) == 2.0f);
+   CHECK(axis_max(r, axis::x) == 3.0f && axis_max(r, axis::y) == 4.0f);
+
+   // The reference forms assign.
+   rect m{};
+   axis_min(m, axis::x) = 7.0f;
+   axis_max(m, axis::y) = 9.0f;
+   CHECK(m == rect(7.0f, 0.0f, 0.0f, 9.0f));
+
+   // make_rect: for axis::x the arguments are already left, top, right,
+   // bottom; for axis::y the pairs swap.
+   CHECK(make_rect(axis::x, 1.0f, 2.0f, 3.0f, 4.0f)
+      == rect(1.0f, 2.0f, 3.0f, 4.0f));
+   CHECK(make_rect(axis::y, 1.0f, 2.0f, 3.0f, 4.0f)
+      == rect(2.0f, 1.0f, 4.0f, 3.0f));
+
+   // The page's Example: one split routine that runs on either axis.
+   for (auto a : {axis::x, axis::y})
+   {
+      rect first = wide, second = wide;
+      auto at = axis_min(wide, a) + (axis_extent(wide, a) * 0.25f);
+      axis_max(first, a) = at;
+      axis_min(second, a) = at;
+      CHECK(near_(axis_extent(first, a), axis_extent(wide, a) * 0.25));
+      CHECK(near_(axis_extent(second, a), axis_extent(wide, a) * 0.75));
+      CHECK(axis_extent(first, other(a)) == axis_extent(wide, other(a)));
+   }
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -515,6 +765,16 @@ int main()
    test_point_subscript();
    test_point_derivation();
    test_extent();
+
+   test_rect_construction();
+   test_rect_query();
+   test_rect_accessors();
+   test_rect_mutators();
+   test_rect_derivation();
+   test_rect_free_query();
+   test_rect_combination();
+   test_rect_placement();
+   test_rect_axis();
 
    test_affine_construction();
    test_affine_factories();
