@@ -4,7 +4,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Circle :: Artist Docs</title>
-    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0-dev/foundation/circle.html">
     <meta name="generator" content="Antora 3.1.15">
     <link rel="stylesheet" href="../../../_/css/site.css">
 <meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
@@ -186,153 +185,379 @@
 <h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The <code>circle</code> is given by a centre and a radius.</p>
+<p>A <code>circle</code> is a centre and a radius: <code>cx</code>, <code>cy</code> and <code>radius</code>, all <code>float</code>.
+It is a value type with no invariant, so nothing stops a negative radius;
+see the note under <a href="#_derivation">Derivation</a>.</p>
+</div>
+<div class="paragraph">
+<p>Only the constructors are <code>constexpr</code>. The accessors and the derivation
+members are plain <code>inline</code>, so a <code>circle</code> can be built at compile time but
+not queried or transformed there. This differs from
+<a href="rect.html" class="xref page">Rect</a>, where nearly everything is <code>constexpr</code>.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+<code>circle.hpp</code> includes <code>artist/rect.hpp</code>, which in turn includes
+<code>artist/point.hpp</code>, so <code>rect</code>, <code>point</code> and <code>extent</code> come with it.
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_circle"><a class="anchor" href="#_circle"></a>circle</h2>
+<h2 id="_include"><a class="anchor" href="#_include"></a>Include</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>The circle is represented by a center point and radius:</p>
-</div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">struct circle
-{
-               circle();
-               circle(float cx, float cy, float radius);
-               circle(point c, float radius);
-               circle(rect const&amp; r);
-               circle(circle const&amp;) = default;
-   circle&amp;     operator=(circle const&amp;) = default;
-
-   rect        bounds() const;
-   bool        operator==(circle const&amp; other) const;
-   bool        operator!=(circle const&amp; other) const;
-
-   point       center() const;
-   circle      inset(float x) const;
-   circle      move(float dx, float dy) const;
-   circle      move_to(float x, float y) const;
-
-   float       cx;
-   float       cy;
-   float       radius;
-};</code></pre>
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/circle.hpp&gt;</code></pre>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h3>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h2>
+<div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Default constructor [1].
-circle{}
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   struct circle
+   {
+      constexpr   circle();
+      constexpr   circle(float cx, float cy, float radius);
+      constexpr   circle(point c, float radius);
+      constexpr   circle(rect const&amp; r);
+                  circle(circle const&amp;) = default;
+      circle&amp;     operator=(circle const&amp;) = default;
 
-// Constructor [2].
-circle{ x, y, radius }
+      rect        bounds() const;
+      bool        operator==(circle const&amp; other) const;
+      bool        operator!=(circle const&amp; other) const;
 
-// Copy constructor. [3]
-circle{ c }
+      point       center() const;
+      circle      inset(float x) const;
+      circle      move(float dx, float dy) const;
+      circle      move_to(float x, float y) const;
 
-// Assignment [4]
-c = c2
-
-// Equality [5]
-c == c2
-
-// Non-equality [6]
-c != c2
-
-// Bounds [7]
-c.bounds()
-
-// Get the center [8]
-c.center()
-
-// Inset [9]
-c.inset(x)
-
-// Move [10]
-c.move(dx, dy)
-
-// Move To [11]
-c.move_to(x, y)
-
-// Member access [12]
-c.cx
-c.cy
-c.radius</code></pre>
+      float       cx;
+      float       cy;
+      float       radius;
+   };</code></pre>
 </div>
 </div>
 </div>
+</div>
+<div class="sect1">
+<h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
+<div class="sectionbody">
 <div class="sect2">
 <h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>c</code>, <code>c2</code>         </dt>
+<dd>
+<p>Objects of type <code>circle</code>.</p>
+</dd>
+<dt class="hdlist1"><code>p</code>               </dt>
+<dd>
+<p>Object of type <code>point</code>.</p>
+</dd>
+<dt class="hdlist1"><code>r</code>               </dt>
+<dd>
+<p>Object of type <code>rect</code>.</p>
+</dd>
+<dt class="hdlist1"><code>cx</code>, <code>cy</code>        </dt>
+<dd>
+<p>Floating point centre coordinates.</p>
+</dd>
+<dt class="hdlist1"><code>radius</code>          </dt>
+<dd>
+<p>A floating point radius.</p>
+</dd>
+<dt class="hdlist1"><code>x</code>, <code>y</code>          </dt>
+<dd>
+<p>Floating point coordinates. For <code>inset</code>, <code>x</code> is a
+distance instead.</p>
+</dd>
+<dt class="hdlist1"><code>dx</code>, <code>dy</code>        </dt>
+<dd>
+<p>Floating point distances.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_constructors_and_assignment"><a class="anchor" href="#_constructors_and_assignment"></a>Constructors and Assignment</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 25%;">
-<col style="width: 75%;">
+<col style="width: 50%;">
+<col style="width: 50%;">
 </colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+</tr>
+</thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>x</code>, <code>y</code>, <code>radius</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Scalar coordinates.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>circle{}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Default construct <code>{0, 0, 0}</code>, a degenerate
+                                circle at the origin.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>dx</code>, <code>dy</code>, <code>radius</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Scalar coordinates.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>circle{cx, cy, radius}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct from the centre coordinates and
+                                the radius.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c</code>, <code>c2</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>circle</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>circle{p, radius}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct from a centre <code>point</code> and the
+                                radius.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>circle(r)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct from a <code>rect</code>. The centre is
+                                <code>center_point(r)</code> and the radius is
+                                <code>std::min(r.width(), r.height())</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>circle(c)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Copy construct from <code>c</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c = c2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Assign <code>c2</code> to <code>c</code>.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+The <code>rect</code> constructor takes the smaller side as the <strong>radius</strong>,
+not as the diameter, so the circle it builds is twice the size that fits
+in <code>r</code>. <code>circle{rect{0, 0, 100, 60}}</code> is centred at <code>{50, 30}</code> with a
+radius of 60, and its <code>bounds()</code> is 120 by 120 around a rect that is 100
+by 60. Pass <code>std::min(r.width(), r.height()) / 2</code> yourself if you want the
+inscribed circle.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+The members have no default member initializers, and the
+constructors are user provided, so <code>circle</code> is not an aggregate. Every
+member is set by whichever constructor runs; there is no partial
+initialization to worry about.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_comparison"><a class="anchor" href="#_comparison"></a>Comparison</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c == c2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Compare <code>cx</code>, <code>cy</code> and <code>radius</code>. The
+                 comparison is exact, so two circles
+                 differing only by rounding are not equal.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c != c2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The negation of the above.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="sect2">
-<h3 id="_semantics"><a class="anchor" href="#_semantics"></a>Semantics</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Default construct a <code>circle</code> with initial values <code>{ 0, 0, 0 }</code></p>
-</li>
-<li>
-<p>Construct a <code>circle</code> given initial values <code>x</code>, <code>y</code>, and <code>radius</code>.</p>
-</li>
-<li>
-<p>Copy construct a <code>circle</code>, <code>c</code>.</p>
-</li>
-<li>
-<p>Assign <code>c2</code> to <code>c</code>.</p>
-</li>
-<li>
-<p>Returns <code>true</code> if a <code>c2</code> is equal <code>c</code>.</p>
-</li>
-<li>
-<p>Returns <code>true</code> if a <code>c2</code> is not equal to <code>c</code>.</p>
-</li>
-<li>
-<p>Get the bounds: smallest <code>rect</code> that encloses <code>c</code>. Returns an instance of
-<code>rect</code>.</p>
-</li>
-<li>
-<p>Get the center of <code>c</code>. Returns an instance of <code>point</code>.</p>
-</li>
-<li>
-<p>Inset <code>c</code> by <code>x</code>.</p>
-</li>
-<li>
-<p>Move center of <code>c</code> by <code>dx</code> and <code>dy</code> distance. Returns the moved instance
-of <code>circle</code>.</p>
-</li>
-<li>
-<p>Move center of <code>c</code> to absolute coordinates <code>x</code> and <code>y</code>. Returns the
-moved instance of <code>circle</code>.</p>
-</li>
-<li>
-<p>Direct access to members <code>cx</code>, <code>cy</code>, and <code>radius</code></p>
-</li>
-</ol>
+<h3 id="_members"><a class="anchor" href="#_members"></a>Members</h3>
+<div class="paragraph">
+<p>The members are public and directly assignable.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c.cx</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The x coordinate of the centre.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c.cy</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The y coordinate of the centre.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c.radius</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The radius.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_accessors"><a class="anchor" href="#_accessors"></a>Accessors</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c.center()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The centre as a <code>point</code>, <code>{cx, cy}</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c.bounds()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The axis aligned bounding box,
+                  <code>{cx-radius, cy-radius, cx+radius,
+                  cy+radius}</code>. The circle is tangent to all
+                  four sides.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_derivation"><a class="anchor" href="#_derivation"></a>Derivation</h3>
+<div class="paragraph">
+<p>Each is <code>const</code> and returns a new circle; <code>c</code> is not modified.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c.inset(x)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A copy of <code>c</code> with the radius reduced
+                       by <code>x</code>, the centre unchanged. A
+                       negative <code>x</code> grows the circle.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>circle</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c.move(dx, dy)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A copy of <code>c</code> with the centre moved by
+                       <code>dx</code> and <code>dy</code>, the radius unchanged.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>circle</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c.move_to(x, y)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A copy of <code>c</code> with the centre placed
+                       at <code>{x, y}</code>, the radius unchanged.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>circle</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="📢  IMPORTANT"></i>
+</td>
+<td class="content">
+<code>inset</code> does not clamp. Insetting further than the radius gives
+a negative radius, and <code>bounds()</code> on that circle returns a rect for which
+<code>is_valid</code> is <code>false</code>. Check the radius yourself if the inset can exceed
+it.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+<code>move_to</code> places the <strong>centre</strong>, unlike
+<a href="rect.html" class="xref page"><code>rect::move_to</code></a>, which places the top left
+corner.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Drawing a dial face as a filled circle with a ring inside it:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   auto dial = circle{center_point(bounds), 40};
+
+   cnv.circle(dial);
+   cnv.fill_style(colors::gray[20]);
+   cnv.fill();
+
+   cnv.circle(dial.inset(6));
+   cnv.stroke_style(colors::light_steel_blue);
+   cnv.line_width(2);
+   cnv.stroke();</code></pre>
 </div>
 </div>
 </div>

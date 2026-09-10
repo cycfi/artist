@@ -4,7 +4,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Resources :: Artist Docs</title>
-    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0-dev/foundation/resources.html">
     <meta name="generator" content="Antora 3.1.15">
     <link rel="stylesheet" href="../../../_/css/site.css">
 <meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
@@ -186,75 +185,233 @@
 <h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Artist finds fonts and images by searching a list of directories. These
-are the calls that manage that list and search it.</p>
+<p>Artist loads images by file name, and the name may be relative. A relative
+name is resolved against a process wide list of search directories: the
+first directory in the list that contains the file wins. The host
+application seeds the list, and applications add to it with
+<code>add_search_path</code>. <code>find_file</code> and <code>find_directory</code> search it.</p>
+</div>
+<div class="paragraph">
+<p>Only the <code>image</code> constructors consult this list. Fonts are located
+through <code>get_user_fonts_directory()</code> and the platform&#8217;s own font
+machinery; see <a href="font.html" class="xref page">Font</a>.</p>
+</div>
+<div class="paragraph">
+<p>The list is guarded by a mutex, so <code>add_search_path</code> may be called from
+any thread, including while another thread is searching.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_resources"><a class="anchor" href="#_resources"></a>resources</h2>
+<h2 id="_include"><a class="anchor" href="#_include"></a>Include</h2>
 <div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/resources.hpp&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   void      add_search_path(
+                fs::path const&amp; path
+              , bool search_first = false
+             );
+   fs::path  find_file(fs::path const&amp; file);
+   fs::path  find_directory(fs::path const&amp; dir);</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   // Declared by the library, defined by the host application
+   extern void init_paths();</code></pre>
+</div>
+</div>
 <div class="paragraph">
-<p>Resources (e.g. images) that are identified by file names can be absolute or
-relative paths. For relative paths, a vector of paths is searched, in the
-order they appear in the vector. Platform code provides the initial paths as
-appropriate. Applications may add additional paths as needed, using the
-add_search_path function. search_first=true puts the path at the top of the
-vector and will be searched first.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">void        add_search_path(fs::path const&amp; path, bool search_first = false);
-fs::path    find_file(fs::path const&amp; file);
-fs::path    app_data_path();</code></pre>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h3>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Add a search path [1]
-add_search_path(path)
-add_search_path(path, true)
-
-// Search for a file [2]
-find_file(path)</code></pre>
+<p><code>fs</code> is the alias <code>cycfi::fs</code>, which <code>&lt;infra/filesystem.hpp&gt;</code> sets to
+<code>std::filesystem</code>, or to <code>ghc::filesystem</code> on a toolchain without it. The
+header includes it, and the alias is visible inside <code>cycfi::artist</code>.</p>
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
+<div class="sectionbody">
 <div class="sect2">
 <h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>p</code>   </dt>
+<dd>
+<p>Object of type <code>fs::path</code>, a directory to search.</p>
+</dd>
+<dt class="hdlist1"><code>f</code>   </dt>
+<dd>
+<p>Object of type <code>fs::path</code>, a file name, relative or absolute.</p>
+</dd>
+<dt class="hdlist1"><code>d</code>   </dt>
+<dd>
+<p>Object of type <code>fs::path</code>, a directory name, relative or absolute.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_free_functions"><a class="anchor" href="#_free_functions"></a>Free Functions</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 25%;">
-<col style="width: 75%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
 </colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>path</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>std::filesystem::path</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>add_search_path(p)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Append <code>p</code> to the list. It is
+                               searched after every directory
+                               already present.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>add_search_path(p, true)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Insert <code>p</code> at the front of the
+                               list. It is searched first.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>find_file(f)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">If <code>f</code> is absolute, <code>f</code> itself
+                               when it exists. Otherwise the
+                               first <code>p</code> in the list for which
+                               <code>p / f</code> exists, returned as
+                               <code>p / f</code>. An empty path when
+                               nothing matches.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fs::path</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>find_directory(d)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">As <code>find_file</code>, but a match must
+                               be a directory.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fs::path</code></p></td>
 </tr>
 </tbody>
 </table>
+<div class="paragraph">
+<p><code>add_search_path</code> does not check that <code>p</code> exists and does not remove
+duplicates. Adding the same directory twice searches it twice.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+<code>find_file</code> tests each candidate with <code>fs::exists</code>, which is true
+for a directory as well as a file, so a relative name that happens to
+match a directory is returned. <code>find_directory</code> is strict: it tests with
+<code>fs::is_directory</code> and never returns a file. There is no function that
+accepts only files.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>An absolute path bypasses the list entirely. It is returned when it
+exists and an empty path when it does not, whatever the list holds.</p>
+</div>
 </div>
 <div class="sect2">
-<h3 id="_semantics"><a class="anchor" href="#_semantics"></a>Semantics</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Add a directory search path. This path, and all paths added via
-<code>add_search_path</code>,  will be used when searching for a resource file. The
-second variant, with the second argument, specifies if the directory
-search path will be pushed into the end (default <code>false</code>) or pushed to the
-front (second argument is <code>true</code>) of the list. If <code>true</code>, the directory
-search path will be searched first.</p>
-</li>
-<li>
-<p>Find a resource file by searching the list of directory search paths.
-Returns an empty path if file is not found. returns an instance of
-<code>std::filesystem::path</code>.</p>
-</li>
-</ol>
+<h3 id="_host_hook"><a class="anchor" href="#_host_hook"></a>Host Hook</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>init_paths()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Seed the search list. The library declares
+                    this and the host application defines it;
+                    every host under <code>examples/host/</code> provides
+                    one, typically adding the application&#8217;s
+                    resource directory. The library calls it
+                    itself the first time <code>find_file</code> or
+                    <code>find_directory</code> runs. Do not call it.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="📢  IMPORTANT"></i>
+</td>
+<td class="content">
+A program that links Artist must define <code>init_paths()</code> or it
+does not link. The companion hook, <code>get_user_fonts_directory()</code>, is
+declared in <code>font.hpp</code> and is usually defined alongside it.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+<code>find_file</code> and <code>find_directory</code> each carry their own one time
+initializer, so <code>init_paths()</code> runs once per function, up to twice in a
+process that calls both. A directory it adds then appears in the list
+twice. The header describes it as called only once; the discrepancy is
+recorded here as current behaviour and is not something to rely on.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   // The host has already seeded the list from init_paths(). Add the
+   // application's own asset directory, then an optional override that
+   // must win over everything else.
+   add_search_path("assets/textures");
+   if (!user_override_dir.empty())
+      add_search_path(user_override_dir, true);
+
+   // image resolves a relative name through the same list.
+   image tex{"wood.png"};
+
+   // Or resolve it yourself and decide what to do on a miss.
+   if (auto p = find_file("wood.png"); !p.empty())
+      use(p);</code></pre>
 </div>
 </div>
 </div>

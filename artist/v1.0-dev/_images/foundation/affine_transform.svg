@@ -9,11 +9,8 @@
       .brk   { stroke: #5d5d5d; stroke-width: 1.5; fill: none; }
       .box   { stroke: #1565c0; stroke-width: 1; fill: none;
                stroke-dasharray: 3 3; }
-      .plate { fill: #f3f3f3; }
     </style>
   </defs>
-
-  <rect class="plate" x="30" y="28" width="185" height="104" rx="8"/>
 
   <path class="brk" d="M 52,34 L 42,34 L 42,126 L 52,126"/>
   <path class="brk" d="M 193,34 L 203,34 L 203,126 L 193,126"/>
