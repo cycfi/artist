@@ -185,210 +185,532 @@
 <h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The <code>point</code> gives a position in the 2D cartesian coordinate space. The
-<code>extent</code> is the same pair of numbers used to mean a size rather than a
-position, and is a specialization of <code>point</code> with the movement members
-removed.</p>
+<p>A <code>point</code> is a position in the 2D cartesian coordinate space: two <code>float</code>
+members, <code>x</code> and <code>y</code>. An <code>extent</code> is the same pair of numbers used to mean
+a size rather than a position. <code>extent</code> derives from <code>point</code> and deletes
+the three members that only make sense for a position, so a size cannot be
+moved or reflected by accident.</p>
+</div>
+<div class="paragraph">
+<p><code>point</code> and <code>extent</code> are the two types the rest of the library measures
+with. <a href="rect.html" class="xref page"><code>rect</code></a> is built from them,
+<a href="circle.html" class="xref page"><code>circle::center()</code></a> returns a <code>point</code>, and
+<code>affine_transform::apply</code> maps one.</p>
+</div>
+<div class="paragraph">
+<p>The header also defines <code>axis</code>, a two valued enumeration used to write
+code once and run it on either coordinate. <code>point</code> is subscriptable by it,
+and <a href="rect.html" class="xref page"><code>rect</code></a> has a family of <code>axis</code> free
+functions built on the same idea.</p>
+</div>
+<div class="paragraph">
+<p>Everything on this page is <code>constexpr</code>, construction and accessors alike,
+so points and extents can be computed at compile time. This is the
+opposite of <a href="circle.html" class="xref page"><code>circle</code></a>, where only the
+constructors are.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+An <code>extent</code> names its members <code>x</code> and <code>y</code>, not <code>width</code> and <code>height</code>.
+The width is <code>e.x</code> and the height is <code>e.y</code>. Only
+<a href="rect.html" class="xref page"><code>rect</code></a> spells the two out, through <code>width()</code>
+and <code>height()</code>.
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_point"><a class="anchor" href="#_point"></a>point</h2>
+<h2 id="_include"><a class="anchor" href="#_include"></a>Include</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>The point indicates position in the 2D cartesian coordinate space,
-represented by the <code>x</code> and <code>y</code> coordinates:</p>
-</div>
-<div class="sect2">
-<h3 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">struct point
-{
-               point();
-               point(float x, float y);
-               point(point const&amp;) = default;
-   point&amp;      operator=(point const &amp;) = default;
-
-   bool        operator==(point const&amp; other) const;
-   bool        operator!=(point const&amp; other) const;
-
-   point       move(float dx, float dy) const;
-   point       move_to(float x, float y) const;
-   point       reflect(point p) const;
-
-   float       x;
-   float       y;
-};</code></pre>
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/point.hpp&gt;</code></pre>
 </div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   enum class axis : bool { x = false, y = true };
+
+   constexpr axis other(axis a);</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   struct point
+   {
+      constexpr         point();
+      constexpr         point(float x, float y);
+      constexpr         point(point const&amp;) = default;
+      constexpr point&amp;  operator=(point const&amp;) = default;
+
+      constexpr bool    operator==(point const&amp; other) const;
+      constexpr bool    operator!=(point const&amp; other) const;
+
+      constexpr point   move(float dx, float dy) const;
+      constexpr point   move_to(float x, float y) const;
+      constexpr point   reflect(point p) const;
+
+      constexpr float&amp;  operator[](axis a);
+      constexpr float   operator[](axis a) const;
+
+      float             x;
+      float             y;
+   };</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   struct extent : point
+   {
+      using point::point;
+
+      constexpr         extent(point p);
+
+      point             move(float dx, float dy) const = delete;
+      point             move_to(float x, float y) const = delete;
+      point             reflect(point p) const = delete;
+   };</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>p</code>, <code>p2</code>         </dt>
+<dd>
+<p>Objects of type <code>point</code>.</p>
+</dd>
+<dt class="hdlist1"><code>e</code>, <code>e2</code>         </dt>
+<dd>
+<p>Objects of type <code>extent</code>.</p>
+</dd>
+<dt class="hdlist1"><code>a</code>               </dt>
+<dd>
+<p>Object of type <code>axis</code>.</p>
+</dd>
+<dt class="hdlist1"><code>x</code>, <code>y</code>          </dt>
+<dd>
+<p>Floating point coordinates.</p>
+</dd>
+<dt class="hdlist1"><code>dx</code>, <code>dy</code>        </dt>
+<dd>
+<p>Floating point distances.</p>
+</dd>
+</dl>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h3>
-<div class="sect3">
-<h4 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h4>
+<h3 id="_axis"><a class="anchor" href="#_axis"></a>Axis</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 25%;">
-<col style="width: 75%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
 </colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>x</code>, <code>y</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Scalar coordinates.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axis::x</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The horizontal axis. Converts to <code>false</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axis</code></p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>dx</code>, <code>dy</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Relative scalar coordinates.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axis::y</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The vertical axis. Converts to <code>true</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axis</code></p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>p</code>, <code>p2</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>point</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>other(a)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The axis that <code>a</code> is not.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axis</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The underlying type is <code>bool</code>, so an <code>axis</code> is one byte and
+<code>bool(axis::y)</code> is <code>true</code>. The enumeration is scoped, so the conversion
+has to be written out.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_point_construction_and_assignment"><a class="anchor" href="#_point_construction_and_assignment"></a>Point Construction and Assignment</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point{}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Default construct <code>{0, 0}</code>, the origin.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point{x, y}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct from the two coordinates.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point(p)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Copy construct from <code>p</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>p = p2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Assign <code>p2</code> to <code>p</code>.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+<code>point</code> has user declared constructors, so it is not an aggregate.
+Both members are always set: there is no way to get a partly initialized
+<code>point</code>, and <code>point{}</code> is the origin rather than indeterminate.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+The members are <code>float</code>, and brace initialization forbids
+narrowing. <code>point{1, 2}</code> compiles because the literals convert exactly,
+but <code>point{n, 2}</code> with an <code>int</code> variable <code>n</code> does not. Write
+<code>point(n, 2)</code> with parentheses, or convert at the call site.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_comparison"><a class="anchor" href="#_comparison"></a>Comparison</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>p == p2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Compare <code>x</code> and <code>y</code>. The comparison is
+                 exact, so two points differing only by
+                 rounding are not equal.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>p != p2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The negation of the above.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<div class="sect3">
-<h4 id="_constructors_and_assignment"><a class="anchor" href="#_constructors_and_assignment"></a>Constructors and assignment</h4>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Default constructor [1].
-point{}
-
-// Constructor [2].
-point{ x, y }
-
-// Copy constructor. [3]
-point{ p }
-
-// Assignment [4]
-p = p2</code></pre>
+<div class="sect2">
+<h3 id="_members"><a class="anchor" href="#_members"></a>Members</h3>
+<div class="paragraph">
+<p>The members are public and directly assignable.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>p.x</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The x coordinate.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>p.y</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The y coordinate.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_subscript"><a class="anchor" href="#_subscript"></a>Subscript</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>p[a]</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The coordinate on axis <code>a</code>: <code>x</code> for
+                <code>axis::x</code>, <code>y</code> for <code>axis::y</code>. On a
+                non-const <code>point</code> this is a reference, so
+                <code>p[a] = v</code> assigns the member.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float&amp;</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>p[a]</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The same on a const <code>point</code>, by value.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Subscript is what makes an algorithm axis agnostic. A routine that snaps
+along one axis can take an <code>axis</code> parameter, use <code>p[a]</code> throughout, and
+work in both directions without a second copy.</p>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_derivation"><a class="anchor" href="#_derivation"></a>Derivation</h3>
+<div class="paragraph">
+<p>Each is <code>const</code> and returns a new <code>point</code>; <code>p</code> is not modified.</p>
 </div>
-<div class="sect3">
-<h4 id="_semantics"><a class="anchor" href="#_semantics"></a>Semantics</h4>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Default construct a <code>point</code> with initial values <code>{ 0, 0 }</code></p>
-</li>
-<li>
-<p>Construct a <code>point</code> given initial values <code>x</code>, and <code>y</code>.</p>
-</li>
-<li>
-<p>Copy construct a <code>point `, `p</code>.</p>
-</li>
-<li>
-<p>Assign <code>p2</code>, to <code>p</code>.</p>
-</li>
-</ol>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_equality"><a class="anchor" href="#_equality"></a>Equality</h4>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Equality [1]
-p == p2
-
-// Non-equality [2]
-p != p2</code></pre>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_semantics_2"><a class="anchor" href="#_semantics_2"></a>Semantics</h4>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Returns <code>true</code> if <code>p2</code>, is equal to <code>p</code>.</p>
-</li>
-<li>
-<p>Returns <code>true</code> if <code>p2</code>, is not equal to <code>p</code>.</p>
-</li>
-</ol>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_transformation"><a class="anchor" href="#_transformation"></a>Transformation</h4>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Move [1]
-p.move(dx, dy)
-
-// Move To [2]
-p.move_to(x, y)
-
-// Reflection [3]
-p.reflect(p2)</code></pre>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>p.move(dx, dy)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A copy of <code>p</code> displaced by <code>dx</code> and
+                        <code>dy</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>p.move_to(x, y)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A copy of <code>p</code> placed at <code>{x, y}</code>,
+                        which discards the original
+                        coordinates.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>p.reflect(p2)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The reflection of <code>p2</code> through <code>p</code>,
+                        which is <code>{2x - p2.x, 2y - p2.y}</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+<code>reflect</code> reflects its <strong>argument</strong>, not the object it is called
+on. <code>p.reflect(p2)</code> treats <code>p</code> as the centre of rotation and returns <code>p2</code>
+rotated 180 degrees about it, so <code>point(0, 0).reflect(point(3, 4))</code> is
+<code>{-3, -4}</code>. The reading suggested by the name, reflecting <code>p</code> about <code>p2</code>,
+is <code>p2.reflect(p)</code>.
+</td>
+</tr>
+</table>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_extent_construction_and_assignment"><a class="anchor" href="#_extent_construction_and_assignment"></a>Extent Construction and Assignment</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>extent{}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Default construct <code>{0, 0}</code>, an empty size.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>extent{x, y}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct from the width and the height, through
+                     the inherited <code>point</code> constructor.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>extent(p)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct from a <code>point</code>, taking <code>p.x</code> as the
+                     width and <code>p.y</code> as the height.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>extent(e)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Copy construct from <code>e</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>e = e2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Assign <code>e2</code> to <code>e</code>.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Both coordinates are required. <code>extent{10}</code> does not compile: there is no
+one argument constructor, and the inherited <code>point</code> constructor takes two.</p>
 </div>
-<div class="sect3">
-<h4 id="_semantics_3"><a class="anchor" href="#_semantics_3"></a>Semantics</h4>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Move <code>p</code> <code>dx</code> and <code>dy</code> distance relative to <code>p</code>. Non-mutating. Returns the
-moved instance of <code>point</code>.</p>
-</li>
-<li>
-<p>Move <code>p</code> to absolute coordinates <code>x</code> and <code>y</code>. Non-mutating. Returns the
-moved instance of <code>point</code>.</p>
-</li>
-<li>
-<p>Reflect a <code>point</code>, <code>p</code>, at 180 degree rotation of point, <code>point</code>.
-Non-mutating. Returns the reflected instance of <code>point</code>.</p>
-</li>
-</ol>
 </div>
+<div class="sect2">
+<h3 id="_extent_and_point"><a class="anchor" href="#_extent_and_point"></a>Extent and Point</h3>
+<div class="paragraph">
+<p><code>extent</code> publicly derives from <code>point</code> and its <code>point</code> constructor is not
+explicit, so the two convert freely in both directions.</p>
 </div>
-<div class="sect3">
-<h4 id="_member_access"><a class="anchor" href="#_member_access"></a>Member access</h4>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">p.x
-p.y</code></pre>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>e.x</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The width.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>e.y</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The height.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>e[a]</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The size along axis <code>a</code>. Subscript is
+                 inherited and not deleted.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float&amp;</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>e == e2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Componentwise, through <code>point::operator==</code>.
+                 <code>e == p</code> and <code>p == e</code> compile too.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>e.move(dx, dy)</code><br>
+  <code>e.move_to(x, y)</code><br>
+  <code>e.reflect(p)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Deleted. Each is a compile error.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">deleted</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The three deleted members hide the base versions rather than removing
+them, so <code>static_cast&lt;point const&amp;&gt;(e).move(dx, dy)</code> still compiles. That
+is the escape hatch when a size genuinely has to be treated as a position.</p>
 </div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_semantics_4"><a class="anchor" href="#_semantics_4"></a>Semantics</h4>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Direct access to members <code>x</code> and <code>y</code>.</p>
-</li>
-</ol>
-</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="📢  IMPORTANT"></i>
+</td>
+<td class="content">
+The separation is a naming aid, not a type barrier. <code>extent e =
+p;</code> and <code>point p = e;</code> both compile silently, so passing a position where
+a size is expected is not caught. Only the three deleted members are
+enforced.
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_extent"><a class="anchor" href="#_extent"></a>extent</h2>
+<h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The <code>extent</code> struct is a specialization of <code>point</code> but deletes the members
-<code>move</code>, <code>move_to</code>, and <code>reflect</code>. <code>extent</code> is intended for specifying
-2-dimensional sizes.</p>
+<p>An axis agnostic helper that grows a <code>point</code> along one axis only, and the
+<code>extent</code> returned by a <code>rect</code>:</p>
 </div>
-<div class="sect2">
-<h3 id="_declaration_2"><a class="anchor" href="#_declaration_2"></a>Declaration</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">struct extent : point
-{
-   using point::point;
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   constexpr point advance(point p, axis a, float d)
+   {
+      p[a] += d;
+      return p;
+   }
 
-               extent(point p);
+   constexpr auto p = advance(point(10, 20), axis::y, 5);   // {10, 25}
 
-   point       move(float dx, float dy) const = delete;
-   point       move_to(float x, float y) const = delete;
-   point       reflect(point p) const = delete;
-};</code></pre>
-</div>
+   // rect::size() hands back an extent; x is the width, y the height.
+   auto size = bounds.size();
+   auto square = std::min(size.x, size.y);</code></pre>
 </div>
 </div>
 </div>
