@@ -167,8 +167,9 @@ add_test(NAME artist_test COMMAND artist_test)
 
 # Non-graphical unit tests (no window / graphics backend required).
 
-# Foundation value types (affine_transform, color, circle). Asserts the
-# claims made by the reference pages under docs/.../pages/foundation/.
+# Foundation value types (point, extent, affine_transform, color, circle).
+# Asserts the claims made by the reference pages under
+# docs/.../pages/foundation/.
 add_executable(foundation_test foundation_test.cpp)
 target_include_directories(foundation_test PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../lib/include)
 add_test(NAME foundation_test COMMAND foundation_test)

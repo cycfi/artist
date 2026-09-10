@@ -3,8 +3,9 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 
-   Unit test for the foundation value types: affine_transform, color and
-   circle. Every case here asserts a claim made by the corresponding
+   Unit test for the foundation value types: point, extent,
+   affine_transform, color and circle. Every case here asserts a claim
+   made by the corresponding
    reference page under docs/modules/ROOT/pages/foundation/, so the pages
    and the library cannot drift apart silently. Non-graphical: builds and
    runs without a window or graphics backend.
@@ -12,10 +13,12 @@
 #include <artist/affine_transform.hpp>
 #include <artist/circle.hpp>
 #include <artist/color.hpp>
+#include <artist/point.hpp>
 #include <cmath>
 #include <iostream>
 #include <iterator>
 #include <type_traits>
+#include <utility>
 
 using namespace cycfi::artist;
 
@@ -40,6 +43,137 @@ static bool near_(color a, color b, double eps = 1e-5)
 {
    return near_(a.red, b.red, eps) && near_(a.green, b.green, eps)
       && near_(a.blue, b.blue, eps) && near_(a.alpha, b.alpha, eps);
+}
+
+///////////////////////////////////////////////////////////////////////////
+// point and extent
+///////////////////////////////////////////////////////////////////////////
+
+// The page's Overview: everything is constexpr, construction and
+// accessors alike. The Axis table: the underlying type is bool, axis::x
+// converts to false, and other() flips.
+static_assert(std::is_same_v<std::underlying_type_t<axis>, bool>);
+static_assert(sizeof(axis) == 1);
+static_assert(bool(axis::x) == false && bool(axis::y) == true);
+static_assert(other(axis::x) == axis::y && other(axis::y) == axis::x);
+
+static_assert(point{}.x == 0.0f && point{}.y == 0.0f);
+static_assert(point(3.0f, 4.0f)[axis::x] == 3.0f);
+static_assert(point(3.0f, 4.0f)[axis::y] == 4.0f);
+static_assert(extent{}.x == 0.0f && extent{}.y == 0.0f);
+
+// The page's NOTE under Point Construction: user declared constructors, so
+// neither type is an aggregate and there is no partial initialization.
+static_assert(!std::is_aggregate_v<point>);
+static_assert(!std::is_aggregate_v<extent>);
+static_assert(std::is_trivially_copyable_v<point>);
+static_assert(std::is_trivially_copyable_v<extent>);
+
+// The Extent and Point section: extent derives from point, adds nothing,
+// and converts both ways.
+static_assert(std::is_base_of_v<point, extent>);
+static_assert(sizeof(extent) == sizeof(point));
+static_assert(std::is_convertible_v<point, extent>);
+static_assert(std::is_convertible_v<extent, point>);
+
+// The Extent and Point section: the three movement members are deleted.
+template <typename T, typename = void>
+struct has_move : std::false_type {};
+template <typename T>
+struct has_move<T, std::void_t<
+   decltype(std::declval<T const&>().move(0.0f, 0.0f))>> : std::true_type {};
+static_assert(has_move<point>::value);
+static_assert(!has_move<extent>::value);
+
+static void test_point_construction()
+{
+   point p;
+   CHECK(p.x == 0.0f && p.y == 0.0f);
+   CHECK(p == point(0.0f, 0.0f));
+
+   point q{10.0f, 20.0f};
+   CHECK(q.x == 10.0f && q.y == 20.0f);
+
+   point r(q);
+   CHECK(r == q);
+   CHECK(!(r != q));
+
+   p = q;
+   CHECK(p == q);
+
+   // The page's Comparison row: the comparison is exact.
+   point almost{10.0f + 1e-6f, 20.0f};
+   CHECK(almost != q);
+}
+
+static void test_point_subscript()
+{
+   point p{3.0f, 4.0f};
+
+   // The const form reads.
+   point const& cp = p;
+   CHECK(cp[axis::x] == 3.0f);
+   CHECK(cp[axis::y] == 4.0f);
+
+   // The non-const form returns a reference, so it assigns.
+   p[axis::x] = 7.0f;
+   p[axis::y] = 8.0f;
+   CHECK(p == point(7.0f, 8.0f));
+
+   // The page's claim that subscript is what makes code axis agnostic.
+   for (auto a : {axis::x, axis::y})
+   {
+      point q{1.0f, 1.0f};
+      q[a] += 5.0f;
+      CHECK(q[a] == 6.0f);
+      CHECK(q[other(a)] == 1.0f);
+   }
+}
+
+static void test_point_derivation()
+{
+   point p{10.0f, 20.0f};
+
+   CHECK(p.move(5.0f, -5.0f) == point(15.0f, 15.0f));
+   CHECK(p.move_to(1.0f, 2.0f) == point(1.0f, 2.0f));
+
+   // Non-mutating: p is untouched by both.
+   CHECK(p == point(10.0f, 20.0f));
+}
+
+static void test_extent()
+{
+   extent e;
+   CHECK(e.x == 0.0f && e.y == 0.0f);
+
+   // Two coordinates, through the inherited point constructor. The page:
+   // x is the width and y is the height; there are no width/height names.
+   extent size{100.0f, 60.0f};
+   CHECK(size.x == 100.0f && size.y == 60.0f);
+   CHECK(size[axis::x] == 100.0f && size[axis::y] == 60.0f);
+
+   // Constructed from a point, and comparable against one either way.
+   point p{100.0f, 60.0f};
+   extent from_point{p};
+   CHECK(from_point == size);
+   CHECK(size == p);
+   CHECK(p == size);
+
+   // The page's IMPORTANT: the separation is a naming aid, not a barrier.
+   // Both conversions are implicit and silent.
+   extent from_pos = p;
+   point as_pos = size;
+   CHECK(from_pos == size);
+   CHECK(as_pos == p);
+
+   // The escape hatch the page documents: the deleted members hide the
+   // base versions rather than removing them.
+   CHECK(static_cast<point const&>(size).move(1.0f, 2.0f)
+      == point(101.0f, 62.0f));
+
+   // rect::size() is the extent the library hands back most often.
+   rect r{0.0f, 0.0f, 100.0f, 60.0f};
+   CHECK(r.size() == extent(100.0f, 60.0f));
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -307,10 +441,29 @@ static void test_circle_derivation()
 
 ///////////////////////////////////////////////////////////////////////////
 // Behaviour under review. These pin down what the library does today so a
-// change is visible; both are flagged in the reference pages as suspect
-// and neither is asserted to be correct. See docs foundation/color.adoc
-// (Arithmetic) and foundation/circle.adoc (Constructors and Assignment).
+// change is visible; each is flagged in the reference pages as suspect
+// and none is asserted to be correct. See docs foundation/point.adoc
+// (Derivation), foundation/color.adoc (Arithmetic) and
+// foundation/circle.adoc (Constructors and Assignment).
 ///////////////////////////////////////////////////////////////////////////
+
+static void test_point_reflect_current_behaviour()
+{
+   // REVIEW: reflect returns 2*(*this) - arg, so it reflects its ARGUMENT
+   // through the object it is called on, not the object through the
+   // argument. The name reads the other way round. Nothing in the library
+   // calls it, so the direction has never been exercised.
+   CHECK(point(0.0f, 0.0f).reflect(point(3.0f, 4.0f))
+      == point(-3.0f, -4.0f));
+   CHECK(point(10.0f, 20.0f).reflect(point(8.0f, 18.0f))
+      == point(12.0f, 22.0f));
+
+   // The reading the name suggests, reflecting p about centre, is
+   // centre.reflect(p).
+   point p{8.0f, 18.0f};
+   point centre{10.0f, 20.0f};
+   CHECK(centre.reflect(p) == point(12.0f, 22.0f));
+}
 
 static void test_color_arithmetic_current_behaviour()
 {
@@ -358,6 +511,11 @@ static void test_circle_from_rect_current_behaviour()
 
 int main()
 {
+   test_point_construction();
+   test_point_subscript();
+   test_point_derivation();
+   test_extent();
+
    test_affine_construction();
    test_affine_factories();
    test_affine_composition();
@@ -373,6 +531,7 @@ int main()
    test_circle_accessors();
    test_circle_derivation();
 
+   test_point_reflect_current_behaviour();
    test_color_arithmetic_current_behaviour();
    test_circle_from_rect_current_behaviour();
 
