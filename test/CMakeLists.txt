@@ -14,6 +14,7 @@ set(artist_test_sources
    composite_test.cpp
    typography_test.cpp
    geometry_test.cpp
+   image_test.cpp
    text_layout_render_test.cpp
    text_edit_sim_test.cpp
    text_edit_code_test.cpp

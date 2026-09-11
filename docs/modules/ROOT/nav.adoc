@@ -10,6 +10,7 @@
 *** xref:foundation/affine_transform.adoc[Affine Transform]
 *** xref:foundation/color.adoc[Color]
 *** xref:foundation/font.adoc[Font]
+*** xref:foundation/image.adoc[Image]
 *** xref:foundation/resources.adoc[Resources]
 ** xref:path.adoc[Path]
 ** xref:canvas.adoc[Canvas]

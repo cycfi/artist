@@ -11,4 +11,6 @@ the drawing calls are expressed in.
   matrix behind the canvas transforms.
 * xref:foundation/color.adoc[Color] gives a color, with named constants.
 * xref:foundation/font.adoc[Font] describes and resolves a font.
+* xref:foundation/image.adoc[Image] holds a bitmap, loaded from a file,
+  built from pixels, or drawn offscreen.
 * xref:foundation/resources.adoc[Resources] finds fonts and images on disk.
