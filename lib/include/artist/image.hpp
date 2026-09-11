@@ -159,11 +159,10 @@ namespace cycfi::artist
 
    inline image& image::operator=(image&& rhs) noexcept
    {
-      if (this != &rhs)
-      {
-         _impl = std::move(rhs._impl);
-         rhs._impl = nullptr;
-      }
+      // Swap so the old _impl is destroyed by rhs's destructor in the backend
+      // TU where image_impl is complete (it is incomplete here). A plain
+      // overwrite would leak the old _impl.
+      std::swap(_impl, rhs._impl);
       return *this;
    }
 }
