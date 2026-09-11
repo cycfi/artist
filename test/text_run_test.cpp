@@ -4,9 +4,7 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 
    Asserts the claims of docs/modules/ROOT/pages/text_run.adoc. Each case
-   names the page section it comes from. Behaviour under review is pinned in
-   its own "current behaviour" case at the bottom; it records what the
-   library does today, not what it should do.
+   names the page section it comes from.
 =============================================================================*/
 #include "test_support.hpp"
 #include <functional>
@@ -451,22 +449,21 @@ TEST_CASE("text_run: Example", "[text_run]")
    img.save_png(get_results_path() + "text_run_example.png");
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Current behaviour, under review. Records what the library does today so
-// that a change is visible; it does not assert the behaviour is correct.
-///////////////////////////////////////////////////////////////////////////////
-
-TEST_CASE("text_run current behaviour: Quartz 2D caret indices", "[text_run]")
+TEST_CASE("text_run: Hit Testing outside the Basic Multilingual Plane", "[text_run]")
 {
-   // Three characters outside the Basic Multilingual Plane, then 'x': four
-   // code points, seven UTF-16 code units.
+   // Page, Overview: indices are code points on every backend, including
+   // characters that take two UTF-16 code units. Three of them, then 'x':
+   // four code points.
    text_run r{fd40, std::u32string_view{U"\U0001F600\U0001F600\U0001F600x"}};
    r.flow(1000);
    REQUIRE(r.text().size() == 4);
-#if defined(ARTIST_QUARTZ_2D)
-   // Quartz 2D counts UTF-16 code units: past the end is 7, not 4.
-   CHECK(r.caret_index(1e6f, 0) == 7);
-#else
    CHECK(r.caret_index(1e6f, 0) == 4);
-#endif
+
+   // Each code point has its own caret position, left to right, and each
+   // position maps back to its index.
+   for (std::size_t i = 0; i != 4; ++i)
+   {
+      CHECK(r.caret_point(i).x < r.caret_point(i + 1).x);
+      CHECK(r.caret_index(r.caret_point(i)) == i);
+   }
 }

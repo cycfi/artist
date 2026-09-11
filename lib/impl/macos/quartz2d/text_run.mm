@@ -56,10 +56,17 @@ namespace cycfi::artist
 
       void                    clear_rows();
 
+      // Core Text indexes the string in UTF-16 code units; the API indexes
+      // it in code points. _u16[i] is the UTF-16 offset of code point i,
+      // with one extra entry for the end of the text.
+      CFIndex                 to_u16(std::size_t index) const;
+      std::size_t             to_u32(CFIndex index) const;
+
       class font              _font;
       std::u32string          _text;
       rows                    _rows;
       std::vector<break_info> _breaks;
+      std::vector<CFIndex>    _u16;
    };
 
    text_run::impl::impl(font const& font_, std::u32string_view utf32)
@@ -107,6 +114,27 @@ namespace cycfi::artist
          }
          _breaks[i] = info;
       }
+
+      _u16.reserve(_text.size() + 1);
+      CFIndex n = 0;
+      for (auto cp : _text)
+      {
+         _u16.push_back(n);
+         n += (cp > 0xFFFF)? 2 : 1;
+      }
+      _u16.push_back(n);
+   }
+
+   CFIndex text_run::impl::to_u16(std::size_t index) const
+   {
+      return _u16[std::min(index, _text.size())];
+   }
+
+   std::size_t text_run::impl::to_u32(CFIndex index) const
+   {
+      // A UTF-16 index inside a surrogate pair maps to the next code point.
+      auto i = std::lower_bound(_u16.begin(), _u16.end(), index);
+      return std::min(std::size_t(i - _u16.begin()), _text.size());
    }
 
    text_run::impl::~impl()
@@ -245,13 +273,20 @@ namespace cycfi::artist
          row_index = _rows.size() - 1;
       }
 
+      // Core Text works in UTF-16 code units.
+      CFIndex u16_index = to_u16(char_index);
+
       // Find the row that includes the glyph index
       if (row_index == -1)
       {
-         auto i = std::lower_bound(_rows.begin(), _rows.end(), char_index,
-            [](auto const& row, std::size_t pos)
+         auto i = std::lower_bound(_rows.begin(), _rows.end(), u16_index,
+            [](auto const& row, CFIndex pos)
             {
+               // The empty last row after a trailing hard break holds no
+               // index; it sorts last.
                auto rng = CTLineGetStringRange(row.line);
+               if (rng.length == 0)
+                  return false;
                return (rng.location + rng.length - 1) < pos;
             }
          );
@@ -262,7 +297,7 @@ namespace cycfi::artist
 
       // Now find the glyph position in the row
       auto const& row = _rows[row_index];
-      auto offset = CTLineGetOffsetForStringIndex(row.line, char_index, nullptr);
+      auto offset = CTLineGetOffsetForStringIndex(row.line, u16_index, nullptr);
       return {float(row.pos.x + offset), row.pos.y};
    }
 
@@ -281,9 +316,10 @@ namespace cycfi::artist
       if (i == _rows.end())
          return npos;
 
+      // Core Text reports UTF-16 indices; the API returns code points.
       auto rng = CTLineGetStringRange(i->line);
       if (p.x <= i->pos.x)
-         return rng.location;
+         return to_u32(rng.location);
 
       if (i != _rows.end()-1 && p.x >= (i->pos.x + i->width))
       {
@@ -292,14 +328,14 @@ namespace cycfi::artist
          // space or a hard newline), so step back over it; otherwise (e.g. CJK
          // with no inter-character space) the boundary is the next line's first
          // character.  This matches the Skia and Cairo backends.
-         auto end = rng.location + rng.length;
-         if (end > rng.location && is_space(_text[end - 1]))
+         auto first = to_u32(rng.location);
+         auto end = to_u32(rng.location + rng.length);
+         if (end > first && is_space(_text[end - 1]))
             --end;
          return end;
       }
 
-      auto index = CTLineGetStringIndexForPosition(i->line, {p.x - i->pos.x, 0});
-      return index;
+      return to_u32(CTLineGetStringIndexForPosition(i->line, {p.x - i->pos.x, 0}));
    }
 
    std::size_t text_run::impl::num_lines() const

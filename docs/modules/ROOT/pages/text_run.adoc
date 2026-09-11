@@ -229,11 +229,6 @@ or the next line's first character. On the last line that is
 `r.text().size()`. Between the two, `x` rounds to the nearest glyph
 boundary.
 
-CAUTION: On Quartz 2D, `caret_point` and `caret_index` count UTF-16 code
-units rather than code points. The two agree until the text holds a
-character outside the Basic Multilingual Plane, such as an emoji; past that
-point Quartz 2D's indices no longer match `text()` or the break queries.
-
 NOTE: Where several code points share one glyph, as in the "fi" ligature,
 the caret positions inside it depend on the backend.
 
