@@ -299,6 +299,41 @@ TEST_CASE("Image: offscreen drawing reaches the image immediately", "[image]")
    CHECK(near(pixel_at(img, 5, 5), red));
 }
 
+TEST_CASE("Image: scale", "[image]")
+{
+   // Page, Overview and Accessors: size() is in units, bitmap_size() in
+   // pixels, scale() pixels per unit.
+   image img{10, 20, 2};
+   CHECK(img.scale() == 2);
+   CHECK(img.size() == extent{10, 20});
+   CHECK(img.bitmap_size() == extent{20, 40});
+
+   // Constructors: the bitmap is rounded to the nearest whole pixel.
+   CHECK(image(10.4f, 10.6f).bitmap_size() == extent{10, 11});
+
+   // Offscreen Construction: the context draws in units, so a fill 5 units
+   // wide covers 10 pixels.
+   fill(img, colors::red, {0, 0, 10, 20});
+   fill(img, colors::blue, {0, 0, 5, 20});
+   CHECK(near(pixel_at(img, 9, 20), blue));
+   CHECK(near(pixel_at(img, 10, 20), red));
+
+   // Output: save_png writes the bitmap, and the file loads back at scale 1.
+   auto path = get_results_path() + "image_test_scale.png";
+   img.save_png(path);
+   std::uint32_t w = 0, h = 0;
+   png_dims(path, w, h);
+   CHECK(w == 20);
+   CHECK(h == 40);
+   image loaded{fs::path{path}};
+   CHECK(loaded.scale() == 1);
+   CHECK(loaded.size() == extent{20, 40});
+
+   // Construction from Pixels: a make_image image has scale 1.
+   std::uint8_t buf[4] = {0, 0, 0, 0};
+   CHECK(make_image<pixel_format::gray8>(buf, {2, 2}).scale() == 1);
+}
+
 TEST_CASE("Image: draw works in units at any scale", "[image]")
 {
    // Page, Accessors: draw places the image at size() in user space, and the

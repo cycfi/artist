@@ -2,30 +2,34 @@
 
 == Overview
 
-An `image` is a bitmap the canvas can paint. It is what the
-xref:canvas/images.adoc[Images] calls take. There are three ways to get
-one: load it from a file, build it from a buffer of pixels with
-`make_image`, or create a blank one of a given size and draw into it
-through an `offscreen_image`.
+An `image` is a bitmap the canvas can paint with `draw`, which is covered
+under xref:canvas/images.adoc[Drawing Images]. This page covers the image
+itself. There are three ways to get one: load it from a file, build it
+from a buffer of pixels with `make_image`, or create a blank one of a
+given size and draw into it through an `offscreen_image`.
+
+Every image owns its pixels: 32 bit, premultiplied B, G, R, A, allocated
+when the image is constructed. A blank image starts fully transparent.
+
+An image's size is in units, the units the canvas draws in, and its scale
+is the number of pixels per unit. An image made 64 by 64 at scale 2 holds
+128 by 128 pixels, yet it is drawn, and drawn into, as 64 by 64. Use a
+scale above 1 to render for a high density display without changing the
+drawing code. Images loaded from a file or built with `make_image` have
+scale 1.
 
 A file name that is not absolute is looked up through the
-xref:foundation/resources.adoc[Resources] search list. PNG is read on every
-backend; which other formats load depends on the backend's decoder.
+xref:foundation/resources.adoc[Resources] search list. PNG, JPEG and WebP
+are read on every backend; which other formats load depends on the
+backend's decoder.
 
-An `image` owns backend storage, so it can be moved but not copied. Share
-one through `image_ptr`, which is a `std::shared_ptr<image>`.
+An `image` owns its storage, so it can be moved but not copied. Share one
+through `image_ptr`, which is a `std::shared_ptr<image>`.
 
 To draw into an image, construct an `offscreen_image` on it and build a
-`canvas` on its `context()`. On some backends the drawing reaches the image
-only when the `offscreen_image` is destroyed, so end its lifetime before
-using the image, and do not let the canvas outlive it. The <<Example>>
-shows the pattern.
-
-NOTE: Drawing an image behaves the same on every backend. Drawing into one,
-and the pixel level API, do not: when the drawing reaches the image,
-whether earlier contents survive, what `pixels()` points at, how
-`make_image` reads its buffer and how a failure is reported all depend on
-the backend. The differences are set out under <<Backend Differences>>.
+`canvas` on its `context()`. The drawing lands in the image as it is drawn,
+over whatever the image already holds. The canvas must not outlive the
+`offscreen_image`. The <<Example>> shows the pattern.
 
 == Include
 
@@ -51,8 +55,8 @@ the backend. The differences are set out under <<Backend Differences>>.
    {
    public:
 
-      explicit          image(float sizex, float sizey);
-      explicit          image(extent size);
+      explicit          image(float sizex, float sizey, float scale = 1.0f);
+      explicit          image(extent size, float scale = 1.0f);
       explicit          image(fs::path const& path_);
 
                         image(image const& rhs) = delete;
@@ -64,6 +68,7 @@ the backend. The differences are set out under <<Backend Differences>>.
 
       image_impl_ptr    impl() const;
       extent            size() const;
+      float             scale() const;
       void              save_png(std::string_view path) const;
 
       uint32_t*         pixels();
@@ -106,8 +111,9 @@ the backend. The differences are set out under <<Backend Differences>>.
 === Notation
 
 `img`, `img2`  :: Objects of type `image`.
-`sx`, `sy`     :: `float` width and height.
-`sz`           :: Object of type `extent`, a width and height.
+`sx`, `sy`     :: `float` width and height, in units.
+`sz`           :: Object of type `extent`, a width and height in units.
+`s`            :: A `float`, a scale: pixels per unit.
 `p`            :: Object of type `fs::path`, an image file name, relative
                   or absolute.
 `str`          :: A `std::string_view`, a file name.
@@ -123,20 +129,23 @@ the backend. The differences are set out under <<Backend Differences>>.
 | Expression                  | Semantics
 
 | `image(sx, sy)`             | Construct a blank, fully transparent image
-                                `sx` by `sy` in size.
-| `image(sz)`                 | As above, `sz` in size.
-| `image(p)`                  | Load the image file `p`. Throws
+                                `sx` by `sy` units in size, at scale 1.
+| `image(sx, sy, s)`          | As above, at scale `s`. The bitmap is
+                                `sx * s` by `sy * s` pixels, rounded to
+                                the nearest whole pixel.
+| `image(sz)`                 | As `image(sz.x, sz.y)`.
+| `image(sz, s)`              | As `image(sz.x, sz.y, s)`.
+| `image(p)`                  | Load the image file `p`, at scale 1. Throws
                                 `std::runtime_error` if the file is
-                                missing or cannot be decoded, except on
-                                Quartz 2D.
+                                missing or cannot be decoded.
 | `image(std::move(img))`     | Move construct from `img`, which is left
                                 holding nothing.
 | `img = std::move(img2)`     | Move assign `img2` to `img`. `img2` is
                                 left holding nothing.
 |===
 
-All three constructors are `explicit`, so an `extent` or a path does not
-convert to an `image` implicitly.
+The constructors are `explicit`, so an `extent` or a path does not convert
+to an `image` implicitly.
 
 WARNING: A moved from `image` holds nothing. Destroy it or assign to it;
 calling any other member on it is undefined behaviour.
@@ -160,13 +169,12 @@ its pointer type, so `pixel_format::invalid` is rejected at compile time.
                                                   in memory order, then a byte
                                                   that is ignored. Opaque.          | `image`
 | `make_image<pixel_format::rgba32>(d32, sz)`   | Four bytes per pixel: R, G, B and
-                                                  A in memory order.                | `image`
+                                                  A in memory order, with straight
+                                                  (not premultiplied) alpha.        | `image`
 |===
 
-CAUTION: Only opaque `gray8` and `rgba32` pixels are read the same way by
-every backend. Whether the buffer is copied, how `rgba32` alpha is read,
-and whether `rgb16` and `rgb32` work at all depend on the backend. Keeping
-the buffer alive for as long as the image is safe on every backend.
+The pixels are converted into the image's own bitmap, so the buffer can be
+released as soon as `make_image` returns. The image has scale 1.
 
 === Accessors
 
@@ -174,13 +182,13 @@ the buffer alive for as long as the image is safe on every backend.
 |===
 | Expression          | Semantics                              | Return Type
 
-| `img.size()`        | The size of the image. `draw` places
-                        the image at this size in user space,
-                        and the `src` rectangle `draw` takes is
-                        in these units.                        | `extent`
-| `img.bitmap_size()` | The width and height, in pixels, of
-                        the buffer `pixels()` points at, or
-                        `{0, 0}` when there is none.           | `extent`
+| `img.size()`        | The size of the image in units. `draw`
+                        places the image at this size in user
+                        space, and the `src` rectangle `draw`
+                        takes is in these units.               | `extent`
+| `img.scale()`       | The number of pixels per unit.         | `float`
+| `img.bitmap_size()` | The width and height of the bitmap in
+                        pixels, `size()` times `scale()`.      | `extent`
 | `img.impl()`        | The backend's image handle, for code
                         that talks to the backend directly.    | `image_impl_ptr`
 |===
@@ -191,20 +199,16 @@ the buffer alive for as long as the image is safe on every backend.
 |===
 | Expression      | Semantics                                  | Return Type
 
-| `img.pixels()`  | The first pixel of the bitmap, or
-                    `nullptr` if the image has none. Rows run
-                    from the top, `bitmap_size().x` pixels to
-                    a row, with no padding.                    | `uint32_t*`, or
+| `img.pixels()`  | The first pixel of the bitmap. Each pixel
+                    is four bytes, B, G, R and A in memory
+                    order, with the colour premultiplied by
+                    alpha. Rows run from the top,
+                    `bitmap_size().x` pixels to a row, with no
+                    padding.                                   | `uint32_t*`, or
                                                                  `uint32_t const*`
                                                                  if `img` is
                                                                  `const`
 |===
-
-CAUTION: What the pixels are depends on the backend and on where the image
-came from. On Quartz 2D, an image drawn through an `offscreen_image` does
-not hold 32 bit pixels at all. To inspect pixels on every backend, save
-the image with `save_png` and load the file back: a loaded PNG always gives
-32 bit pixels, though not in the same channel order everywhere.
 
 NOTE: Treat the buffer as read only. There is no call to tell the backend
 that the pixels have changed, and Cairo needs one before it uses the image
@@ -216,14 +220,17 @@ again.
 |===
 | Expression            | Semantics                            | Return Type
 
-| `img.save_png(str)`   | Write the image to the file `str` as
-                          a PNG, `size().x` by `size().y`
-                          pixels. `str` is used as given; it is
-                          not looked up through the resource
-                          search list.                         | `void`
+| `img.save_png(str)`   | Write the bitmap to the file `str` as
+                          a PNG, `bitmap_size().x` by
+                          `bitmap_size().y` pixels. `str` is
+                          used as given; it is not looked up
+                          through the resource search list.
+                          Throws `std::runtime_error` if the
+                          file cannot be written.              | `void`
 |===
 
-Only Cairo reports a failure to write the file.
+Loading the file back gives an image at scale 1, so its `size()` is the
+saved image's `bitmap_size()`.
 
 === Offscreen Construction
 
@@ -235,9 +242,10 @@ Only Cairo reports a failure to write the file.
                              outlive the `offscreen_image`.
 |===
 
-An `offscreen_image` is neither copyable nor movable. Its destructor ends
-the drawing: everything drawn through its context is in the image once it
-has been destroyed.
+An `offscreen_image` is neither copyable nor movable. Its context draws
+into the image in the image's units, scaled by `scale()` to pixels, and
+each drawing call lands in the image as it is made. The destructor ends
+the drawing.
 
 === Offscreen Context
 
@@ -252,61 +260,14 @@ has been destroyed.
                       not outlive it.                        | `canvas_impl*`
 |===
 
-== Backend Differences
-
-The table records what each backend does today where they part ways.
-
-[cols="2,1,1,1"]
-|===
-| Behaviour                          | Quartz 2D                 | Skia                      | Cairo
-
-| `image(p)` when `p` is missing
-  or cannot be decoded               | Returns an empty image,
-                                       `size()` is `{0, 0}`      | Throws
-                                                                   `std::runtime_error`      | Throws
-                                                                                               `std::runtime_error`
-| `save_png` cannot write the file   | Not reported              | Not reported              | Throws
-                                                                                               `std::runtime_error`
-| A blank image before any drawing   | No bitmap, `pixels()` is
-                                       `nullptr`                 | No bitmap, `pixels()` is
-                                                                   `nullptr`                 | A transparent bitmap
-| When drawing through an
-  `offscreen_image` reaches the
-  image                              | When it is destroyed      | When it is destroyed      | As it is drawn
-| `offscreen_image` on an image
-  that already holds something       | Draws over it             | Starts from transparent
-                                                                   and replaces it           | Draws over it
-| The `make_image` buffer            | Read in place, so it must
-                                       outlive the image         | Copied                    | Copied
-| `rgba32` alpha                     | Read as premultiplied     | Declared opaque, so a
-                                                                   pixel with alpha below
-                                                                   255 draws undefined       | Read as straight
-| `rgb16`                            | Not read as 5-6-5         | Supported                 | Supported
-| `rgb32`                            | Draws nothing             | Supported                 | Supported
-| `pixels()` of a loaded PNG         | R, G, B, A bytes,
-                                       straight alpha            | B, G, R, A bytes,
-                                                                   straight alpha            | B, G, R, A bytes,
-                                                                                               premultiplied
-| `pixels()` after drawing through
-  an `offscreen_image`               | Not 32 bit pixels.
-                                       `bitmap_size()` is
-                                       `{0, 0}` until `pixels()`
-                                       is first called, then
-                                       at the display's backing
-                                       scale                     | B, G, R, A bytes,
-                                                                   premultiplied             | B, G, R, A bytes,
-                                                                                               premultiplied
-| `pixels()` of a `make_image`
-  image                              | The buffer's own format   | The buffer's own format   | B, G, R, A bytes,
-                                                                                               premultiplied
-|===
-
 == Example
 
-Render a badge once into an image, then paint it wherever it is needed:
+Render a badge once into an image, then paint it wherever it is needed.
+At scale 2 the badge stays sharp on a high density display, and the
+drawing code still works in its 64 unit size:
 
 ```c++
-   image badge{64, 64};
+   image badge{64, 64, 2};
    {
       offscreen_image off{badge};
       canvas bc{off.context()};

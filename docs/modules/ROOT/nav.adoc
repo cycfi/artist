@@ -20,6 +20,6 @@
 *** xref:canvas/gradients.adoc[Gradients]
 *** xref:canvas/rectangles.adoc[Rectangles]
 *** xref:canvas/text.adoc[Text]
-*** xref:canvas/images.adoc[Images]
+*** xref:canvas/images.adoc[Drawing Images]
 *** xref:canvas/states.adoc[States]
 ** xref:text_run.adoc[Text Run]

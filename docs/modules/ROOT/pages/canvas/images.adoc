@@ -1,9 +1,14 @@
-= Images
+= Drawing Images
 
 == Overview
 
-An `image` is drawn onto the canvas with `draw`. The overloads differ in
-how much of the image is drawn, where it lands, and at what size.
+`draw` paints an xref:foundation/image.adoc[image] onto the canvas. The
+Image page covers the image itself: loading one, building one from pixels,
+and drawing into one. The overloads here differ in how much of the image
+is drawn, where it lands, and at what size.
+
+Positions and rectangles are in user space. The image's own size, and the
+`src` rectangle, are in the image's units, `size()`, whatever its scale.
 
 == draw
 

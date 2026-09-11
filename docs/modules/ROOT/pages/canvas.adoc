@@ -6,14 +6,16 @@ following standard {cpp} style (e.g. using lower-case and underscores as
 word separators instead of camelCase).
 
 The canvas API is built on top of xref:foundation.adoc[Foundation classes]
-such as points and rectangles, and on the drawable classes documented in
-this section, such as paths and images.
+such as points and rectangles, and on drawable classes such as
+xref:path.adoc[Path] and xref:foundation/image.adoc[Image].
 
 == Overview
 
-The `canvas` is the surface you draw on. You do not construct one: the host
-window creates a canvas for its drawing area and hands it to you for the
-duration of the draw call.
+The `canvas` is the surface you draw on. Usually you do not construct one:
+the host window creates a canvas for its drawing area and hands it to you
+for the duration of the draw call. To draw into an image instead, you
+construct a canvas yourself on an `offscreen_image`'s context; see
+xref:foundation/image.adoc[Image].
 
 Drawing follows the pattern of the HTML5 canvas. You set the styles you
 want, build a path, then fill or stroke it. The styles are state held by
@@ -38,7 +40,7 @@ The pages in this section catalogue the canvas interface.
   color.
 * xref:canvas/rectangles.adoc[Rectangles] build and paint in one step.
 * xref:canvas/text.adoc[Text] draws and measures strings.
-* xref:canvas/images.adoc[Images] draws pixmaps.
+* xref:canvas/images.adoc[Drawing Images] paints an image onto the canvas.
 * xref:canvas/states.adoc[States] save and restore the canvas.
 
 Throughout, `cnv` is an instance of `canvas`.
