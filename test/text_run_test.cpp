@@ -212,7 +212,10 @@ TEST_CASE("text_run: Layout", "[text_run]")
       auto ragged = ink(false);
       auto justified = ink(true);
       CHECK(ragged.right(20, 45) < 400);
-      CHECK(std::abs(justified.right(20, 45) - 410) <= 3);
+      // The justified line fills to the flow width (offset 10 + 400). The
+      // rightmost inked pixel includes the last glyph's overhang, which varies
+      // by shaper and anti-aliasing across backends, so allow a few pixels.
+      CHECK(std::abs(justified.right(20, 45) - 410) <= 8);
       CHECK(justified.right(47, 72) == ragged.right(47, 72));
    }
 }
