@@ -23,6 +23,8 @@ namespace cycfi::artist
 
       base_type&        base() { return *this; }
       base_type const&  base() const { return *this; }
+
+      float             scale = 1.0f;   // bitmap pixels per logical unit
    };
 }
 

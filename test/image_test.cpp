@@ -102,7 +102,7 @@ TEST_CASE("Image: Constructors and Assignment", "[image]")
    // Blank image storage (Backend Differences).
    {
       image img{10, 20};
-#if defined(ARTIST_CAIRO)
+#if defined(ARTIST_CAIRO) || defined(ARTIST_SKIA)
       REQUIRE(img.pixels() != nullptr);
       CHECK(img.bitmap_size() == extent{10, 20});
       for (int i = 0; i != 10 * 20; ++i)
@@ -231,7 +231,7 @@ TEST_CASE("Image: Accessors and Pixel Access", "[image]")
       auto img = make_image<pixel_format::gray8>(buf, {2, 2});
       auto p = reinterpret_cast<std::uint8_t const*>(img.pixels());
       REQUIRE(p != nullptr);
-#if defined(ARTIST_CAIRO)
+#if defined(ARTIST_CAIRO) || defined(ARTIST_SKIA)
       CHECK(p[0] == 0x10);
       CHECK(p[1] == 0x10);
       CHECK(p[2] == 0x10);
@@ -304,10 +304,10 @@ TEST_CASE("Image current behaviour: save_png failure", "[image]")
 {
    image img{4, 4};
    fill(img, colors::red, {0, 0, 4, 4});
-#if defined(ARTIST_CAIRO)
+#if defined(ARTIST_CAIRO) || defined(ARTIST_SKIA)
    CHECK_THROWS_AS(img.save_png(unwritable_file), std::runtime_error);
 #else
-   // Quartz 2D and Skia do not report the failure.
+   // Quartz 2D does not report the failure.
    CHECK_NOTHROW(img.save_png(unwritable_file));
 #endif
 }
@@ -392,17 +392,6 @@ TEST_CASE("Image current behaviour: Quartz 2D offscreen bitmap", "[image]")
 #endif
 }
 
-TEST_CASE("Image current behaviour: Skia offscreen_image discards contents", "[image]")
-{
-#if defined(ARTIST_SKIA)
-   image img{10, 10};
-   fill(img, colors::red, {0, 0, 10, 10});
-   fill(img, colors::blue, {0, 0, 5, 10});
-   CHECK(near(pixel_at(img, 1, 5), blue));
-   CHECK(pixel_at(img, 8, 5).a == 0);
-#endif
-}
-
 TEST_CASE("Image current behaviour: when drawing reaches the image", "[image]")
 {
    // Save the image while the offscreen_image is still alive.
@@ -419,12 +408,12 @@ TEST_CASE("Image current behaviour: when drawing reaches the image", "[image]")
    auto p = reinterpret_cast<std::uint8_t const*>(during.pixels());
    REQUIRE(p != nullptr);
    p += 4 * (5 * int(during.bitmap_size().x) + 5);
-#if defined(ARTIST_CAIRO)
-   // Cairo draws straight into the image.
+#if defined(ARTIST_CAIRO) || defined(ARTIST_SKIA)
+   // Cairo and Skia draw straight into the image.
    CHECK(p[3] == 255);
 #else
-   // Quartz 2D and Skia commit the drawing when the offscreen_image is
-   // destroyed; until then the image is still blank.
+   // Quartz 2D commits the drawing when the offscreen_image is destroyed;
+   // until then the image is still blank.
    CHECK(p[3] == 0);
 #endif
    CHECK(near(pixel_at(img, 5, 5), red));

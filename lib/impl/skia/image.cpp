@@ -11,49 +11,72 @@
 #include "SkImage.h"
 #include "SkPicture.h"
 #include "SkSurface.h"
+#include "SkPixmap.h"
 #include <ganesh/SkSurfaceGanesh.h>
 #include <encode/SkPngEncoder.h>
 #include "SkCanvas.h"
-#include "SkPictureRecorder.h"
 #include "SkStream.h"
 
 #include "opaque.hpp"
 #include <stdexcept>
-#include <map>
 #include <string>
-#include <utility> // std::pair
-#include <iostream>
-
-using std::map;
-using std::pair;
+#include <tuple>
 
 namespace cycfi::artist
 {
-   pair<SkAlphaType, SkColorType> _map_img_fmt_to_api_type(const pixel_format& fmt)
+   namespace
    {
-      switch(fmt)
+      // Source pixel layout for make_image, plus its byte size per pixel.
+      struct src_desc { SkColorType color; SkAlphaType alpha; int bpp; };
+
+      src_desc map_src_fmt(pixel_format fmt)
       {
-         case pixel_format::gray8:
-            return {SkAlphaType::kOpaque_SkAlphaType, SkColorType::kGray_8_SkColorType};
-         case pixel_format::rgb16:
-            return {SkAlphaType::kOpaque_SkAlphaType, SkColorType::kRGB_565_SkColorType};
-         case pixel_format::rgb32:
-            return {SkAlphaType::kOpaque_SkAlphaType, SkColorType::kRGB_888x_SkColorType};
-         case pixel_format::rgba32:
-            return {SkAlphaType::kOpaque_SkAlphaType, SkColorType::kRGBA_8888_SkColorType};
-         default:
-            return {SkAlphaType::kUnknown_SkAlphaType, SkColorType::kUnknown_SkColorType};
+         switch (fmt)
+         {
+            case pixel_format::gray8:
+               return {kGray_8_SkColorType,   kOpaque_SkAlphaType,   1};
+            case pixel_format::rgb16:
+               return {kRGB_565_SkColorType,  kOpaque_SkAlphaType,   2};
+            case pixel_format::rgb32:
+               return {kRGB_888x_SkColorType, kOpaque_SkAlphaType,   4};
+            case pixel_format::rgba32:
+               // Straight alpha in; premultiplied on the way into the bitmap.
+               return {kRGBA_8888_SkColorType, kUnpremul_SkAlphaType, 4};
+            default:
+               return {kUnknown_SkColorType,  kUnknown_SkAlphaType,  0};
+         }
       }
    }
 
-   image::image(extent size, float /*scale*/)
-    : _impl{new artist::image_impl(size)}
-   {}
+   namespace
+   {
+      // The owned bitmap layout, uniform across backends: premultiplied B,G,R,A
+      // in memory. kN32 is kRGBA_8888 on this platform, so pin kBGRA_8888
+      // explicitly rather than relying on kN32.
+      SkImageInfo bgra_premul(int w, int h)
+      {
+         return SkImageInfo::Make(w, h, kBGRA_8888_SkColorType, kPremul_SkAlphaType);
+      }
+   }
 
-   // TODO(skia image-unification): honor scale (owned SkBitmap at size*scale).
+   // Every image owns a premultiplied-BGRA SkBitmap from construction. A blank
+   // image is transparent pixels (never a null bitmap). size() is logical
+   // units; bitmap_size() is pixels; scale() is pixels per logical unit.
+   image::image(extent size, float scale)
+    : _impl{new artist::image_impl(SkBitmap{})}
+   {
+      int w = int(size.x * scale + 0.5f);
+      int h = int(size.y * scale + 0.5f);
+      auto& bitmap = std::get<SkBitmap>(*_impl);
+      if (!bitmap.tryAllocPixels(bgra_premul(w, h)))
+         throw std::runtime_error{"artist skia backend: Failed to create image."};
+      bitmap.eraseColor(SK_ColorTRANSPARENT);
+      _impl->scale = scale;
+   }
+
    float image::scale() const
    {
-      return 1.0f;
+      return _impl ? _impl->scale : 1.0f;
    }
 
    image::image(fs::path const& path_)
@@ -62,14 +85,16 @@ namespace cycfi::artist
       auto path = find_file(path_);
       auto fail = [&path_]()
       {
-         throw std::runtime_error{"Error: Failed to load file: " + path_.string()};
+         throw std::runtime_error{"artist skia backend: Failed to load file: " + path_.string()};
       };
 
       sk_sp<SkData> data{SkData::MakeFromFileName(path.string().c_str())};
       std::unique_ptr<SkCodec> codec = SkCodec::MakeFromData(data);
       if (!codec)
          fail();
-      SkImageInfo info = codec->getInfo().makeColorType(kN32_SkColorType);
+      SkImageInfo info = codec->getInfo()
+         .makeColorType(kBGRA_8888_SkColorType)
+         .makeAlphaType(kPremul_SkAlphaType);
 
       auto& bitmap = std::get<SkBitmap>(*_impl);
       if (!bitmap.tryAllocPixels(info))
@@ -82,23 +107,22 @@ namespace cycfi::artist
    image::image(uint8_t const* data, pixel_format fmt, extent size)
     : _impl{new artist::image_impl(SkBitmap{})}
    {
-      if (fmt == pixel_format::invalid)
-         throw std::runtime_error{"Error: Cannot initalize format: INVALID"};
+      auto src = map_src_fmt(fmt);
+      if (src.bpp == 0)
+         throw std::runtime_error{"artist skia backend: make_image: invalid pixel format."};
 
-      SkAlphaType alpha_fmt;
-      SkColorType byte_fmt;
-      try {
-         std::tie(alpha_fmt, byte_fmt) = _map_img_fmt_to_api_type(fmt);
-      } catch(std::exception& /* e */) {
-         throw std::runtime_error{"Error: unrecognized format."};
-      }
+      int w = int(size.x);
+      int h = int(size.y);
+
+      // Wrap the caller's buffer, then convert into the owned N32-premul bitmap.
+      SkImageInfo src_info = SkImageInfo::Make(w, h, src.color, src.alpha);
+      SkPixmap src_pixmap{src_info, data, size_t(w) * src.bpp};
 
       auto& bitmap = std::get<SkBitmap>(*_impl);
-      SkImageInfo skImgInfo = SkImageInfo::Make(size.x, size.y, byte_fmt, alpha_fmt);
-      if (!bitmap.tryAllocPixels(skImgInfo))
-         throw std::runtime_error{"Error: Failed to initialize image from pixel buffer"};
-
-      memcpy(bitmap.getPixels(), data, _pixmap_size(fmt, size));
+      if (!bitmap.tryAllocPixels(bgra_premul(w, h)))
+         throw std::runtime_error{"artist skia backend: make_image: failed to allocate."};
+      if (!bitmap.writePixels(src_pixmap, 0, 0))
+         throw std::runtime_error{"artist skia backend: make_image: pixel conversion failed."};
    }
 
    image::~image()
@@ -113,26 +137,10 @@ namespace cycfi::artist
 
    extent image::size() const
    {
-      auto get_size =
-         [](auto const& that) -> extent
-         {
-            using T = std::decay_t<decltype(that)>;
-            if constexpr(std::is_same_v<T, extent>)
-            {
-               return that;
-            }
-            if constexpr(std::is_same_v<T, sk_sp<SkPicture>>)
-            {
-               auto r = that->cullRect();
-               return extent{r.width(), r.height()};
-            }
-            if constexpr(std::is_same_v<T, SkBitmap>)
-            {
-               return extent{float(that.width()), float(that.height())};
-            }
-         };
-
-      return std::visit(get_size, _impl->base());
+      if (!_impl) return {};
+      auto const& bitmap = std::get<SkBitmap>(_impl->base());
+      float s = _impl->scale;
+      return extent{float(bitmap.width()) / s, float(bitmap.height()) / s};
    }
 
    void image::save_png(std::string_view path_) const
@@ -140,34 +148,11 @@ namespace cycfi::artist
       std::string path{path_};
       auto fail = [&path]()
       {
-         throw std::runtime_error{"Error: Failed to save file: " + path};
+         throw std::runtime_error{"artist skia backend: Failed to save file: " + path};
       };
 
-      auto size_ = size();
-      sk_sp<SkSurface> surface = SkSurfaces::Raster(SkImageInfo::MakeN32Premul(size_.x, size_.y));
-      SkCanvas* sk_canvas = surface->getCanvas();
-
-      auto draw_picture =
-         [&](auto const& that)
-         {
-            using T = std::decay_t<decltype(that)>;
-            if constexpr(std::is_same_v<T, extent>)
-            {
-            }
-            if constexpr(std::is_same_v<T, sk_sp<SkPicture>>)
-            {
-               sk_canvas->drawPicture(that);
-            }
-            if constexpr(std::is_same_v<T, SkBitmap>)
-            {
-               sk_canvas->drawImage(that.asImage(), 0, 0);
-            }
-         };
-
-      std::visit(draw_picture, _impl->base());
-
-      // Make a PNG encoded image using the canvas
-      sk_sp<SkImage> image(surface->makeImageSnapshot());
+      auto const& bitmap = std::get<SkBitmap>(_impl->base());
+      sk_sp<SkImage> image = bitmap.asImage();
       if (!image)
          fail();
 
@@ -175,114 +160,63 @@ namespace cycfi::artist
       if (!png)
          fail();
 
-      // write the data to the file specified by filePath
       SkFILEWStream out(path.c_str());
-      out.write(png->data(), png->size());
+      if (!out.isValid() || !out.write(png->data(), png->size()))
+         fail();
    }
 
    uint32_t* image::pixels()
    {
-      auto get_pixels =
-         [&](auto const& that) -> uint32_t*
-         {
-            using T = std::decay_t<decltype(that)>;
-            if constexpr(std::is_same_v<T, SkBitmap>)
-               return reinterpret_cast<uint32_t*>(that.getPixels());
-            else
-               return nullptr;
-         };
-
-      return std::visit(get_pixels, _impl->base());
+      if (!_impl) return nullptr;
+      return reinterpret_cast<uint32_t*>(std::get<SkBitmap>(_impl->base()).getPixels());
    }
 
    uint32_t const* image::pixels() const
    {
-      auto get_pixels =
-         [&](auto const& that) -> uint32_t const*
-         {
-            using T = std::decay_t<decltype(that)>;
-            if constexpr(std::is_same_v<T, SkBitmap>)
-               return reinterpret_cast<uint32_t const*>(that.getPixels());
-            else
-               return nullptr;
-         };
-
-      return std::visit(get_pixels, _impl->base());
+      if (!_impl) return nullptr;
+      return reinterpret_cast<uint32_t const*>(std::get<SkBitmap>(_impl->base()).getPixels());
    }
 
    extent image::bitmap_size() const
    {
-      auto get_size =
-         [&](auto const& that) -> extent
-         {
-            using T = std::decay_t<decltype(that)>;
-            if constexpr(std::is_same_v<T, SkBitmap>)
-               return extent{float(that.width()), float(that.height())};
-            else
-               return {};
-         };
-
-      return std::visit(get_size, _impl->base());
+      if (!_impl) return {};
+      auto const& bitmap = std::get<SkBitmap>(_impl->base());
+      return extent{float(bitmap.width()), float(bitmap.height())};
    }
 
    size_t image::_pixmap_size(pixel_format fmt, extent size)
    {
-      size_t fmt_bytes_per_pixel = ([&fmt]() {
-         switch (fmt) {
-            case pixel_format::gray8:
-               return 1;
-            case pixel_format::rgb16:
-               return 2;
-            case pixel_format::rgb32:
-            case pixel_format::rgba32:
-               return 4;
-            default:
-               return 0;
-         }
-      })();
-      return static_cast<size_t>(size.x) * static_cast<size_t>(size.y) * fmt_bytes_per_pixel;
+      return size_t(size.x) * size_t(size.y) * map_src_fmt(fmt).bpp;
    }
 
-   // offscreen_image uses a raster SkSurface (not SkPictureRecorder) so that
-   // the resulting image variant holds a SkBitmap.  canvas::draw() then takes
-   // the drawImageRect path, which honours all SkBlendMode values correctly.
-   // Using SkPictureRecorder + drawPicture(pic, mat, paint) in Skia m148 does
-   // not correctly apply Porter-Duff blend modes during playback.
-
+   ////////////////////////////////////////////////////////////////////////////
+   // offscreen_image draws directly into the image's own bitmap: the drawing
+   // is in the image immediately and earlier contents are kept. The scale CTM
+   // lets draw code stay in logical coordinates. The result is always a
+   // SkBitmap, so canvas::draw() takes the drawImageRect path, which honours
+   // all SkBlendMode values.
    struct offscreen_image::state
    {
-      sk_sp<SkSurface> surface;
+      std::unique_ptr<SkCanvas> canvas;
    };
 
    offscreen_image::offscreen_image(image& img)
     : _image{img}
     , _state{new offscreen_image::state{}}
    {
-      auto size = _image.size();
-      _state->surface = SkSurfaces::Raster(
-         SkImageInfo::MakeN32Premul(
-            static_cast<int>(size.x),
-            static_cast<int>(size.y)));
-      _state->surface->getCanvas()->clear(SK_ColorTRANSPARENT);
+      auto& bitmap = std::get<SkBitmap>(img.impl()->base());
+      _state->canvas = std::make_unique<SkCanvas>(bitmap);
+      float s = img.scale();
+      _state->canvas->scale(s, s);
    }
 
    offscreen_image::~offscreen_image()
    {
-      // Snapshot to a SkBitmap so canvas::draw() uses drawImageRect, which
-      // correctly composites with arbitrary blend modes.
-      sk_sp<SkImage> snap = _state->surface->makeImageSnapshot();
-      SkBitmap bitmap;
-      SkImageInfo info = SkImageInfo::MakeN32Premul(snap->width(), snap->height());
-      bitmap.allocPixels(info);
-      snap->readPixels(nullptr, info, bitmap.getPixels(), bitmap.rowBytes(), 0, 0);
-      bitmap.setImmutable();
-      *(_image.impl()) = std::move(bitmap);
       delete _state;
    }
 
    canvas_impl* offscreen_image::context() const
    {
-      return _state->surface->getCanvas();
+      return _state->canvas.get();
    }
 }
-
