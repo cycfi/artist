@@ -406,7 +406,10 @@ namespace cycfi::artist
       // Now find the glyph position in the row
       auto const& row = _rows[row_index];
       auto pos = glyph_index - row.glyph_index;
-      auto offset = (pos < row.positions.size())? row.positions[pos] : row.width;
+      // At or past the row's last glyph (the terminating break character), the
+      // caret sits at the row's right edge (row.width, which carries the
+      // justified width); positions[glyph_count] holds the un-justified edge.
+      auto offset = (pos < row.glyph_count)? row.positions[pos] : row.width;
       return {row.pos.x + offset, row.pos.y};
    }
 
