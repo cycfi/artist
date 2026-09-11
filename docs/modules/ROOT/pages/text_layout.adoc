@@ -1,0 +1,324 @@
+= Text Layout
+
+== Overview
+
+A `text_layout` is a document of text. Its text is split into paragraphs at
+each line feed, `'\n'`, and each paragraph is laid out by its own
+xref:text_run.adoc[text_run], the paragraphs stacked one line height
+apart. It can be edited in place: `insert`, `erase` and `replace` shape
+again only the paragraphs an edit touches, which keeps a long document
+responsive in an editor. `make_text_layout` builds one in a single font.
+
+A `text_layout` keeps the width it was last flowed to. Replacing or editing
+the text lays the result out again at that width, so, unlike a `text_run`,
+it needs no fresh `flow` after a change. Before the first flow, each
+paragraph counts as one line.
+
+Positions are in document coordinates, with y = 0 at the top of the first
+line. Every line is a box one line height tall: line _k_ spans y from _k_
+times the line height to _k_ + 1 times it. `caret_point` gives the top of
+a caret's line, and `caret_index` picks the line whose box holds the point.
+`draw` is the exception: as for a `text_run`, its point is the left end of
+the first line's baseline, so draw at the top plus the font's ascent.
+Indices are code point indices into `text()`.
+
+image::text_layout/example.png[alt="Output of the example", width=560px, align=center, title="The output of the Example below, annotated. The tints are the line boxes caret_point and caret_index work in; the dots mark the document's top-left and the draw point p on the first baseline.", link={imagesdir}/text_layout/example.png]
+
+NOTE: Hit testing is where a `text_layout` and a `text_run` differ. A
+`text_run` picks a line by baselines, so a point just below one baseline
+already belongs to the next line. A `text_layout` picks it by line box,
+which is what an editor wants from a click.
+
+`text_layout` is `basic_text_layout<text_run>`. The template takes the
+paragraph type as a parameter, so another type can stand in, such as a
+non-graphical one for tests; see <<TextRun Requirements>>.
+
+== Include
+
+```c++
+#include <artist/text_layout.hpp>
+```
+
+== Declaration
+
+```c++
+   template <typename TextRun>
+   class basic_text_layout
+   {
+   public:
+
+      using size_type = std::size_t;
+      using factory = std::function<TextRun(std::u32string_view)>;
+      using break_enum = typename TextRun::break_enum;
+
+      static constexpr size_type npos = size_type(-1);
+
+                              basic_text_layout(
+                                 factory make
+                               , double line_height
+                               , std::u32string_view text
+                              );
+
+                              basic_text_layout(basic_text_layout&&) noexcept = default;
+      basic_text_layout&      operator=(basic_text_layout&&) noexcept = default;
+
+      void                    set_text(std::u32string_view text);
+      std::u32string          text() const;
+      size_type               size() const;
+      size_type               paragraph_count() const;
+
+      void                    insert(size_type pos, std::u32string_view text);
+      void                    erase(size_type pos, size_type len);
+      void                    replace(size_type pos, size_type len, std::u32string_view text);
+
+      void                    flow(float width, bool justify = false);
+      size_type               num_lines() const;
+      double                  height() const;
+      size_type               paragraph_lines(size_type i) const;
+
+      point                   caret_point(size_type index) const;
+      size_type               caret_index(point p) const;
+      size_type               caret_index(float x, float y) const;
+
+      break_enum              word_break(size_type index) const;
+      break_enum              line_break(size_type index) const;
+
+      void                    draw(canvas& cnv, point p, color c = colors::black) const;
+   };
+```
+
+```c++
+   using text_layout = basic_text_layout<text_run>;
+
+   text_layout make_text_layout(font_descr f, std::u32string_view text);
+```
+
+== Expressions
+
+=== Notation
+
+`d`, `d2`         :: Objects of type `text_layout`, or of one
+                     `basic_text_layout<TextRun>`.
+`f`               :: Object of type `font_descr`.
+`make`            :: A `factory`: given one paragraph's text, it returns a
+                     `TextRun` for it.
+`lh`              :: A `double`, the line height.
+`s`               :: A `std::u32string_view`, text.
+`pos`, `len`, `i` :: `size_type` code point positions and counts in
+                     `d.text()`.
+`k`               :: A `size_type`, a paragraph index.
+`w`               :: A `float`, a line width.
+`j`               :: A `bool`, whether to justify.
+`cnv`             :: Object of type `canvas`.
+`p`               :: Object of type `point`.
+`x`, `y`          :: `float` coordinates.
+`c`               :: Object of type `color`.
+
+=== Constructors and Assignment
+
+[cols="1,1"]
+|===
+| Expression                          | Semantics
+
+| `basic_text_layout<TextRun>(make,
+    lh, s)`                           | Construct over the text `s`, with
+                                        lines `lh` apart. `make` builds the
+                                        `TextRun` for each paragraph. The
+                                        text is not yet flowed.
+| `text_layout(std::move(d))`         | Move construct from `d`, which is
+                                        left holding nothing.
+| `d = std::move(d2)`                 | Move assign `d2` to `d`. `d2` is left
+                                        holding nothing.
+|===
+
+A `text_layout` can be moved but not copied.
+
+WARNING: A moved from `text_layout` holds nothing. Destroy it or assign to
+it; calling any other member on it is undefined behaviour.
+
+=== Text
+
+[cols="1,1,1"]
+|===
+| Expression              | Semantics                          | Return Type
+
+| `d.text()`              | The whole text, as a copy.         | `std::u32string`
+| `d.size()`              | The number of code points.         | `size_type`
+| `d.set_text(s)`         | Replace the whole text, laid out
+                            again at the current width.        | `void`
+| `d.paragraph_count()`   | The number of paragraphs, one more
+                            than the number of line feeds. A
+                            text that ends in a line feed ends
+                            in an empty paragraph.             | `size_type`
+|===
+
+=== Editing
+
+[cols="1,1,1"]
+|===
+| Expression                | Semantics                        | Return Type
+
+| `d.insert(pos, s)`        | Insert `s` before code point
+                              `pos`. A `pos` past the end
+                              appends. Inserting empty text
+                              does nothing.                    | `void`
+| `d.erase(pos, len)`       | Remove `len` code points from
+                              `pos`, stopping at the end.
+                              Nothing happens if `len` is 0
+                              or `pos` is at or past the end.  | `void`
+| `d.replace(pos, len, s)`  | As `d.erase(pos, len)` followed
+                              by `d.insert(pos, s)`.           | `void`
+|===
+
+An edit shapes again only the paragraphs it touches; the others keep their
+layout and move up or down. Inserting a line feed splits a paragraph, and
+removing one joins two. The edited text is laid out at the current width.
+
+=== Layout
+
+[cols="1,1,1"]
+|===
+| Expression              | Semantics                          | Return Type
+
+| `d.flow(w)`             | Lay every paragraph out in lines
+                            no wider than `w`.                 | `void`
+| `d.flow(w, j)`          | As above, and justify if `j` is
+                            true.                              | `void`
+| `d.num_lines()`         | The number of lines over all the
+                            paragraphs. An empty paragraph
+                            counts as one line.                | `size_type`
+| `d.height()`            | `num_lines()` times the line
+                            height.                            | `double`
+| `d.paragraph_lines(k)`  | The number of lines paragraph `k`
+                            takes.                             | `size_type`
+|===
+
+Flowing again at the same width and justification does nothing, so an
+editor can call `flow` after every edit, to read the new `height()`, at no
+cost. Lines break and justify as they do in a
+xref:text_run.adoc[text_run].
+
+=== Drawing
+
+[cols="1,1,1"]
+|===
+| Expression          | Semantics                            | Return Type
+
+| `d.draw(cnv, p)`    | Draw the text in black, with the
+                        first line's baseline starting at
+                        `p`.                                 | `void`
+| `d.draw(cnv, p, c)` | As above, in the colour `c`.         | `void`
+|===
+
+Only the paragraphs that intersect the canvas's clip are drawn, so drawing
+a long document in a scrolled view costs what is visible.
+
+=== Hit Testing
+
+[cols="1,1,1"]
+|===
+| Expression              | Semantics                          | Return Type
+
+| `d.caret_point(i)`      | Where the caret before code point
+                            `i` goes: the left edge of its
+                            glyph, at the top of its line. An
+                            `i` at or past the end gives the
+                            end of the last line.              | `point`
+| `d.caret_index(p)`      | The index of the caret position
+                            nearest `p`, in the line whose box
+                            holds `p.y`.                       | `size_type`
+| `d.caret_index(x, y)`   | As above, for the point `x`, `y`.  | `size_type`
+|===
+
+A point above the text maps to the first line and one below it to the
+last, so `caret_index` always returns an index. Within the line, `x` is
+resolved as a `text_run` resolves it.
+
+=== Break Queries
+
+[cols="1,1,1"]
+|===
+| Expression          | Semantics                            | Return Type
+
+| `d.line_break(i)`   | As `text_run::line_break`, over the
+                        whole text. A line feed at `i`
+                        reports a required break after it.   | `break_enum`
+| `d.word_break(i)`   | As `text_run::word_break`, over the
+                        whole text.                          | `break_enum`
+|===
+
+For a `text_layout`, `break_enum` is `text_run::break_enum`.
+
+=== Constants
+
+[cols="1,1,1"]
+|===
+| Expression    | Semantics                                  | Return Type
+
+| `d.npos`      | `size_type(-1)`, kept to match
+                  `text_run::npos`. `caret_index` does not
+                  return it.                                 | `size_type`
+|===
+
+=== Free Functions
+
+[cols="1,1,1"]
+|===
+| Expression                  | Semantics                      | Return Type
+
+| `make_text_layout(f, s)`    | A `text_layout` over the text
+                                `s` in the font `f`, with the
+                                font's `line_height()` as its
+                                line height. Not yet flowed.   | `text_layout`
+|===
+
+== TextRun Requirements
+
+`basic_text_layout` asks this of its paragraph type, where `r` is a
+`TextRun`. It must also be move constructible.
+
+[cols="1,1"]
+|===
+| Expression               | Semantics
+
+| `TextRun::break_enum`    | The type the break queries return.
+| `r.flow(w, j)`           | Lay the paragraph out.
+| `r.num_lines()`          | The paragraph's line count; 0 is taken as
+                             one line.
+| `r.caret_point(i)`       | The paragraph-local caret position, with the
+                             y of line _k_ at _k_ times the line height.
+| `r.caret_index(p)`       | The paragraph-local index nearest `p`,
+                             choosing a line by baselines as a `text_run`
+                             does.
+| `r.word_break(i)`,
+  `r.line_break(i)`        | Break queries, needed only if the layout's
+                             are used.
+| `r.draw(cnv, p, c)`      | Needed only if the layout's `draw` is used.
+|===
+
+== Example
+
+A document of two paragraphs, a third added after the flow, and a caret
+drawn where the mouse position `mp` falls:
+
+```c++
+   auto fd = font_descr{"Open Sans", 20};
+   auto fm = font{fd}.metrics();
+   auto lh = font{fd}.line_height();
+
+   auto doc = make_text_layout(fd, text);
+   doc.flow(340);
+   doc.insert(doc.size(), U"\nThis paragraph was added after the flow.");
+
+   auto top_left = point{90, 30};
+   doc.draw(cnv, {top_left.x, top_left.y + fm.ascent});
+
+   auto i = doc.caret_index(mp.x - top_left.x, mp.y - top_left.y);
+   auto cp = doc.caret_point(i);
+   cnv.stroke_style(colors::navy);
+   cnv.move_to(top_left.x + cp.x, top_left.y + cp.y);
+   cnv.line_to(top_left.x + cp.x, top_left.y + cp.y + lh);
+   cnv.stroke();
+```
+
+Its output is the figure in the <<Overview>>.
