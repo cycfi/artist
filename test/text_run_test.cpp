@@ -12,12 +12,11 @@
 #include <functional>
 #include <type_traits>
 
-namespace fs = cycfi::fs;
-
 namespace
 {
-   // Ink of a white-backed render, read through save_png and a reload so
-   // that the pixels are 32 bit on every backend.
+   // Ink of a white-backed render: a pixel is ink where any colour channel
+   // is dark. The background is opaque, so premultiplication does not
+   // matter.
    struct ink_map
    {
       int w = 0, h = 0;
@@ -73,14 +72,10 @@ namespace
          cnv.fill_rect(0, 0, float(w), float(h));
          f(cnv);
       }
-      static int n = 0;
-      auto path = get_results_path() + "text_run_test_" + std::to_string(n++) + ".png";
-      img.save_png(path);
-      image loaded{fs::path{path}};
-      auto p = reinterpret_cast<std::uint8_t const*>(loaded.pixels());
+      auto p = reinterpret_cast<std::uint8_t const*>(img.pixels());
       ink_map m;
-      m.w = int(loaded.bitmap_size().x);
-      m.h = int(loaded.bitmap_size().y);
+      m.w = int(img.bitmap_size().x);
+      m.h = int(img.bitmap_size().y);
       m.ink.resize(m.w * m.h);
       for (int i = 0; i != m.w * m.h; ++i)
          m.ink[i] = p[4*i] < 128 || p[4*i+1] < 128 || p[4*i+2] < 128;

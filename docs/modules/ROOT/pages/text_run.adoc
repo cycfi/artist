@@ -22,10 +22,10 @@ A run draws with its own font and the colour it is given. The canvas
 font, fill style and text alignment play no part; the canvas transform
 does apply.
 
-NOTE: On Skia and Cairo, text is shaped with HarfBuzz and wrapped at the
-opportunities `line_break` reports. On Quartz 2D, Core Text both shapes and
-wraps it, so a wrap can fall somewhere `line_break` does not mark, and the
-same text can wrap differently from the other backends.
+NOTE: Lines are wrapped at the opportunities `line_break` reports, except
+on Quartz 2D, where Core Text both shapes and wraps the text. There a wrap
+can fall somewhere `line_break` does not mark, and the same text can wrap
+differently from other backends.
 
 == Include
 
