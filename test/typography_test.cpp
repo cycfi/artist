@@ -246,7 +246,7 @@ void typography(canvas& cnv)
 
 TEST_CASE("Typography")
 {
-   image pm{window_size};
+   image pm{window_size, golden_scale};
    {
       offscreen_image ctx{pm};
       canvas pm_cnv{ctx.context()};
@@ -259,7 +259,7 @@ TEST_CASE("Typography")
 }
 TEST_CASE("Text Shaping")
 {
-   image pm{window_size};
+   image pm{window_size, golden_scale};
    offscreen_image ctx{pm};
    canvas cnv{ctx.context()};
 

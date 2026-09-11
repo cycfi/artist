@@ -8,6 +8,7 @@
 #include <stack>
 #include <variant>
 #include "osx_utils.hpp"
+#include "image_impl.hpp"
 
 namespace cycfi::artist
 {
@@ -947,51 +948,67 @@ namespace cycfi::artist
 
    void canvas::draw(image const& img_, rect const& src, rect const& dest)
    {
-      auto  img = (__bridge NSImage*) img_.impl();
-      auto  src_ = NSRect{{src.left, [img size].height - src.bottom}, {src.width(), src.height()}};
-      auto  dest_ = NSRect{{dest.left, dest.top}, {dest.width(), dest.height()}};
+      auto ip = img_.impl();
+      if (!ip)
+         return;
 
-      NSCompositingOperation ns_mode;
+      CGImageRef full = ip->make_cgimage();   // pixels, top row in row 0
+      if (!full)
+         return;
+
+      // src is in logical units; map to the image's pixels for the sub-rect.
+      float s = ip->scale();
+      CGRect src_px = CGRectMake(src.left * s, src.top * s, src.width() * s, src.height() * s);
+      CGImageRef sub = CGImageCreateWithImageInRect(full, src_px);
+
+      CGBlendMode mode;
       switch (_state->mode())
       {
-         case source_over:          ns_mode = NSCompositingOperationSourceOver; break;
-         case source_atop:          ns_mode = NSCompositingOperationSourceAtop; break;
-         case source_in:            ns_mode = NSCompositingOperationSourceIn; break;
-         case source_out:           ns_mode = NSCompositingOperationSourceOut; break;
+         case source_over:          mode = kCGBlendModeNormal; break;
+         case source_atop:          mode = kCGBlendModeSourceAtop; break;
+         case source_in:            mode = kCGBlendModeSourceIn; break;
+         case source_out:           mode = kCGBlendModeSourceOut; break;
 
-         case destination_over:     ns_mode = NSCompositingOperationDestinationOver; break;
-         case destination_atop:     ns_mode = NSCompositingOperationDestinationAtop; break;
-         case destination_in:       ns_mode = NSCompositingOperationDestinationIn; break;
-         case destination_out:      ns_mode = NSCompositingOperationDestinationOut; break;
+         case destination_over:     mode = kCGBlendModeDestinationOver; break;
+         case destination_atop:     mode = kCGBlendModeDestinationAtop; break;
+         case destination_in:       mode = kCGBlendModeDestinationIn; break;
+         case destination_out:      mode = kCGBlendModeDestinationOut; break;
 
-         case lighter:              ns_mode = NSCompositingOperationPlusLighter; break;
-         case darker:               ns_mode = NSCompositingOperationPlusDarker; break;
-         case copy:                 ns_mode = NSCompositingOperationCopy; break;
-         case xor_:                 ns_mode = NSCompositingOperationXOR; break;
+         case lighter:              mode = kCGBlendModePlusLighter; break;
+         case darker:               mode = kCGBlendModePlusDarker; break;
+         case copy:                 mode = kCGBlendModeCopy; break;
+         case xor_:                 mode = kCGBlendModeXOR; break;
 
-         case difference:           ns_mode = NSCompositingOperationDifference; break;
-         case exclusion:            ns_mode = NSCompositingOperationExclusion; break;
-         case multiply:             ns_mode = NSCompositingOperationMultiply; break;
-         case screen:               ns_mode = NSCompositingOperationScreen; break;
+         case difference:           mode = kCGBlendModeDifference; break;
+         case exclusion:            mode = kCGBlendModeExclusion; break;
+         case multiply:             mode = kCGBlendModeMultiply; break;
+         case screen:               mode = kCGBlendModeScreen; break;
 
-         case color_dodge:          ns_mode = NSCompositingOperationColorDodge; break;
-         case color_burn:           ns_mode = NSCompositingOperationColorBurn; break;
-         case soft_light:           ns_mode = NSCompositingOperationSoftLight; break;
-         case hard_light:           ns_mode = NSCompositingOperationHardLight; break;
+         case color_dodge:          mode = kCGBlendModeColorDodge; break;
+         case color_burn:           mode = kCGBlendModeColorBurn; break;
+         case soft_light:           mode = kCGBlendModeSoftLight; break;
+         case hard_light:           mode = kCGBlendModeHardLight; break;
 
-         case canvas::hue:          ns_mode = NSCompositingOperationHue; break;
-         case canvas::saturation:   ns_mode = NSCompositingOperationSaturation; break;
-         case canvas::color_op:     ns_mode = NSCompositingOperationColor; break;
-         case canvas::luminosity:   ns_mode = NSCompositingOperationLuminosity; break;
+         case canvas::hue:          mode = kCGBlendModeHue; break;
+         case canvas::saturation:   mode = kCGBlendModeSaturation; break;
+         case canvas::color_op:     mode = kCGBlendModeColor; break;
+         case canvas::luminosity:   mode = kCGBlendModeLuminosity; break;
+         default:                   mode = kCGBlendModeNormal; break;
       };
 
-      [img drawInRect   :  dest_
-         fromRect       :  src_
-         operation      :  ns_mode
-         fraction       :  1.0
-         respectFlipped :  YES
-         hints          :  nil
-      ];
+      auto ctx = CGContextRef(_context);
+      CGContextSaveGState(ctx);
+      CGContextSetBlendMode(ctx, mode);
+      // The context has Artist's flipped (top-left, y-down) CTM; flip locally so
+      // the top-row-first CGImage draws upright at dest.
+      CGContextTranslateCTM(ctx, dest.left, dest.top + dest.height());
+      CGContextScaleCTM(ctx, 1, -1);
+      CGContextDrawImage(ctx, CGRectMake(0, 0, dest.width(), dest.height()), sub ? sub : full);
+      CGContextRestoreGState(ctx);
+
+      if (sub)
+         CGImageRelease(sub);
+      CGImageRelease(full);
    }
 
    void canvas::add_round_rect_impl(const rect& r, float radius)

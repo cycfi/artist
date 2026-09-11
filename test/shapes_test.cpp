@@ -520,7 +520,7 @@ void chessboard(canvas& cnv)
 
 TEST_CASE("Drawing")
 {
-   image pm{window_size};
+   image pm{window_size, golden_scale};
    {
       offscreen_image ctx{pm};
       canvas pm_cnv{ctx.context()};
@@ -530,7 +530,7 @@ TEST_CASE("Drawing")
 }
 TEST_CASE("Drawing2")
 {
-   image pm{window_size};
+   image pm{window_size, golden_scale};
    {
       offscreen_image ctx{pm};
       canvas pm_cnv{ctx.context()};
@@ -540,7 +540,7 @@ TEST_CASE("Drawing2")
 }
 TEST_CASE("Paths")
 {
-   image pm{window_size};
+   image pm{window_size, golden_scale};
    {
       offscreen_image ctx{pm};
       canvas pm_cnv{ctx.context()};
@@ -550,7 +550,7 @@ TEST_CASE("Paths")
 }
 TEST_CASE("Misc")
 {
-   image pm{window_size};
+   image pm{window_size, golden_scale};
    {
       offscreen_image ctx{pm};
       canvas pm_cnv{ctx.context()};
@@ -561,7 +561,7 @@ TEST_CASE("Misc")
 
 TEST_CASE("Chessboard")
 {
-   image pm{window_size};
+   image pm{window_size, golden_scale};
    {
       offscreen_image ctx{pm};
       canvas pm_cnv{ctx.context()};

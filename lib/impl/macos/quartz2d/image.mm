@@ -3,110 +3,112 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
-#include <artist/image.hpp>
+#include "image_impl.hpp"
 #include <Quartz/Quartz.h>
+#include <ImageIO/ImageIO.h>
 #include <string>
+#include <vector>
 #include <stdexcept>
 
 namespace cycfi::artist
 {
-   std::tuple<CGColorSpaceRef, CGBitmapInfo, size_t, size_t, size_t> _map_img_fmt_to_info(pixel_format const& fmt)
-   {
-      switch(fmt)
-      {
-         case pixel_format::gray8:
-            return {CGColorSpaceCreateDeviceGray(), kCGImageAlphaNone, 1, 8, 8};
-         case pixel_format::rgb16:
-            return {CGColorSpaceCreateDeviceRGB(), kCGImageAlphaNoneSkipFirst, 4, 5, 16};
-         case pixel_format::rgb32:
-            return {CGColorSpaceCreateDeviceRGB(), kCGBitmapByteOrderDefault | kCGImageAlphaNone, 4, 8, 32};
-         case pixel_format::rgba32:
-            return {CGColorSpaceCreateDeviceRGB(), kCGBitmapByteOrderDefault | kCGImageAlphaPremultipliedLast, 4, 8, 32};
-         default:
-            throw std::runtime_error("Unsupported image format");
-      }
-   }
+   image::image(extent size, float scale)
+    : _impl{new image_impl(int(size.x * scale + 0.5f), int(size.y * scale + 0.5f), scale)}
+   {}
 
-   namespace
-   {
-      NSBitmapImageRep* get_bitmap(NSImage* image)
-      {
-         for (NSImageRep* rep in [image representations])
-            if ([rep isKindOfClass : [NSBitmapImageRep class]])
-               return (NSBitmapImageRep*)rep;
-         return nullptr;
-      }
-
-      uint32_t* get_pixels(NSImage* image)
-      {
-         // Fast path: image already has a bitmap rep (offscreen draw or PNG load).
-         if (auto bitmap = get_bitmap(image))
-            return (uint32_t*) [bitmap bitmapData];
-
-         // Slow path: CGImage-backed image (e.g. from make_image).
-         // initWithCGImage: wraps the CGImage without copying; bitmapData unpacks
-         // it lazily into an internal buffer.  Attach the rep so this is free
-         // on subsequent calls.
-         CGImageRef cg = [image CGImageForProposedRect : NULL context : nil hints : nil];
-         if (!cg) return nullptr;
-
-         NSBitmapImageRep* rep = [[NSBitmapImageRep alloc] initWithCGImage : cg];
-         if (!rep) return nullptr;
-
-         [image addRepresentation : rep];
-         return (uint32_t*) [rep bitmapData];
-      }
-   }
-
-   image::image(extent size, float /*scale*/)
-   {
-      auto img_ = [[NSImage alloc] initWithSize : NSMakeSize(size.x, size.y)];
-      _impl = (__bridge_retained image_impl_ptr) img_;
-   }
-
-   // TODO(quartz image-unification): honor scale (CGBitmapContext at size*scale).
    float image::scale() const
    {
-      return 1.0f;
+      return _impl ? _impl->scale() : 1.0f;
    }
 
    image::image(fs::path const& path_)
+    : _impl{nullptr}
    {
       auto fs_path = find_file(path_);
-      auto path = [NSString stringWithUTF8String : fs_path.c_str() ];
-      auto img_ = [[NSImage alloc] initWithContentsOfFile : path];
-      _impl = (__bridge_retained image_impl_ptr) img_;
+      auto fail = [&path_]()
+      {
+         throw std::runtime_error{"artist quartz2d backend: Failed to load file: " + path_.string()};
+      };
+      if (fs_path.empty())
+         fail();
+
+      auto url = CFURLCreateFromFileSystemRepresentation(
+         nullptr, reinterpret_cast<UInt8 const*>(fs_path.c_str()), fs_path.string().size(), false);
+      if (!url) fail();
+      CGImageSourceRef src = CGImageSourceCreateWithURL(url, nullptr);
+      CFRelease(url);
+      if (!src) fail();
+      CGImageRef cg = CGImageSourceCreateImageAtIndex(src, 0, nullptr);
+      CFRelease(src);
+      if (!cg) fail();
+
+      int w = int(CGImageGetWidth(cg));
+      int h = int(CGImageGetHeight(cg));
+      _impl = new image_impl(w, h, 1.0f);
+      // Default (unflipped) bitmap context: a CGImage drawn at the origin lands
+      // with its top row in buffer row 0, matching pixels() on the other backends.
+      CGContextDrawImage(_impl->ctx(), CGRectMake(0, 0, w, h), cg);
+      CGImageRelease(cg);
    }
 
    image::image(uint8_t const* data, pixel_format fmt, extent size)
+    : _impl{nullptr}
    {
-      if (fmt == pixel_format::invalid)
-         throw std::runtime_error{"Error: Cannot initalize format: INVALID"};
-      auto [colorSpaceRef, bitmapInfo, componentsPerPixel, bitsPerComponent, bitsPerPixel] = _map_img_fmt_to_info(fmt);
-      size_t bufferLength = size.x * size.y * componentsPerPixel;
-      CGDataProviderRef provider = CGDataProviderCreateWithData(nullptr, data, bufferLength, nullptr);
-      size_t bytesPerRow = componentsPerPixel * size.x;
-      CGColorRenderingIntent renderingIntent = kCGRenderingIntentDefault;
+      int w = int(size.x);
+      int h = int(size.y);
+      _impl = new image_impl(w, h, 1.0f);
+      uint8_t* dst = reinterpret_cast<uint8_t*>(_impl->pixels());
+      // Convert each source format to premultiplied BGRA, always a copy.
+      switch (fmt)
+      {
+         case pixel_format::gray8:
+            for (int i = 0; i != w * h; ++i)
+            {
+               uint8_t g = data[i];
+               dst[i*4+0] = g; dst[i*4+1] = g; dst[i*4+2] = g; dst[i*4+3] = 0xff;
+            }
+            break;
 
-      CGImageRef iref = CGImageCreate(size.x,
-                                      size.y,
-                                      bitsPerComponent,
-                                      bitsPerPixel,
-                                      bytesPerRow,
-                                      colorSpaceRef,
-                                      bitmapInfo,
-                                      provider,
-                                      NULL,
-                                      YES,
-                                      renderingIntent);
+         case pixel_format::rgb16:
+         {
+            auto const* s = reinterpret_cast<uint16_t const*>(data);
+            for (int i = 0; i != w * h; ++i)
+            {
+               uint8_t r = uint8_t(((s[i] >> 11) & 0x1f) * 255 / 31);
+               uint8_t g = uint8_t(((s[i] >>  5) & 0x3f) * 255 / 63);
+               uint8_t b = uint8_t( (s[i]        & 0x1f) * 255 / 31);
+               dst[i*4+0] = b; dst[i*4+1] = g; dst[i*4+2] = r; dst[i*4+3] = 0xff;
+            }
+            break;
+         }
+         case pixel_format::rgb32:
+            for (int i = 0; i != w * h; ++i)
+            {
+               dst[i*4+0] = data[i*4+2]; dst[i*4+1] = data[i*4+1];
+               dst[i*4+2] = data[i*4+0]; dst[i*4+3] = 0xff;
+            }
+            break;
 
-      auto img_ = [[NSImage alloc] initWithCGImage:iref size:NSMakeSize(size.x, size.y)];
-      _impl = (__bridge_retained image_impl_ptr) img_;
+         case pixel_format::rgba32:
+            for (int i = 0; i != w * h; ++i)
+            {
+               uint8_t a = data[i*4+3];
+               dst[i*4+0] = uint8_t((uint32_t(data[i*4+2]) * a + 127) / 255);
+               dst[i*4+1] = uint8_t((uint32_t(data[i*4+1]) * a + 127) / 255);
+               dst[i*4+2] = uint8_t((uint32_t(data[i*4+0]) * a + 127) / 255);
+               dst[i*4+3] = a;
+            }
+            break;
+
+         default:
+            delete _impl; _impl = nullptr;
+            throw std::runtime_error{"artist quartz2d backend: make_image: invalid pixel format."};
+      }
    }
 
    image::~image()
    {
-      CFBridgingRelease(_impl);
+      delete _impl;
    }
 
    image_impl_ptr image::impl() const
@@ -116,88 +118,78 @@ namespace cycfi::artist
 
    extent image::size() const
    {
-      auto size_ = [(__bridge NSImage*) _impl size];
-      return {float(size_.width), float(size_.height)};
+      if (!_impl) return {};
+      float s = _impl->scale();
+      return {float(_impl->width()) / s, float(_impl->height()) / s};
    }
 
    void image::save_png(std::string_view path_) const
    {
-      auto path = [NSString stringWithUTF8String : std::string{path_}.c_str() ];
-      auto image = (__bridge NSImage*) _impl;
-
-      // Get the size of the original image
-      NSSize imageSize = [image size];
-
-      // Create an NSBitmapImageRep with the same dimensions as the original image
-      NSBitmapImageRep *bitmapRep = [[NSBitmapImageRep alloc]
-         initWithBitmapDataPlanes : NULL
-         pixelsWide : imageSize.width
-         pixelsHigh : imageSize.height
-         bitsPerSample : 8
-         samplesPerPixel : 4  // RGBA format
-         hasAlpha : YES
-         isPlanar : NO
-         colorSpaceName : NSDeviceRGBColorSpace
-         bytesPerRow : 0
-         bitsPerPixel : 0
-      ];
-
-      // Set the properties for the PNG file
-      NSDictionary *properties = @{
-         NSImageCompressionFactor :  @1.0, // Compression factor (1.0 means no compression)
-         NSImageColorSyncProfileData :  [NSNull null], // No color profile
-         NSImageInterlaced :  @NO // Non-interlaced
+      auto fail = [&]()
+      {
+         throw std::runtime_error{"artist quartz2d backend: Failed to save file: " + std::string{path_}};
       };
+      if (!_impl) fail();
 
-      // Set the current graphics context to the NSBitmapImageRep
-      [NSGraphicsContext saveGraphicsState];
-      [NSGraphicsContext setCurrentContext : [NSGraphicsContext graphicsContextWithBitmapImageRep : bitmapRep]];
+      CGImageRef cg = _impl->make_cgimage();
+      if (!cg) fail();
 
-      // Draw the original image onto the NSBitmapImageRep
-      [image drawAtPoint : NSZeroPoint fromRect : NSZeroRect operation : NSCompositingOperationCopy fraction : 1.0];
+      std::string p{path_};
+      auto url = CFURLCreateFromFileSystemRepresentation(
+         nullptr, reinterpret_cast<UInt8 const*>(p.c_str()), p.size(), false);
+      if (!url) { CGImageRelease(cg); fail(); }
 
-      // Restore the graphics state
-      [NSGraphicsContext restoreGraphicsState];
+      CGImageDestinationRef dest = CGImageDestinationCreateWithURL(url, CFSTR("public.png"), 1, nullptr);
+      CFRelease(url);
+      if (!dest) { CGImageRelease(cg); fail(); }
 
-      // Convert the NSBitmapImageRep to NSData with PNG format
-      NSData* data = [bitmapRep representationUsingType : NSBitmapImageFileTypePNG properties : properties];
-
-      // Write the data to the file
-     [data writeToFile : path atomically : YES];
+      CGImageDestinationAddImage(dest, cg, nullptr);
+      bool ok = CGImageDestinationFinalize(dest);
+      CFRelease(dest);
+      CGImageRelease(cg);
+      if (!ok) fail();
    }
 
    uint32_t* image::pixels()
    {
-      return get_pixels((__bridge NSImage*) _impl);
+      return _impl ? _impl->pixels() : nullptr;
    }
 
    uint32_t const* image::pixels() const
    {
-      return get_pixels((__bridge NSImage*) _impl);
+      return _impl ? _impl->pixels() : nullptr;
    }
 
    extent image::bitmap_size() const
    {
-      auto bm = get_bitmap((__bridge NSImage*) _impl);
-      auto pixels_wide = [bm pixelsWide];
-      auto pixels_high = [bm pixelsHigh];
-      return {float(pixels_wide), float(pixels_high)};
+      if (!_impl) return {};
+      return {float(_impl->width()), float(_impl->height())};
    }
 
-   offscreen_image::offscreen_image(image& pict)
-    : _image(pict)
+   ////////////////////////////////////////////////////////////////////////////
+   // offscreen_image draws directly into the image's own bitmap context: the
+   // drawing is in the image immediately and earlier contents are kept. The
+   // flipped, scaled CTM gives draw code Artist's top-left, y-down logical
+   // coordinates (what lockFocusFlipped used to provide).
+   struct offscreen_image::state {};
+
+   offscreen_image::offscreen_image(image& img)
+    : _image{img}
+    , _state{nullptr}
    {
-      [((__bridge NSImage*) _image.impl()) lockFocusFlipped : YES];
+      auto ctx = _image.impl()->ctx();
+      CGContextSaveGState(ctx);
+      CGContextTranslateCTM(ctx, 0, _image.impl()->height());
+      CGContextScaleCTM(ctx, _image.impl()->scale(), -_image.impl()->scale());
    }
 
-    offscreen_image::~offscreen_image()
+   offscreen_image::~offscreen_image()
    {
-      [((__bridge NSImage*) _image.impl()) unlockFocus];
+      CGContextRestoreGState(_image.impl()->ctx());
    }
 
    canvas_impl* offscreen_image::context() const
    {
-      return (canvas_impl*) NSGraphicsContext.currentContext.CGContext;
+      return (canvas_impl*) _image.impl()->ctx();
    }
 }
-

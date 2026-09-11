@@ -243,10 +243,14 @@ void compare_golden(image const& pm, std::string name)
 
    auto bm_size = result.bitmap_size();
    CHECK(bm_size == golden.bitmap_size());
+   if (!(bm_size == golden.bitmap_size()))
+      return;   // don't compare mismatched buffers
 
+   // The result is a loaded PNG (scale 1), so its size() is the pixel size,
+   // which is the logical window scaled by golden_scale.
    auto size = result.size();
-   CHECK(size.x == Approx(window_size.x));
-   CHECK(size.y == Approx(window_size.y));
+   CHECK(size.x == Approx(window_size.x * golden_scale));
+   CHECK(size.y == Approx(window_size.y * golden_scale));
 
    auto a = golden.pixels();
    auto b = result.pixels();

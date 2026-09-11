@@ -35,6 +35,11 @@ using cycfi::codepoint;
 auto constexpr window_size = point{640.0f, 480.0f};
 auto constexpr bkd_color = rgba(54, 52, 55, 255);
 
+// Golden scenes render at this scale on every backend, so comparisons are at
+// one resolution instead of Quartz's implicit display backing scale. The
+// golden image (a loaded PNG) is window_size * golden_scale pixels.
+auto constexpr golden_scale = 2.0f;
+
 // Defined in golden.cpp.
 void background(canvas& cnv);
 void compare_golden(image const& pm, std::string name);

@@ -177,7 +177,7 @@ void tauri(canvas& cnv)
 
 TEST_CASE("Composite")
 {
-   image pm{window_size};
+   image pm{window_size, golden_scale};
    {
       offscreen_image ctx{pm};
       canvas pm_cnv{ctx.context()};
@@ -188,7 +188,7 @@ TEST_CASE("Composite")
 
 TEST_CASE("Composite2")
 {
-   image pm{window_size};
+   image pm{window_size, golden_scale};
    {
       offscreen_image ctx{pm};
       canvas pm_cnv{ctx.context()};
@@ -199,7 +199,7 @@ TEST_CASE("Composite2")
 
 TEST_CASE("DropShadow")
 {
-   image pm{window_size};
+   image pm{window_size, golden_scale};
    {
       offscreen_image ctx{pm};
       canvas pm_cnv{ctx.context()};
@@ -210,7 +210,7 @@ TEST_CASE("DropShadow")
 
 TEST_CASE("Tauri")
 {
-   image pm{window_size};
+   image pm{window_size, golden_scale};
    {
       offscreen_image ctx{pm};
       canvas pm_cnv{ctx.context()};
