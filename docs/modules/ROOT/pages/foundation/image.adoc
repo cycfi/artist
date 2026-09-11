@@ -15,17 +15,17 @@ backend; which other formats load depends on the backend's decoder.
 An `image` owns backend storage, so it can be moved but not copied. Share
 one through `image_ptr`, which is a `std::shared_ptr<image>`.
 
-To draw into an image, construct an `offscreen_image` on it, build a
-`canvas` on the offscreen image's `context()`, and draw. The drawing is in
-the image once the `offscreen_image` has been destroyed, and not reliably
-before, so give it a scope of its own and keep the canvas inside that
-scope. The <<Example>> shows the pattern.
+To draw into an image, construct an `offscreen_image` on it and build a
+`canvas` on its `context()`. On some backends the drawing reaches the image
+only when the `offscreen_image` is destroyed, so end its lifetime before
+using the image, and do not let the canvas outlive it. The <<Example>>
+shows the pattern.
 
-NOTE: Drawing an image, and drawing into one, behave alike on all three
-backends. The pixel level API does not: what `pixels()` points at, how
-`make_image` reads its buffer, and how a failure is reported all vary
-between Quartz 2D, Skia and Cairo. The differences are set out under
-<<Backend Differences>>.
+NOTE: Drawing an image behaves the same on every backend. Drawing into one,
+and the pixel level API, do not: when the drawing reaches the image,
+whether earlier contents survive, what `pixels()` points at, how
+`make_image` reads its buffer and how a failure is reported all depend on
+the backend. The differences are set out under <<Backend Differences>>.
 
 == Include
 
@@ -166,7 +166,7 @@ its pointer type, so `pixel_format::invalid` is rejected at compile time.
 CAUTION: Only opaque `gray8` and `rgba32` pixels are read the same way by
 every backend. Whether the buffer is copied, how `rgba32` alpha is read,
 and whether `rgb16` and `rgb32` work at all depend on the backend. Keeping
-the buffer alive for as long as the image is safe on all three.
+the buffer alive for as long as the image is safe on every backend.
 
 === Accessors
 
@@ -270,6 +270,9 @@ The table records what each backend does today where they part ways.
 | A blank image before any drawing   | No bitmap, `pixels()` is
                                        `nullptr`                 | No bitmap, `pixels()` is
                                                                    `nullptr`                 | A transparent bitmap
+| When drawing through an
+  `offscreen_image` reaches the
+  image                              | When it is destroyed      | When it is destroyed      | As it is drawn
 | `offscreen_image` on an image
   that already holds something       | Draws over it             | Starts from transparent
                                                                    and replaces it           | Draws over it

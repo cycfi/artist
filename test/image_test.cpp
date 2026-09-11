@@ -402,3 +402,30 @@ TEST_CASE("Image current behaviour: Skia offscreen_image discards contents", "[i
    CHECK(pixel_at(img, 8, 5).a == 0);
 #endif
 }
+
+TEST_CASE("Image current behaviour: when drawing reaches the image", "[image]")
+{
+   // Save the image while the offscreen_image is still alive.
+   auto path = get_results_path() + "image_test_during.png";
+   image img{10, 10};
+   {
+      offscreen_image ctx{img};
+      canvas cnv{ctx.context()};
+      cnv.fill_style(colors::red);
+      cnv.fill_rect(0, 0, 10, 10);
+      img.save_png(path);
+   }
+   image during{fs::path{path}};
+   auto p = reinterpret_cast<std::uint8_t const*>(during.pixels());
+   REQUIRE(p != nullptr);
+   p += 4 * (5 * int(during.bitmap_size().x) + 5);
+#if defined(ARTIST_CAIRO)
+   // Cairo draws straight into the image.
+   CHECK(p[3] == 255);
+#else
+   // Quartz 2D and Skia commit the drawing when the offscreen_image is
+   // destroyed; until then the image is still blank.
+   CHECK(p[3] == 0);
+#endif
+   CHECK(near(pixel_at(img, 5, 5), red));
+}
