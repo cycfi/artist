@@ -16,6 +16,7 @@
 #include <artist/point.hpp>
 #include <artist/rect.hpp>
 #include <cmath>
+#include <numbers>
 #include <iostream>
 #include <iterator>
 #include <type_traits>
@@ -464,7 +465,7 @@ static void test_affine_factories()
    CHECK(make_scale(2.0, 3.0) == affine_transform{2, 0, 0, 3, 0, 0});
    CHECK(make_scale(2.0) == affine_transform{2, 0, 0, 2, 0, 0});
 
-   auto r = make_rotation(cycfi::pi / 2);
+   auto r = make_rotation(std::numbers::pi / 2);
    CHECK(near_(r.a, 0.0) && near_(r.b, 1.0));
    CHECK(near_(r.c, -1.0) && near_(r.d, 0.0));
 
