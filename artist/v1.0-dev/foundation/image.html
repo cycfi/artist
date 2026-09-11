@@ -132,7 +132,7 @@
     <a class="nav-link" href="../canvas/text.html">Text</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../canvas/images.html">Images</a>
+    <a class="nav-link" href="../canvas/images.html">Drawing Images</a>
   </li>
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../canvas/states.html">States</a>
@@ -141,6 +141,9 @@
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../text_run.html">Text Run</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../text_layout.html">Text Layout</a>
   </li>
 </ul>
   </li>
@@ -191,43 +194,39 @@
 <h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>An <code>image</code> is a bitmap the canvas can paint. It is what the
-<a href="../canvas/images.html" class="xref page">Images</a> calls take. There are three ways to get
-one: load it from a file, build it from a buffer of pixels with
-<code>make_image</code>, or create a blank one of a given size and draw into it
-through an <code>offscreen_image</code>.</p>
+<p>An <code>image</code> is a bitmap the canvas can paint with <code>draw</code>, which is covered
+under <a href="../canvas/images.html" class="xref page">Drawing Images</a>. This page covers the image
+itself. There are three ways to get one: load it from a file, build it
+from a buffer of pixels with <code>make_image</code>, or create a blank one of a
+given size and draw into it through an <code>offscreen_image</code>.</p>
+</div>
+<div class="paragraph">
+<p>Every image owns its pixels: 32 bit, premultiplied B, G, R, A, allocated
+when the image is constructed. A blank image starts fully transparent.</p>
+</div>
+<div class="paragraph">
+<p>An image&#8217;s size is in units, the units the canvas draws in, and its scale
+is the number of pixels per unit. An image made 64 by 64 at scale 2 holds
+128 by 128 pixels, yet it is drawn, and drawn into, as 64 by 64. Use a
+scale above 1 to render for a high density display without changing the
+drawing code. Images loaded from a file or built with <code>make_image</code> have
+scale 1.</p>
 </div>
 <div class="paragraph">
 <p>A file name that is not absolute is looked up through the
-<a href="resources.html" class="xref page">Resources</a> search list. PNG is read on every
-backend; which other formats load depends on the backend&#8217;s decoder.</p>
+<a href="resources.html" class="xref page">Resources</a> search list. PNG, JPEG and WebP
+are read on every backend; which other formats load depends on the
+backend&#8217;s decoder.</p>
 </div>
 <div class="paragraph">
-<p>An <code>image</code> owns backend storage, so it can be moved but not copied. Share
-one through <code>image_ptr</code>, which is a <code>std::shared_ptr&lt;image&gt;</code>.</p>
+<p>An <code>image</code> owns its storage, so it can be moved but not copied. Share one
+through <code>image_ptr</code>, which is a <code>std::shared_ptr&lt;image&gt;</code>.</p>
 </div>
 <div class="paragraph">
 <p>To draw into an image, construct an <code>offscreen_image</code> on it and build a
-<code>canvas</code> on its <code>context()</code>. On some backends the drawing reaches the image
-only when the <code>offscreen_image</code> is destroyed, so end its lifetime before
-using the image, and do not let the canvas outlive it. The <a href="#_example">Example</a>
-shows the pattern.</p>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="✏️  NOTE"></i>
-</td>
-<td class="content">
-Drawing an image behaves the same on every backend. Drawing into one,
-and the pixel level API, do not: when the drawing reaches the image,
-whether earlier contents survive, what <code>pixels()</code> points at, how
-<code>make_image</code> reads its buffer and how a failure is reported all depend on
-the backend. The differences are set out under <a href="#_backend_differences">Backend Differences</a>.
-</td>
-</tr>
-</table>
+<code>canvas</code> on its <code>context()</code>. The drawing lands in the image as it is drawn,
+over whatever the image already holds. The canvas must not outlive the
+<code>offscreen_image</code>. The <a href="#_example">Example</a> shows the pattern.</p>
 </div>
 </div>
 </div>
@@ -262,8 +261,8 @@ the backend. The differences are set out under <a href="#_backend_differences">B
    {
    public:
 
-      explicit          image(float sizex, float sizey);
-      explicit          image(extent size);
+      explicit          image(float sizex, float sizey, float scale = 1.0f);
+      explicit          image(extent size, float scale = 1.0f);
       explicit          image(fs::path const&amp; path_);
 
                         image(image const&amp; rhs) = delete;
@@ -275,6 +274,7 @@ the backend. The differences are set out under <a href="#_backend_differences">B
 
       image_impl_ptr    impl() const;
       extent            size() const;
+      float             scale() const;
       void              save_png(std::string_view path) const;
 
       uint32_t*         pixels();
@@ -329,11 +329,15 @@ the backend. The differences are set out under <a href="#_backend_differences">B
 </dd>
 <dt class="hdlist1"><code>sx</code>, <code>sy</code>     </dt>
 <dd>
-<p><code>float</code> width and height.</p>
+<p><code>float</code> width and height, in units.</p>
 </dd>
 <dt class="hdlist1"><code>sz</code>           </dt>
 <dd>
-<p>Object of type <code>extent</code>, a width and height.</p>
+<p>Object of type <code>extent</code>, a width and height in units.</p>
+</dd>
+<dt class="hdlist1"><code>s</code>            </dt>
+<dd>
+<p>A <code>float</code>, a scale: pixels per unit.</p>
 </dd>
 <dt class="hdlist1"><code>p</code>            </dt>
 <dd>
@@ -380,18 +384,27 @@ or absolute.</p>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>image(sx, sy)</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Construct a blank, fully transparent image
-                                <code>sx</code> by <code>sy</code> in size.</p></td>
+                                <code>sx</code> by <code>sy</code> units in size, at scale 1.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image(sx, sy, s)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">As above, at scale <code>s</code>. The bitmap is
+                                <code>sx * s</code> by <code>sy * s</code> pixels, rounded to
+                                the nearest whole pixel.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>image(sz)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, <code>sz</code> in size.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">As <code>image(sz.x, sz.y)</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image(sz, s)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">As <code>image(sz.x, sz.y, s)</code>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>image(p)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Load the image file <code>p</code>. Throws
+<td class="tableblock halign-left valign-top"><p class="tableblock">Load the image file <code>p</code>, at scale 1. Throws
                                 <code>std::runtime_error</code> if the file is
-                                missing or cannot be decoded, except on
-                                Quartz 2D.</p></td>
+                                missing or cannot be decoded.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>image(std::move(img))</code></p></td>
@@ -406,8 +419,8 @@ or absolute.</p>
 </tbody>
 </table>
 <div class="paragraph">
-<p>All three constructors are <code>explicit</code>, so an <code>extent</code> or a path does not
-convert to an <code>image</code> implicitly.</p>
+<p>The constructors are <code>explicit</code>, so an <code>extent</code> or a path does not convert
+to an <code>image</code> implicitly.</p>
 </div>
 <div class="admonitionblock warning">
 <table>
@@ -467,25 +480,15 @@ its pointer type, so <code>pixel_format::invalid</code> is rejected at compile t
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>make_image&lt;pixel_format::rgba32&gt;(d32, sz)</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Four bytes per pixel: R, G, B and
-                                                  A in memory order.</p></td>
+                                                  A in memory order, with straight
+                                                  (not premultiplied) alpha.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>image</code></p></td>
 </tr>
 </tbody>
 </table>
-<div class="admonitionblock caution">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-caution" title="Caution"></i>
-</td>
-<td class="content">
-Only opaque <code>gray8</code> and <code>rgba32</code> pixels are read the same way by
-every backend. Whether the buffer is copied, how <code>rgba32</code> alpha is read,
-and whether <code>rgb16</code> and <code>rgb32</code> work at all depend on the backend. Keeping
-the buffer alive for as long as the image is safe on every backend.
-</td>
-</tr>
-</table>
+<div class="paragraph">
+<p>The pixels are converted into the image&#8217;s own bitmap, so the buffer can be
+released as soon as <code>make_image</code> returns. The image has scale 1.</p>
 </div>
 </div>
 <div class="sect2">
@@ -506,17 +509,21 @@ the buffer alive for as long as the image is safe on every backend.
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>img.size()</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The size of the image. <code>draw</code> places
-                        the image at this size in user space,
-                        and the <code>src</code> rectangle <code>draw</code> takes is
-                        in these units.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The size of the image in units. <code>draw</code>
+                        places the image at this size in user
+                        space, and the <code>src</code> rectangle <code>draw</code>
+                        takes is in these units.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>extent</code></p></td>
 </tr>
 <tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>img.scale()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The number of pixels per unit.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>img.bitmap_size()</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The width and height, in pixels, of
-                        the buffer <code>pixels()</code> points at, or
-                        <code>{0, 0}</code> when there is none.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The width and height of the bitmap in
+                        pixels, <code>size()</code> times <code>scale()</code>.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>extent</code></p></td>
 </tr>
 <tr>
@@ -546,10 +553,12 @@ the buffer alive for as long as the image is safe on every backend.
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>img.pixels()</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The first pixel of the bitmap, or
-                    <code>nullptr</code> if the image has none. Rows run
-                    from the top, <code>bitmap_size().x</code> pixels to
-                    a row, with no padding.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The first pixel of the bitmap. Each pixel
+                    is four bytes, B, G, R and A in memory
+                    order, with the colour premultiplied by
+                    alpha. Rows run from the top,
+                    <code>bitmap_size().x</code> pixels to a row, with no
+                    padding.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>uint32_t*</code>, or
                                                                  <code>uint32_t const*</code>
                                                                  if <code>img</code> is
@@ -557,22 +566,6 @@ the buffer alive for as long as the image is safe on every backend.
 </tr>
 </tbody>
 </table>
-<div class="admonitionblock caution">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-caution" title="Caution"></i>
-</td>
-<td class="content">
-What the pixels are depends on the backend and on where the image
-came from. On Quartz 2D, an image drawn through an <code>offscreen_image</code> does
-not hold 32 bit pixels at all. To inspect pixels on every backend, save
-the image with <code>save_png</code> and load the file back: a loaded PNG always gives
-32 bit pixels, though not in the same channel order everywhere.
-</td>
-</tr>
-</table>
-</div>
 <div class="admonitionblock note">
 <table>
 <tr>
@@ -606,17 +599,20 @@ again.
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>img.save_png(str)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Write the image to the file <code>str</code> as
-                          a PNG, <code>size().x</code> by <code>size().y</code>
-                          pixels. <code>str</code> is used as given; it is
-                          not looked up through the resource
-                          search list.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Write the bitmap to the file <code>str</code> as
+                          a PNG, <code>bitmap_size().x</code> by
+                          <code>bitmap_size().y</code> pixels. <code>str</code> is
+                          used as given; it is not looked up
+                          through the resource search list.
+                          Throws <code>std::runtime_error</code> if the
+                          file cannot be written.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
 </tr>
 </tbody>
 </table>
 <div class="paragraph">
-<p>Only Cairo reports a failure to write the file.</p>
+<p>Loading the file back gives an image at scale 1, so its <code>size()</code> is the
+saved image&#8217;s <code>bitmap_size()</code>.</p>
 </div>
 </div>
 <div class="sect2">
@@ -641,9 +637,10 @@ again.
 </tbody>
 </table>
 <div class="paragraph">
-<p>An <code>offscreen_image</code> is neither copyable nor movable. Its destructor ends
-the drawing: everything drawn through its context is in the image once it
-has been destroyed.</p>
+<p>An <code>offscreen_image</code> is neither copyable nor movable. Its context draws
+into the image in the image&#8217;s units, scaled by <code>scale()</code> to pixels, and
+each drawing call lands in the image as it is made. The destructor ends
+the drawing.</p>
 </div>
 </div>
 <div class="sect2">
@@ -677,139 +674,16 @@ has been destroyed.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_backend_differences"><a class="anchor" href="#_backend_differences"></a>Backend Differences</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>The table records what each backend does today where they part ways.</p>
-</div>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 40%;">
-<col style="width: 20%;">
-<col style="width: 20%;">
-<col style="width: 20%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Behaviour</th>
-<th class="tableblock halign-left valign-top">Quartz 2D</th>
-<th class="tableblock halign-left valign-top">Skia</th>
-<th class="tableblock halign-left valign-top">Cairo</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image(p)</code> when <code>p</code> is missing
-  or cannot be decoded</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Returns an empty image,
-                                       <code>size()</code> is <code>{0, 0}</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Throws
-                                                                   <code>std::runtime_error</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Throws
-                                                                                               <code>std::runtime_error</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>save_png</code> cannot write the file</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Not reported</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Not reported</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Throws
-                                                                                               <code>std::runtime_error</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A blank image before any drawing</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">No bitmap, <code>pixels()</code> is
-                                       <code>nullptr</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">No bitmap, <code>pixels()</code> is
-                                                                   <code>nullptr</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A transparent bitmap</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">When drawing through an
-  <code>offscreen_image</code> reaches the
-  image</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">When it is destroyed</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">When it is destroyed</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As it is drawn</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>offscreen_image</code> on an image
-  that already holds something</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Draws over it</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Starts from transparent
-                                                                   and replaces it</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Draws over it</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The <code>make_image</code> buffer</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Read in place, so it must
-                                       outlive the image</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Copied</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Copied</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rgba32</code> alpha</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Read as premultiplied</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Declared opaque, so a
-                                                                   pixel with alpha below
-                                                                   255 draws undefined</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Read as straight</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rgb16</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Not read as 5-6-5</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Supported</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Supported</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rgb32</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Draws nothing</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Supported</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Supported</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>pixels()</code> of a loaded PNG</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">R, G, B, A bytes,
-                                       straight alpha</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">B, G, R, A bytes,
-                                                                   straight alpha</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">B, G, R, A bytes,
-                                                                                               premultiplied</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>pixels()</code> after drawing through
-  an <code>offscreen_image</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Not 32 bit pixels.
-                                       <code>bitmap_size()</code> is
-                                       <code>{0, 0}</code> until <code>pixels()</code>
-                                       is first called, then
-                                       at the display&#8217;s backing
-                                       scale</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">B, G, R, A bytes,
-                                                                   premultiplied</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">B, G, R, A bytes,
-                                                                                               premultiplied</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>pixels()</code> of a <code>make_image</code>
-  image</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The buffer&#8217;s own format</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The buffer&#8217;s own format</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">B, G, R, A bytes,
-                                                                                               premultiplied</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-<div class="sect1">
 <h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Render a badge once into an image, then paint it wherever it is needed:</p>
+<p>Render a badge once into an image, then paint it wherever it is needed.
+At scale 2 the badge stays sharp on a high density display, and the
+drawing code still works in its 64 unit size:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   image badge{64, 64};
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   image badge{64, 64, 2};
    {
       offscreen_image off{badge};
       canvas bc{off.context()};

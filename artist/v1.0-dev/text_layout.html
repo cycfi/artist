@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Text Layout :: Artist Docs</title>
+    <meta name="generator" content="Antora 3.1.15">
+    <link rel="stylesheet" href="../../_/css/site.css">
+<meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
+<link rel="icon" type="image/png" sizes="16x16" href="https://cycfi.com/assets/icons/favicon-16x16.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="https://cycfi.com/assets/icons/favicon-32x32.png"/>
+<link rel="icon" type="image/png" sizes="96x96" href="https://cycfi.com/assets/icons/favicon-96x96.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="https://cycfi.com/assets/icons/android-chrome-192x192.png"/>
+<link rel="icon" type="image/png" sizes="256x256" href="https://cycfi.com/assets/icons/android-chrome-256x256.png"/>
+<link rel="apple-touch-icon" type="image/png" href="https://cycfi.com/assets/icons/apple-touch-icon.png"/>
+
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <!--  Cycfi Logo -->
+      <a class="m-nav__logo" href="https://www.cycfi.com">
+        <svg version="1.1" x="0px" y="0px" width="200" viewBox="0 0 600 100" style="padding-top: 15;" xmlns="http://www.w3.org/2000/svg">
+          <g transform="matrix(2.55, 0, 0, 2.62, -464.010406, -1042.918213)" fill="#202020">
+            <path d="M234.37,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.7-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-3.5-0.04-4.6,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.59,0.66-0.76,1.35c-0.14,0.84-0.18,1.03-0.19,1.43l-0.14,3.91 c-0.01,0.39,0.04,0.84,0.09,1.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h33.85 c0.8,0,1.45,0.67,1.42,1.47L234.37,431.65z"/>
+            <path d="M276.06,433.02H257.9c-0.8,0-1.45-0.67-1.42-1.47l0.15-4.18c0.03-0.76,0.65-1.37,1.42-1.37h14.16 c1.91,0,3.52,0,4.61-0.12c1.23-0.13,1.75-0.25,2.17-0.71c0.36-0.39,0.4-2.52,0.4-2.52h-27.92c-11.11,0-13.26-5.13-13.1-9.44 l0.12-3.38c0.03-0.76,0.65-1.37,1.42-1.37h8.43c0.8,0,1.45,0.67,1.42,1.47l-0.05,1.36c-0.02,0.46-0.01,2.03,0.11,2.51 c0.1,0.42,0.44,0.82,0.78,1.07c0.47,0.35,0.83,0.42,1.64,0.54c0.9,0.14,2.09,0.21,3.54,0.21h24.09l0.21-5.8 c0.03-0.76,0.65-1.37,1.42-1.37h8.46c0.8,0,1.45,0.67,1.42,1.47l-0.49,13.57c-0.06,1.58-0.46,3.96-1.12,5.07 c-0.68,1.15-1.71,2.08-3.04,2.76c-1.23,0.63-2.76,1.07-4.56,1.32C280.44,432.9,278.4,433.02,276.06,433.02L276.06,433.02z"/>
+            <path d="M401.95,431.55l0.78-21.72c0.03-0.76,0.65-1.37,1.42-1.37h8.59c0.8,0,1.45,0.67,1.42,1.47l-0.78,21.72 c-0.03,0.76-0.65,1.37-1.42,1.37h-8.59C402.56,433.02,401.92,432.35,401.95,431.55z"/>
+            <path d="M346.77,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.71-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-2.47-0.04-3.58,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.58,0.66-0.76,1.35c-0.14,0.84-0.22,2.03-0.23,2.43l-0.07,1.91 c-0.01,0.39,0.01,1.84,0.06,2.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h32.83 c0.8,0,1.45,0.67,1.42,1.47L346.77,431.65z"/>
+            <path d="M386.2,425.88l-24.93-0.03l-0.21,5.8c-0.03,0.76-0.65,1.37-1.42,1.37h-8.46c-0.8,0-1.45-0.67-1.42-1.47 l0.49-13.57c0.06-1.58,0.46-3.96,1.12-5.07c0.68-1.15,1.71-2.08,3.04-2.76c1.23-0.63,2.76-1.07,4.56-1.32 c1.7-0.24,3.75-0.36,6.08-0.36l0,0h33.68c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.18c-0.03,0.76-0.65,1.37-1.42,1.37H368.9 c-1.91,0-3.52,0-4.61,0.12c-1.23,0.13-1.75,0.25-2.17,0.71c-0.36,0.39-0.4,2.52-0.4,2.52h24.63c0.8,0,1.45,0.67,1.42,1.47 l-0.15,4.22C387.59,425.28,386.96,425.88,386.2,425.88z"/>
+          </g>
+        </svg>
+      </a>
+      <a class="navbar-item" href="https://www.cycfi.com">Artist Docs</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="artist" data-version="v1.0-dev">
+  <aside class="nav">
+    <div class="panels">
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs">
+        </div>
+      </div>
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="index.html">Artist 2D Canvas Library</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="setup.html">Setup and Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="backends.html">Backends</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="gallery.html">Gallery</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="foundation.html">Foundation</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="foundation/point.html">Point and Extent</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="foundation/rect.html">Rect</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="foundation/circle.html">Circle</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="foundation/affine_transform.html">Affine Transform</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="foundation/color.html">Color</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="foundation/font.html">Font</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="foundation/image.html">Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="foundation/resources.html">Resources</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="path.html">Path</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="canvas.html">Canvas</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas/transforms.html">Transforms</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas/current_path.html">Current Path</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas/styles.html">Styles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas/gradients.html">Gradients</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas/rectangles.html">Rectangles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas/text.html">Text</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas/images.html">Drawing Images</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas/states.html">States</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="text_run.html">Text Run</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="text_layout.html">Text Layout</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Artist 2D Canvas Library</span>
+    <span class="version">v1.0-dev</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="index.html">Artist 2D Canvas Library</a></div>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="index.html">v1.0-dev</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Artist 2D Canvas Library</a></li>
+    <li>Reference</li>
+    <li><a href="text_layout.html">Text Layout</a></li>
+  </ul>
+</nav>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Text Layout</h1>
+<div class="sect1">
+<h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A <code>text_layout</code> is a document of text. Its text is split into paragraphs at
+each line feed, <code>'\n'</code>, and each paragraph is laid out by its own
+<a href="text_run.html" class="xref page">text_run</a>, the paragraphs stacked one line height
+apart. It can be edited in place: <code>insert</code>, <code>erase</code> and <code>replace</code> shape
+again only the paragraphs an edit touches, which keeps a long document
+responsive in an editor. <code>make_text_layout</code> builds one in a single font.</p>
+</div>
+<div class="paragraph">
+<p>A <code>text_layout</code> keeps the width it was last flowed to. Replacing or editing
+the text lays the result out again at that width, so, unlike a <code>text_run</code>,
+it needs no fresh <code>flow</code> after a change. Before the first flow, each
+paragraph counts as one line.</p>
+</div>
+<div class="paragraph">
+<p>Positions are in document coordinates, with y = 0 at the top of the first
+line. Every line is a box one line height tall: line <em>k</em> spans y from <em>k</em>
+times the line height to <em>k</em> + 1 times it. <code>caret_point</code> gives the top of
+a caret&#8217;s line, and <code>caret_index</code> picks the line whose box holds the point.
+<code>draw</code> is the exception: as for a <code>text_run</code>, its point is the left end of
+the first line&#8217;s baseline, so draw at the top plus the font&#8217;s ascent.
+Indices are code point indices into <code>text()</code>.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="_images/text_layout/example.png"><img src="_images/text_layout/example.png" alt="Output of the example" width="560px"></a>
+</div>
+<div class="title">Figure 1. The output of the Example below, annotated. The tints are the line boxes caret_point and caret_index work in; the dots mark the document&#8217;s top-left and the draw point p on the first baseline.</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+Hit testing is where a <code>text_layout</code> and a <code>text_run</code> differ. A
+<code>text_run</code> picks a line by baselines, so a point just below one baseline
+already belongs to the next line. A <code>text_layout</code> picks it by line box,
+which is what an editor wants from a click.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p><code>text_layout</code> is <code>basic_text_layout&lt;text_run&gt;</code>. The template takes the
+paragraph type as a parameter, so another type can stand in, such as a
+non-graphical one for tests; see <a href="#_textrun_requirements">TextRun Requirements</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_include"><a class="anchor" href="#_include"></a>Include</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/text_layout.hpp&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   template &lt;typename TextRun&gt;
+   class basic_text_layout
+   {
+   public:
+
+      using size_type = std::size_t;
+      using factory = std::function&lt;TextRun(std::u32string_view)&gt;;
+      using break_enum = typename TextRun::break_enum;
+
+      static constexpr size_type npos = size_type(-1);
+
+                              basic_text_layout(
+                                 factory make
+                               , double line_height
+                               , std::u32string_view text
+                              );
+
+                              basic_text_layout(basic_text_layout&amp;&amp;) noexcept = default;
+      basic_text_layout&amp;      operator=(basic_text_layout&amp;&amp;) noexcept = default;
+
+      void                    set_text(std::u32string_view text);
+      std::u32string          text() const;
+      size_type               size() const;
+      size_type               paragraph_count() const;
+
+      void                    insert(size_type pos, std::u32string_view text);
+      void                    erase(size_type pos, size_type len);
+      void                    replace(size_type pos, size_type len, std::u32string_view text);
+
+      void                    flow(float width, bool justify = false);
+      size_type               num_lines() const;
+      double                  height() const;
+      size_type               paragraph_lines(size_type i) const;
+
+      point                   caret_point(size_type index) const;
+      size_type               caret_index(point p) const;
+      size_type               caret_index(float x, float y) const;
+
+      break_enum              word_break(size_type index) const;
+      break_enum              line_break(size_type index) const;
+
+      void                    draw(canvas&amp; cnv, point p, color c = colors::black) const;
+   };</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   using text_layout = basic_text_layout&lt;text_run&gt;;
+
+   text_layout make_text_layout(font_descr f, std::u32string_view text);</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>d</code>, <code>d2</code>         </dt>
+<dd>
+<p>Objects of type <code>text_layout</code>, or of one
+<code>basic_text_layout&lt;TextRun&gt;</code>.</p>
+</dd>
+<dt class="hdlist1"><code>f</code>               </dt>
+<dd>
+<p>Object of type <code>font_descr</code>.</p>
+</dd>
+<dt class="hdlist1"><code>make</code>            </dt>
+<dd>
+<p>A <code>factory</code>: given one paragraph&#8217;s text, it returns a
+<code>TextRun</code> for it.</p>
+</dd>
+<dt class="hdlist1"><code>lh</code>              </dt>
+<dd>
+<p>A <code>double</code>, the line height.</p>
+</dd>
+<dt class="hdlist1"><code>s</code>               </dt>
+<dd>
+<p>A <code>std::u32string_view</code>, text.</p>
+</dd>
+<dt class="hdlist1"><code>pos</code>, <code>len</code>, <code>i</code> </dt>
+<dd>
+<p><code>size_type</code> code point positions and counts in
+<code>d.text()</code>.</p>
+</dd>
+<dt class="hdlist1"><code>k</code>               </dt>
+<dd>
+<p>A <code>size_type</code>, a paragraph index.</p>
+</dd>
+<dt class="hdlist1"><code>w</code>               </dt>
+<dd>
+<p>A <code>float</code>, a line width.</p>
+</dd>
+<dt class="hdlist1"><code>j</code>               </dt>
+<dd>
+<p>A <code>bool</code>, whether to justify.</p>
+</dd>
+<dt class="hdlist1"><code>cnv</code>             </dt>
+<dd>
+<p>Object of type <code>canvas</code>.</p>
+</dd>
+<dt class="hdlist1"><code>p</code>               </dt>
+<dd>
+<p>Object of type <code>point</code>.</p>
+</dd>
+<dt class="hdlist1"><code>x</code>, <code>y</code>          </dt>
+<dd>
+<p><code>float</code> coordinates.</p>
+</dd>
+<dt class="hdlist1"><code>c</code>               </dt>
+<dd>
+<p>Object of type <code>color</code>.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_constructors_and_assignment"><a class="anchor" href="#_constructors_and_assignment"></a>Constructors and Assignment</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>basic_text_layout&lt;TextRun&gt;(make,
+    lh, s)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct over the text <code>s</code>, with
+                                        lines <code>lh</code> apart. <code>make</code> builds the
+                                        <code>TextRun</code> for each paragraph. The
+                                        text is not yet flowed.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>text_layout(std::move(d))</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Move construct from <code>d</code>, which is
+                                        left holding nothing.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d = std::move(d2)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Move assign <code>d2</code> to <code>d</code>. <code>d2</code> is left
+                                        holding nothing.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>A <code>text_layout</code> can be moved but not copied.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="⚠️  WARNING"></i>
+</td>
+<td class="content">
+A moved from <code>text_layout</code> holds nothing. Destroy it or assign to
+it; calling any other member on it is undefined behaviour.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_text"><a class="anchor" href="#_text"></a>Text</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d.text()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The whole text, as a copy.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>std::u32string</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d.size()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The number of code points.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>size_type</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d.set_text(s)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Replace the whole text, laid out
+                            again at the current width.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d.paragraph_count()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The number of paragraphs, one more
+                            than the number of line feeds. A
+                            text that ends in a line feed ends
+                            in an empty paragraph.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>size_type</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_editing"><a class="anchor" href="#_editing"></a>Editing</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d.insert(pos, s)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Insert <code>s</code> before code point
+                              <code>pos</code>. A <code>pos</code> past the end
+                              appends. Inserting empty text
+                              does nothing.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d.erase(pos, len)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Remove <code>len</code> code points from
+                              <code>pos</code>, stopping at the end.
+                              Nothing happens if <code>len</code> is 0
+                              or <code>pos</code> is at or past the end.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d.replace(pos, len, s)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">As <code>d.erase(pos, len)</code> followed
+                              by <code>d.insert(pos, s)</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>An edit shapes again only the paragraphs it touches; the others keep their
+layout and move up or down. Inserting a line feed splits a paragraph, and
+removing one joins two. The edited text is laid out at the current width.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_layout"><a class="anchor" href="#_layout"></a>Layout</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d.flow(w)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Lay every paragraph out in lines
+                            no wider than <code>w</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d.flow(w, j)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">As above, and justify if <code>j</code> is
+                            true.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d.num_lines()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The number of lines over all the
+                            paragraphs. An empty paragraph
+                            counts as one line.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>size_type</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d.height()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>num_lines()</code> times the line
+                            height.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>double</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d.paragraph_lines(k)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The number of lines paragraph <code>k</code>
+                            takes.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>size_type</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Flowing again at the same width and justification does nothing, so an
+editor can call <code>flow</code> after every edit, to read the new <code>height()</code>, at no
+cost. Lines break and justify as they do in a
+<a href="text_run.html" class="xref page">text_run</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_drawing"><a class="anchor" href="#_drawing"></a>Drawing</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d.draw(cnv, p)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Draw the text in black, with the
+                        first line&#8217;s baseline starting at
+                        <code>p</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d.draw(cnv, p, c)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">As above, in the colour <code>c</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Only the paragraphs that intersect the canvas&#8217;s clip are drawn, so drawing
+a long document in a scrolled view costs what is visible.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_hit_testing"><a class="anchor" href="#_hit_testing"></a>Hit Testing</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d.caret_point(i)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Where the caret before code point
+                            <code>i</code> goes: the left edge of its
+                            glyph, at the top of its line. An
+                            <code>i</code> at or past the end gives the
+                            end of the last line.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d.caret_index(p)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The index of the caret position
+                            nearest <code>p</code>, in the line whose box
+                            holds <code>p.y</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>size_type</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d.caret_index(x, y)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">As above, for the point <code>x</code>, <code>y</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>size_type</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>A point above the text maps to the first line and one below it to the
+last, so <code>caret_index</code> always returns an index. Within the line, <code>x</code> is
+resolved as a <code>text_run</code> resolves it.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_break_queries"><a class="anchor" href="#_break_queries"></a>Break Queries</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d.line_break(i)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">As <code>text_run::line_break</code>, over the
+                        whole text. A line feed at <code>i</code>
+                        reports a required break after it.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>break_enum</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d.word_break(i)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">As <code>text_run::word_break</code>, over the
+                        whole text.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>break_enum</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>For a <code>text_layout</code>, <code>break_enum</code> is <code>text_run::break_enum</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_constants"><a class="anchor" href="#_constants"></a>Constants</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d.npos</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>size_type(-1)</code>, kept to match
+                  <code>text_run::npos</code>. <code>caret_index</code> does not
+                  return it.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>size_type</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_free_functions"><a class="anchor" href="#_free_functions"></a>Free Functions</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>make_text_layout(f, s)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A <code>text_layout</code> over the text
+                                <code>s</code> in the font <code>f</code>, with the
+                                font&#8217;s <code>line_height()</code> as its
+                                line height. Not yet flowed.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>text_layout</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_textrun_requirements"><a class="anchor" href="#_textrun_requirements"></a>TextRun Requirements</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>basic_text_layout</code> asks this of its paragraph type, where <code>r</code> is a
+<code>TextRun</code>. It must also be move constructible.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>TextRun::break_enum</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The type the break queries return.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.flow(w, j)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Lay the paragraph out.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.num_lines()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The paragraph&#8217;s line count; 0 is taken as
+                             one line.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.caret_point(i)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The paragraph-local caret position, with the
+                             y of line <em>k</em> at <em>k</em> times the line height.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.caret_index(p)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The paragraph-local index nearest <code>p</code>,
+                             choosing a line by baselines as a <code>text_run</code>
+                             does.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.word_break(i)</code>,
+  <code>r.line_break(i)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Break queries, needed only if the layout&#8217;s
+                             are used.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.draw(cnv, p, c)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Needed only if the layout&#8217;s <code>draw</code> is used.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A document of two paragraphs, a third added after the flow, and a caret
+drawn where the mouse position <code>mp</code> falls:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   auto fd = font_descr{"Open Sans", 20};
+   auto fm = font{fd}.metrics();
+   auto lh = font{fd}.line_height();
+
+   auto doc = make_text_layout(fd, text);
+   doc.flow(340);
+   doc.insert(doc.size(), U"\nThis paragraph was added after the flow.");
+
+   auto top_left = point{90, 30};
+   doc.draw(cnv, {top_left.x, top_left.y + fm.ascent});
+
+   auto i = doc.caret_index(mp.x - top_left.x, mp.y - top_left.y);
+   auto cp = doc.caret_point(i);
+   cnv.stroke_style(colors::navy);
+   cnv.move_to(top_left.x + cp.x, top_left.y + cp.y);
+   cnv.line_to(top_left.x + cp.x, top_left.y + cp.y + lh);
+   cnv.stroke();</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Its output is the figure in the <a href="#_overview">Overview</a>.</p>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script src="../../_/js/vendor/lunr.js"></script>
+<script src="../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../.." data-snippet-length="100" data-stylesheet="../../_/css/search.css"></script>
+<script async src="../../search-index.js"></script>
+  </body>
+</html>

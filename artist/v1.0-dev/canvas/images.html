@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Images :: Artist Docs</title>
+    <title>Drawing Images :: Artist Docs</title>
     <meta name="generator" content="Antora 3.1.15">
     <link rel="stylesheet" href="../../../_/css/site.css">
 <meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
@@ -132,7 +132,7 @@
     <a class="nav-link" href="text.html">Text</a>
   </li>
   <li class="nav-item is-current-page" data-depth="3">
-    <a class="nav-link" href="images.html">Images</a>
+    <a class="nav-link" href="images.html">Drawing Images</a>
   </li>
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="states.html">States</a>
@@ -141,6 +141,9 @@
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../text_run.html">Text Run</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../text_layout.html">Text Layout</a>
   </li>
 </ul>
   </li>
@@ -177,7 +180,7 @@
     <li><a href="../index.html">Artist 2D Canvas Library</a></li>
     <li>Reference</li>
     <li><a href="../canvas.html">Canvas</a></li>
-    <li><a href="images.html">Images</a></li>
+    <li><a href="images.html">Drawing Images</a></li>
   </ul>
 </nav>
 </div>
@@ -186,13 +189,19 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Images</h1>
+<h1 class="page">Drawing Images</h1>
 <div class="sect1">
 <h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>An <code>image</code> is drawn onto the canvas with <code>draw</code>. The overloads differ in
-how much of the image is drawn, where it lands, and at what size.</p>
+<p><code>draw</code> paints an <a href="../foundation/image.html" class="xref page">image</a> onto the canvas. The
+Image page covers the image itself: loading one, building one from pixels,
+and drawing into one. The overloads here differ in how much of the image
+is drawn, where it lands, and at what size.</p>
+</div>
+<div class="paragraph">
+<p>Positions and rectangles are in user space. The image&#8217;s own size, and the
+<code>src</code> rectangle, are in the image&#8217;s units, <code>size()</code>, whatever its scale.</p>
 </div>
 </div>
 </div>

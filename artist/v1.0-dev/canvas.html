@@ -132,7 +132,7 @@
     <a class="nav-link" href="canvas/text.html">Text</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="canvas/images.html">Images</a>
+    <a class="nav-link" href="canvas/images.html">Drawing Images</a>
   </li>
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="canvas/states.html">States</a>
@@ -141,6 +141,9 @@
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="text_run.html">Text Run</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="text_layout.html">Text Layout</a>
   </li>
 </ul>
   </li>
@@ -196,8 +199,8 @@ word separators instead of camelCase).</p>
 </div>
 <div class="paragraph">
 <p>The canvas API is built on top of <a href="foundation.html" class="xref page">Foundation classes</a>
-such as points and rectangles, and on the drawable classes documented in
-this section, such as paths and images.</p>
+such as points and rectangles, and on drawable classes such as
+<a href="path.html" class="xref page">Path</a> and <a href="foundation/image.html" class="xref page">Image</a>.</p>
 </div>
 </div>
 </div>
@@ -205,9 +208,11 @@ this section, such as paths and images.</p>
 <h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The <code>canvas</code> is the surface you draw on. You do not construct one: the host
-window creates a canvas for its drawing area and hands it to you for the
-duration of the draw call.</p>
+<p>The <code>canvas</code> is the surface you draw on. Usually you do not construct one:
+the host window creates a canvas for its drawing area and hands it to you
+for the duration of the draw call. To draw into an image instead, you
+construct a canvas yourself on an `offscreen_image&#8217;s context; see
+<a href="foundation/image.html" class="xref page">Image</a>.</p>
 </div>
 <div class="paragraph">
 <p>Drawing follows the pattern of the HTML5 canvas. You set the styles you
@@ -249,7 +254,7 @@ color.</p>
 <p><a href="canvas/text.html" class="xref page">Text</a> draws and measures strings.</p>
 </li>
 <li>
-<p><a href="canvas/images.html" class="xref page">Images</a> draws pixmaps.</p>
+<p><a href="canvas/images.html" class="xref page">Drawing Images</a> paints an image onto the canvas.</p>
 </li>
 <li>
 <p><a href="canvas/states.html" class="xref page">States</a> save and restore the canvas.</p>

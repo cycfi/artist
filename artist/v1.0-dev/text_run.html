@@ -132,7 +132,7 @@
     <a class="nav-link" href="canvas/text.html">Text</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="canvas/images.html">Images</a>
+    <a class="nav-link" href="canvas/images.html">Drawing Images</a>
   </li>
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="canvas/states.html">States</a>
@@ -141,6 +141,9 @@
   </li>
   <li class="nav-item is-current-page" data-depth="2">
     <a class="nav-link" href="text_run.html">Text Run</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="text_layout.html">Text Layout</a>
   </li>
 </ul>
   </li>
@@ -224,10 +227,10 @@ does apply.</p>
 <i class="fa icon-note" title="✏️  NOTE"></i>
 </td>
 <td class="content">
-On Skia and Cairo, text is shaped with HarfBuzz and wrapped at the
-opportunities <code>line_break</code> reports. On Quartz 2D, Core Text both shapes and
-wraps it, so a wrap can fall somewhere <code>line_break</code> does not mark, and the
-same text can wrap differently from the other backends.
+Lines are wrapped at the opportunities <code>line_break</code> reports, except
+on Quartz 2D, where Core Text both shapes and wraps the text. There a wrap
+can fall somewhere <code>line_break</code> does not mark, and the same text can wrap
+differently from other backends.
 </td>
 </tr>
 </table>
@@ -652,21 +655,6 @@ its end gives the index just past its last glyph: the space that ended it,
 or the next line&#8217;s first character. On the last line that is
 <code>r.text().size()</code>. Between the two, <code>x</code> rounds to the nearest glyph
 boundary.</p>
-</div>
-<div class="admonitionblock caution">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-caution" title="Caution"></i>
-</td>
-<td class="content">
-On Quartz 2D, <code>caret_point</code> and <code>caret_index</code> count UTF-16 code
-units rather than code points. The two agree until the text holds a
-character outside the Basic Multilingual Plane, such as an emoji; past that
-point Quartz 2D&#8217;s indices no longer match <code>text()</code> or the break queries.
-</td>
-</tr>
-</table>
 </div>
 <div class="admonitionblock note">
 <table>
