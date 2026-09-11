@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Image :: Artist Docs</title>
+    <meta name="generator" content="Antora 3.1.15">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+<meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
+<link rel="icon" type="image/png" sizes="16x16" href="https://cycfi.com/assets/icons/favicon-16x16.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="https://cycfi.com/assets/icons/favicon-32x32.png"/>
+<link rel="icon" type="image/png" sizes="96x96" href="https://cycfi.com/assets/icons/favicon-96x96.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="https://cycfi.com/assets/icons/android-chrome-192x192.png"/>
+<link rel="icon" type="image/png" sizes="256x256" href="https://cycfi.com/assets/icons/android-chrome-256x256.png"/>
+<link rel="apple-touch-icon" type="image/png" href="https://cycfi.com/assets/icons/apple-touch-icon.png"/>
+
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <!--  Cycfi Logo -->
+      <a class="m-nav__logo" href="https://www.cycfi.com">
+        <svg version="1.1" x="0px" y="0px" width="200" viewBox="0 0 600 100" style="padding-top: 15;" xmlns="http://www.w3.org/2000/svg">
+          <g transform="matrix(2.55, 0, 0, 2.62, -464.010406, -1042.918213)" fill="#202020">
+            <path d="M234.37,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.7-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-3.5-0.04-4.6,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.59,0.66-0.76,1.35c-0.14,0.84-0.18,1.03-0.19,1.43l-0.14,3.91 c-0.01,0.39,0.04,0.84,0.09,1.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h33.85 c0.8,0,1.45,0.67,1.42,1.47L234.37,431.65z"/>
+            <path d="M276.06,433.02H257.9c-0.8,0-1.45-0.67-1.42-1.47l0.15-4.18c0.03-0.76,0.65-1.37,1.42-1.37h14.16 c1.91,0,3.52,0,4.61-0.12c1.23-0.13,1.75-0.25,2.17-0.71c0.36-0.39,0.4-2.52,0.4-2.52h-27.92c-11.11,0-13.26-5.13-13.1-9.44 l0.12-3.38c0.03-0.76,0.65-1.37,1.42-1.37h8.43c0.8,0,1.45,0.67,1.42,1.47l-0.05,1.36c-0.02,0.46-0.01,2.03,0.11,2.51 c0.1,0.42,0.44,0.82,0.78,1.07c0.47,0.35,0.83,0.42,1.64,0.54c0.9,0.14,2.09,0.21,3.54,0.21h24.09l0.21-5.8 c0.03-0.76,0.65-1.37,1.42-1.37h8.46c0.8,0,1.45,0.67,1.42,1.47l-0.49,13.57c-0.06,1.58-0.46,3.96-1.12,5.07 c-0.68,1.15-1.71,2.08-3.04,2.76c-1.23,0.63-2.76,1.07-4.56,1.32C280.44,432.9,278.4,433.02,276.06,433.02L276.06,433.02z"/>
+            <path d="M401.95,431.55l0.78-21.72c0.03-0.76,0.65-1.37,1.42-1.37h8.59c0.8,0,1.45,0.67,1.42,1.47l-0.78,21.72 c-0.03,0.76-0.65,1.37-1.42,1.37h-8.59C402.56,433.02,401.92,432.35,401.95,431.55z"/>
+            <path d="M346.77,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.71-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-2.47-0.04-3.58,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.58,0.66-0.76,1.35c-0.14,0.84-0.22,2.03-0.23,2.43l-0.07,1.91 c-0.01,0.39,0.01,1.84,0.06,2.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h32.83 c0.8,0,1.45,0.67,1.42,1.47L346.77,431.65z"/>
+            <path d="M386.2,425.88l-24.93-0.03l-0.21,5.8c-0.03,0.76-0.65,1.37-1.42,1.37h-8.46c-0.8,0-1.45-0.67-1.42-1.47 l0.49-13.57c0.06-1.58,0.46-3.96,1.12-5.07c0.68-1.15,1.71-2.08,3.04-2.76c1.23-0.63,2.76-1.07,4.56-1.32 c1.7-0.24,3.75-0.36,6.08-0.36l0,0h33.68c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.18c-0.03,0.76-0.65,1.37-1.42,1.37H368.9 c-1.91,0-3.52,0-4.61,0.12c-1.23,0.13-1.75,0.25-2.17,0.71c-0.36,0.39-0.4,2.52-0.4,2.52h24.63c0.8,0,1.45,0.67,1.42,1.47 l-0.15,4.22C387.59,425.28,386.96,425.88,386.2,425.88z"/>
+          </g>
+        </svg>
+      </a>
+      <a class="navbar-item" href="https://www.cycfi.com">Artist Docs</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="artist" data-version="v1.0-dev">
+  <aside class="nav">
+    <div class="panels">
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs">
+        </div>
+      </div>
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">Artist 2D Canvas Library</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../setup.html">Setup and Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../backends.html">Backends</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../gallery.html">Gallery</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../foundation.html">Foundation</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="point.html">Point and Extent</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="rect.html">Rect</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="circle.html">Circle</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="affine_transform.html">Affine Transform</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="color.html">Color</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="font.html">Font</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="image.html">Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="resources.html">Resources</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../path.html">Path</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../canvas.html">Canvas</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/transforms.html">Transforms</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/current_path.html">Current Path</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/styles.html">Styles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/gradients.html">Gradients</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/rectangles.html">Rectangles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/text.html">Text</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/images.html">Images</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/states.html">States</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../text_run.html">Text Run</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Artist 2D Canvas Library</span>
+    <span class="version">v1.0-dev</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../index.html">Artist 2D Canvas Library</a></div>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="../index.html">v1.0-dev</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Artist 2D Canvas Library</a></li>
+    <li>Reference</li>
+    <li><a href="../foundation.html">Foundation</a></li>
+    <li><a href="image.html">Image</a></li>
+  </ul>
+</nav>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Image</h1>
+<div class="sect1">
+<h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>An <code>image</code> is a bitmap the canvas can paint. It is what the
+<a href="../canvas/images.html" class="xref page">Images</a> calls take. There are three ways to get
+one: load it from a file, build it from a buffer of pixels with
+<code>make_image</code>, or create a blank one of a given size and draw into it
+through an <code>offscreen_image</code>.</p>
+</div>
+<div class="paragraph">
+<p>A file name that is not absolute is looked up through the
+<a href="resources.html" class="xref page">Resources</a> search list. PNG is read on every
+backend; which other formats load depends on the backend&#8217;s decoder.</p>
+</div>
+<div class="paragraph">
+<p>An <code>image</code> owns backend storage, so it can be moved but not copied. Share
+one through <code>image_ptr</code>, which is a <code>std::shared_ptr&lt;image&gt;</code>.</p>
+</div>
+<div class="paragraph">
+<p>To draw into an image, construct an <code>offscreen_image</code> on it and build a
+<code>canvas</code> on its <code>context()</code>. On some backends the drawing reaches the image
+only when the <code>offscreen_image</code> is destroyed, so end its lifetime before
+using the image, and do not let the canvas outlive it. The <a href="#_example">Example</a>
+shows the pattern.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+Drawing an image behaves the same on every backend. Drawing into one,
+and the pixel level API, do not: when the drawing reaches the image,
+whether earlier contents survive, what <code>pixels()</code> points at, how
+<code>make_image</code> reads its buffer and how a failure is reported all depend on
+the backend. The differences are set out under <a href="#_backend_differences">Backend Differences</a>.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_include"><a class="anchor" href="#_include"></a>Include</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/image.hpp&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   enum class pixel_format
+   {
+      invalid = -1,
+      gray8,
+      rgb16,
+      rgb32,
+      rgba32,
+   };</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   class image
+   {
+   public:
+
+      explicit          image(float sizex, float sizey);
+      explicit          image(extent size);
+      explicit          image(fs::path const&amp; path_);
+
+                        image(image const&amp; rhs) = delete;
+                        image(image&amp;&amp; rhs) noexcept;
+                        ~image();
+
+      image&amp;            operator=(image const&amp; rhs) = delete;
+      image&amp;            operator=(image&amp;&amp; rhs) noexcept;
+
+      image_impl_ptr    impl() const;
+      extent            size() const;
+      void              save_png(std::string_view path) const;
+
+      uint32_t*         pixels();
+      uint32_t const*   pixels() const;
+      extent            bitmap_size() const;
+   };
+
+   using image_ptr = std::shared_ptr&lt;image&gt;;</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   class offscreen_image
+   {
+   public:
+
+      explicit          offscreen_image(image&amp; img);
+                        offscreen_image(offscreen_image const&amp;) = delete;
+                        ~offscreen_image();
+
+      offscreen_image&amp;  operator=(offscreen_image const&amp; rhs) = delete;
+
+      canvas_impl*      context() const;
+   };</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   // Free functions
+   template &lt;pixel_format fmt&gt;      // gray8
+   image make_image(std::uint8_t const* data, extent size);
+
+   template &lt;pixel_format fmt&gt;      // rgb16
+   image make_image(std::uint16_t const* data, extent size);
+
+   template &lt;pixel_format fmt&gt;      // rgb32 or rgba32
+   image make_image(std::uint32_t const* data, extent size);</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>img</code>, <code>img2</code>  </dt>
+<dd>
+<p>Objects of type <code>image</code>.</p>
+</dd>
+<dt class="hdlist1"><code>sx</code>, <code>sy</code>     </dt>
+<dd>
+<p><code>float</code> width and height.</p>
+</dd>
+<dt class="hdlist1"><code>sz</code>           </dt>
+<dd>
+<p>Object of type <code>extent</code>, a width and height.</p>
+</dd>
+<dt class="hdlist1"><code>p</code>            </dt>
+<dd>
+<p>Object of type <code>fs::path</code>, an image file name, relative
+or absolute.</p>
+</dd>
+<dt class="hdlist1"><code>str</code>          </dt>
+<dd>
+<p>A <code>std::string_view</code>, a file name.</p>
+</dd>
+<dt class="hdlist1"><code>d8</code>           </dt>
+<dd>
+<p>A <code>std::uint8_t const*</code>, a buffer of pixels.</p>
+</dd>
+<dt class="hdlist1"><code>d16</code>          </dt>
+<dd>
+<p>A <code>std::uint16_t const*</code>, a buffer of pixels.</p>
+</dd>
+<dt class="hdlist1"><code>d32</code>          </dt>
+<dd>
+<p>A <code>std::uint32_t const*</code>, a buffer of pixels.</p>
+</dd>
+<dt class="hdlist1"><code>off</code>          </dt>
+<dd>
+<p>Object of type <code>offscreen_image</code>.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_constructors_and_assignment"><a class="anchor" href="#_constructors_and_assignment"></a>Constructors and Assignment</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image(sx, sy)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct a blank, fully transparent image
+                                <code>sx</code> by <code>sy</code> in size.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image(sz)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">As above, <code>sz</code> in size.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image(p)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Load the image file <code>p</code>. Throws
+                                <code>std::runtime_error</code> if the file is
+                                missing or cannot be decoded, except on
+                                Quartz 2D.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image(std::move(img))</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Move construct from <code>img</code>, which is left
+                                holding nothing.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>img = std::move(img2)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Move assign <code>img2</code> to <code>img</code>. <code>img2</code> is
+                                left holding nothing.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>All three constructors are <code>explicit</code>, so an <code>extent</code> or a path does not
+convert to an <code>image</code> implicitly.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="⚠️  WARNING"></i>
+</td>
+<td class="content">
+A moved from <code>image</code> holds nothing. Destroy it or assign to it;
+calling any other member on it is undefined behaviour.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_construction_from_pixels"><a class="anchor" href="#_construction_from_pixels"></a>Construction from Pixels</h3>
+<div class="paragraph">
+<p><code>make_image</code> builds an image from a buffer of <code>sz.x</code> by <code>sz.y</code> pixels,
+stored row by row from the top with no padding between rows. The format is
+a template argument, and each overload accepts only the formats that match
+its pointer type, so <code>pixel_format::invalid</code> is rejected at compile time.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>make_image&lt;pixel_format::gray8&gt;(d8, sz)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Eight bit gray levels, one byte
+                                                  per pixel. Opaque.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>make_image&lt;pixel_format::rgb16&gt;(d16, sz)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sixteen bit 5-6-5 pixels, red in
+                                                  the top five bits. Opaque.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>make_image&lt;pixel_format::rgb32&gt;(d32, sz)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Four bytes per pixel: R, G and B
+                                                  in memory order, then a byte
+                                                  that is ignored. Opaque.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>make_image&lt;pixel_format::rgba32&gt;(d32, sz)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Four bytes per pixel: R, G, B and
+                                                  A in memory order.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+Only opaque <code>gray8</code> and <code>rgba32</code> pixels are read the same way by
+every backend. Whether the buffer is copied, how <code>rgba32</code> alpha is read,
+and whether <code>rgb16</code> and <code>rgb32</code> work at all depend on the backend. Keeping
+the buffer alive for as long as the image is safe on every backend.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_accessors"><a class="anchor" href="#_accessors"></a>Accessors</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>img.size()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The size of the image. <code>draw</code> places
+                        the image at this size in user space,
+                        and the <code>src</code> rectangle <code>draw</code> takes is
+                        in these units.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>extent</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>img.bitmap_size()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The width and height, in pixels, of
+                        the buffer <code>pixels()</code> points at, or
+                        <code>{0, 0}</code> when there is none.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>extent</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>img.impl()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The backend&#8217;s image handle, for code
+                        that talks to the backend directly.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image_impl_ptr</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_pixel_access"><a class="anchor" href="#_pixel_access"></a>Pixel Access</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>img.pixels()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The first pixel of the bitmap, or
+                    <code>nullptr</code> if the image has none. Rows run
+                    from the top, <code>bitmap_size().x</code> pixels to
+                    a row, with no padding.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>uint32_t*</code>, or
+                                                                 <code>uint32_t const*</code>
+                                                                 if <code>img</code> is
+                                                                 <code>const</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+What the pixels are depends on the backend and on where the image
+came from. On Quartz 2D, an image drawn through an <code>offscreen_image</code> does
+not hold 32 bit pixels at all. To inspect pixels on every backend, save
+the image with <code>save_png</code> and load the file back: a loaded PNG always gives
+32 bit pixels, though not in the same channel order everywhere.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+Treat the buffer as read only. There is no call to tell the backend
+that the pixels have changed, and Cairo needs one before it uses the image
+again.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_output"><a class="anchor" href="#_output"></a>Output</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>img.save_png(str)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Write the image to the file <code>str</code> as
+                          a PNG, <code>size().x</code> by <code>size().y</code>
+                          pixels. <code>str</code> is used as given; it is
+                          not looked up through the resource
+                          search list.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Only Cairo reports a failure to write the file.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_offscreen_construction"><a class="anchor" href="#_offscreen_construction"></a>Offscreen Construction</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>offscreen_image(img)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Begin drawing into <code>img</code>, which must
+                             outlive the <code>offscreen_image</code>.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>An <code>offscreen_image</code> is neither copyable nor movable. Its destructor ends
+the drawing: everything drawn through its context is in the image once it
+has been destroyed.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_offscreen_context"><a class="anchor" href="#_offscreen_context"></a>Offscreen Context</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>off.context()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The backend drawing context, from
+                      which a <code>canvas</code> is built:
+                      <code>canvas(off.context())</code>. Valid only
+                      while <code>off</code> lives, so the canvas must
+                      not outlive it.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas_impl*</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_backend_differences"><a class="anchor" href="#_backend_differences"></a>Backend Differences</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The table records what each backend does today where they part ways.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Behaviour</th>
+<th class="tableblock halign-left valign-top">Quartz 2D</th>
+<th class="tableblock halign-left valign-top">Skia</th>
+<th class="tableblock halign-left valign-top">Cairo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image(p)</code> when <code>p</code> is missing
+  or cannot be decoded</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Returns an empty image,
+                                       <code>size()</code> is <code>{0, 0}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Throws
+                                                                   <code>std::runtime_error</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Throws
+                                                                                               <code>std::runtime_error</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>save_png</code> cannot write the file</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not reported</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not reported</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Throws
+                                                                                               <code>std::runtime_error</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A blank image before any drawing</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No bitmap, <code>pixels()</code> is
+                                       <code>nullptr</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No bitmap, <code>pixels()</code> is
+                                                                   <code>nullptr</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A transparent bitmap</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">When drawing through an
+  <code>offscreen_image</code> reaches the
+  image</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">When it is destroyed</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">When it is destroyed</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">As it is drawn</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>offscreen_image</code> on an image
+  that already holds something</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Draws over it</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Starts from transparent
+                                                                   and replaces it</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Draws over it</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The <code>make_image</code> buffer</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Read in place, so it must
+                                       outlive the image</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Copied</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Copied</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rgba32</code> alpha</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Read as premultiplied</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Declared opaque, so a
+                                                                   pixel with alpha below
+                                                                   255 draws undefined</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Read as straight</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rgb16</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not read as 5-6-5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Supported</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Supported</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rgb32</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Draws nothing</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Supported</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Supported</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>pixels()</code> of a loaded PNG</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">R, G, B, A bytes,
+                                       straight alpha</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">B, G, R, A bytes,
+                                                                   straight alpha</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">B, G, R, A bytes,
+                                                                                               premultiplied</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>pixels()</code> after drawing through
+  an <code>offscreen_image</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not 32 bit pixels.
+                                       <code>bitmap_size()</code> is
+                                       <code>{0, 0}</code> until <code>pixels()</code>
+                                       is first called, then
+                                       at the display&#8217;s backing
+                                       scale</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">B, G, R, A bytes,
+                                                                   premultiplied</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">B, G, R, A bytes,
+                                                                                               premultiplied</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>pixels()</code> of a <code>make_image</code>
+  image</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The buffer&#8217;s own format</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The buffer&#8217;s own format</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">B, G, R, A bytes,
+                                                                                               premultiplied</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Render a badge once into an image, then paint it wherever it is needed:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   image badge{64, 64};
+   {
+      offscreen_image off{badge};
+      canvas bc{off.context()};
+      bc.add_circle(32, 32, 30);
+      bc.fill_style(colors::gold);
+      bc.fill();
+   }
+
+   cnv.draw(badge, {10, 10});
+   cnv.draw(badge, {90, 10}, 0.5);</code></pre>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+<script src="../../../_/js/vendor/lunr.js"></script>
+<script src="../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../.." data-snippet-length="100" data-stylesheet="../../../_/css/search.css"></script>
+<script async src="../../../search-index.js"></script>
+  </body>
+</html>

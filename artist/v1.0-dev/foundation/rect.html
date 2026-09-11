@@ -99,6 +99,9 @@
     <a class="nav-link" href="font.html">Font</a>
   </li>
   <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="image.html">Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="resources.html">Resources</a>
   </li>
 </ul>
@@ -135,6 +138,9 @@
     <a class="nav-link" href="../canvas/states.html">States</a>
   </li>
 </ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../text_run.html">Text Run</a>
   </li>
 </ul>
   </li>
@@ -185,466 +191,932 @@
 <h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The <code>rect</code> is a 2-dimensional rectangle, given by its <code>left</code>, <code>top</code>,
-<code>right</code> and <code>bottom</code> coordinates.</p>
+<p>A <code>rect</code> is an axis aligned rectangle held as four <code>float</code> edge
+coordinates: <code>left</code>, <code>top</code>, <code>right</code> and <code>bottom</code>. It is not an origin and
+a size. <code>width()</code> and <code>height()</code> are computed from the edges, and the
+constructors that do take an <a href="point.html" class="xref page"><code>extent</code></a> convert
+to edges on the way in.</p>
+</div>
+<div class="paragraph">
+<p>Artist uses screen coordinates, so <code>y</code> increases <strong>downward</strong>: <code>top</code> is the
+smaller <code>y</code> and <code>bottom</code> the larger. A rectangle whose edges are in that
+order is <strong>valid</strong>, which <code>is_valid</code> tests. Nothing enforces it. <code>rect</code> is a
+value type with no invariant, and several operations can hand back a rect
+that fails <code>is_valid</code>; each is flagged below.</p>
+</div>
+<div class="paragraph">
+<p>Everything declared in the header is <code>constexpr</code> except the seven
+functions defined in <code>rect.cpp</code>: <code>intersects</code>, <code>union_</code>, <code>intersection</code>,
+and the <code>center</code> and <code>align</code> families. A rect can be built, measured,
+moved and inset at compile time, but not intersected or aligned there.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+<code>rect.hpp</code> includes <code>artist/point.hpp</code>, so <code>point</code>, <code>extent</code> and
+<code>axis</code> come with it.
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_rect"><a class="anchor" href="#_rect"></a>rect</h2>
+<h2 id="_include"><a class="anchor" href="#_include"></a>Include</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>The <code>rect</code> struct represents a 2-dimensional rectangle specified by the
-<code>left</code>, <code>top</code>, <code>right</code>, and <code>bottom</code> coordinates.</p>
-</div>
-<div class="sect2">
-<h3 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">struct rect
-{
-               rect();
-               rect(float left, float top, float right, float bottom);
-               rect(point origin, float right, float bottom)
-
-               rect(point top_left, point bottom_right);
-               rect(float left, float top, extent size);
-               rect(point origin, extent size);
-
-               rect(rect const&amp;) = default;
-   rect&amp;       operator=(rect const&amp;) = default;
-
-   bool        operator==(rect const&amp; other) const;
-   bool        operator!=(rect const&amp; other) const;
-
-   bool        is_empty() const;
-   bool        includes(point p) const;
-   bool        includes(rect const&amp; other) const;
-
-   float       width() const;
-   void        width(float w);
-   float       height() const;
-   void        height(float h);
-   extent      size() const;
-
-   point       top_left() const;
-   point       bottom_right() const;
-   point       top_right() const;
-   point       bottom_left() const;
-
-   rect        move(float dx, float dy) const;
-   rect        move_to(float x, float y) const;
-   rect        inset(float x = 1.0, float y = 1.0) const;
-
-   float       left;
-   float       top;
-   float       right;
-   float       bottom;
-};</code></pre>
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/rect.hpp&gt;</code></pre>
 </div>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_free_functions"><a class="anchor" href="#_free_functions"></a>Free Functions</h3>
+</div>
+<div class="sect1">
+<h2 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h2>
+<div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">bool           is_valid(rect const&amp; r);
-bool           is_same_size(rect const&amp; a, rect const&amp; b);
-bool           intersects(rect const&amp; a, rect const&amp; b);
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   struct rect
+   {
+      constexpr         rect();
+      constexpr         rect(float left, float top,
+                           float right, float bottom);
+      constexpr         rect(point origin, float right, float bottom);
+      constexpr         rect(point top_left, point bottom_right);
+      constexpr         rect(float left, float top, extent size);
+      constexpr         rect(point origin, extent size);
 
-point          center_point(rect const&amp; r);
-float          area(rect const&amp; r);
-rect           union_(rect const&amp; a, rect const&amp; b);
-rect           intersection(rect const&amp; a, rect const&amp; b);
+      constexpr         rect(rect const&amp;) = default;
+      constexpr rect&amp;   operator=(rect const&amp;) = default;
 
-rect           center(rect const&amp; r, rect const&amp; encl);
-rect           center_h(rect const&amp; r, rect const&amp; encl);
-rect           center_v(rect const&amp; r, rect const&amp; encl);
-rect           align(rect const&amp; r, rect const&amp; encl, float x, float y);
-rect           align_h(rect const&amp; r, rect const&amp; encl, float x);
-rect           align_v(rect const&amp; r, rect const&amp; encl, float y);</code></pre>
+      constexpr bool    operator==(rect const&amp; other) const;
+      constexpr bool    operator!=(rect const&amp; other) const;
+
+      constexpr bool    is_empty() const;
+      constexpr bool    includes(point p) const;
+      constexpr bool    includes(rect const&amp; other) const;
+
+      constexpr float   width() const;
+      constexpr void    width(float width_);
+      constexpr float   height() const;
+      constexpr void    height(float height_);
+      constexpr extent  size() const;
+      constexpr void    size(extent size_);
+
+      constexpr point   top_left() const;
+      constexpr point   bottom_right() const;
+      constexpr point   top_right() const;
+      constexpr point   bottom_left() const;
+
+      constexpr rect    move(float dx, float dy) const;
+      constexpr rect    move_to(float x, float y) const;
+      constexpr rect    inset(float x_inset, float y_inset) const;
+      constexpr rect    inset(float xy_inset) const;
+
+      float             left;
+      float             top;
+      float             right;
+      float             bottom;
+   };</code></pre>
 </div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   constexpr bool    is_valid(rect const&amp; r);
+   constexpr bool    is_same_size(rect const&amp; a, rect const&amp; b);
+   bool              intersects(rect const&amp; a, rect const&amp; b);
+
+   constexpr point   center_point(rect const&amp; r);
+   constexpr float   area(rect const&amp; r);
+   rect              union_(rect const&amp; a, rect const&amp; b);
+   rect              intersection(rect const&amp; a, rect const&amp; b);
+
+   constexpr void    clear(rect&amp; r);
+   rect              center(rect const&amp; r, rect const&amp; encl);
+   rect              center_h(rect const&amp; r, rect const&amp; encl);
+   rect              center_v(rect const&amp; r, rect const&amp; encl);
+   rect              align(rect const&amp; r, rect const&amp; encl,
+                        float x_align, float y_align);
+   rect              align_h(rect const&amp; r, rect const&amp; encl,
+                        float x_align);
+   rect              align_v(rect const&amp; r, rect const&amp; encl,
+                        float y_align);</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   constexpr float   axis_extent(rect const&amp; r, axis a);
+   constexpr float   axis_min(rect const&amp; r, axis a);
+   constexpr float   axis_max(rect const&amp; r, axis a);
+   constexpr float&amp;  axis_min(rect&amp; r, axis a);
+   constexpr float&amp;  axis_max(rect&amp; r, axis a);
+
+   constexpr rect    make_rect(axis a,
+                        float this_axis_min, float other_axis_min,
+                        float this_axis_max, float other_axis_max);</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>r</code>, <code>r2</code>         </dt>
+<dd>
+<p>Objects of type <code>rect</code>.</p>
+</dd>
+<dt class="hdlist1"><code>encl</code>            </dt>
+<dd>
+<p>An enclosing <code>rect</code>.</p>
+</dd>
+<dt class="hdlist1"><code>p</code>, <code>p2</code>         </dt>
+<dd>
+<p>Objects of type <code>point</code>.</p>
+</dd>
+<dt class="hdlist1"><code>e</code>               </dt>
+<dd>
+<p>Object of type <code>extent</code>.</p>
+</dd>
+<dt class="hdlist1"><code>a</code>               </dt>
+<dd>
+<p>Object of type <code>axis</code>.</p>
+</dd>
+<dt class="hdlist1"><code>left</code>, <code>top</code>, <code>right</code>, <code>bottom</code> </dt>
+<dd>
+<p>Floating point edge coordinates.</p>
+</dd>
+<dt class="hdlist1"><code>x</code>, <code>y</code>          </dt>
+<dd>
+<p>Floating point coordinates.</p>
+</dd>
+<dt class="hdlist1"><code>w</code>, <code>h</code>          </dt>
+<dd>
+<p>A floating point width and height.</p>
+</dd>
+<dt class="hdlist1"><code>dx</code>, <code>dy</code>        </dt>
+<dd>
+<p>Floating point distances.</p>
+</dd>
+</dl>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h3>
-<div class="sect3">
-<h4 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h4>
+<h3 id="_constructors_and_assignment"><a class="anchor" href="#_constructors_and_assignment"></a>Constructors and Assignment</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 25%;">
-<col style="width: 75%;">
+<col style="width: 50%;">
+<col style="width: 50%;">
 </colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+</tr>
+</thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>left</code>, <code>top</code>, <code>right</code>, <code>bottom</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Scalar coordinates.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect{}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Default construct <code>{0, 0, 0, 0}</code>, an
+                                      empty rect at the origin.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>x</code>, <code>y</code>, <code>w</code>, <code>h</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Scalar coordinates.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect{left, top, right, bottom}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct from the four edges.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>dx</code>, <code>dy</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Relative scalar coordinates.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect{origin, right, bottom}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct from a top left <code>point</code>
+                                      and the <strong>absolute</strong> right and bottom
+                                      edges.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>origin</code>, <code>top_left</code>, <code>bottom_right</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>point</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect{top_left, bottom_right}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct from the two opposite
+                                      corners.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>size</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>extent</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect{left, top, e}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct from the top left edges
+                                      and a size. The right edge is
+                                      <code>left + e.x</code>, the bottom
+                                      <code>top + e.y</code>.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r</code>, <code>r2</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Instance of <code>rect</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect{origin, e}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct from a top left <code>point</code>
+                                      and a size.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect(r)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Copy construct from <code>r</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r = r2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Assign <code>r2</code> to <code>r</code>.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+<code>rect{origin, right, bottom}</code> takes <strong>absolute</strong> edges, while
+<code>rect{origin, e}</code> takes a size. The two have the same shape at the call
+site and different meanings: <code>rect{point(10, 10), 100, 100}</code> is 90 by 90,
+<code>rect{point(10, 10), extent(100, 100)}</code> is 100 by 100. Reach for the
+<code>extent</code> form whenever the second argument is a size.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+<code>rect</code> has user declared constructors, so it is not an aggregate.
+All four members are set by whichever constructor runs. As with
+<a href="point.html" class="xref page"><code>point</code></a>, brace initialization forbids
+narrowing, so <code>rect(n, 0, w, h)</code> with an <code>int</code> <code>n</code> needs parentheses.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_comparison"><a class="anchor" href="#_comparison"></a>Comparison</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r == r2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Compare all four edges. The comparison is
+                 exact, so two rects differing only by
+                 rounding are not equal.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r != r2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The negation of the above.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<div class="sect3">
-<h4 id="_constructors_and_assignment"><a class="anchor" href="#_constructors_and_assignment"></a>Constructors and assignment</h4>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Default constructor [1].
-rect{}
-
-// Constructor [2].
-rect{ left, top, right, bottom }
-
-// Constructor [3].
-rect{ origin, right, bottom }
-
-// Constructor [4].
-rect{ top_left, bottom_right }
-
-// Constructor [5].
-rect{ left, top, size }
-
-// Constructor [6].
-rect{ origin, size }
-
-// Copy constructor [7].
-rect{ r }
-
-// Assignment [8]
-r = r2</code></pre>
+<div class="sect2">
+<h3 id="_members"><a class="anchor" href="#_members"></a>Members</h3>
+<div class="paragraph">
+<p>The members are public and directly assignable.</p>
 </div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.left</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The left edge, the smaller <code>x</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.top</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The top edge, the smaller <code>y</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.right</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The right edge, the larger <code>x</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.bottom</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The bottom edge, the larger <code>y</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+</tbody>
+</table>
 </div>
-</div>
-<div class="sect3">
-<h4 id="_semantics"><a class="anchor" href="#_semantics"></a>Semantics</h4>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Default construct a <code>rect</code> with initial values <code>{ 0, 0, 0, 0 }</code></p>
-</li>
-<li>
-<p>Construct a <code>rect</code> given initial values <code>left</code>, <code>top</code>, <code>right</code>, and <code>bottom</code>.</p>
-</li>
-<li>
-<p>Construct a <code>rect</code> given <code>origin</code> (point), <code>right</code> and bottom`.</p>
-</li>
-<li>
-<p>Construct a <code>rect</code> given <code>top_left</code>, <code>bottom_right</code> points.</p>
-</li>
-<li>
-<p>Construct a <code>rect</code> given <code>left</code>, <code>top</code>, and <code>size</code> (extent).</p>
-</li>
-<li>
-<p>Construct a <code>rect</code> given <code>origin</code>, and <code>size</code> (extent).</p>
-</li>
-<li>
-<p>Copy construct a <code>rect `, `r</code>.</p>
-</li>
-<li>
-<p>Assign <code>r2</code> to <code>r</code>.</p>
-</li>
-</ol>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_equality"><a class="anchor" href="#_equality"></a>Equality</h4>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Equality [1]
-r == r2
-
-// Non-equality [2]
-r != r2</code></pre>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_semantics_2"><a class="anchor" href="#_semantics_2"></a>Semantics</h4>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Returns <code>true</code> if a <code>r2</code> is equal <code>r</code>.</p>
-</li>
-<li>
-<p>Returns <code>true</code> if a <code>r2</code> is not equal to <code>r</code>.</p>
-</li>
-</ol>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_query"><a class="anchor" href="#_query"></a>Query</h4>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Check for empty rectangle [1]
-r.empty()
-
-// Check for inclusion [2]
-r.includes(p)
-r.includes(r2)
-
-// Get the width and height [3]
-r.width()
-r.height()
-
-// Get the size [4]
-r.size()
-
-// Get the rectangle corners [5]
-r.top_left()
-r.bottom_right()
-r.top_right()
-r.bottom_left()</code></pre>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_semantics_3"><a class="anchor" href="#_semantics_3"></a>Semantics</h4>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Returns <code>true</code> if <code>r</code> is empty. Equivalent to <code>r.size() == extent{ 0, 0 }</code>.</p>
-</li>
-<li>
-<p>Inclusion:</p>
-<div class="olist loweralpha">
-<ol class="loweralpha" type="a">
-<li>
-<p>Returns true if <code>p</code> is inside <code>r</code>.</p>
-</li>
-<li>
-<p>Returns true if <code>r2</code> is completely inside <code>r</code>.</p>
-</li>
-</ol>
-</div>
-</li>
-<li>
-<p>Returns the width and height of the <code>r</code>. Returns a scalar value.</p>
-</li>
-<li>
-<p>Get the size of <code>r</code>. Returns an instance of <code>extent</code>.</p>
-</li>
-<li>
-<p>Get the top-left, bottom-right, top-right, and bottom-left corners or
-rectangle, <code>r</code>. Returns an instance of <code>point</code>.</p>
-</li>
-</ol>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_mutation"><a class="anchor" href="#_mutation"></a>Mutation</h4>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Set the width and height [1]
-r.height(w)
-r.width(h)</code></pre>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_semantics_4"><a class="anchor" href="#_semantics_4"></a>Semantics</h4>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Sets the width and height of <code>r</code> to <code>w</code> and <code>h</code>, respectively.</p>
-</li>
-</ol>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_transformation"><a class="anchor" href="#_transformation"></a>Transformation</h4>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Move [1]
-r.move(dx, dy)
-
-// Move To [2]
-r.move_to(x, y)
-
-// Inset [3]
-r.inset(x, y)
-r.inset(xy)</code></pre>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_semantics_5"><a class="anchor" href="#_semantics_5"></a>Semantics</h4>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Move origin of <code>r</code> by <code>dx</code> and <code>dy</code> distance. Non-mutating. Returns the
-moved instance of <code>rect</code>.</p>
-</li>
-<li>
-<p>Move origin of <code>r</code> to absolute coordinates <code>x</code> and <code>y</code>. Non-mutating.
-Returns the moved instance of <code>rect</code>.</p>
-</li>
-<li>
-<p>Inset <code>r</code> by <code>x</code> and <code>y</code> (in each dimension), or by <code>xy</code> (in both x and y
-dimensions). The rect <code>r</code> is shrunk if <code>x</code>, <code>y</code> or <code>xy</code> are positive,
-otherwise, expanded if negative. Non-mutating. Returns the inset instance
-of <code>rect</code>.</p>
-</li>
-</ol>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_free_query_functions"><a class="anchor" href="#_free_query_functions"></a>Free Query Functions</h4>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Check for validity [1]
-is_valid(r)
-
-// Check for size equality [2]
-is_same_size(r, r2)
-
-// Check for intersection [3]
-intersects(r, r2)
-
-// Compute the center point [4]
-center_point(r)
-
-// Compute the area [5]
-area(r)
-
-// Compute the union of two rectangles [6]
-union_(r, r2)
-
-// Compute the intersection of two rectangles [7]
-intersection(r, r2)</code></pre>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_semantics_6"><a class="anchor" href="#_semantics_6"></a>Semantics</h4>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Return <code>true</code> if <code>r</code> is a valid rectangle (left &#8656; right &amp;&amp; top &#8656;
-bottom).</p>
-</li>
-<li>
-<p>Return <code>true</code> if <code>r</code> and <code>r2</code> have the same size. Equivalent to <code>r.size()
-== r2.size()</code>.</p>
-</li>
-<li>
-<p>Return <code>true</code> if <code>r</code> intersects with <code>r2</code>.</p>
-</li>
-<li>
-<p>Returns the center point of <code>r</code>. returns an instance of <code>point</code>.</p>
-</li>
-<li>
-<p>Returns the area of <code>r</code>. Equivalent to <code>r.width() * r.height()</code>. Returns
-a scalar value.</p>
-</li>
-<li>
-<p>Compute the union of two rectangles. Returns an instance of <code>rect</code>.</p>
-</li>
-<li>
-<p>Compute the intersection of two rectangles. Returns an instance of
-<code>rect</code>.</p>
-</li>
-</ol>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_free_transformation_functions"><a class="anchor" href="#_free_transformation_functions"></a>Free Transformation Functions</h4>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Center a rectangle [1]
-center(r, r2)
-center_h(r, r2)
-center_v(r, r2)
-
-// Align a rectangle [2]
-align(r, r2, x, y)
-align_h(r, r2, x)
-align_v(r, r2, y)</code></pre>
-</div>
-</div>
+<div class="sect2">
+<h3 id="_query"><a class="anchor" href="#_query"></a>Query</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.is_empty()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code> if <strong>either</strong> dimension is
+                      degenerate, that is if
+                      <code>left == right</code> or <code>top == bottom</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.includes(p)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code> if <code>p</code> lies within <code>r</code>. The
+                      test is inclusive on all four edges,
+                      so a point on the border is included.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.includes(r2)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code> if all four edges of <code>r2</code> lie
+                      within <code>r</code>. Inclusive, so <code>r</code>
+                      includes itself.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="📢  IMPORTANT"></i>
+</td>
+<td class="content">
+<code>is_empty()</code> is not <code>r.size() == extent(0, 0)</code>. One degenerate
+dimension is enough: <code>rect(0, 0, 100, 0)</code> is empty and its <code>size()</code> is
+<code>{100, 0}</code>.
+</td>
+</tr>
+</table>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_semantics_7"><a class="anchor" href="#_semantics_7"></a>Semantics</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Center <code>r</code> in <code>r2</code>. Returns an instance of <code>rect</code>.</p>
-<div class="olist loweralpha">
-<ol class="loweralpha" type="a">
-<li>
-<p><code>center</code>: In both dimensions</p>
-</li>
-<li>
-<p><code>center_h</code>: Horizontally</p>
-</li>
-<li>
-<p><code>center_v</code>: Vertically</p>
-</li>
-</ol>
+<h3 id="_accessors"><a class="anchor" href="#_accessors"></a>Accessors</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.width()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>right - left</code>. Negative if <code>r</code> is
+                        invalid.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.height()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bottom - top</code>. Negative if <code>r</code> is
+                        invalid.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.size()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{width(), height()}</code> as an
+                        <code>extent</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>extent</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.top_left()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{left, top}</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.top_right()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{right, top}</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.bottom_left()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{left, bottom}</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.bottom_right()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{right, bottom}</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+</tbody>
+</table>
 </div>
-</li>
-<li>
-<p>Align <code>r</code> in <code>r2</code>. Given scalar <code>x</code> and <code>y</code> values, 0.0 aligns <code>r</code> to the
-left or top, 1.0 aligns <code>r</code> to the right or bottom, 0.5 aligns <code>r</code> center
-or middle. Returns an instance of <code>rect</code>.</p>
-<div class="olist loweralpha">
-<ol class="loweralpha" type="a">
-<li>
-<p><code>align</code>: In both dimensions by <code>x</code> and <code>y</code>, where <code>x</code> and <code>y</code> are
-fractional values from 0.0 to 1.0.</p>
-</li>
-<li>
-<p><code>align_h</code>: Horizontally by <code>x</code>, where <code>x</code> is a fractional value from
-0.0 to 1.0.</p>
-</li>
-<li>
-<p><code>align_v</code>: Vertically by <code>y</code>, where <code>y</code> is a fractional value from 0.0
-to 1.0.</p>
-</li>
-</ol>
+<div class="sect2">
+<h3 id="_mutators"><a class="anchor" href="#_mutators"></a>Mutators</h3>
+<div class="paragraph">
+<p>These modify <code>r</code> in place and return nothing, unlike the derivation
+members below.</p>
 </div>
-</li>
-</ol>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.width(w)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the width by moving the <strong>right</strong> edge
+                   to <code>left + w</code>. The left edge does not
+                   move.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.height(h)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the height by moving the <strong>bottom</strong>
+                   edge to <code>top + h</code>. The top edge does not
+                   move.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.size(e)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Both of the above, from an <code>extent</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>clear(r)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set all four edges to zero, which leaves
+                   an empty rect at the origin. A free
+                   function, not a member.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p><code>clear</code> is worth knowing because <code>inset</code> calls it; see the caution under
+<a href="#_derivation">Derivation</a>.</p>
 </div>
-<div class="sect3">
-<h4 id="_member_access"><a class="anchor" href="#_member_access"></a>Member Access</h4>
+</div>
+<div class="sect2">
+<h3 id="_derivation"><a class="anchor" href="#_derivation"></a>Derivation</h3>
+<div class="paragraph">
+<p>Each is <code>const</code> and returns a new rect; <code>r</code> is not modified.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.move(dx, dy)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A copy of <code>r</code> displaced by <code>dx</code> and
+                         <code>dy</code>. All four edges shift, so the
+                         size is unchanged.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.move_to(x, y)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A copy of <code>r</code> with its <strong>top left
+                         corner</strong> at <code>{x, y}</code>, the size
+                         unchanged.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.inset(x, y)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A copy of <code>r</code> shrunk by <code>x</code> on the
+                         left and right and by <code>y</code> on the
+                         top and bottom, so the width drops
+                         by <code>2x</code> and the height by <code>2y</code>. A
+                         negative argument grows the rect.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.inset(xy)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The same distance on both axes.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+<code>inset</code> clamps, and it clamps hard. If the inset would leave an
+invalid rect, the result is not a negative rect but <code>{0, 0, 0, 0}</code>: the
+implementation calls <code>clear</code> on it, which discards the position as well as
+the size. Over-insetting on one axis alone is enough, so
+<code>rect(0, 0, 100, 60).inset(40)</code> is <code>{0, 0, 0, 0}</code> rather than a rect
+20 wide. Check <code>width()</code> and <code>height()</code> against the inset first if the
+distance is not known to be small. This is the opposite of
+<a href="circle.html" class="xref page"><code>circle::inset</code></a>, which does not clamp at all
+and hands back a negative radius.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+<code>move_to</code> places the <strong>top left corner</strong>, where
+<a href="circle.html" class="xref page"><code>circle::move_to</code></a> places the centre.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+There is no <code>inset()</code> with no arguments. The two overloads take one
+or two distances and neither has a default argument.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_free_functions"><a class="anchor" href="#_free_functions"></a>Free Functions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The notation of the previous section carries over.</p>
+</div>
+<div class="sect2">
+<h3 id="_validity_and_measurement"><a class="anchor" href="#_validity_and_measurement"></a>Validity and Measurement</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>is_valid(r)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code> if <code>left &lt;= right</code> and
+                          <code>top &lt;= bottom</code>. An empty rect
+                          is valid; an inverted one is not.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>is_same_size(r, r2)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code> if the widths match and the
+                          heights match. Position is
+                          ignored.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>center_point(r)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The midpoint,
+                          <code>{left + width()/2,
+                          top + height()/2}</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>area(r)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>width() * height()</code>. Negative if
+                          exactly one dimension is inverted.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>intersects(r, r2)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code> if the two rects overlap.
+                          Not <code>constexpr</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+<code>intersects</code> is <strong>strict</strong> where <code>includes</code> is inclusive. Two rects
+that share an edge do not intersect, yet each includes the points along
+that edge. <code>rect(0, 0, 10, 10)</code> and <code>rect(10, 0, 20, 10)</code> give
+<code>intersects</code> <code>false</code> and both give <code>includes(point(10, 5))</code> <code>true</code>.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_combination"><a class="anchor" href="#_combination"></a>Combination</h3>
+<div class="paragraph">
+<p>Neither is <code>constexpr</code>.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>union_(r, r2)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The smallest rect covering both:
+                            the min of the left and top
+                            edges, the max of the right and
+                            bottom.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>intersection(r, r2)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The overlap: the max of the left
+                            and top edges, the min of the
+                            right and bottom.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="📢  IMPORTANT"></i>
+</td>
+<td class="content">
+<code>intersection</code> does not test for overlap first. On rects that
+do not intersect it returns an inverted rect, for example
+<code>{100, 100, 10, 10}</code>. Guard it with <code>intersects</code>, or test the result with
+<code>is_valid</code>.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+<code>union_</code> takes no notice of emptiness, so <code>union_(rect{}, r)</code> always
+stretches the result back to the origin. Skip the empty operand rather
+than folding it in.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_placement"><a class="anchor" href="#_placement"></a>Placement</h3>
+<div class="paragraph">
+<p>Each returns a copy of <code>r</code> repositioned inside <code>encl</code>; the size is never
+changed and <code>encl</code> is never modified. None is <code>constexpr</code>.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>center(r, encl)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r</code> centred in <code>encl</code> on both
+                                axes. The same result as
+                                <code>align(r, encl, 0.5, 0.5)</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>center_h(r, encl)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Centred horizontally. <code>r.top</code>
+                                is kept.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>center_v(r, encl)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Centred vertically. <code>r.left</code>
+                                is kept.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>align(r, encl, x, y)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Positioned by two fractions.
+                                <code>0</code> puts <code>r</code> against the
+                                left or top of <code>encl</code>, <code>1</code>
+                                against the right or bottom,
+                                <code>0.5</code> centres it.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>align_h(r, encl, x)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Horizontal fraction only.
+                                <code>r.top</code> is kept.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>align_v(r, encl, y)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Vertical fraction only.
+                                <code>r.left</code> is kept.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+The fractions are not clamped and nothing requires <code>r</code> to fit inside
+<code>encl</code>. A fraction outside <code>0</code> to <code>1</code> places <code>r</code> outside <code>encl</code>, and if
+<code>r</code> is the larger of the two the alignment runs the other way, which is
+occasionally what you want.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_axis"><a class="anchor" href="#_axis"></a>Axis</h3>
+<div class="paragraph">
+<p>These take an <a href="point.html" class="xref page"><code>axis</code></a> and pick the matching
+edge or dimension, so a routine can be written once and run on either
+direction. They are the <code>rect</code> counterpart of <code>point::operator[]</code>.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axis_extent(r, a)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>width()</code> for <code>axis::x</code>,
+                              <code>height()</code> for <code>axis::y</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axis_min(r, a)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>left</code> for <code>axis::x</code>, <code>top</code> for
+                              <code>axis::y</code>. On a non-const
+                              <code>rect</code> this is a reference, so
+                              it assigns.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float&amp;</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axis_max(r, a)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>right</code> for <code>axis::x</code>, <code>bottom</code>
+                              for <code>axis::y</code>. Also has a
+                              reference form.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float&amp;</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>make_rect(a, this_min,
+   other_min, this_max,
+   other_max)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Build a rect from
+                              along-the-axis and
+                              across-the-axis edges. For
+                              <code>axis::x</code> the arguments are
+                              already <code>left, top, right,
+                              bottom</code>; for <code>axis::y</code> the
+                              pairs are swapped.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+The four <code>axis</code> helpers are defined in <code>rect.hpp</code> but do not appear
+in its Free Functions declaration block, so they are easy to miss when
+skimming the header.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Laying a fixed size badge into the top right of a bounds rect, with a
+margin, and taking the part of it that is actually on screen:</p>
+</div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// Member access [1]
-r.left
-r.top
-r.right
-r.bottom</code></pre>
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   auto slot = rect{0, 0, extent{64, 24}};
+   auto badge = align(slot, bounds.inset(8), 1.0f, 0.0f);
+
+   if (intersects(badge, clip))
+   {
+      auto visible = intersection(badge, clip);
+      cnv.rect(visible);
+      cnv.fill_style(colors::gray[90]);
+      cnv.fill();
+   }</code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>And the same layout step written once for either axis:</p>
 </div>
-<div class="sect3">
-<h4 id="_semantic"><a class="anchor" href="#_semantic"></a>Semantic</h4>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Direct access to members <code>left</code>, <code>top</code>, <code>right</code>, and <code>bottom</code></p>
-</li>
-</ol>
-</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   // Split r into two rects at a fraction along axis a.
+   constexpr auto split(rect r, axis a, float frac)
+   {
+      auto at = axis_min(r, a) + (axis_extent(r, a) * frac);
+      auto first = r, second = r;
+      axis_max(first, a) = at;
+      axis_min(second, a) = at;
+      return std::make_pair(first, second);
+   }</code></pre>
 </div>
 </div>
 </div>
