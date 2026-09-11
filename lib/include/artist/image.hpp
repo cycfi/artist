@@ -36,7 +36,7 @@ namespace cycfi::artist
       invalid = -1,
       gray8,
       rgb16,
-      rgb32,            // First byte is Alpha of 1, or ignored
+      rgb32,            // R, G, B in memory order, then an ignored byte
       rgba32,
    };
 
@@ -63,13 +63,9 @@ namespace cycfi::artist
       float             scale() const;
       void              save_png(std::string_view path) const;
 
-      // Returns a pointer to the raw pixel buffer in backend-native format.
-      // The memory layout depends on the active backend:
-      //   Quartz2D : premultiplied ARGB (host byte order)
-      //   Skia     : premultiplied BGRA (little-endian, kN32_SkColorType)
-      //   Cairo    : premultiplied BGRA (CAIRO_FORMAT_ARGB32, little-endian)
-      // None of the backends expose straight-alpha RGBA. Callers that interpret
-      // individual channels must account for the backend-specific layout.
+      // Returns a pointer to the bitmap: bitmap_size().x by bitmap_size().y
+      // pixels, rows from the top with no padding. Every backend uses the
+      // same layout: premultiplied B, G, R, A in memory order.
       // Cairo note: pixels() calls cairo_surface_flush() before returning the
       // pointer. If you write to the buffer, you must mark the surface dirty
       // before using the image again; this API does not expose that call.
