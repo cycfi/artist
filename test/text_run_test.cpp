@@ -124,9 +124,8 @@ TEST_CASE("text_run: Constructors", "[text_run]")
    // UTF-8 is converted: indices are code points, not bytes.
    text_run a{fd40, "h\xc3\xa9llo"};
    CHECK(a.text().size() == 5);
-   CHECK(a.text()[1] == U'\u00e9');   // é
-
-   text_run b{fd40, std::u32string_view{U"héllo"}};
+   CHECK(a.text()[1] == U'\u00e9');
+   text_run b{fd40, std::u32string_view{U"h\u00e9llo"}};
    CHECK(b.text() == a.text());
 
    text_run c{std::move(b)};
