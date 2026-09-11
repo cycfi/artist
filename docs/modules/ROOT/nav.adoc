@@ -22,3 +22,4 @@
 *** xref:canvas/text.adoc[Text]
 *** xref:canvas/images.adoc[Images]
 *** xref:canvas/states.adoc[States]
+** xref:text_run.adoc[Text Run]

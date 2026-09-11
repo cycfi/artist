@@ -1,0 +1,316 @@
+= Text Run
+
+== Overview
+
+A `text_run` is one paragraph of text in one font, shaped, broken into
+lines to fit a width, and then drawn and hit tested as a unit. It keeps its
+own copy of the text as UTF-32. `text_layout`, the multi-paragraph editor
+engine, is built from one `text_run` per paragraph.
+
+Using one takes three steps: construct it, `flow` it to a width, and
+`draw` it. A run has no lines until it has been flowed, and replacing its
+text discards them, so flow again after every change of text.
+
+Positions are relative to the run's origin, the point on the first line's
+baseline where a line with no offset would start: `draw(cnv, p)` puts the
+origin at `p`, and every `caret_point` y is a baseline. Indices are code
+point indices into `text()`, not UTF-8 byte offsets.
+
+image::text_run/example.png[alt="Output of the example", width=560px, align=center, title="The output of the Example below, annotated. The caret is where mp falls, and the tint is the band caret_index maps to its line: it runs from the previous baseline down to this one.", link={imagesdir}/text_run/example.png]
+
+A run draws with its own font and the colour it is given. The canvas
+font, fill style and text alignment play no part; the canvas transform
+does apply.
+
+NOTE: On Skia and Cairo, text is shaped with HarfBuzz and wrapped at the
+opportunities `line_break` reports. On Quartz 2D, Core Text both shapes and
+wraps it, so a wrap can fall somewhere `line_break` does not mark, and the
+same text can wrap differently from the other backends.
+
+== Include
+
+```c++
+#include <artist/text_run.hpp>
+```
+
+== Declaration
+
+```c++
+   class text_run : non_copyable
+   {
+   public:
+                           text_run(font_descr font_, std::string_view utf8);
+                           text_run(font_descr font_, std::u32string_view utf32);
+                           text_run(text_run&& rhs) noexcept;
+                           ~text_run();
+
+      struct line_info
+      {
+         float    offset;
+         float    width;
+      };
+
+      struct flow_info
+      {
+         bool     justify;
+         float    line_height;
+         float    last_line_height;
+      };
+
+      enum break_enum { indeterminate, must_break, allow_break, no_break };
+
+      using get_line_info = std::function<line_info(float y)>;
+      static constexpr auto npos = std::size_t(-1);
+
+      void                    text(std::string_view utf8);
+      void                    text(std::u32string_view utf32);
+      std::u32string_view     text() const;
+
+      void                    flow(float width, bool justify = false);
+      void                    flow(get_line_info const& glf, flow_info finfo);
+      void                    draw(canvas& cnv, point p, color c = colors::black) const;
+      void                    draw(canvas& cnv, float x, float y, color c = colors::black) const;
+
+      std::size_t             num_lines() const;
+      point                   caret_point(std::size_t index) const;
+      std::size_t             caret_index(float x, float y) const;
+      std::size_t             caret_index(point p) const;
+      break_enum              line_break(std::size_t index) const;
+      break_enum              word_break(std::size_t index) const;
+   };
+```
+
+== Expressions
+
+=== Notation
+
+`r`, `r2`   :: Objects of type `text_run`.
+`fd`        :: Object of type `font_descr`.
+`s8`        :: A `std::string_view`, UTF-8 text.
+`s32`       :: A `std::u32string_view`, UTF-32 text.
+`w`         :: A `float`, a line width.
+`j`         :: A `bool`, whether to justify.
+`glf`       :: A `text_run::get_line_info`, called for each line.
+`fi`        :: Object of type `text_run::flow_info`.
+`li`        :: Object of type `text_run::line_info`.
+`cnv`       :: Object of type `canvas`.
+`p`         :: Object of type `point`.
+`x`, `y`    :: `float` coordinates.
+`c`         :: Object of type `color`.
+`i`         :: A `std::size_t`, a code point index into `r.text()`.
+
+=== Constructors
+
+[cols="1,1"]
+|===
+| Expression                  | Semantics
+
+| `text_run(fd, s8)`          | Construct from the UTF-8 text `s8`,
+                                converted to UTF-32, in the font `fd`
+                                describes. The run has no lines until it
+                                is flowed.
+| `text_run(fd, s32)`         | As above, from UTF-32 text.
+| `text_run(std::move(r))`    | Move construct from `r`, which is left
+                                holding nothing.
+|===
+
+A `text_run` can be neither copied nor assigned, not even by move.
+
+WARNING: A moved from `text_run` holds nothing. Calling any member on it
+other than the destructor is undefined behaviour.
+
+=== Text
+
+[cols="1,1,1"]
+|===
+| Expression      | Semantics                              | Return Type
+
+| `r.text()`      | The text, as UTF-32. The view is valid
+                    until the text is next replaced.       | `std::u32string_view`
+| `r.text(s8)`    | Replace the text with `s8`, converted
+                    from UTF-8. Discards the lines: the
+                    run has none until it is flowed
+                    again.                                 | `void`
+| `r.text(s32)`   | As above, from UTF-32 text.            | `void`
+|===
+
+=== Layout
+
+[cols="1,1,1"]
+|===
+| Expression          | Semantics                          | Return Type
+
+| `r.flow(w)`         | Break the text into lines no wider
+                        than `w`, each starting at x 0 and
+                        spaced by the font's
+                        `line_height()`.                   | `void`
+| `r.flow(w, j)`      | As above, and justify if `j` is
+                        true.                              | `void`
+| `r.flow(glf, fi)`   | Break the text into lines, asking
+                        `glf` where each line starts and
+                        how wide it may be.                | `void`
+| `r.num_lines()`     | The number of lines the last flow
+                        produced, 0 before the first. A
+                        text that ends in a hard break has
+                        an empty last line.                | `std::size_t`
+|===
+
+`flow(glf, fi)` calls `glf(y)` for each line, with `y` the baseline of that
+line measured from the first line's baseline, and lays the line out at the
+returned `li.offset` in at most `li.width`. Varying the two with `y` flows
+text around a shape, or indents the first line. Lines are `fi.line_height`
+apart, except that the last line's baseline is moved down by
+`fi.last_line_height - fi.line_height`.
+
+A justified line has its spaces widened so that it fills its width
+exactly. The last line is left ragged, as is any line that ends in a hard
+break and any line whose natural width is 90% of its width or less.
+
+=== Flow Parameters
+
+[cols="1,1,1"]
+|===
+| Expression              | Semantics                      | Return Type
+
+| `li.offset`             | Where the line starts, in x
+                            from the run's origin.         | `float`
+| `li.width`              | The width the line may take.   | `float`
+| `fi.justify`            | Whether to justify.            | `bool`
+| `fi.line_height`        | The distance between one
+                            baseline and the next.         | `float`
+| `fi.last_line_height`   | The distance between the last
+                            two baselines.                 | `float`
+|===
+
+=== Drawing
+
+[cols="1,1,1"]
+|===
+| Expression                | Semantics                    | Return Type
+
+| `r.draw(cnv, p)`          | Draw the lines in black, with
+                              the run's origin at `p`.     | `void`
+| `r.draw(cnv, p, c)`       | As above, in the colour `c`. | `void`
+| `r.draw(cnv, x, y)`       | As above, with the origin at
+                              `x`, `y`.                    | `void`
+| `r.draw(cnv, x, y, c)`    | As above, in the colour `c`. | `void`
+|===
+
+=== Hit Testing
+
+[cols="1,1,1"]
+|===
+| Expression              | Semantics                      | Return Type
+
+| `r.caret_point(i)`      | Where the caret before code
+                            point `i` goes: the left edge
+                            of its glyph, on its line's
+                            baseline. An `i` at or past
+                            the end gives the end of the
+                            last line. `{0, 0}` before the
+                            first flow.                    | `point`
+| `r.caret_index(p)`      | The index of the caret
+                            position nearest `p`, or
+                            `text_run::npos` if `p` is
+                            below the last line's
+                            baseline. 0 before the first
+                            flow.                          | `std::size_t`
+| `r.caret_index(x, y)`   | As above, for the point `x`,
+                            `y`.                           | `std::size_t`
+|===
+
+`caret_index` picks the line first, and it is the first line whose baseline
+is at or below `p.y`. A `p.y` anywhere from just below the baseline of line
+_k_ - 1 down to the baseline of line _k_ therefore selects line _k_, and a
+point in the descenders of line _k_ selects line _k_ + 1. Within the line,
+an `x` at or before its start gives its first index, and an `x` at or past
+its end gives the index just past its last glyph: the space that ended it,
+or the next line's first character. On the last line that is
+`r.text().size()`. Between the two, `x` rounds to the nearest glyph
+boundary.
+
+CAUTION: On Quartz 2D, `caret_point` and `caret_index` count UTF-16 code
+units rather than code points. The two agree until the text holds a
+character outside the Basic Multilingual Plane, such as an emoji; past that
+point Quartz 2D's indices no longer match `text()` or the break queries.
+
+NOTE: Where several code points share one glyph, as in the "fi" ligature,
+the caret positions inside it depend on the backend.
+
+=== Break Queries
+
+[cols="1,1,1"]
+|===
+| Expression          | Semantics                          | Return Type
+
+| `r.line_break(i)`   | Whether a line may break after code
+                        point `i`, by the Unicode line
+                        breaking rules (UAX #14).          | `text_run::break_enum`
+| `r.word_break(i)`   | Whether a word boundary follows
+                        code point `i`, by the Unicode word
+                        boundary rules (UAX #29).          | `text_run::break_enum`
+|===
+
+[cols="1,1"]
+|===
+| Value                         | Meaning
+
+| `text_run::must_break`        | A break is required after `i`, which
+                                  is a hard line break such as `'\n'`.
+| `text_run::allow_break`       | A break is allowed after `i`.
+| `text_run::no_break`          | No break is allowed after `i`.
+| `text_run::indeterminate`     | `i` is out of range, or, for
+                                  `line_break`, the last code point of a
+                                  text that does not end in a hard break.
+|===
+
+`word_break` never reports `must_break`, and it reports `allow_break` for
+the last code point.
+
+=== Constants
+
+[cols="1,1,1"]
+|===
+| Expression         | Semantics                          | Return Type
+
+| `text_run::npos`   | `std::size_t(-1)`, what
+                       `caret_index` returns for a point
+                       below the last line.               | `std::size_t`
+|===
+
+== Example
+
+A justified paragraph with its first line indented, and a caret drawn where
+the mouse position `mp` falls in it:
+
+```c++
+   auto fd = font_descr{"Open Sans", 20};
+   auto fm = font{fd}.metrics();
+   auto lh = font{fd}.line_height();
+
+   auto para = text_run{fd, text};
+   para.flow(
+      [](float y)
+      {
+         return y == 0
+            ? text_run::line_info{30, 310}
+            : text_run::line_info{0, 340};
+      }
+    , {true, lh, lh}
+   );
+
+   auto origin = point{60, 80};
+   para.draw(cnv, origin);
+
+   auto i = para.caret_index(mp.x - origin.x, mp.y - origin.y);
+   if (i != text_run::npos)
+   {
+      auto cp = para.caret_point(i);
+      cnv.stroke_style(colors::navy);
+      cnv.move_to(origin.x + cp.x, origin.y + cp.y - fm.ascent);
+      cnv.line_to(origin.x + cp.x, origin.y + cp.y + fm.descent);
+      cnv.stroke();
+   }
+```
+
+Its output is the figure in the <<Overview>>.
