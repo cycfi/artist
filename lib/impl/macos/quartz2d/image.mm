@@ -58,10 +58,16 @@ namespace cycfi::artist
       }
    }
 
-   image::image(extent size)
+   image::image(extent size, float /*scale*/)
    {
       auto img_ = [[NSImage alloc] initWithSize : NSMakeSize(size.x, size.y)];
       _impl = (__bridge_retained image_impl_ptr) img_;
+   }
+
+   // TODO(quartz image-unification): honor scale (CGBitmapContext at size*scale).
+   float image::scale() const
+   {
+      return 1.0f;
    }
 
    image::image(fs::path const& path_)

@@ -14,13 +14,16 @@
 
 namespace cycfi::artist
 {
-   image::image(extent size)
+   image::image(extent size, float scale)
     : _impl(new image_impl(
          cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
-            int(size.x), int(size.y))))
+            int(size.x * scale + 0.5f), int(size.y * scale + 0.5f))))
    {
       if (!_impl->surface || cairo_surface_status(_impl->surface) != CAIRO_STATUS_SUCCESS)
          throw std::runtime_error{"artist cairo backend: Failed to create image surface."};
+      // The device scale makes an offscreen context interpret user coordinates
+      // as logical units; size() is logical, bitmap_size() is pixels.
+      cairo_surface_set_device_scale(_impl->surface, scale, scale);
       // No cairo_surface_mark_dirty: Cairo owns the zero-initialized pixel data.
       // mark_dirty is only needed after *external* writes to the pixel buffer.
    }
@@ -200,10 +203,20 @@ namespace cycfi::artist
    extent image::size() const
    {
       if (!_impl || !_impl->surface) return {};
+      double sx = 1, sy = 1;
+      cairo_surface_get_device_scale(_impl->surface, &sx, &sy);
       return {
-         float(cairo_image_surface_get_width(_impl->surface)),
-         float(cairo_image_surface_get_height(_impl->surface))
+         float(cairo_image_surface_get_width(_impl->surface) / sx),
+         float(cairo_image_surface_get_height(_impl->surface) / sy)
       };
+   }
+
+   float image::scale() const
+   {
+      if (!_impl || !_impl->surface) return 1.0f;
+      double sx = 1, sy = 1;
+      cairo_surface_get_device_scale(_impl->surface, &sx, &sy);
+      return float(sx);
    }
 
    void image::save_png(std::string_view path_) const
@@ -232,12 +245,13 @@ namespace cycfi::artist
 
    extent image::bitmap_size() const
    {
-      // cairo_image_surface_get_width/height returns physical pixel dimensions.
-      // size() uses the same functions, so bitmap_size() == size() for Cairo image
-      // surfaces.  If cairo_surface_set_device_scale were applied, size() would
-      // still return physical pixels (unchanged by device scale), so the two remain
-      // equivalent — bitmap_size() is always in physical pixels on all backends.
-      return size();
+      // Physical pixel dimensions, always. With a device scale > 1 this is
+      // size() * scale(); with the default scale of 1 the two are equal.
+      if (!_impl || !_impl->surface) return {};
+      return {
+         float(cairo_image_surface_get_width(_impl->surface)),
+         float(cairo_image_surface_get_height(_impl->surface))
+      };
    }
 
    size_t image::_pixmap_size(pixel_format fmt, extent size)

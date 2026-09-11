@@ -47,8 +47,8 @@ namespace cycfi::artist
    {
    public:
 
-      explicit          image(float sizex, float sizey);
-      explicit          image(extent size);
+      explicit          image(float sizex, float sizey, float scale = 1.0f);
+      explicit          image(extent size, float scale = 1.0f);
       explicit          image(fs::path const& path_);
 
                         image(image const& rhs) = delete;
@@ -60,6 +60,7 @@ namespace cycfi::artist
 
       image_impl_ptr    impl() const;
       extent            size() const;
+      float             scale() const;
       void              save_png(std::string_view path) const;
 
       // Returns a pointer to the raw pixel buffer in backend-native format.
@@ -146,8 +147,8 @@ namespace cycfi::artist
       return image(reinterpret_cast<std::uint8_t const*>(data), fmt, size);
    }
 
-   inline image::image(float sizex, float sizey)
-    : image(extent{sizex, sizey})
+   inline image::image(float sizex, float sizey, float scale)
+    : image(extent{sizex, sizey}, scale)
    {
    }
 

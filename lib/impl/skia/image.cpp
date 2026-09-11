@@ -46,9 +46,15 @@ namespace cycfi::artist
       }
    }
 
-   image::image(extent size)
+   image::image(extent size, float /*scale*/)
     : _impl{new artist::image_impl(size)}
    {}
+
+   // TODO(skia image-unification): honor scale (owned SkBitmap at size*scale).
+   float image::scale() const
+   {
+      return 1.0f;
+   }
 
    image::image(fs::path const& path_)
     : _impl{new artist::image_impl(SkBitmap{})}
