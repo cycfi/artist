@@ -38,3 +38,8 @@ xcuserdata/
 #   https://github.com/cycfi/cycfi_ai_dev  (artist/ subdir)
 #   local clone: ~/dev/cycfi/cycfi_ai_dev/artist
 ai/
+
+# Docs
+/docs/antora/build/
+/docs/antora/node_modules/
+/docs/antora/package-lock.json

@@ -3,11 +3,12 @@
 # so pages can be inspected before committing or pushing.
 #
 #    cd docs/antora
+#    npm install          # once
 #    npx antora antora-playbook-local.yml
-#    open build/local/artist/v1.0-dev/index.html
+#    cd build/local && python3 -m http.server 8000
 #
 site:
-  title: Artist Docs
+  title: Artist Docs (local preview)
   start_page: artist::index.adoc
   url: https://www.cycfi.com/
 content:
@@ -22,6 +23,7 @@ ui:
     snapshot: true
 output:
   dir: ./build/local
+  clean: true
 antora:
   extensions:
   - '@antora/lunr-extension'
