@@ -298,3 +298,23 @@ TEST_CASE("Image: offscreen drawing reaches the image immediately", "[image]")
    CHECK(p[3] == 255);
    CHECK(near(pixel_at(img, 5, 5), red));
 }
+
+// Page, Overview: the file formats read on every backend. Both test files are
+// 32 by 16 with red (200, 40, 40) on the left half. formats.jpg is blue
+// (40, 40, 200) on the right; formats.webp is lossless and transparent on the
+// right. One case per format, so a failing format does not hide another.
+TEST_CASE("Image: loads JPEG", "[image]")
+{
+   image img{fs::path{get_images_path() + "formats.jpg"}};
+   CHECK(img.size() == extent{32, 16});
+   CHECK(near(pixel_at(img, 8, 8), {200, 40, 40, 255}, 12));
+   CHECK(near(pixel_at(img, 24, 8), {40, 40, 200, 255}, 12));
+}
+
+TEST_CASE("Image: loads WebP", "[image]")
+{
+   image img{fs::path{get_images_path() + "formats.webp"}};
+   CHECK(img.size() == extent{32, 16});
+   CHECK(near(pixel_at(img, 8, 8), {200, 40, 40, 255}));
+   CHECK(near(pixel_at(img, 24, 8), {0, 0, 0, 0}));
+}

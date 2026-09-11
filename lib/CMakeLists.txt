@@ -280,8 +280,10 @@ if (ARTIST_CAIRO AND NOT MSVC)
    pkg_check_modules(cairo_ft REQUIRED IMPORTED_TARGET cairo-ft)
    pkg_check_modules(fc REQUIRED IMPORTED_TARGET fontconfig)
    pkg_check_modules(harfbuzz REQUIRED IMPORTED_TARGET harfbuzz)
+   pkg_check_modules(webp REQUIRED IMPORTED_TARGET libwebp)
    target_link_libraries(artist PUBLIC
-      PkgConfig::cairo PkgConfig::cairo_ft PkgConfig::fc PkgConfig::harfbuzz)
+      PkgConfig::cairo PkgConfig::cairo_ft PkgConfig::fc PkgConfig::harfbuzz
+      PkgConfig::webp)
    if (APPLE)
       target_link_libraries(artist PUBLIC
          "-framework CoreGraphics" "-framework CoreFoundation")
@@ -298,8 +300,10 @@ if (ARTIST_CAIRO AND MSVC)
    pkg_check_modules(cairo_ft REQUIRED IMPORTED_TARGET cairo-ft)
    pkg_check_modules(harfbuzz REQUIRED IMPORTED_TARGET harfbuzz)
    pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
+   pkg_check_modules(webp REQUIRED IMPORTED_TARGET libwebp)
    target_link_libraries(artist PUBLIC
-      PkgConfig::cairo PkgConfig::cairo_ft PkgConfig::harfbuzz PkgConfig::fontconfig)
+      PkgConfig::cairo PkgConfig::cairo_ft PkgConfig::harfbuzz PkgConfig::fontconfig
+      PkgConfig::webp)
 endif()
 
 add_dependencies(artist libunibreak)

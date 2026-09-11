@@ -24,6 +24,10 @@
       "platform": "windows"
     },
     {
+      "name": "libwebp",
+      "platform": "windows"
+    },
+    {
       "name": "pkgconf",
       "host": true,
       "platform": "windows"

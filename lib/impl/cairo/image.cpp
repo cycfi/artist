@@ -5,8 +5,13 @@
 =============================================================================*/
 #include <artist/image.hpp>
 #include "cairo_private.hpp"
+#include <webp/decode.h>
+#include <algorithm>
+#include <fstream>
+#include <iterator>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_NO_PNG 1
@@ -28,6 +33,60 @@ namespace cycfi::artist
       // mark_dirty is only needed after *external* writes to the pixel buffer.
    }
 
+   namespace
+   {
+      std::vector<uint8_t> read_file(std::string const& path)
+      {
+         std::ifstream f{path, std::ios::binary};
+         return {std::istreambuf_iterator<char>{f}, std::istreambuf_iterator<char>{}};
+      }
+
+      bool is_webp(std::vector<uint8_t> const& d)
+      {
+         return d.size() >= 12
+            && std::equal(d.begin(), d.begin() + 4, "RIFF")
+            && std::equal(d.begin() + 8, d.begin() + 12, "WEBP");
+      }
+
+      // Decode straight into a Cairo ARGB32 surface: libwebp's MODE_bgrA is
+      // premultiplied B, G, R, A in memory, Cairo's layout on a little-endian
+      // host. Returns nullptr on failure.
+      cairo_surface_t* load_webp(std::vector<uint8_t> const& d)
+      {
+         WebPDecoderConfig config;
+         if (!WebPInitDecoderConfig(&config)
+            || WebPGetFeatures(d.data(), d.size(), &config.input) != VP8_STATUS_OK)
+            return nullptr;
+
+         int w = config.input.width;
+         int h = config.input.height;
+         auto surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+         if (cairo_surface_status(surface) != CAIRO_STATUS_SUCCESS)
+         {
+            cairo_surface_destroy(surface);
+            return nullptr;
+         }
+
+         cairo_surface_flush(surface);
+         auto& out = config.output;
+         out.colorspace = MODE_bgrA;
+         out.is_external_memory = 1;
+         out.u.RGBA.rgba = cairo_image_surface_get_data(surface);
+         out.u.RGBA.stride = cairo_image_surface_get_stride(surface);
+         out.u.RGBA.size = size_t(out.u.RGBA.stride) * h;
+
+         auto status = WebPDecode(d.data(), d.size(), &config);
+         WebPFreeDecBuffer(&out);
+         if (status != VP8_STATUS_OK)
+         {
+            cairo_surface_destroy(surface);
+            return nullptr;
+         }
+         cairo_surface_mark_dirty(surface);
+         return surface;
+      }
+   }
+
    image::image(fs::path const& path_)
     : _impl(nullptr)
    {
@@ -42,10 +101,15 @@ namespace cycfi::artist
       {
          surface = cairo_image_surface_create_from_png(full_path.c_str());
       }
+      else if (auto bytes = read_file(full_path); is_webp(bytes))
+      {
+         surface = load_webp(bytes);
+      }
       else
       {
          int w, h, components;
-         uint8_t* src_data = stbi_load(full_path.c_str(), &w, &h, &components, 4);
+         uint8_t* src_data = stbi_load_from_memory(
+            bytes.data(), int(bytes.size()), &w, &h, &components, 4);
          if (src_data)
          {
             surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
