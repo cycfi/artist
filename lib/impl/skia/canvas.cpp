@@ -659,9 +659,11 @@ namespace cycfi::artist
             }
             if constexpr(std::is_same_v<T, SkBitmap>)
             {
+               // src is in logical units; map it to the bitmap's pixels.
+               float s = pic.scale();
                _context->drawImageRect(
                   that.asImage(),
-                  SkRect{src.left, src.top, src.right, src.bottom},
+                  SkRect{src.left * s, src.top * s, src.right * s, src.bottom * s},
                   SkRect{dest.left, dest.top, dest.right, dest.bottom},
                   SkSamplingOptions(),
                   &_state->fill_paint(),

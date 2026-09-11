@@ -299,6 +299,42 @@ TEST_CASE("Image: offscreen drawing reaches the image immediately", "[image]")
    CHECK(near(pixel_at(img, 5, 5), red));
 }
 
+TEST_CASE("Image: draw works in units at any scale", "[image]")
+{
+   // Page, Accessors: draw places the image at size() in user space, and the
+   // src rectangle is in the same units, whatever the image's scale. The
+   // source is 4 by 2 units at scale 2 (8 by 4 pixels): red on the left half,
+   // blue on the right.
+   image src{4, 2, 2};
+   fill(src, colors::red, {0, 0, 2, 2});
+   fill(src, colors::blue, {2, 0, 4, 2});
+
+   // The whole image, at its size.
+   {
+      image dst{4, 2};
+      {
+         offscreen_image ctx{dst};
+         canvas cnv{ctx.context()};
+         cnv.draw(src, point{0, 0});
+      }
+      CHECK(near(pixel_at(dst, 0, 1), red));
+      CHECK(near(pixel_at(dst, 3, 1), blue));
+   }
+
+   // A src rectangle in units: the right half, stretched over the whole
+   // destination.
+   {
+      image dst{4, 2};
+      {
+         offscreen_image ctx{dst};
+         canvas cnv{ctx.context()};
+         cnv.draw(src, rect{2, 0, 4, 2}, rect{0, 0, 4, 2});
+      }
+      CHECK(near(pixel_at(dst, 0, 1), blue));
+      CHECK(near(pixel_at(dst, 3, 1), blue));
+   }
+}
+
 // Page, Overview: the file formats read on every backend. Both test files are
 // 32 by 16 with red (200, 40, 40) on the left half. formats.jpg is blue
 // (40, 40, 200) on the right; formats.webp is lossless and transparent on the
