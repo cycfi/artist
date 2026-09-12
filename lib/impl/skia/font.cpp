@@ -37,15 +37,21 @@ namespace cycfi::artist
    {
       sk_sp<SkFontMgr> get_font_mgr()
       {
+         // Built once and cached for the process lifetime. A font manager is
+         // expensive to create (the fontconfig one scans every installed font)
+         // and it must outlive the typefaces it hands out, so building a fresh
+         // one per call would pay for a full scan on every uncached lookup.
 #if defined(__APPLE__)
-         return SkFontMgr_New_CoreText(nullptr);
+         static sk_sp<SkFontMgr> mgr = SkFontMgr_New_CoreText(nullptr);
 #elif defined(_WIN32)
-         return SkFontMgr_New_DirectWrite();
+         static sk_sp<SkFontMgr> mgr = SkFontMgr_New_DirectWrite();
 #else
          // m148: SkFontMgr_New_FontConfig now requires an explicit font
          // scanner. Use the FreeType scanner (matches SK_TYPEFACE_FACTORY_FREETYPE).
-         return SkFontMgr_New_FontConfig(nullptr, SkFontScanner_Make_FreeType());
+         static sk_sp<SkFontMgr> mgr =
+            SkFontMgr_New_FontConfig(nullptr, SkFontScanner_Make_FreeType());
 #endif
+         return mgr;
       }
    }
 
