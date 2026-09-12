@@ -673,8 +673,22 @@ jobs:
     - name: Configure
       shell: cmake -P {0}
       run: |
+        # Ask vswhere where Visual Studio is: the runner image moves between
+        # editions, and a hardcoded path silently leaves MSVC out of the
+        # environment, leaving CMake to pick the runner's MinGW instead.
         execute_process(
-          COMMAND "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat" && set
+          COMMAND "C:/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe"
+            -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64
+            -property installationPath
+          OUTPUT_VARIABLE vs_path
+          OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        if (NOT vs_path)
+          message(FATAL_ERROR "vswhere found no Visual Studio with the x64 C++ toolset")
+        endif()
+
+        execute_process(
+          COMMAND "${vs_path}/VC/Auxiliary/Build/vcvars64.bat" && set
           OUTPUT_FILE environment_script_output.txt
         )
         file(STRINGS environment_script_output.txt output_lines)
@@ -704,8 +718,22 @@ jobs:
     - name: Build
       shell: cmake -P {0}
       run: |
+        # Ask vswhere where Visual Studio is: the runner image moves between
+        # editions, and a hardcoded path silently leaves MSVC out of the
+        # environment, leaving CMake to pick the runner's MinGW instead.
         execute_process(
-          COMMAND "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat" && set
+          COMMAND "C:/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe"
+            -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64
+            -property installationPath
+          OUTPUT_VARIABLE vs_path
+          OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        if (NOT vs_path)
+          message(FATAL_ERROR "vswhere found no Visual Studio with the x64 C++ toolset")
+        endif()
+
+        execute_process(
+          COMMAND "${vs_path}/VC/Auxiliary/Build/vcvars64.bat" && set
           OUTPUT_FILE environment_script_output.txt
         )
         file(STRINGS environment_script_output.txt output_lines)
