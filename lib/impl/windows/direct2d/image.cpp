@@ -28,8 +28,33 @@ namespace cycfi::artist
          d2d::release(bitmap);
       }
 
+      // A WIC bitmap render target holds the bitmap locked for writing between
+      // BeginDraw and EndDraw, so Flush alone does not make the pixels
+      // readable: reading or encoding them has to end the draw first. The
+      // pixel lock from pixels() blocks the same users, so it goes too.
+      void suspend()
+      {
+         if (rt && drawing)
+         {
+            rt->EndDraw();
+            drawing = false;
+         }
+         d2d::release(_lock);
+      }
+
+      void resume()
+      {
+         if (rt && !drawing && !_lock)
+         {
+            rt->BeginDraw();
+            drawing = true;
+         }
+      }
+
       IWICBitmap*       bitmap = nullptr;
-      IWICBitmapLock*   _lock = nullptr;   // held for the lifetime once pixels() is called
+      IWICBitmapLock*   _lock = nullptr;   // held from pixels() until suspend()
+      ID2D1RenderTarget* rt = nullptr;     // non-owning: the live offscreen target
+      bool              drawing = false;   // rt is between BeginDraw and EndDraw
 
       // The bitmap is allocated at size * scale pixels. size() reports logical
       // units, bitmap_size() reports pixels, and this is the ratio between them.
@@ -192,7 +217,10 @@ namespace cycfi::artist
       IWICBitmap* wic_bitmap(image const& img)
       {
          auto p = img.impl();
-         return p? p->bitmap : nullptr;
+         if (!p)
+            return nullptr;
+         p->suspend();   // the caller is about to draw from it
+         return p->bitmap;
       }
    }
 
@@ -225,6 +253,7 @@ namespace cycfi::artist
          return nullptr;
       if (!_impl->_lock)
       {
+         _impl->suspend();    // land any pending offscreen drawing
          UINT w = 0, h = 0;
          _impl->bitmap->GetSize(&w, &h);
          WICRect rc{0, 0, INT(w), INT(h)};
@@ -245,15 +274,17 @@ namespace cycfi::artist
 
    void image::save_png(std::string_view path_) const
    {
+      auto fail = [&path_]()
+      {
+         throw std::runtime_error{
+            "artist direct2d backend: Failed to save file: " + std::string{path_}};
+      };
+
       if (!_impl || !_impl->bitmap)
-         return;
+         fail();
+      _impl->suspend();
 
       fs::path p{std::string{path_}};
-      // Ensure the destination directory exists (golden bootstrap writes into
-      // dirs that may not be present yet).
-      std::error_code ec;
-      if (p.has_parent_path())
-         fs::create_directories(p.parent_path(), ec);
       std::wstring wpath = p.wstring();
 
       // Every step is checked: WIC returns failure HRESULTs (e.g. an unwritable
@@ -263,6 +294,7 @@ namespace cycfi::artist
       IWICBitmapEncoder* encoder = nullptr;
       IWICBitmapFrameEncode* frame = nullptr;
       auto& wic = d2d::get_wic_factory();
+      bool ok = false;
 
       if (SUCCEEDED(wic.CreateStream(&stream)) && stream &&
           SUCCEEDED(stream->InitializeFromFilename(wpath.c_str(), GENERIC_WRITE)) &&
@@ -278,12 +310,16 @@ namespace cycfi::artist
          frame->SetPixelFormat(&pf);
          if (SUCCEEDED(frame->WriteSource(_impl->bitmap, nullptr)) &&
              SUCCEEDED(frame->Commit()))
-            encoder->Commit();
+            ok = SUCCEEDED(encoder->Commit());
       }
 
       d2d::release(frame);
       d2d::release(encoder);
       d2d::release(stream);
+      _impl->resume();     // an offscreen still drawing into this image
+
+      if (!ok)
+         fail();
    }
 
    ////////////////////////////////////////////////////////////////////////////
@@ -299,6 +335,7 @@ namespace cycfi::artist
     : _image(img)
    {
       _state = new state;
+      img.impl()->suspend();  // a locked bitmap cannot back a render target
       auto props = D2D1::RenderTargetProperties(
          D2D1_RENDER_TARGET_TYPE_DEFAULT,
          D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
@@ -318,8 +355,14 @@ namespace cycfi::artist
       if (sc > 0 && sc != 1.0f)
          _state->rt->SetDpi(96.0f * sc, 96.0f * sc);
 
+      // save_png and pixels() end and restart the draw through this while the
+      // offscreen is alive, so drawing reaches the image immediately rather
+      // than at EndDraw.
+      img.impl()->rt = _state->rt;
+
       _state->ctx.target(_state->rt);
       _state->rt->BeginDraw();
+      img.impl()->drawing = true;
    }
 
    offscreen_image::~offscreen_image()
@@ -328,7 +371,13 @@ namespace cycfi::artist
       {
          if (_state->rt)
          {
-            _state->rt->EndDraw();
+            if (auto p = _image.impl())
+            {
+               if (p->drawing)
+                  _state->rt->EndDraw();
+               p->drawing = false;
+               p->rt = nullptr;
+            }
             d2d::release(_state->rt);
          }
          delete _state;
