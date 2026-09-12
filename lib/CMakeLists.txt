@@ -170,18 +170,25 @@ if (ARTIST_SKIA)
       find_library(BROTLIDEC_LIB   brotlidec    PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
       find_library(BROTLICOM_LIB   brotlicommon PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
       find_library(BZ2_LIB         bz2          PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
+      find_library(EXPAT_LIB       expat        PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
 
       find_package(Threads REQUIRED)
       find_package(OpenGL REQUIRED)
 
+      # These static archives have cyclic symbol dependencies: fontconfig needs
+      # freetype and expat, freetype needs brotli and bz2. A linker group makes
+      # the linker rescan them so resolution does not depend on list order.
       set(ARTIST_DEPEPENDENCIES
          unofficial::skia::skia
          PkgConfig::HARFBUZZ
-         ${FREETYPE_LIB}
+         -Wl,--start-group
          ${FONTCONFIG_LIB}
+         ${FREETYPE_LIB}
+         ${EXPAT_LIB}
          ${BROTLIDEC_LIB}
          ${BROTLICOM_LIB}
          ${BZ2_LIB}
+         -Wl,--end-group
          ${CMAKE_DL_LIBS}
          Threads::Threads
          OpenGL::OpenGL
