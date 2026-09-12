@@ -421,6 +421,15 @@ namespace cycfi::artist
       // and used as a DrawImage source / blend-effect input — unlike the bitmap
       // behind a CreateCompatibleRenderTarget, which is not a valid effect input.
       auto sz = main->GetPixelSize();
+
+      // Every intermediate has to live in the target's coordinate space. A
+      // Direct2D bitmap carries its own DPI and DrawImage scales it by that,
+      // so bitmaps left at the default 96 DPI are drawn enlarged onto a scaled
+      // target (an offscreen image renders at size * scale). Tag them with the
+      // target's DPI instead, so pixels map to DIPs exactly as they do there.
+      FLOAT dpi_x = 96.0f, dpi_y = 96.0f;
+      main->GetDpi(&dpi_x, &dpi_y);
+
       ID2D1Device* device = nullptr;
       device_context* sdc = nullptr;
       ID2D1Bitmap1* src_bm = nullptr;
@@ -432,7 +441,8 @@ namespace cycfi::artist
             sz, nullptr, 0,
             D2D1::BitmapProperties1(
                D2D1_BITMAP_OPTIONS_TARGET,
-               D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)),
+               D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
+               dpi_x, dpi_y),
             &src_bm)) && src_bm;
 
       if (!ready)
@@ -445,6 +455,7 @@ namespace cycfi::artist
       }
 
       sdc->SetTarget(src_bm);
+      sdc->SetDpi(dpi_x, dpi_y);
       sdc->BeginDraw();
       sdc->Clear(D2D1::ColorF(0, 0, 0, 0));
       sdc->SetTransform(current().matrix);
@@ -467,7 +478,8 @@ namespace cycfi::artist
          // background (a plain bitmap is a valid CopyFromRenderTarget dest and
          // blend input), then blend the source over it and source-copy the result.
          auto props = D2D1::BitmapProperties(
-            D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED));
+            D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
+            dpi_x, dpi_y);
          D2D1_POINT_2U dp{0, 0};
          D2D1_RECT_U sr{0, 0, sz.width, sz.height};
          main->Flush(nullptr, nullptr);
