@@ -18,6 +18,7 @@ set(artist_test_sources
    text_run_test.cpp
    text_layout_page_test.cpp
    canvas_transforms_page_test.cpp
+   canvas_current_path_page_test.cpp
    text_layout_render_test.cpp
    text_edit_sim_test.cpp
    text_edit_code_test.cpp

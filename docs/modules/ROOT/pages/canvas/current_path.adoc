@@ -2,375 +2,452 @@
 
 == Overview
 
-The canvas holds one path at a time, its _current path_. The calls below
-build geometry into it, and `fill` or `stroke` paints and then clears it.
+A canvas holds one path at a time, its _current path_. The calls on this
+page build geometry into it; `fill` and `stroke` paint it and then start a
+fresh one. The current path is not a `path` object you can hold: it lives
+in the canvas, is emptied by every paint, and is what `clip`,
+`point_in_path` and `fill_extent` all refer to.
 
-This is the same geometry the xref:path.adoc[`path` class]
-describes, expressed as a sequence of calls rather than as an object. Build
-it here when the shape changes on every draw; build a `path` when the shape
-is fixed and worth keeping, then hand it over with `add_path`.
+This is the same geometry the xref:path.adoc[`path` class] describes,
+expressed as a sequence of calls rather than as an object. Build it here
+when the shape changes on every draw; build a `path` when the shape is
+fixed and worth keeping, then hand it over with `add_path`.
 
-== begin_path / close_path
+Everything is in user space, so the transforms under
+xref:canvas/transforms.adoc[Transforms] apply to the geometry as it is
+added. Coordinates come in two forms throughout: a `point` (or `rect`, or
+`circle`), and the same values as loose `float` arguments.
 
-Starts a new path, and closes the current shape within it.
+NOTE: Artist follows the W3C canvas API, with one deliberate difference
+here. In the W3C API `fill()` and `stroke()` leave the path in place, and
+only `beginPath()` clears it. In Artist they consume it, and
+`fill_preserve` and `stroke_preserve` are the calls that do not.
 
-=== Expressions
+== Include
 
-[,c++]
-----
-// variant 1
-cnv.begin_path()
+```c++
+#include <artist/canvas.hpp>
+```
 
-// variant 2
-cnv.close_path()
-----
+== Declaration
 
-=== Semantics
+```c++
+   void     begin_path();
+   void     close_path();
+   void     fill();
+   void     fill_preserve();
+   void     stroke();
+   void     stroke_preserve();
 
-. Discards the current path and starts a new one.
-. Closes the current shape by drawing a straight line back to where it
-began. A path may hold several closed shapes.
+   void     clip();
+   void     clip(path const& p);
+   rect     clip_extent() const;
+   bool     point_in_path(point p) const;
+   bool     point_in_path(float x, float y) const;
+   rect     fill_extent() const;
 
-'''
+   void     move_to(point p);
+   void     line_to(point p);
+   void     arc_to(point p1, point p2, float radius);
+   void     arc(
+               point p, float radius,
+               float start_angle, float end_angle,
+               bool ccw = false
+            );
+   void     add_rect(rect const& r);
+   void     add_round_rect(rect const& r, float radius);
+   void     add_circle(circle const& c);
+   void     add_path(path const& p);
+   void     clear_rect(rect const& r);
 
-== fill / stroke
+   void     quadratic_curve_to(point cp, point end);
+   void     bezier_curve_to(point cp1, point cp2, point end);
 
-Paints the current path, filled or outlined.
+   void     move_to(float x, float y);
+   void     line_to(float x, float y);
+   void     arc_to(float x1, float y1, float x2, float y2, float radius);
+   void     arc(
+               float x, float y, float radius,
+               float start_angle, float end_angle,
+               bool ccw = false
+            );
+   void     add_rect(float x, float y, float width, float height);
+   void     add_round_rect(
+               float x, float y,
+               float width, float height,
+               float radius
+            );
+   void     add_circle(float cx, float cy, float radius);
+   void     clear_rect(float x, float y, float width, float height);
 
-=== Expressions
+   void     quadratic_curve_to(float cpx, float cpy, float x, float y);
+   void     bezier_curve_to(
+               float cp1x, float cp1y,
+               float cp2x, float cp2y,
+               float x, float y
+            );
 
-[,c++]
-----
-// variant 1
-cnv.fill()
-cnv.stroke()
+   void     fill_rule(path::fill_rule_enum rule);
+```
 
-// variant 2
-cnv.fill_preserve()
-cnv.stroke_preserve()
-----
-
-=== Semantics
-
-. Fills the current path with the current fill style, or strokes it with
-the current stroke style. The path is consumed: the canvas begins a new one
-afterwards.
-. The same, but the path is left in place so it can be painted again. This
-is how a shape is given both a fill and an outline.
-
-[,c++]
-----
-cnv.fill_preserve();   // fill, keeping the path
-cnv.stroke();          // then outline the same path
-----
-
-'''
-
-== move_to / line_to
-
-Moves the current point, and draws a straight line to it.
-
-=== Notation
-
-`p`:: Instance of `point`
-`x`, `y`:: `float`
-
-=== Expressions
-
-[,c++]
-----
-// variant 1
-cnv.move_to(p)
-cnv.move_to(x, y)
-
-// variant 2
-cnv.line_to(p)
-cnv.line_to(x, y)
-----
-
-=== Semantics
-
-. Moves the current point to `p` (or `x, y`) without drawing.
-. Adds a straight line from the current point to `p` (or `x, y`), which
-becomes the new current point.
-
-'''
-
-== arc
-
-image::/canvas/arc.svg[alt="arc", width=260px, role=center]
-
-Adds an arc of a circle, given its centre.
+== Expressions
 
 === Notation
 
-`p`:: Instance of `point`, the centre
-`x`, `y`, `radius`:: `float`
-`start_angle`, `end_angle`:: `float`, angles in radians
-`ccw`:: `bool`
+`cnv`                :: Object of type `canvas`.
+`p`, `p1`, `p2`      :: Objects of type `point`.
+`cp`, `cp1`, `cp2`   :: Objects of type `point`, the control points of a
+                        curve.
+`end`                :: Object of type `point`, the end of a curve.
+`r`                  :: Object of type xref:foundation/rect.adoc[rect].
+`c`                  :: Object of type xref:foundation/circle.adoc[circle].
+`pth`                :: Object of type xref:path.adoc[path].
+`x`, `y`             :: `float` coordinates.
+`width`, `height`    :: `float` measures of a rectangle.
+`radius`             :: A `float` radius.
+`cx`, `cy`           :: `float` coordinates of a centre.
+`x1`, `y1`           :: `float` coordinates of the corner `arc_to` rounds.
+`x2`, `y2`           :: `float` coordinates of the point after it.
+`cpx`, `cpy`         :: `float` coordinates of a quadratic control point.
+`cp1x`, `cp1y`       :: `float` coordinates of the first cubic control point.
+`cp2x`, `cp2y`       :: `float` coordinates of the second cubic control point.
+`start_angle`        :: A `float`, the angle the arc starts at, in radians.
+`end_angle`          :: A `float`, the angle the arc ends at, in radians.
+`ccw`                :: A `bool`, the sweep direction.
+`rule`               :: A `path::fill_rule_enum`, either `path::fill_winding`
+                        or `path::fill_odd_even`.
 
-=== Expressions
+=== Building
 
-[,c++]
-----
-// variant 1
-cnv.arc(p, radius, start_angle, end_angle, ccw)
-cnv.arc(p, radius, start_angle, end_angle)
+[cols="1,1,1"]
+|===
+| Expression              | Semantics                          | Return Type
 
-// variant 2
-cnv.arc(x, y, radius, start_angle, end_angle, ccw)
-cnv.arc(x, y, radius, start_angle, end_angle)
-----
+| `cnv.begin_path()`      | Discard the current path and start
+                            an empty one.                      | `void`
+| `cnv.close_path()`      | Close the sub-path being built, by
+                            adding a straight line back to
+                            where it began.                    | `void`
+| `cnv.move_to(p)`        | Start a new sub-path at `p`, which
+                            becomes the current point. Nothing
+                            is drawn.                          | `void`
+| `cnv.move_to(x, y)`     | As above, at `x`, `y`.             | `void`
+| `cnv.line_to(p)`        | Add a straight line from the
+                            current point to `p`, which
+                            becomes the current point.         | `void`
+| `cnv.line_to(x, y)`     | As above, to `x`, `y`.             | `void`
+|===
 
-=== Semantics
+A path is a list of sub-paths, each a connected run of segments. `move_to`
+begins one, `close_path` closes one, and everything else extends the one
+being built. A path may hold several closed shapes, and how they combine
+when filled is the <<Fill Rule>>.
 
-. Adds an arc centred on `p` (or `x, y`) with the given `radius`, running
-from `start_angle` to `end_angle`.
-. `ccw` selects the direction and defaults to `false`, clockwise.
-. Angles are in radians.
+=== Curves
 
-'''
+[cols="1,1,1"]
+|===
+| Expression                          | Semantics              | Return Type
 
-== arc_to
+| `cnv.quadratic_curve_to(cp, end)`   | Add a quadratic Bézier
+                                        curve from the current
+                                        point to `end`, shaped
+                                        by the single control
+                                        point `cp`.            | `void`
+| `cnv.quadratic_curve_to(cpx, cpy,
+    x, y)`                             | As above, with loose
+                                        coordinates.           | `void`
+| `cnv.bezier_curve_to(cp1, cp2,
+    end)`                              | Add a cubic Bézier
+                                        curve from the current
+                                        point to `end`, shaped
+                                        by the two control
+                                        points `cp1` and
+                                        `cp2`.                 | `void`
+| `cnv.bezier_curve_to(cp1x, cp1y,
+    cp2x, cp2y, x, y)`                 | As above, with loose
+                                        coordinates.           | `void`
+|===
 
-Adds an arc of a circle, given two tangents.
+Both leave the current point in the direction of the first control point
+and arrive at `end`, which becomes the new current point.
 
-=== Notation
+=== Arcs
 
-`p1`, `p2`:: Instance of `point`
-`x1`, `y1`, `x2`, `y2`, `radius`:: `float`
+[cols="1,1,1"]
+|===
+| Expression                     | Semantics                   | Return Type
 
-=== Expressions
+| `cnv.arc(p, radius,
+    start_angle, end_angle,
+    ccw)`                         | Add an arc of a circle
+                                   centred on `p`, running from
+                                   `start_angle` to
+                                   `end_angle`.                | `void`
+| `cnv.arc(p, radius,
+    start_angle, end_angle)`      | As above, with `ccw` at its
+                                   default of `false`.         | `void`
+| `cnv.arc(x, y, radius,
+    start_angle, end_angle,
+    ccw)`                         | As above, with a loose
+                                   centre.                     | `void`
+| `cnv.arc(x, y, radius,
+    start_angle, end_angle)`      | As above, with `ccw` at its
+                                   default of `false`.         | `void`
+| `cnv.arc_to(p1, p2, radius)`   | Add an arc of the given
+                                   `radius` tangent to the line
+                                   from the current point to
+                                   `p1` and to the line from
+                                   `p1` to `p2`.               | `void`
+| `cnv.arc_to(x1, y1, x2, y2,
+    radius)`                      | As above, with loose
+                                   coordinates.                | `void`
+|===
 
-[,c++]
-----
-// variant 1
-cnv.arc_to(p1, p2, radius)
+Angles are in radians and are measured from the positive x axis. Artist's
+y axis grows downward, so an increasing angle turns clockwise on screen,
+and `ccw` at its default of `false` sweeps in that direction.
 
-// variant 2
-cnv.arc_to(x1, y1, x2, y2, radius)
-----
+image::canvas/arc.png[alt="The same arc swept both ways", width=560px, align=center, title="The same start_angle and end_angle, swept each way. Angle 0 points along the positive x axis, and increasing angles turn clockwise because y grows downward.", link={imagesdir}/canvas/arc.png]
 
-=== Semantics
+`arc` joins the arc to the current point with a straight line if there is
+one, so call `begin_path` or `move_to` first when that is not wanted.
 
-. Adds an arc of the given `radius` tangent to both the line from the
-current point to `p1` and the line from `p1` to `p2`.
-. A straight line is added from the current point to where the arc begins,
-if they differ.
-. This is the call that rounds a corner: `p1` is the corner, and the arc
-replaces it.
+`arc_to` is the call that rounds a corner: `p1` is the corner, and the arc
+replaces it. A straight line is added from the current point to where the
+arc begins, so the corner point itself is not on the path. With a `radius`
+of zero, or with the three points collinear, there is no corner to round
+and a straight line to `p1` is added instead.
 
-'''
+=== Whole Shapes
 
-== quadratic_curve_to / bezier_curve_to
+[cols="1,1,1"]
+|===
+| Expression                        | Semantics                | Return Type
 
-image::/canvas/bezier.svg[alt="bezier", width=460px, role=center]
+| `cnv.add_rect(r)`                 | Add the rectangle `r`.   | `void`
+| `cnv.add_rect(x, y, width,
+    height)`                         | As above, from a
+                                      position and a size.     | `void`
+| `cnv.add_round_rect(r, radius)`   | Add `r` with its corners
+                                      rounded to `radius`.     | `void`
+| `cnv.add_round_rect(x, y, width,
+    height, radius)`                 | As above, from a
+                                      position and a size.     | `void`
+| `cnv.add_circle(c)`               | Add the circle `c`.      | `void`
+| `cnv.add_circle(cx, cy, radius)`  | As above, from a centre
+                                      and a radius.            | `void`
+| `cnv.add_path(pth)`               | Add the geometry of the
+                                      `path` object `pth`.     | `void`
+|===
 
-Adds a Bézier curve from the current point.
+`add_round_rect` clamps `radius` to half the shorter side, so an over-large
+radius gives a stadium rather than a larger shape. A `radius` of zero gives
+a plain rectangle.
 
-=== Notation
-
-`cp`, `cp1`, `cp2`, `end`:: Instance of `point`
-`cpx`, `cpy`, `cp1x`, `cp1y`, `cp2x`, `cp2y`, `x`, `y`:: `float`
-
-=== Expressions
-
-[,c++]
-----
-// variant 1
-cnv.quadratic_curve_to(cp, end)
-cnv.quadratic_curve_to(cpx, cpy, x, y)
-
-// variant 2
-cnv.bezier_curve_to(cp1, cp2, end)
-cnv.bezier_curve_to(cp1x, cp1y, cp2x, cp2y, x, y)
-----
-
-=== Semantics
-
-. Adds a quadratic Bézier curve to `end`, shaped by the single control
-point `cp`.
-. Adds a cubic Bézier curve to `end`, shaped by the two control points
-`cp1` and `cp2`.
-. Both start at the current point, which the curve leaves in the direction
-of the first control point. `end` becomes the new current point.
-
-'''
-
-== add_rect / add_round_rect / add_circle
-
-Adds a whole shape to the current path.
-
-=== Notation
-
-`r`:: Instance of `rect`
-`c`:: Instance of `circle`
-`x`, `y`, `width`, `height`, `radius`, `cx`, `cy`:: `float`
-
-=== Expressions
-
-[,c++]
-----
-// variant 1
-cnv.add_rect(r)
-cnv.add_rect(x, y, width, height)
-
-// variant 2
-cnv.add_round_rect(r, radius)
-cnv.add_round_rect(x, y, width, height, radius)
-
-// variant 3
-cnv.add_circle(c)
-cnv.add_circle(cx, cy, radius)
-----
-
-=== Semantics
-
-. Adds the rectangle `r` (or `x, y, width, height`).
-. Adds the same rectangle with its corners rounded to `radius`.
-. Adds the circle `c` (or centre `cx, cy` and `radius`).
+Building a `path` once and adding it with `add_path` on each draw is
+cheaper than rebuilding the geometry call by call, especially on a GPU
+backend.
 
 NOTE: `round_rect` and `circle` remain for code written against the
-Cairo-only canvas, but are deprecated. Use `add_round_rect` and
-`add_circle`.
+Cairo-only canvas, but are deprecated and compile with a warning. Use
+`add_round_rect` and `add_circle`.
 
-'''
+=== Painting
 
-== add_path
+[cols="1,1,1"]
+|===
+| Expression                | Semantics                        | Return Type
 
-Adds an entire `path`, built separately, to the current path.
+| `cnv.fill()`              | Fill the current path with the
+                              current fill style, then start a
+                              new path.                        | `void`
+| `cnv.fill_preserve()`     | As above, but leave the path in
+                              place.                           | `void`
+| `cnv.stroke()`            | Stroke the current path with the
+                              current stroke style, then start
+                              a new path.                      | `void`
+| `cnv.stroke_preserve()`   | As above, but leave the path in
+                              place.                           | `void`
+|===
 
-=== Notation
+The styles these use, and the line width, cap and join that shape a stroke,
+are under xref:canvas/styles.adoc[Styles]. The `_preserve` pair is how a
+shape is given both a fill and an outline:
 
-`p`:: Instance of `path`
+```c++
+   cnv.fill_preserve();    // fill, keeping the path
+   cnv.stroke();           // then outline the same path, and clear it
+```
 
-=== Expression
+=== Clipping
 
-[,c++]
-----
-cnv.add_path(p)
-----
+[cols="1,1,1"]
+|===
+| Expression            | Semantics                            | Return Type
 
-=== Semantics
+| `cnv.clip()`          | Restrict subsequent drawing to the
+                          current path, then start a new
+                          path.                                | `void`
+| `cnv.clip(pth)`       | Restrict subsequent drawing to the
+                          `path` object `pth`.                 | `void`
+| `cnv.clip_extent()`   | The smallest rectangle containing
+                          the clip region, in user space.      | `rect`
+|===
 
-. The geometry of `p` is added to the current path.
-. Building a `path` once and adding it on each draw is cheaper than
-rebuilding the geometry call by call, especially on GPU backends.
+Clipping intersects with whatever clip is already in effect, so it only
+ever narrows the drawable area. There is no call to widen it again: save
+the state first and restore it, as under xref:canvas/states.adoc[States].
 
-'''
+=== Queries
 
-== clear_rect
+[cols="1,1,1"]
+|===
+| Expression                  | Semantics                      | Return Type
 
-Erases a rectangular region.
+| `cnv.point_in_path(p)`      | Whether `p` lies inside the
+                                current path, by the current
+                                fill rule.                     | `bool`
+| `cnv.point_in_path(x, y)`   | As above, for the point `x`,
+                                `y`.                           | `bool`
+| `cnv.fill_extent()`         | The smallest rectangle that
+                                filling the current path would
+                                cover.                         | `rect`
+|===
 
-=== Notation
+`fill_extent` reports what a fill would cover, not what geometry is in the
+path, so a path with no enclosed area, a bare `move_to` and `line_to` for
+instance, reports `rect(0, 0, 0, 0)`. So does an empty path.
 
-`r`:: Instance of `rect`
-`x`, `y`, `width`, `height`:: `float`
+CAUTION: `fill_extent` is declared by `canvas.hpp` but defined only by the
+Cairo backend. Calling it in a Quartz 2D or Skia build is a link error, not
+a compile error.
 
-=== Expressions
+=== Fill Rule
 
-[,c++]
-----
-// variant 1
-cnv.clear_rect(r)
+[cols="1,1,1"]
+|===
+| Expression              | Semantics                          | Return Type
 
-// variant 2
-cnv.clear_rect(x, y, width, height)
-----
+| `cnv.fill_rule(rule)`   | Set the rule that decides what
+                            counts as inside a path that
+                            overlaps itself.                    | `void`
+|===
 
-=== Semantics
+image::canvas/fill_rule.png[alt="A star filled under each fill rule", width=560px, align=center, title="One self-intersecting five-pointed star, traced as a single path, filled under each rule.", link={imagesdir}/canvas/fill_rule.png]
 
-. The region `r` (or `x, y, width, height`) is left transparent.
+`path::fill_winding`, the default, counts the direction of each crossing,
+so overlapping regions of one shape stay filled. `path::fill_odd_even`
+counts crossings alone, so every second region is left empty. The rule
+applies to `fill`, to `clip` and to `point_in_path`, and not to `stroke`.
 
-'''
+=== Erasing
 
-== clip
+[cols="1,1,1"]
+|===
+| Expression                   | Semantics                     | Return Type
 
-image::/canvas/clip.svg[alt="clip", width=460px, role=center]
+| `cnv.clear_rect(r)`          | Leave the region `r`
+                                 transparent.                  | `void`
+| `cnv.clear_rect(x, y, width,
+    height)`                    | As above, from a position and
+                                 a size.                       | `void`
+|===
 
-Restricts subsequent drawing to a region.
+This erases rather than paints: the region is left transparent, not filled
+with a background color.
 
-=== Notation
+== Backend Differences
 
-`p`:: Instance of `path`
+The current path is the part of the canvas that leans hardest on the
+backend, and these are the places where the three do not agree. None of
+them is affected by a difference in the geometry itself; they are all about
+what a call does to the path around it.
 
-=== Expressions
+[cols="1,1,1,1"]
+|===
+| Expression | Quartz 2D | Skia | Cairo
 
-[,c++]
-----
-// variant 1
-cnv.clip()
+| `cnv.add_circle(c)`
+| An arc, joined to the current point by a straight line.
+| A closed sub-path of its own, with no joining line.
+| An arc, joined to the current point by a straight line.
 
-// variant 2
-cnv.clip(p)
+| `cnv.add_path(pth)`
+| Appends `pth` to the current path.
+| Replaces the current path with `pth`.
+| Appends `pth` to the current path.
 
-// variant 3
-cnv.clip_extent()
-----
+| `cnv.clip(pth)`
+| Clips to `pth` alone; the current path is left as it was.
+| Clips to `pth` alone; the current path is left as it was.
+| Appends `pth` to the current path, clips to the pair, then discards the
+  path. It also leaves the context set to the fill rule of `pth`.
 
-=== Semantics
+| `cnv.clear_rect(r)`
+| Erases `r`; the current path is left as it was.
+| Erases `r`; the current path is left as it was.
+| Erases `r` **and** whatever is already in the current path, then discards
+  the path.
 
-. Clips subsequent drawing to the current path.
-. Clips subsequent drawing to `p`.
-. Returns the smallest `rect` containing the current clip region.
-. Clipping intersects with whatever clip is already in effect, so it only
-ever narrows the drawable area. Save the state beforehand to get it back.
+| `cnv.fill_rule(rule)`
+| Canvas state, outside the saved state: it survives `begin_path`, and
+  `save` and `restore` do not put it back.
+| Path state. `begin_path`, `fill` and `stroke` reset it to
+  `path::fill_winding`, so it has to be set after the path is started.
+| Part of the saved state: it survives `begin_path`, and `save` and
+  `restore` put it back.
 
-'''
+| `cnv.point_in_path(p)`
+| True inside the fill **or** on the stroke, because the query is made in
+  fill-and-stroke mode.
+| True inside the fill only.
+| True inside the fill only.
 
-== point_in_path / fill_extent
+| `cnv.arc` with a negative
+  `radius`
+| Passed through to the backend.
+| Clamped to zero.
+| Clamped to zero.
 
-Queries the current path.
+| `cnv.fill_extent()`
+| Not defined. Link error.
+| Not defined. Link error.
+| Defined.
 
-=== Notation
+| `cnv.save()` and
+  `cnv.restore()`
+| Do not save the current path.
+| Save and restore the current path with the rest of the state.
+| Do not save the current path.
+|===
 
-`p`:: Instance of `point`
-`x`, `y`:: `float`
+Verified by running on Cairo and by reading `lib/impl/skia/canvas.cpp`,
+`lib/impl/macos/quartz2d/canvas.mm` and
+`lib/include/artist/detail/canvas_impl.hpp`.
 
-=== Expressions
+CAUTION: On Quartz 2D, `add_round_rect` with a `radius` above zero begins a
+new path before adding the rounded rectangle, so it discards whatever was
+already being built. Cairo and Skia add to the path in place. Start a round
+rect on an empty path until this is settled.
 
-[,c++]
-----
-// variant 1
-cnv.point_in_path(p)
-cnv.point_in_path(x, y)
+== Example
 
-// variant 2
-cnv.fill_extent()
-----
+A rounded panel given both a fill and an outline, and the same shape rebuilt
+to hit test a mouse position:
 
-=== Semantics
+```c++
+   cnv.begin_path();
+   cnv.add_round_rect(panel, 8);
+   cnv.fill_style(colors::white.opacity(0.1));
+   cnv.stroke_style(colors::white.opacity(0.4));
+   cnv.line_width(1);
+   cnv.fill_preserve();
+   cnv.stroke();
 
-. Returns `true` if `p` (or `x, y`) lies inside the current path, by the
-current fill rule.
-. Returns the smallest `rect` that the current path's fill would cover.
-
-'''
-
-== fill_rule
-
-image::/canvas/fill_rule.svg[alt="fill_rule", width=480px, role=center]
-
-Sets the rule that decides what counts as inside a self-intersecting path.
-
-=== Notation
-
-`rule`:: `path::fill_rule_enum`
-
-=== Expression
-
-[,c++]
-----
-cnv.fill_rule(rule)
-----
-
-=== Semantics
-
-. `path::fill_winding` counts the direction of each crossing, so
-overlapping regions of a single shape stay filled.
-. `path::fill_odd_even` counts crossings alone, so every second region is
-left empty.
-. The default is `path::fill_winding`.
-
-'''
+   // The path is gone after stroke, so rebuild it to hit test.
+   cnv.begin_path();
+   cnv.add_round_rect(panel, 8);
+   bool hot = cnv.point_in_path(mouse);
+   cnv.begin_path();
+```
