@@ -448,6 +448,14 @@ if (ARTIST_SKIA)
       target_link_libraries(artist PUBLIC ${ARTIST_DEPEPENDENCIES})
    else()
       target_link_libraries(artist PRIVATE "${ARTIST_DEPEPENDENCIES}")
+
+      # Keep the bundled static harfbuzz out of the consuming executable's
+      # dynamic symbol table. GTK and Pango call the system libharfbuzz, and an
+      # exported static copy of a different version interposes on it, crashing
+      # in Pango shaping when a widget is realized. This has to be a link
+      # option, not a link library, so it precedes the archives on the command
+      # line.
+      target_link_options(artist INTERFACE "LINKER:--exclude-libs,libharfbuzz.a")
    endif()
 endif()
 
