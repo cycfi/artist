@@ -664,11 +664,32 @@ jobs:
       inputs.job == 'all' ||
       inputs.job == 'direct2d'
     runs-on: windows-latest
+    env:
+      # Only libwebp, and only in classic mode: the manifest's Windows
+      # dependencies are all core, so a manifest build here would drag in Skia
+      # and Cairo and cost this job the dependency-free build that makes it
+      # fast. Cached on the same R2 vcpkg cache the Cairo job uses.
+      VCPKG_BINARY_SOURCES: "clear;http,https://media.cycfi.com/vcpkg-cache/{sha}.zip,read;x-aws,s3://cycfi-media/vcpkg-cache/,write"
+      AWS_ENDPOINT_URL: "https://24c350f8d000d722e6bcc12e3b03469a.r2.cloudflarestorage.com"
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       with:
         submodules: recursive
+
+    # Windows' WIC has no WebP codec (it ships as an optional Store package),
+    # so the Direct2D backend decodes WebP with libwebp. Everything else it
+    # needs is a system library.
+    - name: Install libwebp
+      shell: pwsh
+      working-directory: lib/external/vcpkg
+      run: |
+        if (-not (Test-Path ./vcpkg.exe)) { ./bootstrap-vcpkg.bat -disableMetrics }
+        ./vcpkg.exe install libwebp:x64-windows
+        if ($LASTEXITCODE -ne 0) { throw "vcpkg install libwebp failed" }
 
     - name: Configure
       shell: cmake -P {0}
@@ -706,6 +727,7 @@ jobs:
             -D ARTIST_DIRECT2D=ON
             -D ARTIST_BUILD_EXAMPLES=ON
             -D ARTIST_BUILD_TESTS=ON
+            -D CMAKE_PREFIX_PATH=$ENV{GITHUB_WORKSPACE}/lib/external/vcpkg/installed/x64-windows
             -G Ninja
             -D CMAKE_MAKE_PROGRAM=ninja
           RESULT_VARIABLE result
