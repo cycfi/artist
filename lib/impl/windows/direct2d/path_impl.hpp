@@ -75,6 +75,7 @@ namespace cycfi::artist::d2d
                             , _start(rhs._start)
                             , _cp(rhs._cp)
                             , _ops(rhs._ops)
+                            , _prim(rhs._prim)
                            {}
 
       path_impl&           operator=(path_impl const& rhs)
@@ -89,6 +90,7 @@ namespace cycfi::artist::d2d
                                  _start = rhs._start;
                                  _cp = rhs._cp;
                                  _ops = rhs._ops;
+                                 _prim = rhs._prim;
                               }
                               return *this;
                            }
@@ -109,6 +111,8 @@ namespace cycfi::artist::d2d
 
       // Fold any pending free-form sub-path into the geometry generators.
       void                 flatten()           { build_path(); }
+      // True, with `r` set, when the path is exactly one rectangle.
+      bool                 rect_primitive(rect& r) const;
       // Append another path's geometry generators (used by canvas::add_path).
       void                 absorb(path_impl const& other);
 
@@ -172,6 +176,43 @@ namespace cycfi::artist::d2d
       point                _start;
       point                _cp;
       std::vector<path_op> _ops;   // structural log for operator==
+
+      // When the path is exactly one rect, round rect or circle, fill and
+      // stroke use Direct2D's primitive calls instead of realizing a geometry
+      // object: no COM allocation and no CPU tessellation per shape, which is
+      // where a widget scene of thousands of small marks spends its time.
+      struct primitive
+      {
+         enum kind_enum
+         {
+            none, rect_kind, round_rect_kind, circle_kind,
+            move_kind,     // a lone move_to: the start of a possible line
+            line_kind      // move_to then one line_to: a single segment
+         };
+         kind_enum   kind = none;
+         rect        r;
+         float       radius = 0;
+         circle      c;
+         point       p0, p1;
+      };
+      primitive            _prim;
+
+      bool                 single_primitive() const
+                           {
+                              return (_prim.kind == primitive::rect_kind
+                                 || _prim.kind == primitive::round_rect_kind
+                                 || _prim.kind == primitive::circle_kind)
+                                 && _geometry_gens.size() == 1
+                                 && _path_gens.empty();
+                           }
+
+      // A single segment still sitting in the path generators (before
+      // build_path folds it into a geometry).
+      bool                 single_line() const
+                           {
+                              return _prim.kind == primitive::line_kind
+                                 && _geometry_gens.empty();
+                           }
    };
 
    ////////////////////////////////////////////////////////////////////////////
@@ -205,6 +246,15 @@ namespace cycfi::artist::d2d
       return _geometry_gens.empty() && _path_gens.empty();
    }
 
+   inline bool path_impl::rect_primitive(rect& r) const
+   {
+      if (_prim.kind != primitive::rect_kind
+         || _geometry_gens.size() != 1 || !_path_gens.empty())
+         return false;
+      r = _prim.r;
+      return true;
+   }
+
    inline void path_impl::add_gen(geometry_gen&& gen)
    {
       _geometry_gens.emplace_back(std::move(gen));
@@ -213,20 +263,30 @@ namespace cycfi::artist::d2d
 
    inline void path_impl::add(rect r)
    {
+      bool first = empty();
       _ops.push_back({path_op::rect_op, {r.left, r.top, r.right, r.bottom, 0, 0}});
       add_gen([=](auto){ return make_rect(r); });
+      _prim.kind = first? primitive::rect_kind : primitive::none;
+      _prim.r = r;
    }
 
    inline void path_impl::add(rect r, float radius)
    {
+      bool first = empty();
       _ops.push_back({path_op::round_rect_op, {r.left, r.top, r.right, r.bottom, radius, 0}});
       add_gen([=](auto){ return make_round_rect(r, radius); });
+      _prim.kind = first? primitive::round_rect_kind : primitive::none;
+      _prim.r = r;
+      _prim.radius = radius;
    }
 
    inline void path_impl::add(circle c)
    {
+      bool first = empty();
       _ops.push_back({path_op::circle_op, {c.cx, c.cy, c.radius, 0, 0, 0}});
       add_gen([=](auto){ return make_circle(c); });
+      _prim.kind = first? primitive::circle_kind : primitive::none;
+      _prim.c = c;
    }
 
    inline void path_impl::fill_rule(fill_mode mode)

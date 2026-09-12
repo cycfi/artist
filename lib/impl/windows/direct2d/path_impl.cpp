@@ -9,6 +9,7 @@
 =============================================================================*/
 #include "path_impl.hpp"
 #include <infra/support.hpp>   // pi
+#include <algorithm>
 #include <cmath>
 
 namespace cycfi::artist::d2d
@@ -47,6 +48,7 @@ namespace cycfi::artist::d2d
       _path_gens.clear();
       _path_gens_state = path_ended;
       _ops.clear();
+      _prim.kind = primitive::none;
    }
 
    void path_impl::absorb(path_impl const& other)
@@ -56,6 +58,7 @@ namespace cycfi::artist::d2d
       for (auto const& g : other._geometry_gens)
          _geometry_gens.push_back(g);
       release(_fill_geometry);
+      _prim.kind = primitive::none;
    }
 
    void path_impl::fill(render_target& target, brush* paint, bool preserve)
@@ -63,7 +66,31 @@ namespace cycfi::artist::d2d
       build_path();
       if (!empty())
       {
-         target.FillGeometry(compute_fill(), paint, nullptr);
+         if (single_primitive())
+         {
+            auto const& p = _prim;
+            switch (p.kind)
+            {
+               case primitive::rect_kind:
+                  target.FillRectangle(
+                     {p.r.left, p.r.top, p.r.right, p.r.bottom}, paint);
+                  break;
+               case primitive::round_rect_kind:
+                  target.FillRoundedRectangle(
+                     {{p.r.left, p.r.top, p.r.right, p.r.bottom}, p.radius, p.radius},
+                     paint);
+                  break;
+               case primitive::circle_kind:
+                  target.FillEllipse({{p.c.cx, p.c.cy}, p.c.radius, p.c.radius}, paint);
+                  break;
+               default:
+                  break;
+            }
+         }
+         else
+         {
+            target.FillGeometry(compute_fill(), paint, nullptr);
+         }
          if (!preserve)
             clear();
       }
@@ -77,12 +104,49 @@ namespace cycfi::artist::d2d
     , stroke_style* stroke_style
    )
    {
+      if (single_line())
+      {
+         // One segment (a tick mark, a divider): DrawLine, no geometry.
+         target.DrawLine(
+            {_prim.p0.x, _prim.p0.y}, {_prim.p1.x, _prim.p1.y},
+            paint, line_width, stroke_style);
+         if (!preserve)
+            clear();
+         return;
+      }
       build_path();
       if (!empty())
       {
-         compute_geometries(stroke_mode);
-         for (auto geom : _geometries)
-            target.DrawGeometry(geom, paint, line_width, stroke_style);
+         if (single_primitive())
+         {
+            auto const& p = _prim;
+            switch (p.kind)
+            {
+               case primitive::rect_kind:
+                  target.DrawRectangle(
+                     {p.r.left, p.r.top, p.r.right, p.r.bottom},
+                     paint, line_width, stroke_style);
+                  break;
+               case primitive::round_rect_kind:
+                  target.DrawRoundedRectangle(
+                     {{p.r.left, p.r.top, p.r.right, p.r.bottom}, p.radius, p.radius},
+                     paint, line_width, stroke_style);
+                  break;
+               case primitive::circle_kind:
+                  target.DrawEllipse(
+                     {{p.c.cx, p.c.cy}, p.c.radius, p.c.radius},
+                     paint, line_width, stroke_style);
+                  break;
+               default:
+                  break;
+            }
+         }
+         else
+         {
+            compute_geometries(stroke_mode);
+            for (auto geom : _geometries)
+               target.DrawGeometry(geom, paint, line_width, stroke_style);
+         }
          if (!preserve)
             clear();
       }
@@ -99,6 +163,20 @@ namespace cycfi::artist::d2d
 
    rect path_impl::fill_bounds()
    {
+      if (single_line())
+      {
+         auto const& p = _prim;
+         return {std::min(p.p0.x, p.p1.x), std::min(p.p0.y, p.p1.y),
+                 std::max(p.p0.x, p.p1.x), std::max(p.p0.y, p.p1.y)};
+      }
+      if (single_primitive())
+      {
+         auto const& p = _prim;
+         if (p.kind == primitive::circle_kind)
+            return {p.c.cx - p.c.radius, p.c.cy - p.c.radius,
+                    p.c.cx + p.c.radius, p.c.cy + p.c.radius};
+         return p.r;
+      }
       rectf d2d_bounds{};
       build_path();
       if (!empty())
@@ -114,6 +192,15 @@ namespace cycfi::artist::d2d
     , stroke_style* stroke_style
    )
    {
+      if (single_line() || single_primitive())
+      {
+         // Widen analytically; a miter can extend further, but these bounds
+         // only size the intermediate for composite modes and blur, which
+         // the callers already pad.
+         auto b = fill_bounds();
+         auto half = line_width / 2;
+         return {b.left - half, b.top - half, b.right + half, b.bottom + half};
+      }
       rectf d2d_bounds{};
       build_path();
       if (!empty())
@@ -138,6 +225,9 @@ namespace cycfi::artist::d2d
 
    void path_impl::end_path(bool close)
    {
+      // Closing a lone segment makes it a figure, not a line.
+      if (close)
+         _prim.kind = primitive::none;
       _path_gens_state = path_ended;
       _path_gens.push_back(
          [close](geometry_sink* sink, render_mode /*mode*/)
@@ -152,6 +242,8 @@ namespace cycfi::artist::d2d
    void path_impl::move_to(point p)
    {
       _ops.push_back({path_op::move_op, {p.x, p.y, 0, 0, 0, 0}});
+      _prim.kind = empty()? primitive::move_kind : primitive::none;
+      _prim.p0 = p;
       close_sub_path_if_open();
       _path_gens_state = path_started;
       _path_gens.push_back(
@@ -173,6 +265,13 @@ namespace cycfi::artist::d2d
          move_to(p);
          return;
       }
+      if (_prim.kind == primitive::move_kind)
+      {
+         _prim.kind = primitive::line_kind;
+         _prim.p1 = p;
+      }
+      else
+         _prim.kind = primitive::none;
       _path_gens.push_back(
          [p](geometry_sink* sink, render_mode /*mode*/)
          {
@@ -190,6 +289,7 @@ namespace cycfi::artist::d2d
    {
       _ops.push_back({path_op::arc_op,
          {p.x, p.y, radius, start_angle, end_angle, ccw? 1.0f : 0.0f}});
+      _prim.kind = primitive::none;
       // A non-positive radius is a degenerate corner (callers pass e.g. -1 to
       // mean "sharp"). A D2D arc segment with a <=0 size is invalid and fails
       // GeometrySink::Close, so collapse it to a point.
@@ -280,6 +380,7 @@ namespace cycfi::artist::d2d
    void path_impl::quadratic_curve_to(point cp, point end)
    {
       _ops.push_back({path_op::quad_op, {cp.x, cp.y, end.x, end.y, 0, 0}});
+      _prim.kind = primitive::none;
       if (_path_gens_state == path_ended)
          move_to({cp.x, cp.y});
 
@@ -299,6 +400,7 @@ namespace cycfi::artist::d2d
    void path_impl::bezier_curve_to(point cp1, point cp2, point end)
    {
       _ops.push_back({path_op::bezier_op, {cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y}});
+      _prim.kind = primitive::none;
       if (_path_gens_state == path_ended)
          move_to({cp1.x, cp1.y});
 

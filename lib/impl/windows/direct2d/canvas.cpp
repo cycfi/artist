@@ -18,6 +18,7 @@
 #include <variant>
 #include <stack>
 #include <vector>
+#include <algorithm>
 #include <cmath>
 
 namespace cycfi::artist
@@ -196,21 +197,47 @@ namespace cycfi::artist
                               release(geo);
                               return;
                            }
+                           // The layer is sized to the clip geometry, not the
+                           // target: an InfiniteRect content bound allocates
+                           // and composites a full-target surface per clip.
+                           rectf bounds{};
+                           geo->GetBounds(nullptr, &bounds);
+
+                           // A device context manages its own layer surfaces
+                           // (PushLayer with no ID2D1Layer), which is cheaper
+                           // than creating one per clip. Older targets need
+                           // the explicit layer.
                            ID2D1Layer* layer = nullptr;
-                           if (FAILED(_rt->CreateLayer(nullptr, &layer)) || !layer)
+                           device_context* dc = nullptr;
+                           if (FAILED(_rt->QueryInterface(&dc)) || !dc)
                            {
-                              release(geo);
-                              return;
+                              if (FAILED(_rt->CreateLayer(nullptr, &layer)) || !layer)
+                              {
+                                 release(geo);
+                                 return;
+                              }
                            }
+                           release(dc);
                            _rt->SetTransform(current().matrix);
                            _rt->PushLayer(
                               D2D1::LayerParameters(
-                                 D2D1::InfiniteRect(), geo,
+                                 bounds, geo,
                                  D2D1_ANTIALIAS_MODE_PER_PRIMITIVE,
                                  D2D1::IdentityMatrix(), 1.0f, nullptr,
                                  D2D1_LAYER_OPTIONS_NONE),
                               layer);
-                           _clips.push_back({layer, geo});
+                           _clips.push_back({layer, geo, false});
+                        }
+      // An axis-aligned rectangle clip needs no layer at all.
+      void              do_clip(artist::rect const& r)
+                        {
+                           if (!_rt)
+                              return;
+                           _rt->SetTransform(current().matrix);
+                           _rt->PushAxisAlignedClip(
+                              {r.left, r.top, r.right, r.bottom},
+                              D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+                           _clips.push_back({nullptr, nullptr, true});
                         }
       std::size_t       clip_count() const             { return _clips.size(); }
       void              pop_clips_to(std::size_t depth)
@@ -220,7 +247,12 @@ namespace cycfi::artist
                               auto c = _clips.back();
                               _clips.pop_back();
                               if (_rt)
-                                 _rt->PopLayer();
+                              {
+                                 if (c.axis_aligned)
+                                    _rt->PopAxisAlignedClip();
+                                 else
+                                    _rt->PopLayer();
+                              }
                               release(c.layer);
                               release(c.geo);
                            }
@@ -228,7 +260,7 @@ namespace cycfi::artist
 
    private:
 
-      struct clip_t { ID2D1Layer* layer; geometry* geo; };
+      struct clip_t { ID2D1Layer* layer; geometry* geo; bool axis_aligned; };
 
       std::stack<info>  _stack;
       artist::path      _path;
@@ -237,6 +269,29 @@ namespace cycfi::artist
 
       brush*            _fill_paint = nullptr;     // lazy, derived from fill_info
       brush*            _stroke_paint = nullptr;   // lazy, derived from stroke_info
+      bool              _fill_solid = false;       // _fill_paint is a solid brush
+      bool              _stroke_solid = false;     // _stroke_paint is a solid brush
+      bool              _fill_stale = false;       // info changed under the brush (restore)
+      bool              _stroke_stale = false;
+
+      // Gradient brushes, keyed by their colour stops. A gradient brush is a
+      // stop collection plus a brush, two device objects per creation, and
+      // widgets create the same few theme gradients over and over. The stops
+      // are what cost; the geometry (points, radii) is set on the cached
+      // brush. Small and most-recent-first, so lookups stay cheap.
+      struct gradient_entry
+      {
+         std::vector<color_stop> stops;
+         bool                    linear;
+         brush*                  paint;
+         render_target*          owner;
+      };
+      std::vector<gradient_entry> _gradients;
+      brush*            gradient_paint(paint_info const& info, render_target& target);
+      void              clear_gradients();
+      line_cap_enum     _style_cap = line_cap_enum::butt;   // what _stroke_style was built from
+      join_enum         _style_join = join_enum::miter_join;
+      float             _style_miter = 10;
       d2d::stroke_style*_stroke_style = nullptr;   // lazy, derived from cap/join/miter
    };
 
@@ -251,6 +306,72 @@ namespace cycfi::artist
       release(_fill_paint);
       release(_stroke_paint);
       release(_stroke_style);
+      clear_gradients();
+   }
+
+   void canvas::canvas_state::clear_gradients()
+   {
+      for (auto& g : _gradients)
+         release(g.paint);
+      _gradients.clear();
+   }
+
+   brush* canvas::canvas_state::gradient_paint(paint_info const& info, render_target& target)
+   {
+      auto const* lg = std::get_if<canvas::linear_gradient>(&info);
+      auto const* rg = std::get_if<canvas::radial_gradient>(&info);
+      auto const& stops = lg? lg->color_space : rg->color_space;
+      bool linear = lg != nullptr;
+
+      auto same = [&](gradient_entry const& e)
+      {
+         if (e.owner != &target || e.linear != linear || e.stops.size() != stops.size())
+            return false;
+         for (std::size_t i = 0; i != stops.size(); ++i)
+            if (e.stops[i].offset != stops[i].offset
+               || e.stops[i].color.red != stops[i].color.red
+               || e.stops[i].color.green != stops[i].color.green
+               || e.stops[i].color.blue != stops[i].color.blue
+               || e.stops[i].color.alpha != stops[i].color.alpha)
+               return false;
+         return true;
+      };
+
+      auto it = std::find_if(_gradients.begin(), _gradients.end(), same);
+      if (it == _gradients.end())
+      {
+         constexpr std::size_t cap = 16;
+         if (_gradients.size() == cap)
+         {
+            release(_gradients.back().paint);
+            _gradients.pop_back();
+         }
+         auto paint = lg? make_paint(*lg, target) : make_paint(*rg, target);
+         _gradients.insert(_gradients.begin(), {stops, linear, paint, &target});
+         it = _gradients.begin();
+      }
+      else if (it != _gradients.begin())
+      {
+         std::rotate(_gradients.begin(), it, it + 1);   // most recent first
+         it = _gradients.begin();
+      }
+
+      if (lg)
+      {
+         auto b = static_cast<linear_gradient_brush*>(it->paint);
+         b->SetStartPoint(D2D1::Point2F(lg->start.x, lg->start.y));
+         b->SetEndPoint(D2D1::Point2F(lg->end.x, lg->end.y));
+      }
+      else
+      {
+         auto b = static_cast<radial_gradient_brush*>(it->paint);
+         b->SetCenter(D2D1::Point2F(rg->c2.x, rg->c2.y));
+         b->SetGradientOriginOffset(D2D1::Point2F(rg->c1.x - rg->c2.x, rg->c1.y - rg->c2.y));
+         b->SetRadiusX(rg->c2_radius);
+         b->SetRadiusY(rg->c2_radius);
+      }
+      it->paint->AddRef();   // the caller's _fill_paint/_stroke_paint holds its own ref
+      return it->paint;
    }
 
    void canvas::canvas_state::update(render_target& /*target*/)
@@ -265,6 +386,7 @@ namespace cycfi::artist
       release(_fill_paint);
       release(_stroke_paint);
       release(_stroke_style);
+      clear_gradients();
    }
 
    void canvas::canvas_state::save()
@@ -280,46 +402,90 @@ namespace cycfi::artist
       {
          pop_clips_to(_stack.top().clip_depth);   // drop clips added this level
          _stack.pop();
-         // Derived resources depend on the (now restored) info; rebuild lazily.
-         release(_fill_paint);
-         release(_stroke_paint);
-         release(_stroke_style);
+         // Derived resources depend on the (now restored) info. They are kept
+         // and checked against it on next use rather than rebuilt: every
+         // widget saves and restores, so releasing here would recreate a
+         // brush and a stroke style per widget.
+         _fill_stale = _stroke_stale = true;
       }
+   }
+
+   // A solid brush takes a new colour in place. Widgets change fill and stroke
+   // colours before nearly every shape, and creating a brush per change is a
+   // COM allocation each time; recolouring the one we have is not.
+   static bool recolor(brush* paint, bool solid, color const* c)
+   {
+      if (!paint || !solid || !c)
+         return false;
+      static_cast<solid_color_brush*>(paint)->SetColor(
+         D2D1::ColorF(c->red, c->green, c->blue, c->alpha));
+      return true;
    }
 
    void canvas::canvas_state::set_fill(paint_info const& info)
    {
       current().fill_info = info;
-      release(_fill_paint);
+      if (!recolor(_fill_paint, _fill_solid, std::get_if<color>(&info)))
+         release(_fill_paint);
    }
 
    void canvas::canvas_state::set_stroke(paint_info const& info)
    {
       current().stroke_info = info;
-      release(_stroke_paint);
+      if (!recolor(_stroke_paint, _stroke_solid, std::get_if<color>(&info)))
+         release(_stroke_paint);
    }
 
    brush* canvas::canvas_state::fill_paint(render_target& target)
    {
+      if (_fill_stale)
+      {
+         _fill_stale = false;
+         if (!recolor(_fill_paint, _fill_solid, std::get_if<color>(&current().fill_info)))
+            release(_fill_paint);
+      }
       if (!_fill_paint)
-         _fill_paint = std::visit(
-            [&](auto const& i){ return make_paint(i, target); }, current().fill_info);
+      {
+         auto const& info = current().fill_info;
+         _fill_solid = std::holds_alternative<color>(info);
+         _fill_paint = _fill_solid?
+            make_paint(std::get<color>(info), target) : gradient_paint(info, target);
+      }
       return _fill_paint;
    }
 
    brush* canvas::canvas_state::stroke_paint(render_target& target)
    {
+      if (_stroke_stale)
+      {
+         _stroke_stale = false;
+         if (!recolor(_stroke_paint, _stroke_solid, std::get_if<color>(&current().stroke_info)))
+            release(_stroke_paint);
+      }
       if (!_stroke_paint)
-         _stroke_paint = std::visit(
-            [&](auto const& i){ return make_paint(i, target); }, current().stroke_info);
+      {
+         auto const& info = current().stroke_info;
+         _stroke_solid = std::holds_alternative<color>(info);
+         _stroke_paint = _stroke_solid?
+            make_paint(std::get<color>(info), target) : gradient_paint(info, target);
+      }
       return _stroke_paint;
    }
 
    d2d::stroke_style* canvas::canvas_state::stroke_style_obj()
    {
+      // Rebuilt only when cap, join or miter limit actually changed.
+      auto const& c = current();
+      if (_stroke_style
+         && (_style_cap != c.line_cap || _style_join != c.join || _style_miter != c.miter_limit))
+         release(_stroke_style);
       if (!_stroke_style)
-         _stroke_style = make_stroke_style(
-            current().line_cap, current().join, current().miter_limit);
+      {
+         _stroke_style = make_stroke_style(c.line_cap, c.join, c.miter_limit);
+         _style_cap = c.line_cap;
+         _style_join = c.join;
+         _style_miter = c.miter_limit;
+      }
       return _stroke_style;
    }
 
@@ -536,7 +702,12 @@ namespace cycfi::artist
          adjust_for_blur(bounds);
          apply_blur(ctx, bounds, render);   // leaves the transform at identity
       }
-      auto bounds = _path.impl()->fill_bounds();
+      // Bounds are only for the composite intermediate; source-over draws
+      // straight to the target, and computing them realizes the geometry,
+      // which for a plain shape costs more than drawing it.
+      artist::rect bounds;
+      if (current().composite != canvas::source_over)
+         bounds = _path.impl()->fill_bounds();
       composite_draw(ctx, bounds,
          [this, preserve](render_target* t)
          { _path.impl()->fill(*t, fill_paint(*t), preserve); });
@@ -555,7 +726,9 @@ namespace cycfi::artist
          adjust_for_blur(bounds);
          apply_blur(ctx, bounds, render);   // leaves the transform at identity
       }
-      auto bounds = _path.impl()->stroke_bounds(lw, ss);
+      artist::rect bounds;
+      if (current().composite != canvas::source_over)
+         bounds = _path.impl()->stroke_bounds(lw, ss);
       composite_draw(ctx, bounds,
          [this, lw, ss, preserve](render_target* t)
          { _path.impl()->stroke(*t, stroke_paint(*t), lw, preserve, ss); });
@@ -686,6 +859,17 @@ namespace cycfi::artist
 
    void canvas::clip()
    {
+      // A single rectangle under a transform without rotation or skew clips
+      // axis-aligned: no geometry, no layer.
+      artist::rect r;
+      auto const& m = _state->current().matrix;
+      if (m._12 == 0 && m._21 == 0 && _state->path().impl()->rect_primitive(r))
+      {
+         _state->do_clip(r);
+         _state->path().impl()->clear();
+         return;
+      }
+
       bool owned = false;
       auto geo = _state->path().impl()->realize_fill(owned);
       // clip() consumes the current path (matches the other backends' detach);
@@ -1032,8 +1216,7 @@ namespace cycfi::artist
    // Pixmaps
    void canvas::draw(image const& pic, rect const& src, rect const& dest)
    {
-      auto wic = d2d::wic_bitmap(pic);
-      if (!_context->target() || !wic)
+      if (!_context->target())
          return;
 
       // src is in the image's own units; the bitmap source rectangle is in
@@ -1043,8 +1226,10 @@ namespace cycfi::artist
       _state->composite_draw(*_context, dest,
          [&](render_target* t)
          {
-            ID2D1Bitmap* bm = nullptr;
-            if (FAILED(t->CreateBitmapFromWicBitmap(wic, &bm)) || !bm)
+            // The device bitmap is cached on the image (see image_bitmap), so
+            // a photo drawn every frame is uploaded once, not every frame.
+            auto bm = d2d::image_bitmap(pic, *t);
+            if (!bm)
                return;
             t->DrawBitmap(
                bm,
@@ -1053,7 +1238,6 @@ namespace cycfi::artist
                D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,
                D2D1::RectF(src.left * sc, src.top * sc, src.right * sc, src.bottom * sc)
             );
-            release(bm);
          });
    }
 }
