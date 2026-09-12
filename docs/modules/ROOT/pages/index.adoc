@@ -45,7 +45,7 @@ include::../nav.adoc[]
 
 == The Author
 
-image:joel.jpg[alt="Joel de Guzman", width=150, role=left] Joel got into
+image:joel.jpg[alt="Joel de Guzman", width=150, role=right] Joel got into
 electronics and programming in the 80s because almost everything in music,
 his first love, is becoming electronic and digital. Since then, he builds his
 own guitars, effect boxes and synths. He enjoys playing distortion-laden rock
