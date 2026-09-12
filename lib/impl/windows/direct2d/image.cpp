@@ -27,6 +27,10 @@ namespace cycfi::artist
 
       IWICBitmap*       bitmap = nullptr;
       IWICBitmapLock*   _lock = nullptr;   // held for the lifetime once pixels() is called
+
+      // The bitmap is allocated at size * scale pixels. size() reports logical
+      // units, bitmap_size() reports pixels, and this is the ratio between them.
+      float             scale = 1.0f;
    };
 
    namespace
@@ -44,11 +48,14 @@ namespace cycfi::artist
       }
    }
 
-   image::image(extent size)
+   image::image(extent size, float scale)
     : _impl(new image_impl)
    {
+      float const w = size.x * scale;
+      float const h = size.y * scale;
       _impl->bitmap = make_wic_bitmap(
-         UINT(size.x < 1? 1 : size.x), UINT(size.y < 1? 1 : size.y));
+         UINT(w < 1? 1 : w + 0.5f), UINT(h < 1? 1 : h + 0.5f));
+      _impl->scale = scale;
    }
 
    image::image(fs::path const& path_)
@@ -126,16 +133,25 @@ namespace cycfi::artist
 
    extent image::size() const
    {
+      // Logical units: the pixel dimensions divided by the device scale.
+      auto const px = bitmap_size();
+      auto const sc = scale();
+      return {px.x / sc, px.y / sc};
+   }
+
+   float image::scale() const
+   {
+      return (_impl && _impl->scale > 0)? _impl->scale : 1.0f;
+   }
+
+   extent image::bitmap_size() const
+   {
+      // Physical pixel dimensions, always.
       if (!_impl || !_impl->bitmap)
          return {};
       UINT w = 0, h = 0;
       _impl->bitmap->GetSize(&w, &h);
       return {float(w), float(h)};
-   }
-
-   extent image::bitmap_size() const
-   {
-      return size();
    }
 
    uint32_t* image::pixels()
@@ -227,6 +243,16 @@ namespace cycfi::artist
       );
       if (!SUCCEEDED(hr))
          throw std::runtime_error{"Error: CreateWicBitmapRenderTarget failed."};
+
+      // The bitmap is allocated at size * scale pixels, so the target has to
+      // interpret drawing in logical units. Direct2D maps DIPs to pixels by
+      // DPI, so a DPI of 96 * scale is the equivalent of Cairo's device scale.
+      // It is not part of the transform stack, so canvas transforms do not
+      // clobber it.
+      float const sc = img.scale();
+      if (sc > 0 && sc != 1.0f)
+         _state->rt->SetDpi(96.0f * sc, 96.0f * sc);
+
       _state->ctx.target(_state->rt);
       _state->rt->BeginDraw();
    }

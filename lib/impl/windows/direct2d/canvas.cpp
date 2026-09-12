@@ -1014,6 +1014,10 @@ namespace cycfi::artist
       if (!_context->target() || !wic)
          return;
 
+      // src is in the image's own units; the bitmap source rectangle is in
+      // pixels, so a scaled image needs it scaled too.
+      auto sc = pic.scale();
+
       _state->composite_draw(*_context, dest,
          [&](render_target* t)
          {
@@ -1025,7 +1029,7 @@ namespace cycfi::artist
                D2D1::RectF(dest.left, dest.top, dest.right, dest.bottom),
                1.0f,
                D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,
-               D2D1::RectF(src.left, src.top, src.right, src.bottom)
+               D2D1::RectF(src.left * sc, src.top * sc, src.right * sc, src.bottom * sc)
             );
             release(bm);
          });
