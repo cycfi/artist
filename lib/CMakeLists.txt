@@ -33,15 +33,13 @@ if (WIN32)
          NOMINMAX
          _UNICODE
    )
-   if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
-      set_property(TARGET libunibreak PROPERTY
-         MSVC_RUNTIME_LIBRARY "MultiThreadedDebug"
-      )
-   else()
-      set_property(TARGET libunibreak PROPERTY
-         MSVC_RUNTIME_LIBRARY "MultiThreaded"
-      )
-   endif()
+   # Follow the configuration being built. CMAKE_BUILD_TYPE is empty for
+   # multi-config generators, and keying off the compiler picked the debug CRT
+   # for clang-cl even in Release, which mismatched artist and elements on
+   # _ITERATOR_DEBUG_LEVEL and failed the link.
+   set_property(TARGET libunibreak PROPERTY
+      MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+   )
 endif()
 
 if (ARTIST_SKIA)
@@ -411,15 +409,13 @@ elseif (WIN32)
          NOMINMAX
          _UNICODE
    )
-   if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
+      # Follow the configuration being built. CMAKE_BUILD_TYPE is empty for
+      # multi-config generators, and keying off the compiler picked the debug
+      # CRT for clang-cl even in Release, which mismatched artist and elements
+      # on _ITERATOR_DEBUG_LEVEL and failed the link.
       set_property(TARGET artist PROPERTY
-         MSVC_RUNTIME_LIBRARY "MultiThreaded"
+         MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
       )
-   else()
-      set_property(TARGET artist PROPERTY
-         MSVC_RUNTIME_LIBRARY "MultiThreadedDebug"
-      )
-   endif()
 
 
 endif()
