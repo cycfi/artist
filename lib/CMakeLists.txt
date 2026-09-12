@@ -454,8 +454,11 @@ if (ARTIST_SKIA)
       # exported static copy of a different version interposes on it, crashing
       # in Pango shaping when a widget is realized. This has to be a link
       # option, not a link library, so it precedes the archives on the command
-      # line.
-      target_link_options(artist INTERFACE "LINKER:--exclude-libs,libharfbuzz.a")
+      # line. ELF only: symbol interposition is not a thing on Windows, and
+      # link.exe would read the flag as an input file name.
+      if (NOT MSVC)
+         target_link_options(artist INTERFACE "LINKER:--exclude-libs,libharfbuzz.a")
+      endif()
    endif()
 endif()
 
