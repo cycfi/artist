@@ -21,6 +21,7 @@
 #include <context.hpp>          // d2d::context, get_factory (backend impl header)
 #include <stdexcept>
 #include <chrono>
+#include <cstdlib>
 
 using namespace cycfi::artist;
 namespace d2d = cycfi::artist::d2d;
@@ -75,9 +76,14 @@ bool window::create_target()
       96.0f * _scale, 96.0f * _scale
    );
 
+   // When measuring (ARTIST_PERF), EndDraw must not wait for the vblank, or
+   // every frame is quantised to the display rate and the render cost is lost.
+   auto present = std::getenv("ARTIST_PERF")?
+      D2D1_PRESENT_OPTIONS_IMMEDIATELY : D2D1_PRESENT_OPTIONS_NONE;
+
    auto hr = d2d::get_factory().CreateHwndRenderTarget(
       props,
-      D2D1::HwndRenderTargetProperties(_wnd, px),
+      D2D1::HwndRenderTargetProperties(_wnd, px, present),
       &_target
    );
    return SUCCEEDED(hr);
@@ -94,16 +100,19 @@ void window::render(HWND hwnd)
       _target->SetTransform(D2D1::Matrix3x2F::Identity());
       _target->Clear(D2D1::ColorF(_bkd.red, _bkd.green, _bkd.blue, _bkd.alpha));
 
+      // Direct2D batches drawing until EndDraw, so the render time has to
+      // include it, or the number is the cost of recording commands, not of
+      // rendering them.
       auto start = std::chrono::steady_clock::now();
       {
          d2d::context ctx{_target};
          auto cnv = canvas{&ctx};
          draw(cnv);
       }
+      auto hr = _target->EndDraw();
       auto stop = std::chrono::steady_clock::now();
       elapsed_ = std::chrono::duration<double>{stop - start}.count();
 
-      auto hr = _target->EndDraw();
       if (hr == D2DERR_RECREATE_TARGET)
       {
          // Device loss: drop the device-dependent target; the next WM_PAINT
