@@ -194,311 +194,311 @@
 <h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The transform maps the coordinates you draw in, called user space, onto
-the coordinates of the surface, called device space. <code>translate</code>,
-<code>rotate</code>, <code>scale</code> and <code>skew</code> compose, each applying on top of the
-transform already in effect, while <code>transform</code> replaces it outright.</p>
+<p>The transform maps the coordinates you draw in, user space, onto the
+coordinates of the surface, device space. <code>translate</code>, <code>rotate</code>, <code>scale</code>
+and <code>skew</code> compose: each applies on top of the transform already in
+effect. <code>transform</code> instead reads or replaces the matrix outright.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/transforms.png"><img src="../_images/canvas/transforms.png" alt="The four composing transforms" width="560px"></a>
+</div>
+<div class="title">Figure 1. Each operation applied to the same square, which is drawn once by the same call. The outline is where it lands with no transform.</div>
+</div>
+<div class="paragraph">
+<p>Angles are in radians, and Artist&#8217;s y axis grows downward, so a positive
+angle turns clockwise on screen. Rotation, scaling and skewing are about
+the origin of user space, not the centre of what you are drawing: translate
+first to work about another point, as the <a href="#_example">Example</a> does.</p>
+</div>
+<div class="paragraph">
+<p>The transform is part of the canvas state, so <code>save</code> and <code>restore</code>, under
+<a href="states.html" class="xref page">States</a>, put back the one that was in effect.</p>
+</div>
+<div class="paragraph">
+<p>A canvas may already carry a transform when you get it: a host window can
+set one for its drawing area, and a canvas over an
+<a href="../foundation/image.html" class="xref page">image</a> carries that image&#8217;s scale.
+<code>user_to_device</code> and <code>device_to_user</code> are relative to it, so what you get
+back does not depend on what the host or the image set up.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_translate"><a class="anchor" href="#_translate"></a>translate</h2>
+<h2 id="_include"><a class="anchor" href="#_include"></a>Include</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>Moves the origin of user space.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;</code></pre>
 </div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">      void              translate(point p);
+      void              rotate(float rad);
+      void              scale(point p);
+      void              skew(double sx, double sy);
+      point             device_to_user(point p);
+      point             user_to_device(point p);
+
+      void              translate(float x, float y);
+      void              scale(float xy);
+      void              scale(float x, float y);
+      point             device_to_user(float x, float y);
+      point             user_to_device(float x, float y);
+
+      affine_transform  transform() const;
+      void              transform(affine_transform const&amp; mat);
+      void              transform(double a, double b, double c, double d, double tx, double ty);</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
+<div class="sectionbody">
 <div class="sect2">
 <h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
 <div class="dlist">
 <dl>
-<dt class="hdlist1"><code>p</code></dt>
+<dt class="hdlist1"><code>cnv</code>             </dt>
 <dd>
-<p>Instance of <code>point</code></p>
+<p>Object of type <code>canvas</code>.</p>
 </dd>
-<dt class="hdlist1"><code>x</code>, <code>y</code></dt>
+<dt class="hdlist1"><code>p</code>               </dt>
 <dd>
-<p><code>float</code></p>
+<p>Object of type <code>point</code>.</p>
+</dd>
+<dt class="hdlist1"><code>x</code>, <code>y</code>          </dt>
+<dd>
+<p><code>float</code> coordinates.</p>
+</dd>
+<dt class="hdlist1"><code>xy</code>              </dt>
+<dd>
+<p>A <code>float</code> scale factor for both axes.</p>
+</dd>
+<dt class="hdlist1"><code>rad</code>             </dt>
+<dd>
+<p>A <code>float</code>, an angle in radians.</p>
+</dd>
+<dt class="hdlist1"><code>sx</code>, <code>sy</code>        </dt>
+<dd>
+<p><code>double</code> angles in radians.</p>
+</dd>
+<dt class="hdlist1"><code>mat</code>             </dt>
+<dd>
+<p>Object of type
+                     <a href="../foundation/affine_transform.html" class="xref page">affine_transform</a>.
+<code>a</code>, <code>b</code>, <code>c</code>,</p>
+</dd>
+<dt class="hdlist1"><code>d</code>, <code>tx</code>, <code>ty</code>   </dt>
+<dd>
+<p><code>double</code> members of a transform matrix.</p>
 </dd>
 </dl>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h3>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
-cnv.translate(p)
-
-// variant 2
-cnv.translate(x, y)</code></pre>
+<h3 id="_composition"><a class="anchor" href="#_composition"></a>Composition</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.translate(p)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Move the origin of user space by
+                            <code>p</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.translate(x, y)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">As above, by <code>x</code> and <code>y</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.rotate(rad)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rotate user space about its origin
+                            by <code>rad</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.scale(p)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scale user space by <code>p.x</code> and
+                            <code>p.y</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.scale(xy)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scale both axes by <code>xy</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.scale(x, y)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scale by <code>x</code> and <code>y</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.skew(sx, sy)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Skew user space: <code>sx</code> is the angle
+                            by which y shears with x, and <code>sy</code>
+                            the angle by which x shears with
+                            y.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Each call composes on top of the transform in effect, so the call nearest
+the drawing is the one applied first to it: scaling by 2 and then
+translating by 10 moves by 20 device units. Everything drawn afterwards
+follows the transform, line widths and text included.</p>
 </div>
+<div class="paragraph">
+<p>The angles <code>skew</code> takes are the ones
+<a href="../foundation/affine_transform.html" class="xref page">affine_transform</a> <code>skew</code> and
+<code>make_skew</code> take.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_semantics"><a class="anchor" href="#_semantics"></a>Semantics</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>The origin is moved by <code>p</code> (or <code>x, y</code>).</p>
-</li>
-<li>
-<p>Transforms compose: the move applies on top of the transform already in
-effect.</p>
-</li>
-</ol>
+<h3 id="_conversion"><a class="anchor" href="#_conversion"></a>Conversion</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.user_to_device(p)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Where the user space point
+                                  <code>p</code> lands in device space.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.user_to_device(x, y)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">As above, for the point <code>x</code>,
+                                  <code>y</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.device_to_user(p)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The user space point that the
+                                  device space point <code>p</code> came
+                                  from. This is what a mouse
+                                  position needs.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.device_to_user(x, y)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">As above, for the point <code>x</code>,
+                                  <code>y</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The two are inverses of each other, and both are relative to the transform
+the canvas already carried when it was made.</p>
 </div>
-<hr>
+</div>
+<div class="sect2">
+<h3 id="_the_matrix"><a class="anchor" href="#_the_matrix"></a>The Matrix</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.transform()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The current matrix.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>affine_transform</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.transform(mat)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Replace the current
+                                       matrix with <code>mat</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.transform(a, b, c, d,
+    tx, ty)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Replace it with the six
+                                       members of a matrix.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+These three work on the backend&#8217;s own matrix, not on a matrix
+relative to what the canvas started with, and its value for the same
+drawing state is not the same on every backend. Replacing it therefore
+throws away whatever the host or the image set up, such as a window offset
+or an image&#8217;s scale. Prefer <code>save</code> and <code>restore</code> for putting a transform
+back, and give <code>transform(mat)</code> only a matrix that <code>transform()</code> returned
+from the same canvas.
+</td>
+</tr>
+</table>
+</div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_rotate"><a class="anchor" href="#_rotate"></a>rotate</h2>
+<h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Rotates user space about the origin.</p>
+<p>Rotating a rectangle about its own centre, and putting the transform back
+afterwards:</p>
 </div>
-<div class="sect2">
-<h3 id="_notation_2"><a class="anchor" href="#_notation_2"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>rad</code></dt>
-<dd>
-<p><code>float</code>, an angle in radians</p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_expression"><a class="anchor" href="#_expression"></a>Expression</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">cnv.rotate(rad)</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_semantics_2"><a class="anchor" href="#_semantics_2"></a>Semantics</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>User space is rotated about the origin by <code>rad</code>.</p>
-</li>
-<li>
-<p>Rotation is about the origin, not the centre of what you are drawing.
-Translate first to rotate about some other point.</p>
-</li>
-</ol>
-</div>
-<hr>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_scale"><a class="anchor" href="#_scale"></a>scale</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Scales user space.</p>
-</div>
-<div class="sect2">
-<h3 id="_notation_3"><a class="anchor" href="#_notation_3"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>p</code></dt>
-<dd>
-<p>Instance of <code>point</code></p>
-</dd>
-<dt class="hdlist1"><code>xy</code>, <code>x</code>, <code>y</code></dt>
-<dd>
-<p><code>float</code></p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_expressions_2"><a class="anchor" href="#_expressions_2"></a>Expressions</h3>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
-cnv.scale(p)
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   auto state = cnv.new_state();
 
-// variant 2
-cnv.scale(xy)
+   cnv.translate(center.x, center.y);
+   cnv.rotate(pi / 6);
+   cnv.translate(-center.x, -center.y);
 
-// variant 3
-cnv.scale(x, y)</code></pre>
+   cnv.add_rect(r);
+   cnv.fill_style(colors::gold);
+   cnv.fill();</code></pre>
 </div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_semantics_3"><a class="anchor" href="#_semantics_3"></a>Semantics</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>User space is scaled by <code>p</code>, by <code>xy</code> on both axes, or by <code>x</code> and <code>y</code>
-independently.</p>
-</li>
-<li>
-<p>A value greater than 1.0 scales up, a value less than 1.0 scales down.</p>
-</li>
-<li>
-<p>Line widths, fonts and everything else drawn afterwards scale with it.</p>
-</li>
-</ol>
-</div>
-<hr>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_skew"><a class="anchor" href="#_skew"></a>skew</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Skews user space.</p>
-</div>
-<div class="sect2">
-<h3 id="_notation_4"><a class="anchor" href="#_notation_4"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>sx</code>, <code>sy</code></dt>
-<dd>
-<p><code>double</code></p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_expression_2"><a class="anchor" href="#_expression_2"></a>Expression</h3>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">cnv.skew(sx, sy)</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_semantics_4"><a class="anchor" href="#_semantics_4"></a>Semantics</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>User space is skewed by <code>sx</code> in x and <code>sy</code> in y.</p>
-</li>
-</ol>
-</div>
-<hr>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_device_to_user_user_to_device"><a class="anchor" href="#_device_to_user_user_to_device"></a>device_to_user / user_to_device</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Converts a point between the coordinates you draw in (user space) and the
-coordinates of the surface (device space).</p>
-</div>
-<div class="sect2">
-<h3 id="_notation_5"><a class="anchor" href="#_notation_5"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>p</code></dt>
-<dd>
-<p>Instance of <code>point</code></p>
-</dd>
-<dt class="hdlist1"><code>x</code>, <code>y</code></dt>
-<dd>
-<p><code>float</code></p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_expressions_3"><a class="anchor" href="#_expressions_3"></a>Expressions</h3>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
-cnv.device_to_user(p)
-cnv.device_to_user(x, y)
-
-// variant 2
-cnv.user_to_device(p)
-cnv.user_to_device(x, y)</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_semantics_5"><a class="anchor" href="#_semantics_5"></a>Semantics</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Returns the <code>point</code> in user space corresponding to a device space
-point. Useful for a mouse position, which arrives in device space, that has
-to be compared against something you drew.</p>
-</li>
-<li>
-<p>Returns the <code>point</code> in device space corresponding to a user space point.</p>
-</li>
-</ol>
-</div>
-<hr>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_transform"><a class="anchor" href="#_transform"></a>transform</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Gets or replaces the current transform outright.</p>
-</div>
-<div class="sect2">
-<h3 id="_notation_6"><a class="anchor" href="#_notation_6"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>mat</code></dt>
-<dd>
-<p>Instance of <a href="../foundation/affine_transform.html" class="xref page"><code>affine_transform</code></a></p>
-</dd>
-<dt class="hdlist1"><code>a</code>, <code>b</code>, <code>c</code>, <code>d</code>, <code>tx</code>, <code>ty</code></dt>
-<dd>
-<p><code>double</code></p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_expressions_4"><a class="anchor" href="#_expressions_4"></a>Expressions</h3>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
-cnv.transform()
-
-// variant 2
-cnv.transform(mat)
-
-// variant 3
-cnv.transform(a, b, c, d, tx, ty)</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_semantics_6"><a class="anchor" href="#_semantics_6"></a>Semantics</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Returns the current transform as an
-<a href="../foundation/affine_transform.html" class="xref page"><code>affine_transform</code></a>.</p>
-</li>
-<li>
-<p>Replaces the current transform with <code>mat</code>.</p>
-</li>
-<li>
-<p>Replaces the current transform with the six values of a transformation
-matrix.</p>
-</li>
-<li>
-<p>Unlike <code>translate</code>, <code>rotate</code>, <code>scale</code> and <code>skew</code>, which compose, setting
-the transform replaces whatever is in effect.</p>
-</li>
-</ol>
-</div>
-<hr>
 </div>
 </div>
 </div>
