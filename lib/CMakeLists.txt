@@ -49,6 +49,14 @@ if (ARTIST_SKIA)
    ############################################################################
    # Skia dependency
    ############################################################################
+   # The prebuilt bundle ships a debug and a release Skia. An optimized build
+   # must link the release one: the debug Skia is far slower and, because
+   # SkRefCnt is header-inline, mixing it with an NDEBUG consumer is an ODR
+   # mismatch that aborts at runtime. Configurations with no Skia build of
+   # their own fall back to the debug library, so map them to Release.
+   set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO "Release;")
+   set(CMAKE_MAP_IMPORTED_CONFIG_MINSIZEREL "Release;")
+
    # Default (local builds): fetch a prebuilt Skia bundle from R2 and add it to
    # CMAKE_PREFIX_PATH so the find_package(unofficial-skia) calls below resolve
    # it — no Skia compile. No-op under a vcpkg toolchain (vcpkg supplies Skia).
