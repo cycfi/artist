@@ -386,10 +386,15 @@ function(add_example name)
    # an example linked against a shared dependency (libwebp, Skia) dies at
    # startup with 0xC0000135 unless its DLLs are beside it. Copy whatever the
    # linker actually pulled in, rather than naming libraries here.
+   # The target may have no DLLs to copy (vcpkg's Cairo arrives as plain .lib
+   # paths, not imported SHARED targets, and deploys via applocal.ps1). An
+   # empty list would leave `cmake -E copy_if_different <dir>` with no files
+   # and fail the build, so switch the command to a no-op in that case.
    if (WIN32 AND NOT CMAKE_VERSION VERSION_LESS 3.21)
       add_custom_command(
          TARGET ${name} POST_BUILD
-         COMMAND ${CMAKE_COMMAND} -E copy_if_different
+         COMMAND ${CMAKE_COMMAND} -E
+            $<IF:$<BOOL:$<TARGET_RUNTIME_DLLS:${name}>>,copy_if_different,true>
             $<TARGET_RUNTIME_DLLS:${name}> $<TARGET_FILE_DIR:${name}>
          COMMAND_EXPAND_LISTS
       )
