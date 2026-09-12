@@ -599,8 +599,11 @@ namespace cycfi::artist
    void canvas::skew(double sx, double sy)
    {
       auto& m = _state->current().matrix;
+      // sx and sy are angles, as for affine_transform::skew: sx shears y with
+      // x, sy shears x with y. Direct2D's Skew takes degrees, angleX first,
+      // and that one is the shear of x with y.
       auto sk = matrix2x2f::Skew(
-         float(std::atan(sx) * 180 / pi), float(std::atan(sy) * 180 / pi), {0, 0});
+         float(sy * 180 / pi), float(sx * 180 / pi), {0, 0});
       m = sk * m;
    }
 
