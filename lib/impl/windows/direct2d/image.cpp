@@ -11,8 +11,11 @@
 =============================================================================*/
 #include <artist/image.hpp>
 #include "context.hpp"
+#include <cstddef>
+#include <cstring>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace cycfi::artist
 {
@@ -100,16 +103,78 @@ namespace cycfi::artist
          throw std::runtime_error{"Error: Cannot initialize format: INVALID"};
 
       UINT w = UINT(size.x), h = UINT(size.y);
-      // Only rgba32/rgb32 (32bpp) are wired up for now; others land with the
-      // rest of the pixel-format matrix in a later pass.
-      UINT stride = w * 4;
-      UINT buf = stride * h;
-      auto hr = d2d::get_wic_factory().CreateBitmapFromMemory(
-         w, h, GUID_WICPixelFormat32bppPBGRA, stride, buf,
-         const_cast<BYTE*>(data), &_impl->bitmap
-      );
-      if (!SUCCEEDED(hr))
-         throw std::runtime_error{"Error: WIC CreateBitmapFromMemory failed."};
+      std::size_t const n = std::size_t(w) * h;
+
+      // Convert into the backend's own layout: premultiplied B, G, R, A. The
+      // caller's buffer is copied, so it may be reused or destroyed after this.
+      std::vector<uint8_t> px(n * 4);
+      auto put =
+         [&px](std::size_t i, uint32_t r, uint32_t g, uint32_t b, uint32_t a)
+         {
+            auto* d = px.data() + i * 4;
+            d[0] = uint8_t(b);
+            d[1] = uint8_t(g);
+            d[2] = uint8_t(r);
+            d[3] = uint8_t(a);
+         };
+
+      switch (fmt)
+      {
+         case pixel_format::gray8:
+            for (std::size_t i = 0; i != n; ++i)
+            {
+               uint32_t v = data[i];
+               put(i, v, v, v, 255);
+            }
+            break;
+
+         case pixel_format::rgb16:
+            // 5-6-5, red in the top five bits; each channel expanded so that
+            // an all-ones field is 255.
+            for (std::size_t i = 0; i != n; ++i)
+            {
+               uint32_t v = data[i * 2] | (uint32_t(data[i * 2 + 1]) << 8);
+               uint32_t r = (v >> 11) & 0x1F;
+               uint32_t g = (v >> 5) & 0x3F;
+               uint32_t b = v & 0x1F;
+               put(i, (r * 255 + 15) / 31, (g * 255 + 31) / 63, (b * 255 + 15) / 31, 255);
+            }
+            break;
+
+         case pixel_format::rgb32:
+            // R, G, B and an ignored fourth byte: opaque, nothing to scale.
+            for (std::size_t i = 0; i != n; ++i)
+               put(i, data[i * 4], data[i * 4 + 1], data[i * 4 + 2], 255);
+            break;
+
+         default:
+         {
+            // rgba32: straight alpha in, premultiplied out.
+            for (std::size_t i = 0; i != n; ++i)
+            {
+               uint32_t a = data[i * 4 + 3];
+               auto pm = [a](uint32_t c) { return (c * a + 127) / 255; };
+               put(i, pm(data[i * 4]), pm(data[i * 4 + 1]), pm(data[i * 4 + 2]), a);
+            }
+            break;
+         }
+      }
+
+      // Copy into a bitmap WIC owns, row by row: the destination stride is the
+      // bitmap's own, which need not be w * 4.
+      _impl->bitmap = make_wic_bitmap(w, h);
+      WICRect rc{0, 0, INT(w), INT(h)};
+      IWICBitmapLock* lock = nullptr;
+      if (!SUCCEEDED(_impl->bitmap->Lock(&rc, WICBitmapLockWrite, &lock)) || !lock)
+         throw std::runtime_error{"Error: WIC bitmap Lock failed."};
+
+      UINT stride = 0, cb = 0;
+      BYTE* dest = nullptr;
+      lock->GetStride(&stride);
+      lock->GetDataPointer(&cb, &dest);
+      for (UINT y = 0; y != h; ++y)
+         std::memcpy(dest + std::size_t(y) * stride, px.data() + std::size_t(y) * w * 4, w * 4);
+      d2d::release(lock);
    }
 
    image::~image()
