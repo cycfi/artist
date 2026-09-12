@@ -688,7 +688,10 @@ jobs:
       working-directory: lib/external/vcpkg
       run: |
         if (-not (Test-Path ./vcpkg.exe)) { ./bootstrap-vcpkg.bat -disableMetrics }
-        ./vcpkg.exe install libwebp:x64-windows
+        # --classic: vcpkg searches upward and finds the repo's vcpkg.json,
+        # whose Windows dependencies are all core (Skia, Cairo). Manifest mode
+        # would build the lot; classic mode installs just this one port.
+        ./vcpkg.exe install --classic libwebp:x64-windows
         if ($LASTEXITCODE -ne 0) { throw "vcpkg install libwebp failed" }
 
     - name: Configure
