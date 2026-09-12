@@ -5,6 +5,7 @@
 =============================================================================*/
 #include <infra/support.hpp>
 #include <artist/canvas.hpp>
+#include <cmath>
 #include <stack>
 #include "opaque.hpp"
 
@@ -176,7 +177,9 @@ namespace cycfi::artist
 
    void canvas::skew(double sx, double sy)
    {
-      _context->skew(sx, sy);
+      // sx and sy are angles, as for affine_transform::skew: sx shears y
+      // with x, sy shears x with y. SkCanvas::skew takes (xy, yx) factors.
+      _context->skew(std::tan(sy), std::tan(sx));
    }
 
    point canvas::device_to_user(point p)

@@ -149,8 +149,10 @@ namespace cycfi::artist
 
    void canvas::skew(double sx, double sy)
    {
+      // sx and sy are angles, as for affine_transform::skew: sx shears y
+      // with x, sy shears x with y.
       cairo_matrix_t m;
-      cairo_matrix_init(&m, 1.0, sy, sx, 1.0, 0.0, 0.0);
+      cairo_matrix_init(&m, 1.0, std::tan(sx), std::tan(sy), 1.0, 0.0, 0.0);
       cairo_transform(_context, &m);
    }
 
