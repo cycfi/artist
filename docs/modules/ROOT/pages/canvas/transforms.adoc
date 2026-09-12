@@ -2,178 +2,155 @@
 
 == Overview
 
-The transform maps the coordinates you draw in, called user space, onto
-the coordinates of the surface, called device space. `translate`,
-`rotate`, `scale` and `skew` compose, each applying on top of the
-transform already in effect, while `transform` replaces it outright.
+The transform maps the coordinates you draw in, user space, onto the
+coordinates of the surface, device space. `translate`, `rotate`, `scale`
+and `skew` compose: each applies on top of the transform already in
+effect. `transform` instead reads or replaces the matrix outright.
 
-== translate
+image::canvas/transforms.png[alt="The four composing transforms", width=560px, align=center, title="Each operation applied to the same square, which is drawn once by the same call. The outline is where it lands with no transform.", link={imagesdir}/canvas/transforms.png]
 
-Moves the origin of user space.
+Angles are in radians, and Artist's y axis grows downward, so a positive
+angle turns clockwise on screen. Rotation, scaling and skewing are about
+the origin of user space, not the centre of what you are drawing: translate
+first to work about another point, as the <<Example>> does.
 
-=== Notation
+The transform is part of the canvas state, so `save` and `restore`, under
+xref:canvas/states.adoc[States], put back the one that was in effect.
 
-`p`:: Instance of `point`
-`x`, `y`:: `float`
+A canvas may already carry a transform when you get it: a host window can
+set one for its drawing area, and a canvas over an
+xref:foundation/image.adoc[image] carries that image's scale.
+`user_to_device` and `device_to_user` are relative to it, so what you get
+back does not depend on what the host or the image set up.
 
-=== Expressions
+== Include
 
-[,c++]
-----
-// variant 1
-cnv.translate(p)
+```c++
+#include <artist/canvas.hpp>
+```
 
-// variant 2
-cnv.translate(x, y)
-----
+== Declaration
 
-=== Semantics
+```c++
+      void              translate(point p);
+      void              rotate(float rad);
+      void              scale(point p);
+      void              skew(double sx, double sy);
+      point             device_to_user(point p);
+      point             user_to_device(point p);
 
-. The origin is moved by `p` (or `x, y`).
-. Transforms compose: the move applies on top of the transform already in
-effect.
+      void              translate(float x, float y);
+      void              scale(float xy);
+      void              scale(float x, float y);
+      point             device_to_user(float x, float y);
+      point             user_to_device(float x, float y);
 
-'''
+      affine_transform  transform() const;
+      void              transform(affine_transform const& mat);
+      void              transform(double a, double b, double c, double d, double tx, double ty);
+```
 
-== rotate
-
-Rotates user space about the origin.
-
-=== Notation
-
-`rad`:: `float`, an angle in radians
-
-=== Expression
-
-[,c++]
-----
-cnv.rotate(rad)
-----
-
-=== Semantics
-
-. User space is rotated about the origin by `rad`.
-. Rotation is about the origin, not the centre of what you are drawing.
-Translate first to rotate about some other point.
-
-'''
-
-== scale
-
-Scales user space.
+== Expressions
 
 === Notation
 
-`p`:: Instance of `point`
-`xy`, `x`, `y`:: `float`
+`cnv`             :: Object of type `canvas`.
+`p`               :: Object of type `point`.
+`x`, `y`          :: `float` coordinates.
+`xy`              :: A `float` scale factor for both axes.
+`rad`             :: A `float`, an angle in radians.
+`sx`, `sy`        :: `double` angles in radians.
+`mat`             :: Object of type
+                     xref:foundation/affine_transform.adoc[affine_transform].
+`a`, `b`, `c`,
+`d`, `tx`, `ty`   :: `double` members of a transform matrix.
 
-=== Expressions
+=== Composition
 
-[,c++]
-----
-// variant 1
-cnv.scale(p)
+[cols="1,1,1"]
+|===
+| Expression              | Semantics                          | Return Type
 
-// variant 2
-cnv.scale(xy)
+| `cnv.translate(p)`      | Move the origin of user space by
+                            `p`.                               | `void`
+| `cnv.translate(x, y)`   | As above, by `x` and `y`.          | `void`
+| `cnv.rotate(rad)`       | Rotate user space about its origin
+                            by `rad`.                          | `void`
+| `cnv.scale(p)`          | Scale user space by `p.x` and
+                            `p.y`.                             | `void`
+| `cnv.scale(xy)`         | Scale both axes by `xy`.           | `void`
+| `cnv.scale(x, y)`       | Scale by `x` and `y`.              | `void`
+| `cnv.skew(sx, sy)`      | Skew user space: `sx` is the angle
+                            by which y shears with x, and `sy`
+                            the angle by which x shears with
+                            y.                                 | `void`
+|===
 
-// variant 3
-cnv.scale(x, y)
-----
+Each call composes on top of the transform in effect, so the call nearest
+the drawing is the one applied first to it: scaling by 2 and then
+translating by 10 moves by 20 device units. Everything drawn afterwards
+follows the transform, line widths and text included.
 
-=== Semantics
+The angles `skew` takes are the ones
+xref:foundation/affine_transform.adoc[affine_transform] `skew` and
+`make_skew` take.
 
-. User space is scaled by `p`, by `xy` on both axes, or by `x` and `y`
-independently.
-. A value greater than 1.0 scales up, a value less than 1.0 scales down.
-. Line widths, fonts and everything else drawn afterwards scale with it.
+=== Conversion
 
-'''
+[cols="1,1,1"]
+|===
+| Expression                    | Semantics                    | Return Type
 
-== skew
+| `cnv.user_to_device(p)`       | Where the user space point
+                                  `p` lands in device space.   | `point`
+| `cnv.user_to_device(x, y)`    | As above, for the point `x`,
+                                  `y`.                         | `point`
+| `cnv.device_to_user(p)`       | The user space point that the
+                                  device space point `p` came
+                                  from. This is what a mouse
+                                  position needs.              | `point`
+| `cnv.device_to_user(x, y)`    | As above, for the point `x`,
+                                  `y`.                         | `point`
+|===
 
-Skews user space.
+The two are inverses of each other, and both are relative to the transform
+the canvas already carried when it was made.
 
-=== Notation
+=== The Matrix
 
-`sx`, `sy`:: `double`
+[cols="1,1,1"]
+|===
+| Expression                         | Semantics               | Return Type
 
-=== Expression
+| `cnv.transform()`                  | The current matrix.     | `affine_transform`
+| `cnv.transform(mat)`               | Replace the current
+                                       matrix with `mat`.      | `void`
+| `cnv.transform(a, b, c, d,
+    tx, ty)`                          | Replace it with the six
+                                       members of a matrix.    | `void`
+|===
 
-[,c++]
-----
-cnv.skew(sx, sy)
-----
+CAUTION: These three work on the backend's own matrix, not on a matrix
+relative to what the canvas started with, and its value for the same
+drawing state is not the same on every backend. Replacing it therefore
+throws away whatever the host or the image set up, such as a window offset
+or an image's scale. Prefer `save` and `restore` for putting a transform
+back, and give `transform(mat)` only a matrix that `transform()` returned
+from the same canvas.
 
-=== Semantics
+== Example
 
-. User space is skewed by `sx` in x and `sy` in y.
+Rotating a rectangle about its own centre, and putting the transform back
+afterwards:
 
-'''
+```c++
+   auto state = cnv.new_state();
 
-== device_to_user / user_to_device
+   cnv.translate(center.x, center.y);
+   cnv.rotate(pi / 6);
+   cnv.translate(-center.x, -center.y);
 
-Converts a point between the coordinates you draw in (user space) and the
-coordinates of the surface (device space).
-
-=== Notation
-
-`p`:: Instance of `point`
-`x`, `y`:: `float`
-
-=== Expressions
-
-[,c++]
-----
-// variant 1
-cnv.device_to_user(p)
-cnv.device_to_user(x, y)
-
-// variant 2
-cnv.user_to_device(p)
-cnv.user_to_device(x, y)
-----
-
-=== Semantics
-
-. Returns the `point` in user space corresponding to a device space
-point. Useful for a mouse position, which arrives in device space, that has
-to be compared against something you drew.
-. Returns the `point` in device space corresponding to a user space point.
-
-'''
-
-== transform
-
-Gets or replaces the current transform outright.
-
-=== Notation
-
-`mat`:: Instance of xref:foundation/affine_transform.adoc[`affine_transform`]
-`a`, `b`, `c`, `d`, `tx`, `ty`:: `double`
-
-=== Expressions
-
-[,c++]
-----
-// variant 1
-cnv.transform()
-
-// variant 2
-cnv.transform(mat)
-
-// variant 3
-cnv.transform(a, b, c, d, tx, ty)
-----
-
-=== Semantics
-
-. Returns the current transform as an
-xref:foundation/affine_transform.adoc[`affine_transform`].
-. Replaces the current transform with `mat`.
-. Replaces the current transform with the six values of a transformation
-matrix.
-. Unlike `translate`, `rotate`, `scale` and `skew`, which compose, setting
-the transform replaces whatever is in effect.
-
-'''
+   cnv.add_rect(r);
+   cnv.fill_style(colors::gold);
+   cnv.fill();
+```
