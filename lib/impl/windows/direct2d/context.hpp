@@ -164,6 +164,11 @@ namespace cycfi::artist::d2d
    // nullptr for an empty image.
    IWICBitmap* wic_bitmap(image const& img);
 
+   // The image's device bitmap for `target`, created on first use and cached
+   // on the image until its pixels change or a different target asks. Owned
+   // by the image: do not release.
+   bitmap* image_bitmap(image const& img, render_target& target);
+
    template <typename Container>
    inline geometry_group* make_group(Container const& c, fill_mode mode)
    {

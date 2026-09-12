@@ -29,8 +29,22 @@ namespace cycfi::artist
       ~image_impl()
       {
          d2d::release(_lock);
+         d2d::release(gpu);
          d2d::release(bitmap);
       }
+
+      // The device bitmap made from `bitmap` for the last render target that
+      // drew this image. Dropped whenever the pixels can change (a pixel lock,
+      // an offscreen draw) and whenever a different target asks: a device
+      // bitmap is only valid on the target that created it.
+      void invalidate_gpu()
+      {
+         d2d::release(gpu);
+         gpu_owner = nullptr;
+      }
+
+      ID2D1Bitmap*       gpu = nullptr;
+      ID2D1RenderTarget* gpu_owner = nullptr;
 
       // A WIC bitmap render target holds the bitmap locked for writing between
       // BeginDraw and EndDraw, so Flush alone does not make the pixels
@@ -292,6 +306,21 @@ namespace cycfi::artist
          p->suspend();   // the caller is about to draw from it
          return p->bitmap;
       }
+
+      bitmap* image_bitmap(image const& img, render_target& target)
+      {
+         auto p = img.impl();
+         if (!p || !p->bitmap)
+            return nullptr;
+         p->suspend();
+         if (p->gpu && p->gpu_owner == &target)
+            return p->gpu;
+         p->invalidate_gpu();
+         if (FAILED(target.CreateBitmapFromWicBitmap(p->bitmap, &p->gpu)) || !p->gpu)
+            return nullptr;
+         p->gpu_owner = &target;
+         return p->gpu;
+      }
    }
 
    extent image::size() const
@@ -324,6 +353,7 @@ namespace cycfi::artist
       if (!_impl->_lock)
       {
          _impl->suspend();    // land any pending offscreen drawing
+         _impl->invalidate_gpu();   // the caller may write through the lock
          UINT w = 0, h = 0;
          _impl->bitmap->GetSize(&w, &h);
          WICRect rc{0, 0, INT(w), INT(h)};
@@ -406,6 +436,7 @@ namespace cycfi::artist
    {
       _state = new state;
       img.impl()->suspend();  // a locked bitmap cannot back a render target
+      img.impl()->invalidate_gpu();   // the pixels are about to change
       auto props = D2D1::RenderTargetProperties(
          D2D1_RENDER_TARGET_TYPE_DEFAULT,
          D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
