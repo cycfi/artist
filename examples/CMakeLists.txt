@@ -382,6 +382,19 @@ function(add_example name)
 
    target_link_libraries(${name} artist)
 
+   # Windows has no rpath: a DLL is found next to the executable or on PATH, so
+   # an example linked against a shared dependency (libwebp, Skia) dies at
+   # startup with 0xC0000135 unless its DLLs are beside it. Copy whatever the
+   # linker actually pulled in, rather than naming libraries here.
+   if (WIN32 AND NOT CMAKE_VERSION VERSION_LESS 3.21)
+      add_custom_command(
+         TARGET ${name} POST_BUILD
+         COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_RUNTIME_DLLS:${name}> $<TARGET_FILE_DIR:${name}>
+         COMMAND_EXPAND_LISTS
+      )
+   endif()
+
 endfunction()
 
 set(space_images

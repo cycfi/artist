@@ -92,6 +92,19 @@ file(
 
 target_link_libraries(artist_test artist)
 
+# Windows has no rpath: a DLL is found next to the executable or on PATH, so a
+# test linked against a shared dependency (libwebp, Skia) dies at startup with
+# 0xC0000135 unless its DLLs are beside it. Copy whatever the linker actually
+# pulled in, rather than naming libraries here and going stale.
+if (WIN32 AND NOT CMAKE_VERSION VERSION_LESS 3.21)
+   add_custom_command(
+      TARGET artist_test POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+         $<TARGET_RUNTIME_DLLS:artist_test> $<TARGET_FILE_DIR:artist_test>
+      COMMAND_EXPAND_LISTS
+   )
+endif()
+
 if (APPLE)
    if (ARTIST_SKIA)
       set(GOLDEN_PATH macos_golden/skia)
