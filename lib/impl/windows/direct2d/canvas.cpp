@@ -962,21 +962,28 @@ namespace cycfi::artist
 
       auto lw = _state->current().line_width;
       auto ss = _state->stroke_style_obj();
-      auto xform = D2D1::Matrix3x2F::Translation(lb.x, lb.y) * _state->current().matrix;
 
-      // Drop shadow / glow for the stroked outline (the glyph outline sits at the
-      // origin, so the shadow render must re-apply the glyph translation).
+      // Move the outline to the baseline origin as a transformed geometry
+      // rather than folding the translation into the target transform, so a
+      // gradient stroke brush keeps its user-space coordinates.
+      ID2D1TransformedGeometry* placed = nullptr;
+      d2d::get_factory().CreateTransformedGeometry(
+         geo, D2D1::Matrix3x2F::Translation(lb.x, lb.y), &placed);
+      d2d::release(geo);
+      if (!placed)
+         return;
+
+      // Drop shadow / glow for the stroked outline.
       if (_state->current().shadow_blur != 0)
          _state->apply_blur(*_context, {},
-            [geo, xform, lw, ss](render_target* target, brush* b, bool)
+            [placed, lw, ss](render_target* target, brush* b, bool)
             {
-               target->SetTransform(xform);
-               target->DrawGeometry(geo, b, lw, ss);
+               target->DrawGeometry(placed, b, lw, ss);
             });
 
-      t->SetTransform(xform);
-      t->DrawGeometry(geo, _state->stroke_paint(*t), lw, ss);
-      d2d::release(geo);
+      t->SetTransform(_state->current().matrix);
+      t->DrawGeometry(placed, _state->stroke_paint(*t), lw, ss);
+      d2d::release(placed);
    }
 
    canvas::text_metrics canvas::measure_text(std::string_view utf8)
