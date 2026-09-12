@@ -389,12 +389,20 @@ if (WIN32 AND ARTIST_DIRECT2D)
    # Expose the backend's low-level header so the example host can create the
    # HWND render target + wrap it in a d2d::context (mirrors the 2020 branch).
    target_include_directories(artist PUBLIC impl/windows/direct2d)
-   # Direct2D / DirectWrite / WIC are system libs — the whole point: no vcpkg,
-   # no Skia blob. d2d1.lib also provides the D2D 1.1 (ID2D1DeviceContext) API.
-   # dxguid provides the D2D effect CLSIDs (Gaussian blur / 2D affine transform).
+   # Direct2D / DirectWrite / WIC are system libs — the whole point: no Skia
+   # blob. d2d1.lib also provides the D2D 1.1 (ID2D1DeviceContext) API, and
+   # dxguid the D2D effect CLSIDs (Gaussian blur / 2D affine transform).
    target_link_libraries(artist PUBLIC
       d2d1 dwrite windowscodecs dxgi dxguid ole32
    )
+
+   # The one non-system dependency: WIC has no WebP codec (it ships as an
+   # optional Store package), so the backend decodes WebP itself with the same
+   # libwebp the Cairo backend uses. Without this, a machine lacking that
+   # package could not read WebP at all. Any libwebp on CMAKE_PREFIX_PATH will
+   # do; there is no need for the full vcpkg manifest here.
+   find_package(WebP CONFIG REQUIRED)
+   target_link_libraries(artist PUBLIC WebP::webpdecoder)
 endif()
 
 if (ARTIST_SKIA AND NOT APPLE)

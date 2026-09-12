@@ -11,8 +11,12 @@
 =============================================================================*/
 #include <artist/image.hpp>
 #include "context.hpp"
+#include <webp/decode.h>
+#include <algorithm>
 #include <cstddef>
 #include <cstring>
+#include <fstream>
+#include <iterator>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -63,6 +67,19 @@ namespace cycfi::artist
 
    namespace
    {
+      std::vector<uint8_t> read_file(fs::path const& p)
+      {
+         std::ifstream f{p, std::ios::binary};
+         return {std::istreambuf_iterator<char>{f}, std::istreambuf_iterator<char>{}};
+      }
+
+      bool is_webp(std::vector<uint8_t> const& d)
+      {
+         return d.size() >= 12
+            && std::equal(d.begin(), d.begin() + 4, "RIFF")
+            && std::equal(d.begin() + 8, d.begin() + 12, "WEBP");
+      }
+
       IWICBitmap* make_wic_bitmap(UINT w, UINT h)
       {
          IWICBitmap* bm = nullptr;
@@ -72,6 +89,51 @@ namespace cycfi::artist
          );
          if (!SUCCEEDED(hr))
             throw std::runtime_error{"Error: WIC CreateBitmap failed."};
+         return bm;
+      }
+
+      // Windows ships no WIC WebP codec: it arrives only with an optional Store
+      // package, so a machine without it could not read WebP at all. Decode it
+      // here instead, with the same libwebp the Cairo backend uses, so every
+      // machine reads the same formats. MODE_bgrA is premultiplied B, G, R, A,
+      // which is exactly GUID_WICPixelFormat32bppPBGRA.
+      IWICBitmap* decode_webp(std::vector<uint8_t> const& d)
+      {
+         WebPDecoderConfig config;
+         if (!WebPInitDecoderConfig(&config)
+            || WebPGetFeatures(d.data(), d.size(), &config.input) != VP8_STATUS_OK)
+            return nullptr;
+
+         auto bm = make_wic_bitmap(UINT(config.input.width), UINT(config.input.height));
+         WICRect rc{0, 0, config.input.width, config.input.height};
+         IWICBitmapLock* lock = nullptr;
+         if (!SUCCEEDED(bm->Lock(&rc, WICBitmapLockWrite, &lock)) || !lock)
+         {
+            d2d::release(bm);
+            return nullptr;
+         }
+
+         UINT stride = 0, cb = 0;
+         BYTE* px = nullptr;
+         lock->GetStride(&stride);
+         lock->GetDataPointer(&cb, &px);
+
+         auto& out = config.output;
+         out.colorspace = MODE_bgrA;
+         out.is_external_memory = 1;
+         out.u.RGBA.rgba = px;
+         out.u.RGBA.stride = int(stride);
+         out.u.RGBA.size = cb;
+
+         auto status = WebPDecode(d.data(), d.size(), &config);
+         WebPFreeDecBuffer(&out);
+         d2d::release(lock);
+
+         if (status != VP8_STATUS_OK)
+         {
+            d2d::release(bm);
+            return nullptr;
+         }
          return bm;
       }
    }
@@ -91,6 +153,14 @@ namespace cycfi::artist
    {
       auto fs_path = find_file(path_);
       std::wstring wpath = fs_path.wstring();
+
+      if (auto bytes = read_file(fs_path); is_webp(bytes))
+      {
+         _impl->bitmap = decode_webp(bytes);
+         if (!_impl->bitmap)
+            throw std::runtime_error{"Error: cannot decode image file: " + fs_path.string()};
+         return;
+      }
 
       IWICBitmapDecoder* decoder = nullptr;
       auto hr = d2d::get_wic_factory().CreateDecoderFromFilename(
