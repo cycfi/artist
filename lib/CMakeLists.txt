@@ -62,7 +62,23 @@ if (ARTIST_SKIA)
 
    if (APPLE)
 
+      # Skia's vcpkg config resolves its image libraries (jpeg, png, webp) with
+      # find_library, which searches the system prefixes, Homebrew included,
+      # before Skia's own lib directory. A Homebrew libjpeg with another API
+      # version then fails every JPEG decode at runtime. Keep the search inside
+      # Skia's tree (SDK libraries still resolve through the implicit link
+      # directories) and drop whatever an earlier configure cached.
+      get_cmake_property(_cache_vars CACHE_VARIABLES)
+      foreach (_var IN LISTS _cache_vars)
+         if (_var MATCHES "^z_vcpkg_skia_link_libs_")
+            unset(${_var} CACHE)
+         endif()
+      endforeach()
+      set(CMAKE_FIND_USE_CMAKE_SYSTEM_PATH FALSE)
+      set(CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH FALSE)
       find_package(unofficial-skia CONFIG REQUIRED)
+      unset(CMAKE_FIND_USE_CMAKE_SYSTEM_PATH)
+      unset(CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH)
 
       # vcpkg installs Skia headers in subdirectories (core/, effects/, gpu/, …).
       # Derive the base from the installed target and expose subdirs so existing

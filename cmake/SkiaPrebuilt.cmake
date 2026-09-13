@@ -114,22 +114,48 @@ set(_root "${_cache}/${_ver}")
 set(_dest "${_root}/${_triplet}")
 set(_marker "${_dest}/share/unofficial-skia/unofficial-skia-config.cmake")
 
-# --- download + verify + extract (once) -----------------------------------
-if(NOT EXISTS "${_marker}")
-  set(_base "${ARTIST_SKIA_PREBUILT_URL}/${_ver}/${_triplet}.tar.zst")
-  set(_tar "${_root}/${_triplet}.tar.zst")
-  file(MAKE_DIRECTORY "${_root}")
+# --- download + verify + extract ------------------------------------------
+# The sha256 of the extracted bundle is kept beside it and compared with the
+# server's on every configure, so a bundle re-uploaded under the same version
+# replaces the local copy. When the server can't be reached, the local copy
+# is used as is.
+set(_base "${ARTIST_SKIA_PREBUILT_URL}/${_ver}/${_triplet}.tar.zst")
+set(_tar "${_root}/${_triplet}.tar.zst")
+set(_shafile "${_root}/${_triplet}.tar.zst.sha256")
+set(_remote_shafile "${_shafile}.remote")
+file(MAKE_DIRECTORY "${_root}")
 
-  set(_shafile "${_root}/${_triplet}.tar.zst.sha256")
-  file(DOWNLOAD "${_base}.sha256" "${_shafile}" STATUS _shast)
-  list(GET _shast 0 _shacode)
-  if(NOT _shacode EQUAL 0)
-    message(FATAL_ERROR
-      "Artist: no prebuilt Skia bundle for ${_triplet}@${_ver} "
-      "(${_base}.sha256: ${_shast}). ${_help}")
-  endif()
-  file(READ "${_shafile}" _sha)
+set(_sha "")
+file(DOWNLOAD "${_base}.sha256" "${_remote_shafile}" STATUS _shast TIMEOUT 30)
+list(GET _shast 0 _shacode)
+if(_shacode EQUAL 0)
+  file(READ "${_remote_shafile}" _sha)
   string(STRIP "${_sha}" _sha)
+elseif(NOT EXISTS "${_marker}")
+  file(REMOVE "${_remote_shafile}")
+  message(FATAL_ERROR
+    "Artist: no prebuilt Skia bundle for ${_triplet}@${_ver} "
+    "(${_base}.sha256: ${_shast}). ${_help}")
+else()
+  message(STATUS "Artist: cannot check prebuilt Skia ${_triplet}@${_ver} "
+    "for updates (${_shast}); using the local copy")
+endif()
+file(REMOVE "${_remote_shafile}")
+
+set(_local_sha "")
+if(EXISTS "${_shafile}")
+  file(READ "${_shafile}" _local_sha)
+  string(STRIP "${_local_sha}" _local_sha)
+endif()
+
+if(_sha AND (NOT EXISTS "${_marker}" OR NOT _sha STREQUAL _local_sha))
+  if(EXISTS "${_dest}")
+    message(STATUS "Artist: prebuilt Skia ${_triplet}@${_ver} changed on the server")
+  endif()
+  # Written back only after a verified extract, so an interrupted update
+  # is retried on the next configure.
+  file(REMOVE "${_shafile}")
+  file(REMOVE_RECURSE "${_dest}")
 
   message(STATUS "Artist: downloading prebuilt Skia ${_triplet}@${_ver} …")
   file(DOWNLOAD "${_base}" "${_tar}"
@@ -145,6 +171,9 @@ if(NOT EXISTS "${_marker}")
 
   file(ARCHIVE_EXTRACT INPUT "${_tar}" DESTINATION "${_root}")
   file(REMOVE "${_tar}")
+  if(EXISTS "${_marker}")
+    file(WRITE "${_shafile}" "${_sha}\n")
+  endif()
 endif()
 
 if(NOT EXISTS "${_marker}")
