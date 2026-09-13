@@ -360,7 +360,8 @@ namespace cycfi::artist::d2d
       {
          case canvas::bevel_join: join = line_join_bevel; break;
          case canvas::round_join: join = line_join_round; break;
-         case canvas::miter_join: join = line_join_miter; break;
+         // A plain miter join ignores the miter limit; this one honors it.
+         case canvas::miter_join: join = D2D1_LINE_JOIN_MITER_OR_BEVEL; break;
       };
 
       stroke_style* style = nullptr;

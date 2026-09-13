@@ -76,13 +76,16 @@ namespace cycfi::artist
          int         sw, sh_h;
          float       sigma;
          uint8_t     r, g, b, a;
-         std::size_t path_hash;
+         std::size_t content_hash;
+         float       xx, yx, xy, yy, tx, ty;
 
          bool operator==(shadow_cache_key const& o) const noexcept
          {
             return sw == o.sw && sh_h == o.sh_h && sigma == o.sigma
                 && r == o.r && g == o.g && b == o.b && a == o.a
-                && path_hash == o.path_hash;
+                && content_hash == o.content_hash
+                && xx == o.xx && yx == o.yx && xy == o.xy && yy == o.yy
+                && tx == o.tx && ty == o.ty;
          }
       };
 
@@ -123,6 +126,10 @@ namespace cycfi::artist
    {
       cairo_get_matrix(_context, &_state->_inv_affine);
       cairo_matrix_invert(&_state->_inv_affine);
+
+      // The W3C defaults. Cairo's own default line width is 2.
+      cairo_set_line_width(_context, 1);
+      cairo_set_miter_limit(_context, 10);
    }
 
    canvas::~canvas()
@@ -238,6 +245,8 @@ namespace cycfi::artist
       using shadow_scratch    = canvas::canvas_state::shadow_scratch_t;
       using shadow_cache_key   = canvas::canvas_state::shadow_cache_key;
       using shadow_cache_entry = canvas::canvas_state::shadow_cache_entry;
+      using shadow_info        = canvas::canvas_state::shadow_info;
+      using shadow_render      = std::function<void(cairo_t*)>;
 
       std::size_t hash_path(cairo_path_t* path) noexcept
       {
@@ -271,207 +280,356 @@ namespace cycfi::artist
          return *slot;
       }
 
-      auto composite_shadow(
-         cairo_t* cr,
-         uint8_t* pixels,
-         int sw, int sh_h, int stride,
-         double x1, double y1,
-         double render_scale, int margin,
-         double off_sx, double off_sy)
+      void mix(std::size_t& h, double v) noexcept
       {
-         // surface = render_scale * (user - (x1 - off)) + margin
-         cairo_surface_t* surf = cairo_image_surface_create_for_data(
-            pixels, CAIRO_FORMAT_ARGB32, sw, sh_h, stride);
+         h = (h ^ std::hash<double>{}(v)) * 1099511628211ULL;
+      }
+
+      // The device-space bounding box of a user-space rectangle.
+      void device_box(
+         cairo_matrix_t const& m
+       , double& x1, double& y1, double& x2, double& y2)
+      {
+         double xs[4] = {x1, x2, x2, x1};
+         double ys[4] = {y1, y1, y2, y2};
+         for (int i = 0; i != 4; ++i)
+            cairo_matrix_transform_point(&m, &xs[i], &ys[i]);
+         x1 = *std::min_element(xs, xs + 4);
+         x2 = *std::max_element(xs, xs + 4);
+         y1 = *std::min_element(ys, ys + 4);
+         y2 = *std::max_element(ys, ys + 4);
+      }
+
+      // Where a shadow is rendered: a bitmap in device space. The offset and
+      // blur are in the canvas's initial user space, so the transform in
+      // effect does not change them, as in the W3C canvas API.
+      struct shadow_frame
+      {
+         double   x1, y1;        // device-space origin of the bitmap
+         double   scale;         // bitmap pixels per device unit
+         double   off_x, off_y;  // the offset, in device units
+         float    sigma;         // in bitmap pixels
+         int      margin;
+         int      w, h;
+      };
+
+      bool make_shadow_frame(
+         cairo_t* cr, canvas::canvas_state const& state
+       , double x1, double y1, double x2, double y2
+       , shadow_frame& f)
+      {
+         auto const& sh = state._info.shadow;
+         cairo_matrix_t ctm;
+         cairo_get_matrix(cr, &ctm);
+         device_box(ctm, x1, y1, x2, y2);
+
+         cairo_matrix_t base = state._inv_affine;
+         cairo_matrix_invert(&base);
+         double base_scale =
+            std::sqrt(std::abs(base.xx * base.yy - base.xy * base.yx));
+         f.off_x = base.xx * sh.offset.x + base.xy * sh.offset.y;
+         f.off_y = base.yx * sh.offset.x + base.yy * sh.offset.y;
+
+         double dev_x = 1, dev_y = 1;
+         cairo_surface_get_device_scale(cairo_get_target(cr), &dev_x, &dev_y);
+         f.scale = (dev_x + dev_y) / 2;
+         if (f.scale < 0.01)
+            f.scale = 1;
+
+         // The blur is twice the Gaussian standard deviation.
+         f.sigma = float(sh.blur * 0.5 * base_scale * f.scale);
+         f.margin = sh.blur > 0? blur_margin(f.sigma) : 1;
+
+         // Only the part whose shadow can land inside the clip is needed.
+         double cx1, cy1, cx2, cy2;
+         cairo_clip_extents(cr, &cx1, &cy1, &cx2, &cy2);
+         device_box(ctm, cx1, cy1, cx2, cy2);
+         double reach = f.margin / f.scale;
+         x1 = std::max(x1, cx1 - f.off_x - reach);
+         y1 = std::max(y1, cy1 - f.off_y - reach);
+         x2 = std::min(x2, cx2 - f.off_x + reach);
+         y2 = std::min(y2, cy2 - f.off_y + reach);
+         if (x2 <= x1 || y2 <= y1)
+            return false;
+
+         // Snap to whole pixels, so a moved shape can reuse a cached shadow.
+         f.x1 = std::floor(x1 * f.scale) / f.scale;
+         f.y1 = std::floor(y1 * f.scale) / f.scale;
+         f.w = int(std::ceil((x2 - f.x1) * f.scale)) + 2 * f.margin;
+         f.h = int(std::ceil((y2 - f.y1) * f.scale)) + 2 * f.margin;
+         return true;
+      }
+
+      // Render what is drawn into the frame's bitmap, then turn it into the
+      // shadow: its alpha, blurred, scaled by the shadow color's alpha, in
+      // the shadow color. The result is in scratch.surf_buf.
+      void render_shadow(
+         cairo_t* cr, shadow_info const& sh, shadow_frame const& f
+       , shadow_scratch& scratch, shadow_render const& render)
+      {
+         int stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, f.w);
+         auto surf_size = std::size_t(stride) * f.h;
+         auto px_count = std::size_t(f.w) * f.h;
+         auto cum_count = std::size_t(std::max(f.w, f.h) + 1);
+         if (scratch.surf_buf.size() < surf_size)
+            scratch.surf_buf.resize(surf_size);
+         if (scratch.alpha.size() < px_count)
+            scratch.alpha.resize(px_count);
+         if (scratch.tmp.size() < px_count)
+            scratch.tmp.resize(px_count);
+         if (scratch.cum.size() < cum_count)
+            scratch.cum.resize(cum_count);
+         scratch.stride = stride;
+         auto* pixels = scratch.surf_buf.data();
+         std::fill(pixels, pixels + surf_size, 0);
+
+         cairo_matrix_t ctm;
+         cairo_get_matrix(cr, &ctm);
+         auto* surf = cairo_image_surface_create_for_data(
+            pixels, CAIRO_FORMAT_ARGB32, f.w, f.h, stride);
+         auto* sc = cairo_create(surf);
+         cairo_translate(sc, f.margin, f.margin);
+         cairo_scale(sc, f.scale, f.scale);
+         cairo_translate(sc, -f.x1, -f.y1);
+         cairo_transform(sc, &ctm);
+         render(sc);
+         cairo_destroy(sc);
+         cairo_surface_flush(surf);
+         cairo_surface_destroy(surf);
+
+         auto* alpha = scratch.alpha.data();
+         alpha_extract(pixels, stride, alpha, f.w, f.h);
+         if (f.sigma >= 0.5f)
+         {
+            approx_gaussian_blur_1ch(
+               alpha, scratch.tmp.data(), scratch.cum.data()
+             , f.w, f.h, f.sigma);
+         }
+         if (sh.c.alpha < 1)
+         {
+            auto k = unsigned(std::lround(sh.c.alpha * 255));
+            for (std::size_t i = 0; i != px_count; ++i)
+               alpha[i] = uint8_t((alpha[i] * k + 127) / 255);
+         }
+
+         auto byte = [](float v) { return uint8_t(std::lround(v * 255)); };
+         shadow_reconstruct(
+            pixels, stride, alpha, f.w, f.h
+          , byte(sh.c.red), byte(sh.c.green), byte(sh.c.blue));
+      }
+
+      // Paint a rendered shadow at its offset, with the current operator
+      // and clip.
+      void paint_shadow(
+         cairo_t* cr, uint8_t* pixels, int stride, shadow_frame const& f)
+      {
+         auto* surf = cairo_image_surface_create_for_data(
+            pixels, CAIRO_FORMAT_ARGB32, f.w, f.h, stride);
          cairo_save(cr);
+         cairo_identity_matrix(cr);
          cairo_set_source_surface(cr, surf, 0, 0);
-         auto* pat = cairo_get_source(cr);
          cairo_matrix_t pm;
-         cairo_matrix_init_identity(&pm);
-         cairo_matrix_translate(&pm, margin, margin);
-         cairo_matrix_scale(&pm, render_scale, render_scale);
-         cairo_matrix_translate(
-            &pm, -(x1 + off_sx / render_scale), -(y1 + off_sy / render_scale));
-         cairo_pattern_set_matrix(pat, &pm);
+         cairo_matrix_init_translate(&pm, f.margin, f.margin);
+         cairo_matrix_scale(&pm, f.scale, f.scale);
+         cairo_matrix_translate(&pm, -(f.x1 + f.off_x), -(f.y1 + f.off_y));
+         cairo_pattern_set_matrix(cairo_get_source(cr), &pm);
          cairo_paint(cr);
          cairo_restore(cr);
          cairo_surface_destroy(surf);
       }
 
+      // Draw the shadow of what render draws inside the user-space box.
+      // content_hash identifies what is drawn when the shadow may be cached.
       void draw_shadow(
-         cairo_t* cr,
-         canvas::canvas_state::shadow_info const& sh,
-         canvas::canvas_state& state,
-         bool is_fill)
+         cairo_t* cr, canvas::canvas_state& state
+       , double x1, double y1, double x2, double y2
+       , shadow_render const& render, std::size_t const* content_hash)
+      {
+         auto const& sh = state._info.shadow;
+         shadow_frame f;
+         if (!make_shadow_frame(cr, state, x1, y1, x2, y2, f))
+            return;
+
+         std::optional<shadow_cache_key> key;
+         if (content_hash)
+         {
+            cairo_matrix_t m;
+            cairo_get_matrix(cr, &m);
+            auto byte = [](float v) { return uint8_t(std::lround(v * 255)); };
+            key = shadow_cache_key{
+               f.w, f.h, f.sigma
+             , byte(sh.c.red), byte(sh.c.green)
+             , byte(sh.c.blue), byte(sh.c.alpha)
+             , *content_hash
+             , float(m.xx), float(m.yx), float(m.xy), float(m.yy)
+             , float(m.x0 - f.x1), float(m.y0 - f.y1)
+            };
+            if (auto* hit = find_shadow_cache(state, *key))
+            {
+               paint_shadow(cr, hit->pixels.data(), hit->stride, f);
+               return;
+            }
+         }
+
+         auto& scratch = state.shadow_scratch;
+         render_shadow(cr, sh, f, scratch, render);
+         auto* pixels = scratch.surf_buf.data();
+         if (key)
+         {
+            auto size = std::size_t(scratch.stride) * f.h;
+            auto& entry = alloc_shadow_cache_entry(
+               state, *key
+             , std::vector<uint8_t>(pixels, pixels + size), scratch.stride);
+            pixels = entry.pixels.data();
+         }
+         paint_shadow(cr, pixels, scratch.stride, f);
+      }
+
+      void copy_stroke_style(cairo_t* from, cairo_t* to)
+      {
+         cairo_set_line_width(to, cairo_get_line_width(from));
+         cairo_set_line_cap(to, cairo_get_line_cap(from));
+         cairo_set_line_join(to, cairo_get_line_join(from));
+         cairo_set_miter_limit(to, cairo_get_miter_limit(from));
+         if (int n = cairo_get_dash_count(from); n > 0)
+         {
+            std::vector<double> dashes(n);
+            double offset = 0;
+            cairo_get_dash(from, dashes.data(), &offset);
+            cairo_set_dash(to, dashes.data(), n, offset);
+         }
+      }
+
+      // The shadow of the current path, filled or stroked with the current
+      // source. The path is left as it is.
+      void path_shadow(cairo_t* cr, canvas::canvas_state& state, bool is_fill)
       {
          cairo_path_t* path = cairo_copy_path(cr);
          if (!path || path->status != CAIRO_STATUS_SUCCESS)
          {
-            if (path) cairo_path_destroy(path);
+            if (path)
+               cairo_path_destroy(path);
             return;
          }
 
-         // Use stroke extents for stroke shadows — cairo_path_extents returns
-         // only the geometric path bounds, but a stroke extends ½·line_width
-         // beyond them. Sizing the surface from the path extents would let the
-         // stroke outer edge eat into the blur margin and clip the glow.
          double x1, y1, x2, y2;
          if (is_fill)
-            cairo_path_extents(cr, &x1, &y1, &x2, &y2);
+            cairo_fill_extents(cr, &x1, &y1, &x2, &y2);
          else
             cairo_stroke_extents(cr, &x1, &y1, &x2, &y2);
 
-         // Derive the CTM scale (user-applied transforms) and the surface device
-         // scale (Retina) separately. The shadow surface is rendered at the full
-         // physical resolution (render_scale = ctm_scale * device_scale) so the
-         // blur is computed at device resolution — never on a low-res user-space
-         // bitmap that is then heavily upscaled (which over-softens the blur and
-         // widens the feather at large user scales, e.g. cnv.scale(10, 10)).
-         cairo_matrix_t ctm;
-         cairo_get_matrix(cr, &ctm);
-         double ctm_scale = std::sqrt(ctm.xx * ctm.xx + ctm.xy * ctm.xy);
-         if (ctm_scale < 0.01) ctm_scale = 1.0;
-
-         double dev_x = 1.0, dev_y = 1.0;
-         cairo_surface_get_device_scale(cairo_get_target(cr), &dev_x, &dev_y);
-         double device_scale = (dev_x + dev_y) * 0.5;
-         if (device_scale < 0.01) device_scale = 1.0;
-
-         double render_scale = ctm_scale * device_scale;
-         if (render_scale < 0.01) render_scale = 1.0;
-
-         // sigma in surface pixels. blur is in default-user-space (logical pt);
-         // the physical blur scales with device_scale only, matching Quartz —
-         // it does NOT grow with cnv.scale(), so the glow stays tight when the
-         // shape is magnified. Since the surface is rendered at render_scale and
-         // physical = surface * device_scale, sigma_surface = blur*0.5*device_scale.
-         float  sigma  = static_cast<float>(sh.blur * 0.5 * device_scale);
-         // Margin (surface px) covers the blur's full box-blur support so the
-         // feather is never clipped by the surface boundary (see blur_margin).
-         int    margin = blur_margin(sigma);
-
-         // Offset is in default-user-space; convert to surface pixels.
-         double off_sx = sh.offset.x * device_scale;
-         double off_sy = sh.offset.y * device_scale;
-
-         int sw   = static_cast<int>(std::ceil((x2 - x1) * render_scale)) + 2 * margin;
-         int sh_h = static_cast<int>(std::ceil((y2 - y1) * render_scale)) + 2 * margin;
-
-         if (sw <= 0 || sh_h <= 0)
+         auto render = [cr, path, is_fill](cairo_t* sc)
          {
-            cairo_path_destroy(path);
-            return;
-         }
-
-         shadow_cache_key cache_key{
-            sw, sh_h, sigma,
-            static_cast<uint8_t>(sh.c.red   * 255.0f),
-            static_cast<uint8_t>(sh.c.green * 255.0f),
-            static_cast<uint8_t>(sh.c.blue  * 255.0f),
-            static_cast<uint8_t>(sh.c.alpha * 255.0f),
-            hash_path(path)
+            cairo_append_path(sc, path);
+            cairo_set_source(sc, cairo_get_source(cr));
+            if (is_fill)
+            {
+               cairo_set_fill_rule(sc, cairo_get_fill_rule(cr));
+               cairo_fill(sc);
+            }
+            else
+            {
+               copy_stroke_style(cr, sc);
+               cairo_stroke(sc);
+            }
          };
 
-         if (auto* cached = find_shadow_cache(state, cache_key))
+         // Only a solid color is cached: a gradient's shadow varies with it.
+         double r, g, b, a;
+         bool solid = cairo_pattern_get_rgba(
+            cairo_get_source(cr), &r, &g, &b, &a) == CAIRO_STATUS_SUCCESS;
+         std::size_t h = 0;
+         if (solid)
          {
-            composite_shadow(cr,
-               cached->pixels.data(), sw, sh_h, cached->stride,
-               x1, y1, render_scale, margin, off_sx, off_sy);
-            cairo_append_path(cr, path);
-            cairo_path_destroy(path);
+            h = hash_path(path);
+            for (double v : {r, g, b, a, double(is_fill)})
+               mix(h, v);
+            if (is_fill)
+            {
+               mix(h, cairo_get_fill_rule(cr));
+            }
+            else
+            {
+               mix(h, cairo_get_line_width(cr));
+               mix(h, cairo_get_line_cap(cr));
+               mix(h, cairo_get_line_join(cr));
+               mix(h, cairo_get_miter_limit(cr));
+               mix(h, cairo_get_dash_count(cr));
+            }
+         }
+         draw_shadow(cr, state, x1, y1, x2, y2, render, solid? &h : nullptr);
+         cairo_path_destroy(path);
+      }
+
+      bool is_unbounded(cairo_operator_t op)
+      {
+         return op == CAIRO_OPERATOR_IN || op == CAIRO_OPERATOR_OUT
+            || op == CAIRO_OPERATOR_DEST_IN || op == CAIRO_OPERATOR_DEST_ATOP
+            || op == CAIRO_OPERATOR_SOURCE;
+      }
+
+      // The unbounded operators clear the destination outside what is
+      // drawn, as far as the clip. Draw into a group with source-over, then
+      // paint the group through the clip with the operator.
+      template <typename F>
+      void with_operator(cairo_t* cr, canvas::canvas_state& state, F&& draw)
+      {
+         if (!is_unbounded(cairo_get_operator(cr)))
+         {
+            draw();
             return;
          }
-
-         // Cache miss — render shape and blur.
-         auto& sc_buf = state.shadow_scratch;
-         int stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, sw);
-         std::size_t surf_size = static_cast<std::size_t>(stride * sh_h);
-         std::size_t px_count  = static_cast<std::size_t>(sw * sh_h);
-         std::size_t cum_count = static_cast<std::size_t>(std::max(sw, sh_h) + 1);
-         if (sc_buf.surf_buf.size() < surf_size) sc_buf.surf_buf.resize(surf_size);
-         if (sc_buf.alpha.size()    < px_count)  sc_buf.alpha.resize(px_count);
-         if (sc_buf.tmp.size()      < px_count)  sc_buf.tmp.resize(px_count);
-         if (sc_buf.cum.size()      < cum_count) sc_buf.cum.resize(cum_count);
-         sc_buf.stride = stride;
-
-         // Render the shape into the surface at render_scale resolution. User
-         // point (x1, y1) maps to surface (margin, margin).
-         std::fill(sc_buf.surf_buf.begin(), sc_buf.surf_buf.begin() + surf_size, 0);
-         cairo_surface_t* surf = cairo_image_surface_create_for_data(
-            sc_buf.surf_buf.data(), CAIRO_FORMAT_ARGB32, sw, sh_h, stride);
-         cairo_t* sc = cairo_create(surf);
-         cairo_translate(sc, margin, margin);
-         cairo_scale(sc, render_scale, render_scale);
-         cairo_translate(sc, -x1, -y1);
-         if (!is_fill)
-            cairo_set_line_width(sc, cairo_get_line_width(cr));
-         cairo_append_path(sc, path);
-         cairo_set_source_rgba(sc, sh.c.red, sh.c.green, sh.c.blue, sh.c.alpha);
-         if (is_fill) cairo_fill(sc); else cairo_stroke(sc);
-         cairo_destroy(sc);
-
-         // Blur alpha-only channel (4× smaller working set than ARGB32).
-         cairo_surface_flush(surf);
-         if (sh.blur > 0.5f)
-         {
-            uint8_t* pixels = sc_buf.surf_buf.data();
-            alpha_extract(pixels, stride, sc_buf.alpha.data(), sw, sh_h);
-            approx_gaussian_blur_1ch(
-               sc_buf.alpha.data(), sc_buf.tmp.data(),
-               sc_buf.cum.data(), sw, sh_h, sigma);
-            auto sr = static_cast<uint8_t>(sh.c.red   * 255.0f);
-            auto sg = static_cast<uint8_t>(sh.c.green * 255.0f);
-            auto sb = static_cast<uint8_t>(sh.c.blue  * 255.0f);
-            shadow_reconstruct(pixels, stride, sc_buf.alpha.data(), sw, sh_h, sr, sg, sb);
-            cairo_surface_mark_dirty(surf);
-         }
-         cairo_surface_destroy(surf);
-
-         // Store blurred pixels in cache before compositing.
-         auto& entry = alloc_shadow_cache_entry(
-            state, cache_key,
-            std::vector<uint8_t>(sc_buf.surf_buf.begin(),
-                                 sc_buf.surf_buf.begin() + surf_size),
-            stride);
-
-         composite_shadow(cr,
-            entry.pixels.data(), sw, sh_h, stride,
-            x1, y1, render_scale, margin, off_sx, off_sy);
-
-         cairo_append_path(cr, path);
-         cairo_path_destroy(path);
+         cairo_push_group(cr);
+         cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
+         draw();
+         cairo_pop_group_to_source(cr);
+         cairo_paint(cr);
+         state._info.pattern_set = canvas::canvas_state::info::none_set;
       }
    }
 
    void canvas::fill()
    {
-      if (_state->_info.shadow.active)
-         draw_shadow(_context, _state->_info.shadow, *_state, true);
       _state->apply_fill_style();
-      cairo_fill(_context);
+      with_operator(_context, *_state, [this]
+      {
+         if (_state->_info.shadow.active)
+            path_shadow(_context, *_state, true);
+         cairo_fill(_context);
+      });
    }
 
    void canvas::fill_preserve()
    {
-      if (_state->_info.shadow.active)
-         draw_shadow(_context, _state->_info.shadow, *_state, true);
       _state->apply_fill_style();
-      cairo_fill_preserve(_context);
+      with_operator(_context, *_state, [this]
+      {
+         if (_state->_info.shadow.active)
+            path_shadow(_context, *_state, true);
+         cairo_fill_preserve(_context);
+      });
    }
 
    void canvas::stroke()
    {
-      if (_state->_info.shadow.active)
-         draw_shadow(_context, _state->_info.shadow, *_state, false);
       _state->apply_stroke_style();
-      cairo_stroke(_context);
+      with_operator(_context, *_state, [this]
+      {
+         if (_state->_info.shadow.active)
+            path_shadow(_context, *_state, false);
+         cairo_stroke(_context);
+      });
    }
 
    void canvas::stroke_preserve()
    {
-      if (_state->_info.shadow.active)
-         draw_shadow(_context, _state->_info.shadow, *_state, false);
       _state->apply_stroke_style();
-      cairo_stroke_preserve(_context);
+      with_operator(_context, *_state, [this]
+      {
+         if (_state->_info.shadow.active)
+            path_shadow(_context, *_state, false);
+         cairo_stroke_preserve(_context);
+      });
    }
 
    void canvas::clip()
@@ -662,6 +820,9 @@ namespace cycfi::artist
 
    void canvas::line_width(float w)
    {
+      // Zero, negative, infinite and NaN widths are ignored.
+      if (!(w > 0) || !std::isfinite(w))
+         return;
       cairo_set_line_width(_context, w);
    }
 
@@ -691,12 +852,19 @@ namespace cycfi::artist
 
    void canvas::miter_limit(float limit)
    {
+      // Zero, negative, infinite and NaN limits are ignored.
+      if (!(limit > 0) || !std::isfinite(limit))
+         return;
       cairo_set_miter_limit(_context, limit);
    }
 
    void canvas::shadow_style(point offset, float blur, color c)
    {
-      _state->_info.shadow = {offset, blur, c, true};
+      // A shadow is drawn only if it can be seen: a color that is not fully
+      // transparent, and an offset or a blur.
+      bool const visible =
+         c.alpha > 0 && (blur > 0 || offset.x != 0 || offset.y != 0);
+      _state->_info.shadow = {offset, blur, c, visible};
    }
 
    void canvas::global_composite_operation(composite_op_enum mode)
@@ -930,44 +1098,51 @@ namespace cycfi::artist
          auto run = shape_text(fi->_hb_font.get(), fi->_size, utf8);
          p = get_text_start(_context, p, _state->_info.align, run.advance_x);
          auto glyphs = make_cairo_glyphs(run, p.x, p.y);
-         if (glyphs.empty()) return;
+         if (glyphs.empty())
+            return;
 
-         if (_state->_info.shadow.active)
+         _state->apply_fill_style();
+         with_operator(_context, *_state, [&]
          {
-            cairo_glyph_path(_context, glyphs.data(), int(glyphs.size()));
-            draw_shadow(_context, _state->_info.shadow, *_state, true);
-            _state->apply_fill_style();
-            cairo_fill(_context);
-         }
-         else
-         {
-            _state->apply_fill_style();
-            // Quartz CG backend requires current point set before show_glyphs.
-            if (!glyphs.empty())
+            if (_state->_info.shadow.active)
+            {
+               cairo_glyph_path(_context, glyphs.data(), int(glyphs.size()));
+               path_shadow(_context, *_state, true);
+               cairo_fill(_context);
+            }
+            else
+            {
+               // Quartz CG backend requires the current point set before
+               // show_glyphs.
                cairo_move_to(_context, glyphs.front().x, glyphs.front().y);
-            cairo_show_glyphs(_context, glyphs.data(), int(glyphs.size()));
-         }
+               cairo_show_glyphs(_context, glyphs.data(), int(glyphs.size()));
+            }
+         });
       }
       else
       {
-         // Fallback: no HarfBuzz font set — use unshaped Cairo text.
+         // Fallback: no HarfBuzz font set, so use unshaped Cairo text.
          auto str = std::string{utf8.data(), utf8.size()};
          cairo_text_extents_t ext;
          cairo_text_extents(_context, str.c_str(), &ext);
-         p = get_text_start(_context, p, _state->_info.align, float(ext.x_advance));
-         cairo_move_to(_context, p.x, p.y);
-         if (_state->_info.shadow.active)
+         p = get_text_start(
+            _context, p, _state->_info.align, float(ext.x_advance));
+
+         _state->apply_fill_style();
+         with_operator(_context, *_state, [&]
          {
-            cairo_text_path(_context, str.c_str());
-            draw_shadow(_context, _state->_info.shadow, *_state, true);
-            _state->apply_fill_style();
-            cairo_fill(_context);
-         }
-         else
-         {
-            _state->apply_fill_style();
-            cairo_show_text(_context, str.c_str());
-         }
+            cairo_move_to(_context, p.x, p.y);
+            if (_state->_info.shadow.active)
+            {
+               cairo_text_path(_context, str.c_str());
+               path_shadow(_context, *_state, true);
+               cairo_fill(_context);
+            }
+            else
+            {
+               cairo_show_text(_context, str.c_str());
+            }
+         });
       }
    }
 
@@ -1052,20 +1227,36 @@ namespace cycfi::artist
 
    void canvas::draw(image const& pic, rect const& src, rect const& dest)
    {
-      if (!pic.impl() || !pic.impl()->surface) return;
+      if (!pic.impl() || !pic.impl()->surface)
+         return;
+
       auto s = new_state();
-      auto w = dest.width();
-      auto h = dest.height();
       translate(dest.top_left());
-      auto sx = w / src.width();
-      auto sy = h / src.height();
-      scale({sx, sy});
-      // Clip to the destination rect before painting. Cairo's unbounded operators
-      // (IN, OUT, SOURCE, DEST_IN, XOR, etc.) affect the entire clip region, not
-      // just the filled path. Without this clip they would clear the whole surface.
-      cairo_rectangle(_context, 0, 0, src.width(), src.height());
-      cairo_clip(_context);
-      cairo_set_source_surface(_context, pic.impl()->surface, -src.left, -src.top);
-      cairo_paint(_context);
+      scale({dest.width() / src.width(), dest.height() / src.height()});
+
+      // Paint the image into its own rectangle, leaving the path as it is.
+      auto* surface = pic.impl()->surface;
+      double const w = src.width(), h = src.height();
+      auto paint = [surface, src, w, h](cairo_t* cr)
+      {
+         auto* saved = cairo_copy_path(cr);
+         cairo_save(cr);
+         cairo_new_path(cr);
+         cairo_rectangle(cr, 0, 0, w, h);
+         cairo_clip(cr);
+         cairo_set_source_surface(cr, surface, -src.left, -src.top);
+         cairo_paint(cr);
+         cairo_restore(cr);
+         cairo_new_path(cr);
+         cairo_append_path(cr, saved);
+         cairo_path_destroy(saved);
+      };
+
+      with_operator(_context, *_state, [&]
+      {
+         if (_state->_info.shadow.active)
+            draw_shadow(_context, *_state, 0, 0, w, h, paint, nullptr);
+         paint(_context);
+      });
    }
 }

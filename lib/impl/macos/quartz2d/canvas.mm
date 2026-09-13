@@ -45,6 +45,9 @@ namespace cycfi::artist
       int               text_align() const;
       void              text_align(int align);
 
+      bool              shadow() const       { return current()->_shadow; }
+      void              shadow(bool on)      { current()->_shadow = on; }
+
       mode_enum         mode() const;
       void              mode(mode_enum mode_);
 
@@ -74,6 +77,7 @@ namespace cycfi::artist
          class font     _font             = font_descr{"Helvetica Neue", 12};
          int            _text_align       = canvas::baseline;
          mode_enum      _mode             = source_over;
+         bool           _shadow           = false;
       };
 
       using state_info_ptr = std::unique_ptr<state_info>;
@@ -112,6 +116,42 @@ namespace cycfi::artist
                space_, components, locations, nspaces
             );
          CGColorSpaceRelease(space_);
+      }
+
+      bool is_unbounded(canvas::composite_op_enum mode)
+      {
+         return mode == canvas::source_in || mode == canvas::source_out
+            || mode == canvas::destination_in
+            || mode == canvas::destination_atop || mode == canvas::copy;
+      }
+
+      // The unbounded operators clear the destination outside what is
+      // drawn, as far as the clip. Draw into a transparency layer with the
+      // normal blend mode; the layer is then composited with the operator.
+      template <typename F>
+      void with_mode(CGContextRef ctx, canvas::composite_op_enum mode, F&& draw)
+      {
+         if (!is_unbounded(mode))
+         {
+            draw();
+            return;
+         }
+         CGContextBeginTransparencyLayer(ctx, nullptr);
+         CGContextSetBlendMode(ctx, kCGBlendModeNormal);
+         draw();
+         CGContextEndTransparencyLayer(ctx);
+      }
+
+      // A gradient is painted through a clip to the path, which would clip
+      // its shadow away. In a transparency layer the layer casts the shadow.
+      template <typename F>
+      void with_shadow_layer(CGContextRef ctx, bool shadow, F&& draw)
+      {
+         if (shadow)
+            CGContextBeginTransparencyLayer(ctx, nullptr);
+         draw();
+         if (shadow)
+            CGContextEndTransparencyLayer(ctx);
       }
    }
 
@@ -347,30 +387,42 @@ namespace cycfi::artist
          {
             auto ctx = CGContextRef(_context);
             CGContextSaveGState(ctx);
-            clip();  // Set to clip current path
-            CGContextDrawLinearGradient(
-               ctx, _state->fill_gradient(),
-               CGPoint{style.start.x, style.start.y},
-               CGPoint{style.end.x, style.end.y},
-               kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
-            );
+            with_shadow_layer(ctx, _state->shadow(), [&]
+            {
+               clip();  // Set to clip current path
+               CGContextDrawLinearGradient(
+                  ctx, _state->fill_gradient(),
+                  CGPoint{style.start.x, style.start.y},
+                  CGPoint{style.end.x, style.end.y},
+                  kCGGradientDrawsAfterEndLocation
+                     | kCGGradientDrawsBeforeStartLocation
+               );
+            });
             CGContextRestoreGState(ctx);
          }
          else if constexpr (std::is_same_v<T, radial_gradient>)
          {
             auto ctx = CGContextRef(_context);
             CGContextSaveGState(ctx);
-            clip();  // Set to clip current path
-            CGContextDrawRadialGradient(
-               ctx, _state->fill_gradient(),
-               CGPoint{style.c1.x, style.c1.y}, style.c1_radius,
-               CGPoint{style.c2.x, style.c2.y}, style.c2_radius,
-               kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation);
+            with_shadow_layer(ctx, _state->shadow(), [&]
+            {
+               clip();  // Set to clip current path
+               CGContextDrawRadialGradient(
+                  ctx, _state->fill_gradient(),
+                  CGPoint{style.c1.x, style.c1.y}, style.c1_radius,
+                  CGPoint{style.c2.x, style.c2.y}, style.c2_radius,
+                  kCGGradientDrawsAfterEndLocation
+                     | kCGGradientDrawsBeforeStartLocation
+               );
+            });
             CGContextRestoreGState(ctx);
          }
       };
 
-      std::visit(apply_fill, _state->fill_style());
+      with_mode(CGContextRef(_context), _state->mode(), [&]
+      {
+         std::visit(apply_fill, _state->fill_style());
+      });
    }
 
    void canvas::fill_preserve()
@@ -397,14 +449,17 @@ namespace cycfi::artist
             auto ctx = CGContextRef(_context);
             CGContextSaveGState(ctx);
             CGContextReplacePathWithStrokedPath(ctx);
-
-            clip();  // Set to clip current path
-            CGContextDrawLinearGradient(
-               ctx, _state->stroke_gradient(),
-               CGPoint{style.start.x, style.start.y},
-               CGPoint{style.end.x, style.end.y},
-               kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
-            );
+            with_shadow_layer(ctx, _state->shadow(), [&]
+            {
+               clip();  // Set to clip current path
+               CGContextDrawLinearGradient(
+                  ctx, _state->stroke_gradient(),
+                  CGPoint{style.start.x, style.start.y},
+                  CGPoint{style.end.x, style.end.y},
+                  kCGGradientDrawsAfterEndLocation
+                     | kCGGradientDrawsBeforeStartLocation
+               );
+            });
             CGContextRestoreGState(ctx);
          }
          else if constexpr (std::is_same_v<T, radial_gradient>)
@@ -412,19 +467,25 @@ namespace cycfi::artist
             auto ctx = CGContextRef(_context);
             CGContextSaveGState(ctx);
             CGContextReplacePathWithStrokedPath(ctx);
-
-            clip();  // Set to clip current path
-            CGContextDrawRadialGradient(
-               ctx, _state->stroke_gradient(),
-               CGPoint{style.c1.x, style.c1.y}, style.c1_radius,
-               CGPoint{style.c2.x, style.c2.y}, style.c2_radius,
-               kCGGradientDrawsAfterEndLocation | kCGGradientDrawsBeforeStartLocation
-            );
+            with_shadow_layer(ctx, _state->shadow(), [&]
+            {
+               clip();  // Set to clip current path
+               CGContextDrawRadialGradient(
+                  ctx, _state->stroke_gradient(),
+                  CGPoint{style.c1.x, style.c1.y}, style.c1_radius,
+                  CGPoint{style.c2.x, style.c2.y}, style.c2_radius,
+                  kCGGradientDrawsAfterEndLocation
+                     | kCGGradientDrawsBeforeStartLocation
+               );
+            });
             CGContextRestoreGState(ctx);
          }
       };
 
-      std::visit(apply_stroke, _state->stroke_style());
+      with_mode(CGContextRef(_context), _state->mode(), [&]
+      {
+         std::visit(apply_stroke, _state->stroke_style());
+      });
    }
 
    void canvas::stroke_preserve()
@@ -446,6 +507,20 @@ namespace cycfi::artist
    rect canvas::clip_extent() const
    {
       auto r = CGContextGetClipBoundingBox(CGContextRef(_context));
+      return {
+         float(r.origin.x)
+       , float(r.origin.y)
+       , float(r.origin.x + r.size.width)
+       , float(r.origin.y + r.size.height)
+      };
+   }
+
+   rect canvas::fill_extent() const
+   {
+      auto ctx = CGContextRef(_context);
+      if (CGContextIsPathEmpty(ctx))
+         return {};
+      auto r = CGContextGetPathBoundingBox(ctx);
       return {
          float(r.origin.x)
        , float(r.origin.y)
@@ -574,6 +649,9 @@ namespace cycfi::artist
 
    void canvas::line_width(float w)
    {
+      // Zero, negative, infinite and NaN widths are ignored.
+      if (!(w > 0) || !std::isfinite(w))
+         return;
       CGContextSetLineWidth(CGContextRef(_context), w);
    }
 
@@ -603,13 +681,31 @@ namespace cycfi::artist
 
    void canvas::miter_limit(float limit)
    {
+      // Zero, negative, infinite and NaN limits are ignored.
+      if (!(limit > 0) || !std::isfinite(limit))
+         return;
       CGContextSetMiterLimit(CGContextRef(_context), limit);
    }
 
    void canvas::shadow_style(point offset, float blur, color c)
    {
+      // A shadow is drawn only if it can be seen: a color that is not fully
+      // transparent, and an offset or a blur.
+      auto ctx = CGContextRef(_context);
+      bool const visible =
+         c.alpha > 0 && (blur > 0 || offset.x != 0 || offset.y != 0);
+      _state->shadow(visible);
+      if (!visible)
+      {
+         CGContextSetShadowWithColor(ctx, CGSizeZero, 0, nullptr);
+         return;
+      }
+
+      // Quartz takes the shadow in base space: pixels for a bitmap context,
+      // points for a window. Scale a bitmap's to the image's units.
+      auto k = CGBitmapContextGetWidth(ctx) != 0? _state->scale() : 1.0f;
       CGContextSetShadowWithColor(
-         CGContextRef(_context), CGSizeMake(offset.x, -offset.y), blur,
+         ctx, CGSizeMake(offset.x * k, -offset.y * k), blur * k,
          [
             [NSColor
                colorWithRed : c.red
@@ -639,7 +735,7 @@ namespace cycfi::artist
          case destination_out:      cg_mode = kCGBlendModeDestinationOut; break;
 
          case lighter:              cg_mode = kCGBlendModePlusLighter; break;
-         case darker:               cg_mode = kCGBlendModePlusDarker; break;
+         case darker:               cg_mode = kCGBlendModeDarken; break;
          case copy:                 cg_mode = kCGBlendModeCopy; break;
          case xor_:                 cg_mode = kCGBlendModeXOR; break;
 
@@ -804,11 +900,14 @@ namespace cycfi::artist
       auto apply_gradient = [&](auto&& apply)
       {
          CGContextSaveGState(ctx);
-         begin_path();
-         translate({p.x, p.y});                    // Move to p
-         detail::add_line_to_path(ctx, line);      // Convert text to path and add
-         clip();                                   // Set to clip current path
-         apply();                                  // Apply the gradient
+         with_shadow_layer(ctx, _state->shadow(), [&]
+         {
+            begin_path();
+            translate({p.x, p.y});                 // Move to p
+            detail::add_line_to_path(ctx, line);   // Text to path
+            clip();                                // Clip to the path
+            apply();                               // Apply the gradient
+         });
          CGContextRestoreGState(ctx);
       };
 
@@ -849,7 +948,10 @@ namespace cycfi::artist
          }
       };
 
-      std::visit(apply_fill, _state->fill_style());
+      with_mode(ctx, _state->mode(), [&]
+      {
+         std::visit(apply_fill, _state->fill_style());
+      });
       CFRelease(line);
    }
 
@@ -865,12 +967,15 @@ namespace cycfi::artist
       auto apply_gradient = [&](auto&& apply)
       {
          CGContextSaveGState(ctx);
-         begin_path();
-         translate({p.x, p.y});                    // Move to p
-         detail::add_line_to_path(ctx, line);      // Convert text to path and add
-         CGContextReplacePathWithStrokedPath(ctx); // Convert stroke to path
-         clip();                                   // Set to clip current path
-         apply();                                  // Apply the gradient
+         with_shadow_layer(ctx, _state->shadow(), [&]
+         {
+            begin_path();
+            translate({p.x, p.y});                 // Move to p
+            detail::add_line_to_path(ctx, line);   // Text to path
+            CGContextReplacePathWithStrokedPath(ctx);
+            clip();                                // Clip to the path
+            apply();                               // Apply the gradient
+         });
          CGContextRestoreGState(ctx);
       };
 
@@ -911,7 +1016,10 @@ namespace cycfi::artist
          }
       };
 
-      std::visit(apply_stroke, _state->stroke_style());
+      with_mode(ctx, _state->mode(), [&]
+      {
+         std::visit(apply_stroke, _state->stroke_style());
+      });
       CFRelease(line);
    }
 
@@ -975,7 +1083,7 @@ namespace cycfi::artist
          case destination_out:      mode = kCGBlendModeDestinationOut; break;
 
          case lighter:              mode = kCGBlendModePlusLighter; break;
-         case darker:               mode = kCGBlendModePlusDarker; break;
+         case darker:               mode = kCGBlendModeDarken; break;
          case copy:                 mode = kCGBlendModeCopy; break;
          case xor_:                 mode = kCGBlendModeXOR; break;
 
@@ -1003,7 +1111,11 @@ namespace cycfi::artist
       // the top-row-first CGImage draws upright at dest.
       CGContextTranslateCTM(ctx, dest.left, dest.top + dest.height());
       CGContextScaleCTM(ctx, 1, -1);
-      CGContextDrawImage(ctx, CGRectMake(0, 0, dest.width(), dest.height()), sub ? sub : full);
+      with_mode(ctx, _state->mode(), [&]
+      {
+         auto r = CGRectMake(0, 0, dest.width(), dest.height());
+         CGContextDrawImage(ctx, r, sub? sub : full);
+      });
       CGContextRestoreGState(ctx);
 
       if (sub)

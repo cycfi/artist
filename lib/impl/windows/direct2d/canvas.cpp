@@ -181,8 +181,20 @@ namespace cycfi::artist
       // offscreen, which is Gaussian-blurred, offset, and composited onto the
       // main target. Leaves the main transform at identity.
       using render_function = std::function<void(render_target*, brush*, bool)>;
-      void              apply_blur(context& ctx, artist::rect bounds, render_function render);
+      void              apply_blur(
+                           context& ctx, artist::rect bounds
+                         , render_function render, bool stroke);
       void              adjust_for_blur(artist::rect& bounds);
+
+      // A shadow is drawn only if it can be seen: a color that is not fully
+      // transparent, and an offset or a blur.
+      bool              shadow_visible() const
+                        {
+                           auto const& c = current();
+                           return c.shadow_color.alpha > 0 &&
+                              (c.shadow_blur > 0 || c.shadow_offset.x != 0
+                                 || c.shadow_offset.y != 0);
+                        }
 
    public:
 
@@ -226,9 +238,13 @@ namespace cycfi::artist
                                  D2D1::IdentityMatrix(), 1.0f, nullptr,
                                  D2D1_LAYER_OPTIONS_NONE),
                               layer);
-                           auto device = narrowed(device_bounds(current().matrix,
-                              {bounds.left, bounds.top, bounds.right, bounds.bottom}));
-                           _clips.push_back({layer, geo, false, device});
+                           auto const& m = current().matrix;
+                           artist::rect user{
+                              bounds.left, bounds.top,
+                              bounds.right, bounds.bottom};
+                           auto device = narrowed(device_bounds(m, user));
+                           _clips.push_back(
+                              {layer, geo, false, device, m, user});
                         }
       // An axis-aligned rectangle clip needs no layer at all.
       void              do_clip(artist::rect const& r)
@@ -239,8 +255,53 @@ namespace cycfi::artist
                            _rt->PushAxisAlignedClip(
                               {r.left, r.top, r.right, r.bottom},
                               D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-                           _clips.push_back(
-                              {nullptr, nullptr, true, narrowed(device_bounds(current().matrix, r))});
+                           _clips.push_back({
+                              nullptr, nullptr, true,
+                              narrowed(device_bounds(current().matrix, r)),
+                              current().matrix, r});
+                        }
+
+      // Direct2D will not read the target back (CopyFromRenderTarget) while
+      // a clip or layer is pushed on it. Take the clips off for the read and
+      // put them back after, as they were.
+      void              suspend_clips()
+                        {
+                           if (!_rt)
+                              return;
+                           auto i = _clips.rbegin();
+                           for (; i != _clips.rend(); ++i)
+                           {
+                              if (i->axis_aligned)
+                                 _rt->PopAxisAlignedClip();
+                              else
+                                 _rt->PopLayer();
+                           }
+                        }
+
+      void              resume_clips()
+                        {
+                           if (!_rt)
+                              return;
+                           for (auto const& c : _clips)
+                           {
+                              auto const& b = c.bounds;
+                              rectf r{b.left, b.top, b.right, b.bottom};
+                              auto const aa = D2D1_ANTIALIAS_MODE_PER_PRIMITIVE;
+                              _rt->SetTransform(c.matrix);
+                              if (c.axis_aligned)
+                              {
+                                 _rt->PushAxisAlignedClip(r, aa);
+                              }
+                              else
+                              {
+                                 _rt->PushLayer(
+                                    D2D1::LayerParameters(
+                                       r, c.geo, aa,
+                                       D2D1::IdentityMatrix(), 1.0f,
+                                       nullptr, D2D1_LAYER_OPTIONS_NONE),
+                                    c.layer);
+                              }
+                           }
                         }
       std::size_t       clip_count() const             { return _clips.size(); }
       // The active clip's device-space bounds, or none when nothing clips.
@@ -277,6 +338,8 @@ namespace cycfi::artist
          geometry*      geo;
          bool           axis_aligned;
          artist::rect   device;
+         matrix2x2f     matrix;     // as pushed, to push it again
+         artist::rect   bounds;     // user space, as pushed
       };
 
       artist::rect      narrowed(artist::rect const& device_bounds_) const
@@ -515,7 +578,8 @@ namespace cycfi::artist
 
    void canvas::canvas_state::adjust_for_blur(artist::rect& bounds)
    {
-      float offset = current().shadow_blur / current().matrix.m11;
+      // The blur is in the canvas's initial units, whatever the transform.
+      float offset = current().shadow_blur;
       bounds.left -= offset;
       bounds.right += offset;
       bounds.top -= offset;
@@ -523,7 +587,8 @@ namespace cycfi::artist
    }
 
    void canvas::canvas_state::apply_blur(
-      context& ctx, artist::rect /*bounds*/, render_function render)
+      context& ctx, artist::rect /*bounds*/, render_function render
+    , bool stroke)
    {
       auto& cur = current();
 
@@ -534,58 +599,62 @@ namespace cycfi::artist
       if (FAILED(ctx.target()->QueryInterface(&dc)) || !dc)
          return;
 
-      float alpha = 1.0f;
-      if (std::holds_alternative<color>(cur.fill_info))
-         alpha = std::get<color>(cur.fill_info).alpha;
-
-      // Render the shape (in shadow color) into a compatible offscreen bitmap,
-      // positioned exactly like the real shape (same transform).
+      // Render what is drawn, in its own paint, into a compatible offscreen
+      // bitmap positioned exactly like it (same transform): its alpha, point
+      // by point, is what casts the shadow.
+      auto main = ctx.target();
+      brush* paint = stroke? stroke_paint(*main) : fill_paint(*main);
       offscreen_context offscreen{ctx};
       auto bm_target = offscreen.target();
       bm_target->BeginDraw();
       bm_target->Clear(D2D1::ColorF(0, 0, 0, 0));
       bm_target->SetTransform(cur.matrix);
-      solid_color_brush* shadow_paint = nullptr;
-      bm_target->CreateSolidColorBrush(
-         D2D1::ColorF(
-            cur.shadow_color.red, cur.shadow_color.green,
-            cur.shadow_color.blue, alpha),
-         &shadow_paint
-      );
-      render(bm_target, shadow_paint, true);
+      render(bm_target, paint, true);
       bm_target->EndDraw();
 
-      // Gaussian-blur the shadow bitmap, offset it, and draw it onto the main
-      // target (under the shape, which the caller paints next).
-      effect* blur = nullptr;
+      // The shadow effect takes the source's alpha, blurs it and fills it with
+      // the shadow color, alpha included. Offset it and draw it onto the main
+      // target, under what the caller paints next.
+      effect* shadow = nullptr;
       effect* xform = nullptr;
-      if (SUCCEEDED(dc->CreateEffect(CLSID_D2D1GaussianBlur, &blur)) && blur &&
+      if (SUCCEEDED(dc->CreateEffect(CLSID_D2D1Shadow, &shadow)) && shadow &&
           SUCCEEDED(dc->CreateEffect(CLSID_D2D12DAffineTransform, &xform)) && xform)
       {
-         // Match the Skia backend: shadow blur maps directly to the Gaussian
-         // standard deviation (Skia uses sigma = blur). The earlier /2 made the
-         // D2D shadow about half as wide (too tight/hard).
-         float blur_val = cur.shadow_blur / cur.matrix.m11;
-         blur->SetInput(0, offscreen.bitmap());
-         blur->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_SOFT);
-         blur->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, blur_val);
-         blur->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_GAUSSIANBLUR_OPTIMIZATION_BALANCED);
+         // The blur is twice the Gaussian standard deviation, as in the W3C
+         // canvas API, and the transform in effect does not change it.
+         auto const& c = cur.shadow_color;
+         shadow->SetInput(0, offscreen.bitmap());
+         shadow->SetValue(
+            D2D1_SHADOW_PROP_BLUR_STANDARD_DEVIATION, cur.shadow_blur / 2);
+         shadow->SetValue(
+            D2D1_SHADOW_PROP_COLOR
+          , D2D1::Vector4F(c.red, c.green, c.blue, c.alpha));
+         shadow->SetValue(
+            D2D1_SHADOW_PROP_OPTIMIZATION, D2D1_SHADOW_OPTIMIZATION_BALANCED);
 
-         float offset_x = cur.shadow_offset.x;
-         float offset_y = cur.shadow_offset.y;
-         xform->SetInputEffect(0, blur);
+         xform->SetInputEffect(0, shadow);
+         auto const& offset = cur.shadow_offset;
          xform->SetValue(
             D2D1_2DAFFINETRANSFORM_PROP_TRANSFORM_MATRIX,
-            D2D1::Matrix3x2F::Translation(offset_x, offset_y));
+            D2D1::Matrix3x2F::Translation(offset.x, offset.y));
 
          dc->SetTransform(D2D1::Matrix3x2F::Identity());
          dc->DrawImage(xform, D2D1_INTERPOLATION_MODE_LINEAR);
       }
 
-      release(blur);
+      release(shadow);
       release(xform);
-      release(shadow_paint);
       release(dc);
+   }
+
+   namespace
+   {
+      bool is_unbounded(canvas::composite_op_enum m)
+      {
+         return m == canvas::source_in || m == canvas::source_out
+            || m == canvas::destination_in || m == canvas::destination_atop
+            || m == canvas::copy;
+      }
    }
 
    void canvas::canvas_state::composite_draw(
@@ -673,9 +742,12 @@ namespace cycfi::artist
          D2D1_POINT_2U dp{0, 0};
          D2D1_RECT_U sr{0, 0, sz.width, sz.height};
          main->Flush(nullptr, nullptr);
-         if (SUCCEEDED(main->CreateBitmap(sz, nullptr, 0, &props, &bg)) && bg &&
-             SUCCEEDED(bg->CopyFromRenderTarget(&dp, main, &sr)) &&
-             SUCCEEDED(dc->CreateEffect(CLSID_D2D1Blend, &blend)) && blend)
+         suspend_clips();
+         bool const copied =
+            SUCCEEDED(main->CreateBitmap(sz, nullptr, 0, &props, &bg)) && bg &&
+            SUCCEEDED(bg->CopyFromRenderTarget(&dp, main, &sr));
+         resume_clips();
+         if (copied && SUCCEEDED(dc->CreateEffect(CLSID_D2D1Blend, &blend)) && blend)
          {
             blend->SetInput(0, bg);       // background (destination)
             blend->SetInput(1, src_bm);   // foreground (source)
@@ -693,17 +765,23 @@ namespace cycfi::artist
          draw_mode = to_composite_mode(mode);
       }
 
-      // The composite is confined to the primitive's device-space bounds — canvas
-      // ops affect only the draw's coverage, not the whole surface (matches Skia).
+      // The unbounded operators clear the destination outside what is drawn,
+      // as far as the clip, so they composite the whole intermediate. The
+      // others are confined to the primitive's device-space bounds.
       if (draw_img)
       {
-         auto db = device_bounds(current().matrix, user_bounds);
+         bool const confine = !is_unbounded(mode);
          dc->SetTransform(D2D1::Matrix3x2F::Identity());
-         dc->PushAxisAlignedClip(
-            D2D1::RectF(db.left, db.top, db.right, db.bottom),
-            D2D1_ANTIALIAS_MODE_ALIASED);
+         if (confine)
+         {
+            auto db = device_bounds(current().matrix, user_bounds);
+            dc->PushAxisAlignedClip(
+               D2D1::RectF(db.left, db.top, db.right, db.bottom),
+               D2D1_ANTIALIAS_MODE_ALIASED);
+         }
          dc->DrawImage(draw_img, D2D1_INTERPOLATION_MODE_LINEAR, draw_mode);
-         dc->PopAxisAlignedClip();
+         if (confine)
+            dc->PopAxisAlignedClip();
       }
 
       release(blend_out);
@@ -717,14 +795,15 @@ namespace cycfi::artist
 
    void canvas::canvas_state::fill(context& ctx, bool preserve)
    {
-      if (current().shadow_blur != 0)
+      if (shadow_visible())
       {
          auto render =
             [this](render_target* target, brush* b, bool preserve)
             { _path.impl()->fill(*target, b, preserve); };
          auto bounds = _path.impl()->fill_bounds();
          adjust_for_blur(bounds);
-         apply_blur(ctx, bounds, render);   // leaves the transform at identity
+         // Leaves the transform at identity.
+         apply_blur(ctx, bounds, render, false);
       }
       // Bounds are only for the composite intermediate; source-over draws
       // straight to the target, and computing them realizes the geometry,
@@ -741,14 +820,15 @@ namespace cycfi::artist
    {
       auto lw = current().line_width;
       auto ss = stroke_style_obj();
-      if (current().shadow_blur != 0)
+      if (shadow_visible())
       {
          auto render =
             [this, lw, ss](render_target* target, brush* b, bool preserve)
             { _path.impl()->stroke(*target, b, lw, preserve, ss); };
          auto bounds = _path.impl()->stroke_bounds(lw, ss);
          adjust_for_blur(bounds);
-         apply_blur(ctx, bounds, render);   // leaves the transform at identity
+         // Leaves the transform at identity.
+         apply_blur(ctx, bounds, render, true);
       }
       artist::rect bounds;
       if (current().composite != canvas::source_over)
@@ -1028,6 +1108,9 @@ namespace cycfi::artist
 
    void canvas::line_width(float w)
    {
+      // Zero, negative, infinite and NaN widths are ignored.
+      if (!(w > 0) || !std::isfinite(w))
+         return;
       _state->current().line_width = w;
    }
 
@@ -1045,6 +1128,9 @@ namespace cycfi::artist
 
    void canvas::miter_limit(float limit)
    {
+      // Zero, negative, infinite and NaN limits are ignored.
+      if (!(limit > 0) || !std::isfinite(limit))
+         return;
       _state->current().miter_limit = limit;
       _state->discard();
    }
@@ -1122,12 +1208,12 @@ namespace cycfi::artist
 
       // Drop shadow / glow: render the text in the shadow color into an offscreen,
       // blur + offset it, and composite under the real text.
-      if (_state->current().shadow_blur != 0)
+      if (_state->shadow_visible())
          _state->apply_blur(*_context, {},
             [layout, org](render_target* target, brush* b, bool)
             {
                target->DrawTextLayout(org, layout, b, D2D1_DRAW_TEXT_OPTIONS_NONE);
-            });
+            }, false);
 
       t->SetTransform(_state->current().matrix);
       auto brush = _state->fill_paint(*t);
@@ -1193,12 +1279,12 @@ namespace cycfi::artist
          return;
 
       // Drop shadow / glow for the stroked outline.
-      if (_state->current().shadow_blur != 0)
+      if (_state->shadow_visible())
          _state->apply_blur(*_context, {},
             [placed, lw, ss](render_target* target, brush* b, bool)
             {
                target->DrawGeometry(placed, b, lw, ss);
-            });
+            }, true);
 
       t->SetTransform(_state->current().matrix);
       t->DrawGeometry(placed, _state->stroke_paint(*t), lw, ss);
@@ -1254,22 +1340,28 @@ namespace cycfi::artist
       // src is in the image's own units; the bitmap source rectangle is in
       // pixels, so a scaled image needs it scaled too.
       auto sc = pic.scale();
+      auto paint = [&](render_target* t)
+      {
+         // The device bitmap is cached on the image (see image_bitmap), so
+         // a photo drawn every frame is uploaded once, not every frame.
+         auto bm = d2d::image_bitmap(pic, *t);
+         if (!bm)
+            return;
+         t->DrawBitmap(
+            bm,
+            D2D1::RectF(dest.left, dest.top, dest.right, dest.bottom),
+            1.0f,
+            D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,
+            D2D1::RectF(
+               src.left * sc, src.top * sc, src.right * sc, src.bottom * sc)
+         );
+      };
 
-      _state->composite_draw(*_context, dest,
-         [&](render_target* t)
-         {
-            // The device bitmap is cached on the image (see image_bitmap), so
-            // a photo drawn every frame is uploaded once, not every frame.
-            auto bm = d2d::image_bitmap(pic, *t);
-            if (!bm)
-               return;
-            t->DrawBitmap(
-               bm,
-               D2D1::RectF(dest.left, dest.top, dest.right, dest.bottom),
-               1.0f,
-               D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,
-               D2D1::RectF(src.left * sc, src.top * sc, src.right * sc, src.bottom * sc)
-            );
-         });
+      // Images cast shadows too, from their own alpha.
+      if (_state->shadow_visible())
+         _state->apply_blur(*_context, {},
+            [&](render_target* t, brush*, bool) { paint(t); }, false);
+
+      _state->composite_draw(*_context, dest, paint);
    }
 }

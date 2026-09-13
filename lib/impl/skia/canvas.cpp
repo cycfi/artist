@@ -47,6 +47,8 @@ namespace cycfi::artist
       class font&       font();
       int&              text_align();
       SkPaint&          clear_paint();
+      blur_info&        shadow();
+      bool&             shadow_visible();
 
       void              save();
       void              restore();
@@ -65,6 +67,10 @@ namespace cycfi::artist
             _fill_paint.setStyle(SkPaint::kFill_Style);
             _stroke_paint.setAntiAlias(true);
             _stroke_paint.setStyle(SkPaint::kStroke_Style);
+
+            // The W3C defaults. Skia's own are a hairline and a limit of 4.
+            _stroke_paint.setStrokeWidth(1);
+            _stroke_paint.setStrokeMiter(10);
          }
 
          SkPathBuilder  _path;
@@ -72,6 +78,8 @@ namespace cycfi::artist
          SkPaint        _stroke_paint;
          class font     _font;
          int            _text_align = 0;
+         blur_info      _shadow = {{0, 0}, 0, colors::black};
+         bool           _shadow_visible = false;
       };
 
       using state_info_ptr = std::unique_ptr<state_info>;
@@ -123,6 +131,16 @@ namespace cycfi::artist
       return _clear_paint;
    }
 
+   canvas::canvas_state::blur_info& canvas::canvas_state::shadow()
+   {
+      return current()->_shadow;
+   }
+
+   bool& canvas::canvas_state::shadow_visible()
+   {
+      return current()->_shadow_visible;
+   }
+
    void canvas::canvas_state::save()
    {
       _stack.push(std::make_unique<state_info>(*current()));
@@ -147,6 +165,84 @@ namespace cycfi::artist
    void canvas::canvas_state::set_inv_affine(affine_transform xf)
    {
       _inv_affine = xf;
+   }
+
+   namespace
+   {
+      // The paint with the current shadow, if one is to be drawn. The offset
+      // and blur are in the canvas's initial user space, so the transform in
+      // effect does not change them, as in the W3C canvas API. Skia applies
+      // an image filter's parameters in local space, so map them there.
+      SkPaint shadowed(
+         SkCanvas* cnv, canvas::canvas_state& state, SkPaint paint)
+      {
+         if (!state.shadow_visible())
+            return paint;
+
+         auto const& sh = state.shadow();
+         auto base = state.get_inv_affine().invert();
+         double dx = base.a * sh._offset.x + base.c * sh._offset.y;
+         double dy = base.b * sh._offset.x + base.d * sh._offset.y;
+         double sigma = sh._blur / 2
+            * std::sqrt(std::abs(base.a * base.d - base.c * base.b));
+
+         SkScalar m[6];
+         (void) cnv->getTotalMatrix().asAffine(m);
+         double det = m[0] * m[3] - m[2] * m[1];
+         if (det == 0)
+            return paint;
+         double lx = (m[3] * dx - m[2] * dy) / det;
+         double ly = (m[0] * dy - m[1] * dx) / det;
+         double sx = std::hypot(m[0], m[1]);
+         double sy = std::hypot(m[2], m[3]);
+
+         auto c = sh._color;
+         paint.setImageFilter(SkImageFilters::DropShadow(
+            lx, ly, sigma / sx, sigma / sy
+          , SkColor4f{c.red, c.green, c.blue, c.alpha}.toSkColor()
+          , nullptr
+         ));
+         return paint;
+      }
+
+      bool is_unbounded(SkBlendMode mode)
+      {
+         return mode == SkBlendMode::kSrcIn || mode == SkBlendMode::kSrcOut
+            || mode == SkBlendMode::kDstIn || mode == SkBlendMode::kDstATop
+            || mode == SkBlendMode::kSrc;
+      }
+
+      // The unbounded operators clear the destination outside what is
+      // drawn, as far as the clip. Draw into a layer with source-over; the
+      // layer is then composited with the operator.
+      template <typename F>
+      void with_blend(SkCanvas* cnv, SkPaint const& paint, F&& draw)
+      {
+         auto mode = paint.asBlendMode().value_or(SkBlendMode::kSrcOver);
+         if (!is_unbounded(mode))
+         {
+            draw(paint);
+            return;
+         }
+
+         SkPaint layer;
+         layer.setBlendMode(mode);
+         cnv->saveLayer(nullptr, &layer);
+         SkPaint inner = paint;
+         inner.setBlendMode(SkBlendMode::kSrcOver);
+         draw(inner);
+         cnv->restore();
+      }
+
+      void draw_path(
+         SkCanvas* cnv, canvas::canvas_state& state
+       , SkPath const& path, SkPaint const& paint)
+      {
+         with_blend(cnv, shadowed(cnv, state, paint), [&](SkPaint const& p)
+         {
+            cnv->drawPath(path, p);
+         });
+      }
    }
 
    canvas::canvas(canvas_impl* context_)
@@ -255,22 +351,26 @@ namespace cycfi::artist
 
    void canvas::fill()
    {
-      _context->drawPath(_state->path().detach(), _state->fill_paint());
+      auto path = _state->path().detach();
+      draw_path(_context, *_state, path, _state->fill_paint());
    }
 
    void canvas::fill_preserve()
    {
-      _context->drawPath(_state->path().snapshot(), _state->fill_paint());
+      auto path = _state->path().snapshot();
+      draw_path(_context, *_state, path, _state->fill_paint());
    }
 
    void canvas::stroke()
    {
-      _context->drawPath(_state->path().detach(), _state->stroke_paint());
+      auto path = _state->path().detach();
+      draw_path(_context, *_state, path, _state->stroke_paint());
    }
 
    void canvas::stroke_preserve()
    {
-      _context->drawPath(_state->path().snapshot(), _state->stroke_paint());
+      auto path = _state->path().snapshot();
+      draw_path(_context, *_state, path, _state->stroke_paint());
    }
 
    void canvas::clip()
@@ -285,8 +385,18 @@ namespace cycfi::artist
 
    rect canvas::clip_extent() const
    {
-      SkRect r;
-      _context->getLocalClipBounds(&r);
+      // getLocalClipBounds pads the clip by a pixel for antialiasing. Map
+      // the device clip back to user space instead.
+      SkMatrix inverse;
+      if (!_context->getTotalMatrix().invert(&inverse))
+         return {};
+      auto r = inverse.mapRect(SkRect::Make(_context->getDeviceClipBounds()));
+      return {r.left(), r.top(), r.right(), r.bottom()};
+   }
+
+   rect canvas::fill_extent() const
+   {
+      auto r = _state->path().snapshot().getBounds();
       return {r.left(), r.top(), r.right(), r.bottom()};
    }
 
@@ -373,6 +483,9 @@ namespace cycfi::artist
 
    void canvas::line_width(float w)
    {
+      // Zero, negative, infinite and NaN widths are ignored.
+      if (!(w > 0) || !std::isfinite(w))
+         return;
       _state->stroke_paint().setStrokeWidth(w);
    }
 
@@ -402,27 +515,20 @@ namespace cycfi::artist
 
    void canvas::miter_limit(float limit)
    {
+      // Zero, negative, infinite and NaN limits are ignored.
+      if (!(limit > 0) || !std::isfinite(limit))
+         return;
       _state->stroke_paint().setStrokeMiter(limit);
    }
 
    void canvas::shadow_style(point offset, float blur, color c)
    {
-      constexpr auto blur_factor = 1.0f;
-      auto matrix = _context->getTotalMatrix();
-      float scx = matrix.getScaleX();
-      float scy = matrix.getScaleY();
-
-      auto shadow = SkImageFilters::DropShadow(
-         offset.x / scx
-       , offset.y / scy
-       , (blur * blur_factor) / scx
-       , (blur * blur_factor) / scy
-       , SkColor4f{c.red, c.green, c.blue, c.alpha}.toSkColor()
-       , nullptr
-      );
-
-      _state->stroke_paint().setImageFilter(shadow);
-      _state->fill_paint().setImageFilter(shadow);
+      // Kept in the state and applied at each draw (see shadowed). A shadow
+      // is drawn only if it can be seen: a color that is not fully
+      // transparent, and an offset or a blur.
+      _state->shadow() = {offset, blur, c};
+      _state->shadow_visible() =
+         c.alpha > 0 && (blur > 0 || offset.x != 0 || offset.y != 0);
    }
 
    void canvas::global_composite_operation(composite_op_enum mode)
@@ -605,7 +711,11 @@ namespace cycfi::artist
          utf8.data(), utf8.size(), *_state->font().impl().get()
       );
       prepare_text(_state->font(), _state->text_align(), p, utf8.data(), utf8.data()+utf8.size());
-      _context->drawTextBlob(text_blob.get(), p.x, p.y, _state->fill_paint());
+      auto paint = shadowed(_context, *_state, _state->fill_paint());
+      with_blend(_context, paint, [&](SkPaint const& q)
+      {
+         _context->drawTextBlob(text_blob.get(), p.x, p.y, q);
+      });
    }
 
    void canvas::stroke_text(std::string_view utf8, point p)
@@ -614,7 +724,11 @@ namespace cycfi::artist
          utf8.data(), utf8.size(), *_state->font().impl().get()
       );
       prepare_text(_state->font(), _state->text_align(), p, utf8.data(), utf8.data()+ utf8.size());
-      _context->drawTextBlob(text_blob.get(), p.x, p.y, _state->stroke_paint());
+      auto paint = shadowed(_context, *_state, _state->stroke_paint());
+      with_blend(_context, paint, [&](SkPaint const& q)
+      {
+         _context->drawTextBlob(text_blob.get(), p.x, p.y, q);
+      });
    }
 
    canvas::text_metrics canvas::measure_text(std::string_view utf8)
@@ -646,6 +760,7 @@ namespace cycfi::artist
 
    void canvas::draw(image const& pic, rect const& src, rect const& dest)
    {
+      auto paint = shadowed(_context, *_state, _state->fill_paint());
       auto draw_picture =
          [&](auto const& that)
          {
@@ -658,20 +773,29 @@ namespace cycfi::artist
                SkMatrix mat;
                mat.setScale(dest.width()/src.width(), dest.height()/src.height());
                mat.setTranslate(dest.left-src.left, dest.top-src.top);
-               _context->drawPicture(that, &mat, &_state->fill_paint());
+               with_blend(_context, paint, [&](SkPaint const& q)
+               {
+                  _context->drawPicture(that, &mat, &q);
+               });
             }
             if constexpr(std::is_same_v<T, SkBitmap>)
             {
                // src is in logical units; map it to the bitmap's pixels.
                float s = pic.scale();
-               _context->drawImageRect(
-                  that.asImage(),
-                  SkRect{src.left * s, src.top * s, src.right * s, src.bottom * s},
-                  SkRect{dest.left, dest.top, dest.right, dest.bottom},
-                  SkSamplingOptions(),
-                  &_state->fill_paint(),
-                  SkCanvas::kStrict_SrcRectConstraint
-               );
+               with_blend(_context, paint, [&](SkPaint const& q)
+               {
+                  _context->drawImageRect(
+                     that.asImage(),
+                     SkRect{
+                        src.left * s, src.top * s
+                      , src.right * s, src.bottom * s
+                     },
+                     SkRect{dest.left, dest.top, dest.right, dest.bottom},
+                     SkSamplingOptions(),
+                     &q,
+                     SkCanvas::kStrict_SrcRectConstraint
+                  );
+               });
             }
          };
 

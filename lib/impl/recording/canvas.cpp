@@ -120,7 +120,14 @@ namespace cycfi::artist
       recording::command cmd;
       cmd.kind = kind;
       cmd.geometry = geometry;
-      cmd.bounds = recording::intersect(ink, c.clip);
+      // The unbounded operators reach the whole clip: they clear the
+      // destination outside what is drawn.
+      bool const unbounded =
+         c.composite == canvas::source_in || c.composite == canvas::source_out
+         || c.composite == canvas::destination_in
+         || c.composite == canvas::destination_atop
+         || c.composite == canvas::copy;
+      cmd.bounds = unbounded? c.clip : recording::intersect(ink, c.clip);
       cmd.visible = cmd.bounds.width() > 0 && cmd.bounds.height() > 0;
       cmd.paint = p.c;
       cmd.gradient = p.gradient;
@@ -421,6 +428,9 @@ namespace cycfi::artist
 
    void canvas::line_width(float w)
    {
+      // Zero, negative, infinite and NaN widths are ignored.
+      if (!(w > 0) || !std::isfinite(w))
+         return;
       _state->cur().line_width = w;
    }
 
@@ -436,6 +446,9 @@ namespace cycfi::artist
 
    void canvas::miter_limit(float limit)
    {
+      // Zero, negative, infinite and NaN limits are ignored.
+      if (!(limit > 0) || !std::isfinite(limit))
+         return;
       _state->cur().miter = limit;
    }
 
