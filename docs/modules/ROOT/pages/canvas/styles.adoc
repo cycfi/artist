@@ -2,192 +2,442 @@
 
 == Overview
 
-The styles decide how `fill` and `stroke` render. They are canvas state:
-set one and it stays in effect until it is set again, or until a saved
-state is restored over it.
+The styles decide how `fill` and `stroke` render: the paint each uses, the
+width and shape of a stroke, the shadow cast under what is drawn, and how
+new drawing combines with what is already on the canvas. Each is canvas
+state. Set one and it stays in effect for every paint that follows, until
+it is set again or a saved state is restored over it. Every style on this
+page is part of the state that `save` and `restore` keep, on every backend,
+so the usual way to apply a style to one shape is inside a
+xref:canvas/states.adoc[saved state].
 
-== fill_style / stroke_style
+A style is read when the path is painted, not when it is set, so set it
+before `fill` or `stroke`. The geometry it paints is the
+xref:canvas/current_path.adoc[current path].
 
-Sets the paint used by `fill` and by `stroke`.
+NOTE: Artist follows the W3C canvas API, and the styles map onto its
+`fillStyle`, `strokeStyle`, `lineWidth`, `lineCap`, `lineJoin`,
+`miterLimit`, the four `shadow` attributes and `globalCompositeOperation`.
+The differences are mostly in the backends, and are listed under
+<<Backend Differences>>. Two of them catch code written against the W3C
+defaults: the default line width is not 1 everywhere, and the default miter
+limit is not 10 everywhere. Set both when they matter.
 
-=== Notation
+== Include
 
-`c`:: Instance of `color`
-`gr`:: Instance of `linear_gradient` or `radial_gradient`
+```c++
+#include <artist/canvas.hpp>
+```
 
-=== Expressions
+== Declaration
 
-[,c++]
-----
-// variant 1
-cnv.fill_style(c)
-cnv.stroke_style(c)
+```c++
+   enum line_cap_enum
+   {
+      butt,
+      round,
+      square
+   };
 
-// variant 2
-cnv.fill_style(gr)
-cnv.stroke_style(gr)
+   enum join_enum
+   {
+      bevel_join,
+      round_join,
+      miter_join
+   };
 
-// variant 3
-cnv.fill_color(c)
-cnv.stroke_color(c)
-----
+   enum composite_op_enum
+   {
+      source_over,
+      source_atop,
+      source_in,
+      source_out,
 
-=== Semantics
+      destination_over,
+      destination_atop,
+      destination_in,
+      destination_out,
 
-. Fills or strokes with a flat color.
-. Fills or strokes with a gradient.
-. `fill_color` and `stroke_color` are the same operations as variant 1,
-under names that read better beside the gradient overloads.
-. The style is canvas state: it stays in effect until set again, or until a
-saved state is restored over it.
+      lighter,
+      darker,
+      copy,
+      xor_,
 
-'''
+      difference,
+      exclusion,
+      multiply,
+      screen,
 
-== line_width
+      color_dodge,
+      color_burn,
+      soft_light,
+      hard_light,
 
-Sets the width of a stroke.
+      hue,
+      saturation,
+      color_op,
+      luminosity
+   };
 
-=== Notation
+   void     fill_style(color c);
+   void     stroke_style(color c);
+   void     fill_style(linear_gradient const& gr);
+   void     fill_style(radial_gradient const& gr);
+   void     stroke_style(linear_gradient const& gr);
+   void     stroke_style(radial_gradient const& gr);
+   void     fill_color(color c);
+   void     stroke_color(color c);
 
-`w`:: `float`
+   void     line_width(float w);
+   void     line_cap(line_cap_enum cap);
+   void     line_join(join_enum join);
+   void     miter_limit(float limit = 10);
 
-=== Expression
+   void     shadow_style(point offset, float blur, color c);
+   void     shadow_style(float offsetx, float offsety, float blur, color c);
+   void     shadow_style(float blur, color c);
 
-[,c++]
-----
-cnv.line_width(w)
-----
+   void     global_composite_operation(composite_op_enum mode);
+   void     composite_op(composite_op_enum mode);
+```
 
-=== Semantics
+All of these are members of `canvas`, and the enums are nested in it, so
+the values are spelled `canvas::round`, `canvas::miter_join`,
+`canvas::copy` and so on.
 
-. Strokes drawn afterwards are `w` units wide, measured in user space,
-so the transform scales it.
-
-'''
-
-== line_cap
-
-image::/canvas/line_cap.svg[alt="line_cap", width=480px, role=center]
-
-Sets the shape drawn at the ends of an open stroke.
-
-=== Notation
-
-`cap`:: `canvas::line_cap_enum`
-
-=== Expression
-
-[,c++]
-----
-cnv.line_cap(cap)
-----
-
-=== Semantics
-
-. `canvas::butt` ends the stroke exactly at the endpoint.
-. `canvas::round` extends it by a half-circle of half the line width.
-. `canvas::square` extends it by a square of half the line width.
-. The dashed guides above mark the true endpoints.
-
-'''
-
-== line_join / miter_limit
-
-image::/canvas/line_join.svg[alt="line_join", width=480px, role=center]
-
-Sets the shape drawn where two stroke segments meet.
-
-=== Notation
-
-`join`:: `canvas::join_enum`
-`limit`:: `float`
-
-=== Expressions
-
-[,c++]
-----
-// variant 1
-cnv.line_join(join)
-
-// variant 2
-cnv.miter_limit(limit)
-----
-
-=== Semantics
-
-. `canvas::bevel_join` cuts the corner flat, `canvas::round_join` rounds
-it, and `canvas::miter_join` extends both edges to a point.
-. Sets how far a miter may extend before it is cut back to a bevel, as a
-multiple of the line width. Sharp angles produce very long miters without
-it. Defaults to 10.
-
-'''
-
-== shadow_style
-
-Casts a shadow behind whatever is filled or stroked.
+== Expressions
 
 === Notation
 
-`offset`:: Instance of `point`
-`offsetx`, `offsety`, `blur`:: `float`
-`c`:: Instance of `color`
+`cnv`                :: Object of type `canvas`.
+`c`                  :: Object of type xref:foundation/color.adoc[color].
+`gr`                 :: Object of type `canvas::linear_gradient` or
+                        `canvas::radial_gradient`.
+`w`                  :: A `float` line width.
+`limit`              :: A `float` miter limit, a multiple of the line width.
+`offset`             :: Object of type xref:foundation/point.adoc[point],
+                        the displacement of a shadow.
+`offsetx`, `offsety` :: `float` components of the displacement.
+`blur`               :: A `float`, the softness of a shadow.
+`mode`               :: A `canvas::composite_op_enum`.
 
-=== Expressions
+=== Paint
 
-[,c++]
-----
-// variant 1
-cnv.shadow_style(offset, blur, c)
+[cols="1,1,1"]
+|===
+| Expression              | Semantics                          | Return Type
 
-// variant 2
-cnv.shadow_style(offsetx, offsety, blur, c)
+| `cnv.fill_style(c)`     | Fill with the flat color `c`.      | `void`
+| `cnv.fill_style(gr)`    | Fill with the gradient `gr`.       | `void`
+| `cnv.stroke_style(c)`   | Stroke with the flat color `c`.    | `void`
+| `cnv.stroke_style(gr)`  | Stroke with the gradient `gr`.     | `void`
+| `cnv.fill_color(c)`     | The same as `cnv.fill_style(c)`.   | `void`
+| `cnv.stroke_color(c)`   | The same as `cnv.stroke_style(c)`. | `void`
+|===
 
-// variant 3
-cnv.shadow_style(blur, c)
-----
+Fill and stroke are separate styles, so one path can be filled in one paint
+and outlined in another. Each holds one paint at a time: setting a color
+replaces a gradient, and setting a gradient replaces a color. Both start as
+opaque black.
 
-=== Semantics
+The fill style also paints `fill_text` and `fill_rect`, and the stroke style
+`stroke_text` and `stroke_rect`. How a gradient is built, and the space its
+coordinates are in, is under xref:canvas/gradients.adoc[Gradients].
 
-. The shadow is displaced by `offset`, softened by `blur`, in color `c`.
-. The same, with the displacement given as two scalars.
-. The same, with no displacement, so the shadow spreads evenly around what
-is drawn, giving a glow.
+=== Line Width
 
-'''
+[cols="1,1,1"]
+|===
+| Expression              | Semantics                          | Return Type
 
-== composite_op
+| `cnv.line_width(w)`     | Stroke `w` units wide, centred on
+                            the path, half on each side.       | `void`
+|===
 
-Sets how new drawing combines with what is already on the canvas.
+The width is in user space, under the transform in effect when the path is
+stroked, not when the width is set. After `cnv.scale(2)`, a width of 10
+strokes 20 device units wide, whichever call came first.
 
-=== Notation
+CAUTION: The default width is 1 on Quartz 2D and Direct2D, 2 on Cairo, and
+a one-pixel hairline on Skia. Set it before the first stroke.
 
-`mode`:: `canvas::composite_op_enum`
+=== Line Cap
 
-=== Expressions
+[cols="1,1,1"]
+|===
+| Expression                       | Semantics                 | Return Type
 
-[,c++]
-----
-// variant 1
-cnv.composite_op(mode)
+| `cnv.line_cap(canvas::butt)`     | End a stroke exactly at
+                                     the end of the path. The
+                                     default.                  | `void`
+| `cnv.line_cap(canvas::round)`    | Extend it past the end by
+                                     a half circle whose radius
+                                     is half the line width.   | `void`
+| `cnv.line_cap(canvas::square)`   | Extend it past the end by
+                                     half the line width,
+                                     squared off.              | `void`
+|===
 
-// variant 2
-cnv.global_composite_operation(mode)
-----
+image::canvas/line_cap.png[alt="A line under each cap", width=560px, align=center, title="The same line under each cap. The grey guides mark where the path ends.", link={imagesdir}/canvas/line_cap.png]
 
-=== Semantics
+A cap is drawn at the two open ends of a sub-path. A sub-path closed with
+`close_path` has no ends, and its corners are joins instead.
 
-. Sets the compositing mode. Variant 2 is the same operation under its
-HTML5 name.
-. The Porter-Duff operators are `source_over` (the default),
-`source_atop`, `source_in`, `source_out`, their four `destination_`
-counterparts, `copy` and `xor_`.
-. The blend modes are `lighter`, `darker`, `difference`, `exclusion`,
-`multiply`, `screen`, `color_dodge`, `color_burn`, `soft_light`,
-`hard_light`, `hue`, `saturation`, `color_op` and `luminosity`.
+=== Line Join
 
-NOTE: `darker` is the one mode the backends do not agree on. Quartz2D
-implements the W3C PlusDarker rule exactly; Skia and Cairo approximate it
-with a per-channel minimum.
+[cols="1,1,1"]
+|===
+| Expression                          | Semantics              | Return Type
 
-'''
+| `cnv.line_join(canvas::bevel_join)` | Cut the corner flat,
+                                        across the outer edges
+                                        of the two segments.   | `void`
+| `cnv.line_join(canvas::round_join)` | Round the corner with
+                                        an arc whose radius is
+                                        half the line width.   | `void`
+| `cnv.line_join(canvas::miter_join)` | Extend the outer edges
+                                        of both segments until
+                                        they meet in a point.
+                                        The default.           | `void`
+| `cnv.miter_limit(limit)`            | Cut a miter back to a
+                                        bevel when it would be
+                                        longer than `limit`
+                                        line widths.           | `void`
+| `cnv.miter_limit()`                 | Set the limit to 10.   | `void`
+|===
+
+image::canvas/line_join.png[alt="A corner under each join", width=560px, align=center, title="The same corner under each join.", link={imagesdir}/canvas/line_join.png]
+
+A miter grows as the angle between two segments closes. At an angle θ it is
+1 / sin(θ / 2) line widths long, so a limit of 10 keeps a miter at any angle
+above about 11.5 degrees and bevels anything sharper. A limit of 2 bevels
+everything below 60 degrees. The limit only applies to `canvas::miter_join`.
+
+=== Shadow
+
+[cols="1,1,1"]
+|===
+| Expression                      | Semantics                   | Return Type
+
+| `cnv.shadow_style(offset,
+    blur, c)`                      | Cast a shadow of color `c`
+                                    under every fill and stroke
+                                    that follows, displaced by
+                                    `offset` and softened by
+                                    `blur`.                     | `void`
+| `cnv.shadow_style(offsetx,
+    offsety, blur, c)`             | As above, with the offset
+                                    as two scalars.             | `void`
+| `cnv.shadow_style(blur, c)`     | As above, with no offset,
+                                    so the shadow spreads
+                                    evenly around the shape: a
+                                    glow.                       | `void`
+|===
+
+The shadow is the shape itself, drawn in `c`, blurred, moved by `offset`,
+and put down beneath the shape. The alpha of `c` scales it, so a
+half-transparent color gives a half-strength shadow.
+
+On Quartz 2D and Cairo, as in the W3C API, `offset` and `blur` are not
+scaled by the transform: after `cnv.scale(2)`, an offset of 10 is still 10.
+`blur` is twice the standard deviation of the Gaussian that softens the
+edge, so a shadow fades out over roughly `blur` units on either side of it.
+A `blur` of zero gives a hard-edged copy of the shape. Skia and Direct2D
+differ on both counts; see <<Backend Differences>>.
+
+TIP: There is no call to turn a shadow off. Set it inside a saved state and
+let the restore remove it:
+
+```c++
+   {
+      auto s = cnv.new_state();
+      cnv.shadow_style({0, 2}, 6, colors::black.opacity(0.4));
+      cnv.fill_round_rect(panel, 8);
+   }  // no shadow from here on
+```
+
+Setting a fully transparent shadow color is the W3C way, but it does not
+work on Direct2D, which takes the shadow's alpha from the fill style.
+
+=== Compositing
+
+[cols="1,1,1"]
+|===
+| Expression                                | Semantics        | Return Type
+
+| `cnv.composite_op(mode)`                  | Combine what is
+                                              drawn afterwards
+                                              with what is
+                                              already on the
+                                              canvas by
+                                              `mode`.          | `void`
+| `cnv.global_composite_operation(mode)`    | The same, under
+                                              its W3C name.    | `void`
+|===
+
+In the table below the _source_ is what is being drawn and the
+_destination_ is what is already on the canvas. The first twelve modes are
+the Porter-Duff operators and their relatives, which decide how much of each
+survives. The last twelve are blend modes, which mix the two colors where
+they overlap and then draw the result over the destination.
+
+[cols="1,2"]
+|===
+| Mode                         | Result
+
+| `canvas::source_over`        | The source over the destination. The
+                                 default.
+| `canvas::source_atop`        | The source only where the destination
+                                 is, over it. The rest of the destination
+                                 is kept.
+| `canvas::source_in`          | The source only where the destination
+                                 is. The destination is not shown.
+| `canvas::source_out`         | The source only where the destination
+                                 is not. The destination is not shown.
+| `canvas::destination_over`   | The source behind the destination.
+| `canvas::destination_atop`   | The source behind the destination, and
+                                 the destination only where the source is.
+| `canvas::destination_in`     | The destination only where the source
+                                 is. The source is not shown.
+| `canvas::destination_out`    | The destination only where the source
+                                 is not: the source erases.
+| `canvas::lighter`            | The sum of the two colors.
+| `canvas::darker`             | max(0, source + destination - 1) on
+                                 Quartz 2D. See the caution below.
+| `canvas::copy`               | The source alone, alpha included,
+                                 replacing the destination.
+| `canvas::xor_`               | Each only where the other is not.
+| `canvas::difference`         | The absolute difference of the two.
+| `canvas::exclusion`          | Like `difference`, with less contrast.
+| `canvas::multiply`           | The product of the two: always as dark as
+                                 either.
+| `canvas::screen`             | The inverse of the product of the
+                                 inverses: always as light as either.
+| `canvas::color_dodge`        | The destination brightened by the
+                                 source.
+| `canvas::color_burn`         | The destination darkened by the source.
+| `canvas::soft_light`         | Darken or lighten by the source, gently.
+| `canvas::hard_light`         | Multiply or screen by the source.
+| `canvas::hue`                | The hue of the source, with the
+                                 saturation and luminosity of the
+                                 destination.
+| `canvas::saturation`         | The saturation of the source, with the
+                                 hue and luminosity of the destination.
+| `canvas::color_op`           | The hue and saturation of the source,
+                                 with the luminosity of the destination.
+                                 The W3C `color` mode.
+| `canvas::luminosity`         | The luminosity of the source, with the
+                                 hue and saturation of the destination.
+|===
+
+In the W3C API `source_in`, `source_out`, `destination_in`,
+`destination_atop` and `copy` also clear the destination everywhere outside
+the shape being drawn, since the source is transparent there. Only Cairo
+does, and only for the first four; see <<Backend Differences>>. Draw with
+them inside a clip when the extent matters.
+
+CAUTION: `darker` is the one mode whose colors the backends disagree on.
+Quartz 2D implements the plus-darker rule, max(0, source + destination -
+1). Skia, Cairo and Direct2D approximate it with a per-channel minimum. The
+enum has no W3C `clear`; `destination_out` with an opaque source, or
+`clear_rect`, does the same job.
+
+== Backend Differences
+
+[cols="1,1,1,1,1"]
+|===
+| Expression | Quartz 2D | Skia | Cairo | Direct2D
+
+| Default line width
+| 1.
+| 0, a one-pixel hairline.
+| 2.
+| 1.
+
+| `cnv.line_width(0)`
+| Strokes nothing.
+| A one-pixel hairline.
+| Strokes nothing.
+| Passed to Direct2D.
+
+| Default miter limit
+| 10.
+| 4.
+| 10.
+| 10.
+
+| `cnv.shadow_style` under a transform
+| `offset` and `blur` are not scaled.
+| Both are divided by the transform's scale at the time of the call, so a
+  transform set afterwards scales the shadow.
+| `offset` and `blur` are not scaled.
+| `offset` is not scaled. `blur` is divided by the horizontal scale at the
+  time of drawing.
+
+| Shadow `blur`
+| Twice the standard deviation.
+| The standard deviation, so twice as soft.
+| Twice the standard deviation.
+| The standard deviation, so twice as soft.
+
+| Shadow strength
+| The alpha of what is drawn, times the alpha of `c`. A transparent shape
+  casts none.
+| The alpha of what is drawn, times the alpha of `c`. A transparent shape
+  casts none.
+| The alpha of `c` alone. A transparent shape still casts one.
+| The alpha of the fill style, or 1 for a gradient, in place of the alpha of
+  `c`. It is used for stroke shadows too.
+
+| Shadow with a `blur` of 0
+| Drawn.
+| Drawn.
+| Drawn.
+| Not drawn.
+
+| What casts a shadow
+| Everything drawn, images included.
+| Fills, strokes, text and images.
+| Fills, strokes and text. Not images.
+| Fills, strokes and text. Not images.
+
+| `source_in`, `source_out`, `destination_in`, `destination_atop`
+| Confined to the shape.
+| Confined to the shape.
+| Clear the destination outside the shape, as far as the clip.
+| Clear the destination outside the shape, within its bounding box.
+
+| `copy`
+| Confined to the shape.
+| Confined to the shape.
+| Confined to the shape.
+| Clears the destination outside the shape, within its bounding box.
+
+| `darker`
+| max(0, source + destination - 1).
+| Per-channel minimum.
+| Per-channel minimum.
+| Per-channel minimum.
+|===
+
+Verified by running on Cairo and Quartz 2D, and by reading
+`lib/impl/skia/canvas.cpp` and `lib/impl/windows/direct2d/canvas.cpp`.
+
+== Example
+
+A panel, the `rect` `panel`, with a soft drop shadow and a rounded outline.
+The shadow is scoped to the fill, so the outline casts none:
+
+```c++
+   {
+      auto s = cnv.new_state();
+      cnv.shadow_style({0, 2}, 6, colors::black.opacity(0.4));
+      cnv.fill_style(colors::white);
+      cnv.fill_round_rect(panel, 8);
+   }
+
+   cnv.stroke_style(colors::gray[40]);
+   cnv.line_width(1);
+   cnv.line_join(canvas::round_join);
+   cnv.stroke_round_rect(panel, 8);
+```
