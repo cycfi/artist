@@ -4,6 +4,7 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
 #include <artist/font.hpp>
+#include <artist/detail/font_cache.hpp>
 #include <Quartz/Quartz.h>
 #include <algorithm>
 #include <sstream>
@@ -37,50 +38,43 @@ namespace cycfi::artist
 
    using namespace font_constants;
 
-   font::font()
-    : _ptr(nullptr)
+   namespace
    {
-   }
-
-   font::font(font_descr descr)
-    : _ptr(nullptr)
-   {
-      int weight = std::ceil(float(descr._weight * 5) / 40);
-      int style = 0;
-
-      if (descr._slant)
-         style |= NSItalicFontMask;
-      if (descr._stretch <= condensed)
-         style |= NSCondensedFontMask;
-      else if (descr._stretch >= expanded)
-         style |= NSExpandedFontMask;
-
-      std::istringstream str(std::string{descr._families});
-      std::string family;
-      auto font_manager = [NSFontManager sharedFontManager];
-
-      while (getline(str, family, ','))
+      // Returns a retained NSFont.
+      font_impl_ptr make_font_impl(font_descr const& descr)
       {
-         trim(family);
-         auto  family_ = [NSString stringWithUTF8String : family.c_str()];
+         int weight = std::ceil(float(descr._weight * 5) / 40);
+         int style = 0;
 
-         auto font =
-            [font_manager
-               fontWithFamily : family_
-                       traits : style
-                       weight : weight
-                         size : descr._size
-            ];
+         if (descr._slant)
+            style |= NSItalicFontMask;
+         if (descr._stretch <= condensed)
+            style |= NSCondensedFontMask;
+         else if (descr._stretch >= expanded)
+            style |= NSExpandedFontMask;
 
-         if (font)
+         std::istringstream str(std::string{descr._families});
+         std::string family;
+         auto font_manager = [NSFontManager sharedFontManager];
+
+         while (getline(str, family, ','))
          {
-            _ptr = (__bridge_retained font_impl_ptr) font;
-            break;
+            trim(family);
+            auto  family_ = [NSString stringWithUTF8String : family.c_str()];
+
+            auto font =
+               [font_manager
+                  fontWithFamily : family_
+                          traits : style
+                          weight : weight
+                            size : descr._size
+               ];
+
+            if (font)
+               return (__bridge_retained font_impl_ptr) font;
          }
-      }
-      if (_ptr == nullptr)
-      {
-         _ptr = (__bridge_retained font_impl_ptr)
+
+         return (__bridge_retained font_impl_ptr)
             [NSFont
                systemFontOfSize : descr._size
                          weight : weight
@@ -88,8 +82,25 @@ namespace cycfi::artist
       }
    }
 
+   font::font()
+    : _ptr(nullptr)
+   {
+   }
+
+   font::font(font_descr descr)
+    : font(detail::get_font_cache<font>().get(descr,
+         [](font_descr const& d)
+         {
+            font f;
+            f._ptr = make_font_impl(d);
+            return f;
+         }
+      ))
+   {
+   }
+
    font::font(font const& rhs)
-    : _ptr((font_impl_ptr) CFRetain(rhs._ptr))
+    : _ptr(rhs._ptr? (font_impl_ptr) CFRetain(rhs._ptr) : nullptr)
    {
    }
 
@@ -108,17 +119,17 @@ namespace cycfi::artist
    font& font::operator=(font const& rhs)
    {
       if (this != &rhs)
-         _ptr = (font_impl_ptr) CFRetain(rhs._ptr);
+      {
+         font tmp{rhs};
+         std::swap(_ptr, tmp._ptr);
+      }
       return *this;
    }
 
    font& font::operator=(font&& rhs) noexcept
    {
       if (this != &rhs)
-      {
-         _ptr = rhs._ptr;
-         rhs._ptr = nullptr;
-      }
+         std::swap(_ptr, rhs._ptr);
       return *this;
    }
 

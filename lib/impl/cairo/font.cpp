@@ -5,6 +5,7 @@
 =============================================================================*/
 #include "cairo_private.hpp"
 #include "cairo_text.hpp"
+#include <artist/detail/font_cache.hpp>
 #include <cairo/cairo-ft.h>
 #include <fontconfig/fontconfig.h>
 #include <ft2build.h>
@@ -392,10 +393,19 @@ namespace cycfi::artist
    {}
 
    font::font(font_descr descr)
-    : _ptr(make_font_impl(descr))
-   {
-      if (!_ptr) _ptr = new font_impl;
-   }
+    : font(detail::get_font_cache<font>().get(descr,
+         [](font_descr const& d)
+         {
+            font f;
+            if (auto* p = make_font_impl(d))
+            {
+               delete f._ptr;
+               f._ptr = p;
+            }
+            return f;
+         }
+      ))
+   {}
 
    font::font(font const& rhs)
     : _ptr(new font_impl(*rhs._ptr))

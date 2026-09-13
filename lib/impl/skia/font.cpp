@@ -4,6 +4,7 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
 #include <artist/font.hpp>
+#include <artist/detail/font_cache.hpp>
 #include <SkTypeface.h>
 #include <SkFont.h>
 #include <sstream>
@@ -378,6 +379,65 @@ namespace cycfi::artist
          }
          return nullptr;
       }
+
+      font_impl_ptr make_font_impl(font_descr const& descr)
+      {
+         auto [font_map, font_map_mutex] = get_font_map();
+         std::lock_guard<std::mutex> lock(font_map_mutex);
+
+         auto match_ptr = match(font_map, descr);
+         if (match_ptr)
+         {
+            if (match_ptr->cached_typeface)
+               return std::make_shared<SkFont>(match_ptr->cached_typeface, descr._size);
+
+            auto face = get_font_mgr()->makeFromFile(match_ptr->file.c_str(), match_ptr->index);
+            auto ptr = std::make_shared<SkFont>(face, descr._size);
+            match_ptr->cached_typeface = sk_ref_sp(ptr->getTypeface());
+            return ptr;
+         }
+
+         using namespace font_constants;
+         int stretch = int(descr._stretch) / 10;
+         SkFontStyle style(
+            descr._weight * 10
+          , (descr._stretch < condensed)? stretch-1 : stretch
+          , (descr._slant == italic)? SkFontStyle::kItalic_Slant :
+            (descr._slant == oblique)? SkFontStyle::kOblique_Slant :
+            SkFontStyle::kUpright_Slant
+         );
+
+         auto mgr = get_font_mgr();
+         auto default_face = sk_sp<SkTypeface>(mgr->matchFamilyStyle(nullptr, style));
+         std::istringstream str(std::string{descr._families});
+         std::string family;
+         font_impl_ptr ptr;
+
+         while (getline(str, family, ','))
+         {
+            trim(family);
+            auto face = sk_sp<SkTypeface>(mgr->matchFamilyStyle(family.c_str(), style));
+            if (face && face != default_face)
+            {
+               ptr = std::make_shared<SkFont>(face, descr._size);
+               break;
+            }
+         }
+         if (!ptr)
+         {
+            family = font_map_default_font_family;
+            ptr = std::make_shared<SkFont>(default_face, descr._size);
+         }
+
+         font_entry entry;
+         entry.cached_typeface = sk_ref_sp(ptr->getTypeface());
+         entry.weight = descr._weight;
+         entry.slant = descr._slant;
+         entry.stretch = descr._stretch;
+
+         font_map[family].push_back(std::move(entry));
+         return ptr;
+      }
    }
 
    font::font()
@@ -386,67 +446,15 @@ namespace cycfi::artist
    }
 
    font::font(font_descr descr)
+    : font(detail::get_font_cache<font>().get(descr,
+         [](font_descr const& d)
+         {
+            font f;
+            f._ptr = make_font_impl(d);
+            return f;
+         }
+      ))
    {
-      auto [font_map, font_map_mutex] = get_font_map();
-      std::lock_guard<std::mutex> lock(font_map_mutex);
-
-      auto match_ptr = match(font_map, descr);
-      if (match_ptr)
-      {
-         if (match_ptr->cached_typeface)
-         {
-            _ptr = std::make_shared<SkFont>(match_ptr->cached_typeface, descr._size);
-         }
-         else
-         {
-            auto face = get_font_mgr()->makeFromFile(match_ptr->file.c_str(), match_ptr->index);
-            _ptr = std::make_shared<SkFont>(face, descr._size);
-            if (_ptr)
-               match_ptr->cached_typeface = sk_ref_sp(_ptr->getTypeface());
-         }
-      }
-
-      if (_ptr)
-         return;
-
-      using namespace font_constants;
-      int stretch = int(descr._stretch) / 10;
-      SkFontStyle style(
-         descr._weight * 10
-       , (descr._stretch < condensed)? stretch-1 : stretch
-       , (descr._slant == italic)? SkFontStyle::kItalic_Slant :
-         (descr._slant == oblique)? SkFontStyle::kOblique_Slant :
-         SkFontStyle::kUpright_Slant
-      );
-
-      auto mgr = get_font_mgr();
-      auto default_face = sk_sp<SkTypeface>(mgr->matchFamilyStyle(nullptr, style));
-      std::istringstream str(std::string{descr._families});
-      std::string family;
-
-      while (getline(str, family, ','))
-      {
-         trim(family);
-         auto face = sk_sp<SkTypeface>(mgr->matchFamilyStyle(family.c_str(), style));
-         if (face && face != default_face)
-         {
-            _ptr = std::make_shared<SkFont>(face, descr._size);
-            break;
-         }
-      }
-      if (!_ptr)
-      {
-         family = font_map_default_font_family;
-         _ptr = std::make_shared<SkFont>(default_face, descr._size);
-      }
-
-      font_entry entry;
-      entry.cached_typeface = sk_ref_sp(_ptr->getTypeface());
-      entry.weight = descr._weight;
-      entry.slant = descr._slant;
-      entry.stretch = descr._stretch;
-
-      font_map[family].push_back(std::move(entry));
    }
 
    font::font(font const& rhs)

@@ -9,6 +9,7 @@
    what the Cairo backend measures with. Shaping is HarfBuzz.
 =============================================================================*/
 #include "recording_impl.hpp"
+#include <artist/detail/font_cache.hpp>
 #include <fontconfig/fontconfig.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -290,10 +291,19 @@ namespace cycfi::artist
    }
 
    font::font(font_descr descr)
-    : _ptr(make_font_impl(descr))
+    : font(detail::get_font_cache<font>().get(descr,
+         [](font_descr const& d)
+         {
+            font f;
+            if (auto* p = make_font_impl(d))
+            {
+               delete f._ptr;
+               f._ptr = p;
+            }
+            return f;
+         }
+      ))
    {
-      if (!_ptr)
-         _ptr = new font_impl;
    }
 
    font::font(font const& rhs)

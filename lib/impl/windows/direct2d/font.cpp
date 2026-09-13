@@ -7,6 +7,7 @@
    metrics), and provides metrics / measure_text.
 =============================================================================*/
 #include <artist/font.hpp>
+#include <artist/detail/font_cache.hpp>
 #include "font_impl.hpp"
 #include <dwrite_3.h>
 #include <infra/filesystem.hpp>
@@ -195,6 +196,71 @@ namespace cycfi::artist
          if (sys)
             d2d::release(sys);
       }
+
+      font_impl* make_font_impl(font_descr const& descr)
+      {
+         auto weight  = dwrite_weight(descr._weight);
+         auto style   = dwrite_style(descr._slant);
+         auto stretch = dwrite_stretch(descr._stretch);
+
+         auto* fi = new font_impl;
+         fi->size = descr._size;
+
+         // Resolve the family from the comma-separated list. Prefer the bundled
+         // (custom) collection and pick the FIRST listed family it actually
+         // contains. This matters for e.g. "Open Sans Condensed, Open Sans": the
+         // custom collection groups the condensed faces *under* "Open Sans"
+         // (selected via the stretch axis), so the first name misses and we must
+         // fall through to "Open Sans" + DWRITE_FONT_STRETCH_CONDENSED rather than
+         // give up and render a normal-width fallback. If none of the listed names
+         // are in the custom collection, use the first against the system
+         // collection (nullptr => system in CreateTextFormat).
+         auto custom = d2d::custom_font_collection();
+         std::wstring wfamily;
+         IDWriteFontCollection* coll = nullptr;
+         {
+            std::istringstream str{std::string{descr._families}};
+            std::string fam;
+            while (std::getline(str, fam, ','))
+            {
+               trim(fam);
+               if (fam.empty())
+                  continue;
+               std::wstring wf = d2d::to_utf16(std::string_view{fam});
+               if (wfamily.empty())
+                  wfamily = wf;   // first listed family = the system fallback
+               if (custom)
+               {
+                  UINT32 idx = 0;
+                  BOOL ex = FALSE;
+                  custom->FindFamilyName(wf.c_str(), &idx, &ex);
+                  if (ex)
+                  {
+                     wfamily = wf;
+                     coll = custom;
+                     break;
+                  }
+               }
+            }
+         }
+
+         d2d::dwrite_factory()->CreateTextFormat(
+            wfamily.c_str(), coll, weight, style, stretch,
+            descr._size, L"en-us", &fi->format
+         );
+
+         resolve(coll, wfamily, weight, style, stretch, &fi->face);
+         if (fi->face)
+         {
+            DWRITE_FONT_METRICS fm{};
+            fi->face->GetMetrics(&fm);
+            float s = descr._size / float(fm.designUnitsPerEm);
+            fi->ascent  = fm.ascent * s;
+            fi->descent = fm.descent * s;
+            fi->leading = fm.lineGap * s;
+         }
+         return fi;
+      }
    }
 
    font::font()
@@ -203,67 +269,15 @@ namespace cycfi::artist
    }
 
    font::font(font_descr descr)
-    : _ptr(new font_impl)
-   {
-      auto weight  = dwrite_weight(descr._weight);
-      auto style   = dwrite_style(descr._slant);
-      auto stretch = dwrite_stretch(descr._stretch);
-
-      _ptr->size = descr._size;
-
-      // Resolve the family from the comma-separated list. Prefer the bundled
-      // (custom) collection and pick the FIRST listed family it actually
-      // contains. This matters for e.g. "Open Sans Condensed, Open Sans": the
-      // custom collection groups the condensed faces *under* "Open Sans"
-      // (selected via the stretch axis), so the first name misses and we must
-      // fall through to "Open Sans" + DWRITE_FONT_STRETCH_CONDENSED rather than
-      // give up and render a normal-width fallback. If none of the listed names
-      // are in the custom collection, use the first against the system
-      // collection (nullptr => system in CreateTextFormat).
-      auto custom = d2d::custom_font_collection();
-      std::wstring wfamily;
-      IDWriteFontCollection* coll = nullptr;
-      {
-         std::istringstream str{std::string{descr._families}};
-         std::string fam;
-         while (std::getline(str, fam, ','))
+    : font(detail::get_font_cache<font>().get(descr,
+         [](font_descr const& d)
          {
-            trim(fam);
-            if (fam.empty())
-               continue;
-            std::wstring wf = d2d::to_utf16(std::string_view{fam});
-            if (wfamily.empty())
-               wfamily = wf;   // first listed family = the system fallback
-            if (custom)
-            {
-               UINT32 idx = 0;
-               BOOL ex = FALSE;
-               custom->FindFamilyName(wf.c_str(), &idx, &ex);
-               if (ex)
-               {
-                  wfamily = wf;
-                  coll = custom;
-                  break;
-               }
-            }
+            font f;
+            f._ptr = make_font_impl(d);
+            return f;
          }
-      }
-
-      d2d::dwrite_factory()->CreateTextFormat(
-         wfamily.c_str(), coll, weight, style, stretch,
-         descr._size, L"en-us", &_ptr->format
-      );
-
-      resolve(coll, wfamily, weight, style, stretch, &_ptr->face);
-      if (_ptr->face)
-      {
-         DWRITE_FONT_METRICS fm{};
-         _ptr->face->GetMetrics(&fm);
-         float s = descr._size / float(fm.designUnitsPerEm);
-         _ptr->ascent  = fm.ascent * s;
-         _ptr->descent = fm.descent * s;
-         _ptr->leading = fm.lineGap * s;
-      }
+      ))
+   {
    }
 
    font::font(font const& rhs)
