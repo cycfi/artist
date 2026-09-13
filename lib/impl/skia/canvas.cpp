@@ -5,6 +5,7 @@
 =============================================================================*/
 #include <infra/support.hpp>
 #include <artist/canvas.hpp>
+#include <artist/detail/font_cache.hpp>
 #include <cmath>
 #include <stack>
 #include "opaque.hpp"
@@ -733,14 +734,21 @@ namespace cycfi::artist
 
    canvas::text_metrics canvas::measure_text(std::string_view utf8)
    {
-      auto m = _state->font().metrics();
-      auto width = _state->font().measure_text(utf8);
-      return {
-         m.ascent
-       , m.descent
-       , m.leading
-       , {width, m.ascent + m.descent + m.leading}
+      auto const& f = _state->font();
+      auto measure = [&]() -> text_metrics
+      {
+         auto m = f.metrics();
+         auto width = f.measure_text(utf8);
+         return {
+            m.ascent
+          , m.descent
+          , m.leading
+          , {width, m.ascent + m.descent + m.leading}
+         };
       };
+
+      return detail::get_measure_cache<artist::font, text_metrics>().get(
+         f.impl().get(), f, utf8, measure);
    }
 
    void canvas::text_align(int align)

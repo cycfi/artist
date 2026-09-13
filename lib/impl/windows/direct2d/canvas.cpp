@@ -12,6 +12,7 @@
 #include <infra/support.hpp>
 #include <infra/utf8_utils.hpp>
 #include <artist/canvas.hpp>
+#include <artist/detail/font_cache.hpp>
 #include "context.hpp"
 #include "path_impl.hpp"
 #include "font_impl.hpp"
@@ -1293,26 +1294,33 @@ namespace cycfi::artist
 
    canvas::text_metrics canvas::measure_text(std::string_view utf8)
    {
-      auto fi = _state->current().font.impl();
+      auto const& f = _state->current().font;
+      auto fi = f.impl();
       if (!fi || !fi->format)
          return {};
 
-      auto wtext = d2d::to_utf16(utf8);
-      IDWriteTextLayout* layout = nullptr;
-      float width = 0;
-      if (SUCCEEDED(d2d::dwrite_factory()->CreateTextLayout(
-            wtext.c_str(), UINT32(wtext.size()), fi->format,
-            FLT_MAX, FLT_MAX, &layout)) && layout)
+      auto measure = [&]() -> text_metrics
       {
-         DWRITE_TEXT_METRICS tm{};
-         layout->GetMetrics(&tm);
-         width = tm.widthIncludingTrailingWhitespace;
-         d2d::release(layout);
-      }
-      return text_metrics{
-         fi->ascent, fi->descent, fi->leading,
-         {width, fi->ascent + fi->descent + fi->leading}
+         auto wtext = d2d::to_utf16(utf8);
+         IDWriteTextLayout* layout = nullptr;
+         float width = 0;
+         if (SUCCEEDED(d2d::dwrite_factory()->CreateTextLayout(
+               wtext.c_str(), UINT32(wtext.size()), fi->format,
+               FLT_MAX, FLT_MAX, &layout)) && layout)
+         {
+            DWRITE_TEXT_METRICS tm{};
+            layout->GetMetrics(&tm);
+            width = tm.widthIncludingTrailingWhitespace;
+            d2d::release(layout);
+         }
+         return text_metrics{
+            fi->ascent, fi->descent, fi->leading,
+            {width, fi->ascent + fi->descent + fi->leading}
+         };
       };
+
+      return artist::detail::get_measure_cache<artist::font, text_metrics>().get(
+         fi->format, f, utf8, measure);
    }
 
    void canvas::text_align(int align)

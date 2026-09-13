@@ -12,6 +12,7 @@
    bounding box.
 =============================================================================*/
 #include "recording_impl.hpp"
+#include <artist/detail/font_cache.hpp>
 #include <infra/utf8_utils.hpp>
 #include <algorithm>
 #include <cmath>
@@ -522,11 +523,20 @@ namespace cycfi::artist
    canvas::text_metrics canvas::measure_text(std::string_view utf8)
    {
       auto const& f = _state->cur().font_;
-      auto m = f.metrics();
-      return {
-         m.ascent, m.descent, m.leading,
-         {recording::text_advance(f, utf8), m.ascent + m.descent}
+      auto measure = [&]() -> text_metrics
+      {
+         auto m = f.metrics();
+         return {
+            m.ascent, m.descent, m.leading,
+            {recording::text_advance(f, utf8), m.ascent + m.descent}
+         };
       };
+
+      auto const* fi = f.impl();
+      if (!fi || !fi->hb)
+         return measure();
+      return detail::get_measure_cache<artist::font, text_metrics>().get(
+         fi->hb, f, utf8, measure);
    }
 
    void canvas::text_align(int align)

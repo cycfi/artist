@@ -5,6 +5,7 @@
 =============================================================================*/
 #include <artist/canvas.hpp>
 #include <artist/image.hpp>
+#include <artist/detail/font_cache.hpp>
 #include "cairo_private.hpp"
 #include "cairo_text.hpp"
 #include "shadow_blur.hpp"
@@ -1175,36 +1176,44 @@ namespace cycfi::artist
 
    canvas::text_metrics canvas::measure_text(std::string_view utf8)
    {
-      cairo_font_extents_t font_extents;
-      cairo_scaled_font_extents(cairo_get_scaled_font(_context), &font_extents);
-
-      float ascent  = float(font_extents.ascent);
-      float descent = float(font_extents.descent);
-      float leading = float(font_extents.height) - ascent - descent;
-      if (leading < 0) leading = 0;
-
-      // Use HarfBuzz shaped advance for width when a font has been set;
-      // fall back to Cairo text extents otherwise.
-      float width;
       auto const* fi = _state->_info.font.impl();
-      if (fi && fi->_hb_font)
-         width = shape_text(fi->_hb_font.get(), fi->_size, utf8).advance_x;
-      else
+      auto measure = [&]() -> text_metrics
       {
-         auto str = std::string{utf8.data(), utf8.size()};
-         cairo_text_extents_t extents;
-         cairo_scaled_font_text_extents(cairo_get_scaled_font(_context),
-            str.c_str(), &extents);
-         width = float(extents.x_advance);
-      }
+         cairo_font_extents_t font_extents;
+         cairo_scaled_font_extents(cairo_get_scaled_font(_context), &font_extents);
 
-      return {
-         ascent,
-         descent,
-         leading,
-         // size.x = shaped advance width; size.y = line height (ascent + descent)
-         {width, ascent + descent}
+         float ascent  = float(font_extents.ascent);
+         float descent = float(font_extents.descent);
+         float leading = float(font_extents.height) - ascent - descent;
+         if (leading < 0) leading = 0;
+
+         // Use HarfBuzz shaped advance for width when a font has been set;
+         // fall back to Cairo text extents otherwise.
+         float width;
+         if (fi && fi->_hb_font)
+            width = shape_text(fi->_hb_font.get(), fi->_size, utf8).advance_x;
+         else
+         {
+            auto str = std::string{utf8.data(), utf8.size()};
+            cairo_text_extents_t extents;
+            cairo_scaled_font_text_extents(cairo_get_scaled_font(_context),
+               str.c_str(), &extents);
+            width = float(extents.x_advance);
+         }
+
+         return {
+            ascent,
+            descent,
+            leading,
+            // size.x = shaped advance width; size.y = line height (ascent + descent)
+            {width, ascent + descent}
+         };
       };
+
+      if (!fi || !fi->_hb_font)
+         return measure();
+      return detail::get_measure_cache<artist::font, text_metrics>().get(
+         fi->_hb_font.get(), _state->_info.font, utf8, measure);
    }
 
    void canvas::text_align(int align)

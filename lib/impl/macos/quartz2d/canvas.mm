@@ -4,6 +4,7 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
 #include <artist/canvas.hpp>
+#include <artist/detail/font_cache.hpp>
 #include <Quartz/Quartz.h>
 #include <stack>
 #include <variant>
@@ -1025,18 +1026,27 @@ namespace cycfi::artist
 
    canvas::text_metrics canvas::measure_text(std::string_view utf8)
    {
-      CGFloat ascent, descent, leading, width;
-      auto line = detail::measure_text(
-         _state->font(), utf8.begin(), utf8.end(), width, ascent, descent, leading);
-
-      CFRelease(line);
-      return canvas::text_metrics
+      auto const& f = _state->font();
+      auto measure = [&]() -> text_metrics
       {
-         float(ascent)
-       , float(descent)
-       , float(leading)
-       , {float(width), float(ascent + descent + leading)}
+         CGFloat ascent, descent, leading, width;
+         auto line = detail::measure_text(
+            f, utf8.begin(), utf8.end(), width, ascent, descent, leading);
+
+         CFRelease(line);
+         return canvas::text_metrics
+         {
+            float(ascent)
+          , float(descent)
+          , float(leading)
+          , {float(width), float(ascent + descent + leading)}
+         };
       };
+
+      if (!f.impl())
+         return measure();
+      return artist::detail::get_measure_cache<artist::font, text_metrics>().get(
+         (void const*) f.impl(), f, utf8, measure);
    }
 
    void canvas::text_align(int align)
