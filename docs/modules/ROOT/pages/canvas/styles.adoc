@@ -7,8 +7,8 @@ width and shape of a stroke, the shadow cast under what is drawn, and how
 new drawing combines with what is already on the canvas. Each is canvas
 state. Set one and it stays in effect for every paint that follows, until
 it is set again or a saved state is restored over it. Every style on this
-page is part of the state that `save` and `restore` keep, on every backend,
-so the usual way to apply a style to one shape is inside a
+page is part of the state that `save` and `restore` keep, so the usual way
+to apply a style to one shape is inside a
 xref:canvas/states.adoc[saved state].
 
 A style is read when the path is painted, not when it is set, so set it
@@ -18,10 +18,7 @@ xref:canvas/current_path.adoc[current path].
 NOTE: Artist follows the W3C canvas API, and the styles map onto its
 `fillStyle`, `strokeStyle`, `lineWidth`, `lineCap`, `lineJoin`,
 `miterLimit`, the four `shadow` attributes and `globalCompositeOperation`.
-The differences are mostly in the backends, and are listed under
-<<Backend Differences>>. Two of them catch code written against the W3C
-defaults: the default line width is not 1 everywhere, and the default miter
-limit is not 10 everywhere. Set both when they matter.
+They behave as the W3C API specifies, the same on every backend.
 
 == Include
 
@@ -135,6 +132,8 @@ the values are spelled `canvas::round`, `canvas::miter_join`,
 | `cnv.stroke_color(c)`   | The same as `cnv.stroke_style(c)`. | `void`
 |===
 
+image::canvas/paint.png[alt="A color and a gradient, each as a fill and as a stroke", width=560px, align=center, title="A color and a gradient, each as a fill and as a stroke.", link={imagesdir}/canvas/paint.png]
+
 Fill and stroke are separate styles, so one path can be filled in one paint
 and outlined in another. Each holds one paint at a time: setting a color
 replaces a gradient, and setting a gradient replaces a color. Both start as
@@ -154,12 +153,14 @@ coordinates are in, is under xref:canvas/gradients.adoc[Gradients].
                             the path, half on each side.       | `void`
 |===
 
+image::canvas/line_width.png[alt="Three widths on the same path", width=560px, align=center, title="Three widths. The white line is the path.", link={imagesdir}/canvas/line_width.png]
+
+The default width is 1. A width that is zero, negative, infinite or NaN is
+ignored, and the width stays what it was.
+
 The width is in user space, under the transform in effect when the path is
 stroked, not when the width is set. After `cnv.scale(2)`, a width of 10
 strokes 20 device units wide, whichever call came first.
-
-CAUTION: The default width is 1 on Quartz 2D and Direct2D, 2 on Cairo, and
-a one-pixel hairline on Skia. Set it before the first stroke.
 
 === Line Cap
 
@@ -203,7 +204,8 @@ A cap is drawn at the two open ends of a sub-path. A sub-path closed with
                                         bevel when it would be
                                         longer than `limit`
                                         line widths.           | `void`
-| `cnv.miter_limit()`                 | Set the limit to 10.   | `void`
+| `cnv.miter_limit()`                 | Set the limit to 10,
+                                        the default.           | `void`
 |===
 
 image::canvas/line_join.png[alt="A corner under each join", width=560px, align=center, title="The same corner under each join.", link={imagesdir}/canvas/line_join.png]
@@ -212,6 +214,9 @@ A miter grows as the angle between two segments closes. At an angle θ it is
 1 / sin(θ / 2) line widths long, so a limit of 10 keeps a miter at any angle
 above about 11.5 degrees and bevels anything sharper. A limit of 2 bevels
 everything below 60 degrees. The limit only applies to `canvas::miter_join`.
+A limit that is zero, negative, infinite or NaN is ignored.
+
+image::canvas/miter_limit.png[alt="A sharp corner under two miter limits", width=560px, align=center, title="A 24 degree corner: its miter is 4.8 line widths long, inside a limit of 10 and cut back to a bevel by a limit of 2.", link={imagesdir}/canvas/miter_limit.png]
 
 === Shadow
 
@@ -221,8 +226,8 @@ everything below 60 degrees. The limit only applies to `canvas::miter_join`.
 
 | `cnv.shadow_style(offset,
     blur, c)`                      | Cast a shadow of color `c`
-                                    under every fill and stroke
-                                    that follows, displaced by
+                                    under everything drawn
+                                    afterwards, displaced by
                                     `offset` and softened by
                                     `blur`.                     | `void`
 | `cnv.shadow_style(offsetx,
@@ -234,16 +239,23 @@ everything below 60 degrees. The limit only applies to `canvas::miter_join`.
                                     glow.                       | `void`
 |===
 
-The shadow is the shape itself, drawn in `c`, blurred, moved by `offset`,
-and put down beneath the shape. The alpha of `c` scales it, so a
-half-transparent color gives a half-strength shadow.
+image::canvas/shadow.png[alt="Four shadows", width=560px, align=center, title="A hard shadow, a soft one, a glow, and the shadow of a half-transparent shape.", link={imagesdir}/canvas/shadow.png]
 
-On Quartz 2D and Cairo, as in the W3C API, `offset` and `blur` are not
-scaled by the transform: after `cnv.scale(2)`, an offset of 10 is still 10.
-`blur` is twice the standard deviation of the Gaussian that softens the
-edge, so a shadow fades out over roughly `blur` units on either side of it.
-A `blur` of zero gives a hard-edged copy of the shape. Skia and Direct2D
-differ on both counts; see <<Backend Differences>>.
+The shadow is what is drawn, in `c`, blurred, moved by `offset`, and put
+down beneath it. Fills, strokes, text and images all cast one. Its strength
+is the alpha of what is drawn, point by point, times the alpha of `c`: a
+half-transparent shape casts a half-strength shadow, and the parts of a
+gradient that fade out cast less.
+
+`offset` and `blur` are in the canvas's own units and are not changed by
+the transform: after `cnv.scale(2)` or a rotation, an offset of 10 across
+is still 10 across. On an image with a scale, they are in the image's
+units, not its pixels. `blur` is twice the standard deviation of the
+Gaussian that softens the edge, so a shadow fades out over roughly `blur`
+units on either side of it. A `blur` of zero gives a hard-edged copy.
+
+A shadow is drawn only when it can be seen: when `c` is not fully
+transparent, and `offset` or `blur` is not zero.
 
 TIP: There is no call to turn a shadow off. Set it inside a saved state and
 let the restore remove it:
@@ -256,8 +268,8 @@ let the restore remove it:
    }  // no shadow from here on
 ```
 
-Setting a fully transparent shadow color is the W3C way, but it does not
-work on Direct2D, which takes the shadow's alpha from the fill style.
+Setting a fully transparent shadow color, or no offset and no blur, turns it
+off too.
 
 === Compositing
 
@@ -302,8 +314,8 @@ they overlap and then draw the result over the destination.
 | `canvas::destination_out`    | The destination only where the source
                                  is not: the source erases.
 | `canvas::lighter`            | The sum of the two colors.
-| `canvas::darker`             | max(0, source + destination - 1) on
-                                 Quartz 2D. See the caution below.
+| `canvas::darker`             | The smaller of the two colors, channel
+                                 by channel.
 | `canvas::copy`               | The source alone, alpha included,
                                  replacing the destination.
 | `canvas::xor_`               | Each only where the other is not.
@@ -330,98 +342,17 @@ they overlap and then draw the result over the destination.
                                  hue and saturation of the destination.
 |===
 
-In the W3C API `source_in`, `source_out`, `destination_in`,
-`destination_atop` and `copy` also clear the destination everywhere outside
-the shape being drawn, since the source is transparent there. Only Cairo
-does, and only for the first four; see <<Backend Differences>>. Draw with
-them inside a clip when the extent matters.
+image::canvas/composite_ops.png[alt="The first twelve modes", width=560px, align=center, title="The first twelve modes: a circle drawn over a square. The checkerboard shows where nothing is left.", link={imagesdir}/canvas/composite_ops.png]
 
-CAUTION: `darker` is the one mode whose colors the backends disagree on.
-Quartz 2D implements the plus-darker rule, max(0, source + destination -
-1). Skia, Cairo and Direct2D approximate it with a per-channel minimum. The
-enum has no W3C `clear`; `destination_out` with an opaque source, or
-`clear_rect`, does the same job.
+image::canvas/blend_modes.png[alt="The twelve blend modes", width=560px, align=center, title="The twelve blend modes, with gradients so the mix varies across the overlap.", link={imagesdir}/canvas/blend_modes.png]
 
-== Backend Differences
+`source_in`, `source_out`, `destination_in`, `destination_atop` and `copy`
+also clear the destination everywhere outside what is drawn, as far as the
+clip, since the source is transparent there. Draw with them inside a clip
+when the rest of the canvas matters.
 
-[cols="1,1,1,1,1"]
-|===
-| Expression | Quartz 2D | Skia | Cairo | Direct2D
-
-| Default line width
-| 1.
-| 0, a one-pixel hairline.
-| 2.
-| 1.
-
-| `cnv.line_width(0)`
-| Strokes nothing.
-| A one-pixel hairline.
-| Strokes nothing.
-| Passed to Direct2D.
-
-| Default miter limit
-| 10.
-| 4.
-| 10.
-| 10.
-
-| `cnv.shadow_style` under a transform
-| `offset` and `blur` are not scaled.
-| Both are divided by the transform's scale at the time of the call, so a
-  transform set afterwards scales the shadow.
-| `offset` and `blur` are not scaled.
-| `offset` is not scaled. `blur` is divided by the horizontal scale at the
-  time of drawing.
-
-| Shadow `blur`
-| Twice the standard deviation.
-| The standard deviation, so twice as soft.
-| Twice the standard deviation.
-| The standard deviation, so twice as soft.
-
-| Shadow strength
-| The alpha of what is drawn, times the alpha of `c`. A transparent shape
-  casts none.
-| The alpha of what is drawn, times the alpha of `c`. A transparent shape
-  casts none.
-| The alpha of `c` alone. A transparent shape still casts one.
-| The alpha of the fill style, or 1 for a gradient, in place of the alpha of
-  `c`. It is used for stroke shadows too.
-
-| Shadow with a `blur` of 0
-| Drawn.
-| Drawn.
-| Drawn.
-| Not drawn.
-
-| What casts a shadow
-| Everything drawn, images included.
-| Fills, strokes, text and images.
-| Fills, strokes and text. Not images.
-| Fills, strokes and text. Not images.
-
-| `source_in`, `source_out`, `destination_in`, `destination_atop`
-| Confined to the shape.
-| Confined to the shape.
-| Clear the destination outside the shape, as far as the clip.
-| Clear the destination outside the shape, within its bounding box.
-
-| `copy`
-| Confined to the shape.
-| Confined to the shape.
-| Confined to the shape.
-| Clears the destination outside the shape, within its bounding box.
-
-| `darker`
-| max(0, source + destination - 1).
-| Per-channel minimum.
-| Per-channel minimum.
-| Per-channel minimum.
-|===
-
-Verified by running on Cairo and Quartz 2D, and by reading
-`lib/impl/skia/canvas.cpp` and `lib/impl/windows/direct2d/canvas.cpp`.
+NOTE: The enum has no W3C `clear`. `destination_out` with an opaque source,
+or `clear_rect`, does the same job.
 
 == Example
 
