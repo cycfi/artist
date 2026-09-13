@@ -235,6 +235,63 @@ static float check_tiles(uint32_t const* golden, uint32_t const* result,
    return worst_margin;
 }
 
+#if defined(ARTIST_RECORDING)
+
+#include <fstream>
+#include <sstream>
+
+// The recording backend's golden is the journal as text. A missing golden is
+// written on the first run; after that the journal must match it line for
+// line, and the first line that differs is reported.
+static void journal_golden(image const& pm, std::string const& name)
+{
+   auto text = recording::journal_of(pm).str();
+   std::ofstream{get_results_path() + name + ".txt"} << text;
+
+   auto path = get_golden_path() + name + ".txt";
+   if (!cycfi::fs::exists(path))
+   {
+      cycfi::fs::create_directories(get_golden_path());
+      std::ofstream{path} << text;
+      std::cout << "[golden created] " << name << "\n";
+      return;
+   }
+
+   std::ifstream f{path};
+   std::stringstream golden;
+   golden << f.rdbuf();
+
+   std::istringstream a{golden.str()}, b{text};
+   std::string la, lb;
+   int line = 0;
+   while (true)
+   {
+      bool more_a = bool(std::getline(a, la));
+      bool more_b = bool(std::getline(b, lb));
+      ++line;
+      if (!more_a && !more_b)
+         break;
+      if (more_a != more_b || la != lb)
+      {
+         INFO(name << " line " << line << "\n  golden: " << la << "\n  result: " << lb);
+         CHECK(false);
+         return;
+      }
+   }
+}
+
+void compare_golden(image const& pm, std::string name)
+{
+   journal_golden(pm, name);
+}
+
+void snapshot_golden(image const& pm, std::string name)
+{
+   journal_golden(pm, name);
+}
+
+#else
+
 void compare_golden(image const& pm, std::string name)
 {
    pm.save_png(get_results_path() + name + ".png");
@@ -311,4 +368,6 @@ void snapshot_golden(image const& pm, std::string name)
    CHECK(diff.p95  < 3.0);
    CHECK(margin    < 0.0f);
 }
+
+#endif
 

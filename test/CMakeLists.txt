@@ -180,8 +180,16 @@ file(
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
 )
 
+# The recording backend's goldens are journal text, the same on every
+# platform, and are read from and bootstrapped into the source tree.
+if (ARTIST_RECORDING)
+   set(GOLDEN_FULL_PATH ${CMAKE_CURRENT_LIST_DIR}/recording_golden)
+else()
+   set(GOLDEN_FULL_PATH ${CMAKE_CURRENT_BINARY_DIR}/${GOLDEN_PATH})
+endif()
+
 add_definitions(
-   -DGOLDEN_PATH="${CMAKE_CURRENT_BINARY_DIR}/${GOLDEN_PATH}/"
+   -DGOLDEN_PATH="${GOLDEN_FULL_PATH}/"
    -DRESULTS_PATH="${CMAKE_CURRENT_BINARY_DIR}/results/"
    -DIMAGES_PATH="${CMAKE_CURRENT_BINARY_DIR}/images/"
    -DFONTS_PATH="${CMAKE_CURRENT_BINARY_DIR}/resources/fonts/"

@@ -274,6 +274,16 @@ if (WIN32 AND ARTIST_DIRECT2D)
    )
 endif()
 
+if (ARTIST_RECORDING)
+   set(ARTIST_IMPL
+      impl/recording/canvas.cpp
+      impl/recording/path.cpp
+      impl/recording/image.cpp
+      impl/recording/font.cpp
+      impl/recording/text_run.cpp
+   )
+endif()
+
 source_group("Source Files\\artist"
    FILES
    ${ARTIST_SOURCES}
@@ -329,6 +339,18 @@ if (ARTIST_CAIRO AND MSVC)
    target_link_libraries(artist PUBLIC
       PkgConfig::cairo PkgConfig::cairo_ft PkgConfig::harfbuzz PkgConfig::fontconfig
       PkgConfig::webp)
+endif()
+
+if (ARTIST_RECORDING)
+   # Nothing is rasterized, but text is measured and shaped with real fonts,
+   # so layouts built on this backend match the drawing backends.
+   find_package(PkgConfig REQUIRED)
+   pkg_check_modules(freetype REQUIRED IMPORTED_TARGET freetype2)
+   pkg_check_modules(fontconfig REQUIRED IMPORTED_TARGET fontconfig)
+   pkg_check_modules(harfbuzz REQUIRED IMPORTED_TARGET harfbuzz)
+   target_link_libraries(artist PUBLIC
+      PkgConfig::freetype PkgConfig::fontconfig PkgConfig::harfbuzz)
+   target_compile_definitions(artist PUBLIC ARTIST_RECORDING)
 endif()
 
 add_dependencies(artist libunibreak)

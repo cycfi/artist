@@ -73,7 +73,14 @@ TEST_CASE("canvas styles: Paint", "[styles]")
       // The default fill style is opaque black.
       image img{100, 100, 1};
       render(img, [](canvas& cnv) { cnv.fill_rect(10, 10, 20, 20); });
+#if defined(ARTIST_RECORDING)
+      REQUIRE(recorded(img).size() == 1);
+      CHECK(recorded(img, 0).kind == recording::op::fill);
+      CHECK(same_color(recorded(img, 0).paint, colors::black));
+      CHECK(same_rect(recorded(img, 0).geometry, {10, 10, 30, 30}));
+#else
       CHECK(near(pixel_at(img, 20, 20), {0, 0, 0, 255}));
+#endif
    }
 
    {
@@ -88,8 +95,19 @@ TEST_CASE("canvas styles: Paint", "[styles]")
          cnv.fill_preserve();
          cnv.stroke();
       });
+#if defined(ARTIST_RECORDING)
+      REQUIRE(recorded(img).size() == 2);
+      CHECK(recorded(img, 0).kind == recording::op::fill);
+      CHECK(same_color(recorded(img, 0).paint, red));
+      CHECK(same_rect(recorded(img, 0).geometry, {20, 20, 80, 80}));
+      CHECK(recorded(img, 1).kind == recording::op::stroke);
+      CHECK(same_color(recorded(img, 1).paint, blue));
+      CHECK(recorded(img, 1).line_width == 10);
+      CHECK(same_rect(recorded(img, 1).geometry, {15, 15, 85, 85}));
+#else
       CHECK(near(pixel_at(img, 50, 50), red8));
       CHECK(near(pixel_at(img, 20, 50), blue8));
+#endif
    }
 
    {
@@ -104,8 +122,19 @@ TEST_CASE("canvas styles: Paint", "[styles]")
          cnv.fill_preserve();
          cnv.stroke();
       });
+#if defined(ARTIST_RECORDING)
+      REQUIRE(recorded(img).size() == 2);
+      CHECK(recorded(img, 0).kind == recording::op::fill);
+      CHECK(same_color(recorded(img, 0).paint, red));
+      CHECK(same_rect(recorded(img, 0).geometry, {20, 20, 80, 80}));
+      CHECK(recorded(img, 1).kind == recording::op::stroke);
+      CHECK(same_color(recorded(img, 1).paint, blue));
+      CHECK(recorded(img, 1).line_width == 10);
+      CHECK(same_rect(recorded(img, 1).geometry, {15, 15, 85, 85}));
+#else
       CHECK(near(pixel_at(img, 50, 50), red8));
       CHECK(near(pixel_at(img, 20, 50), blue8));
+#endif
    }
 
    {
@@ -123,9 +152,17 @@ TEST_CASE("canvas styles: Paint", "[styles]")
          cnv.fill_style(gr);
          cnv.fill_rect(50, 0, 50, 100);
       });
+#if defined(ARTIST_RECORDING)
+      REQUIRE(recorded(img).size() == 2);
+      CHECK(!recorded(img, 0).gradient);
+      CHECK(same_color(recorded(img, 0).paint, red));
+      CHECK(recorded(img, 1).gradient);
+      CHECK(same_color(recorded(img, 1).paint, blue));
+#else
       CHECK(near(pixel_at(img, 25, 50), red8));
       auto p = pixel_at(img, 75, 50);
       CHECK((p.b > 200 && p.r < 30 && p.a > 200));
+#endif
    }
 }
 
@@ -149,11 +186,25 @@ TEST_CASE("canvas styles: styles are saved state", "[styles]")
       cnv.fill_rect(10, 10, 20, 20);
       hline(cnv, 50, 90, 50);
    });
+#if defined(ARTIST_RECORDING)
+   REQUIRE(recorded(img).size() == 2);
+   auto const& fill = recorded(img, 0);
+   CHECK(same_color(fill.paint, red));
+   CHECK(fill.composite == canvas::source_over);
+   CHECK(same_rect(fill.bounds, fill.geometry));  // no shadow
+   auto const& line = recorded(img, 1);
+   CHECK(same_color(line.paint, red));
+   CHECK(line.line_width == 2);
+   CHECK(line.line_cap == canvas::butt);
+   CHECK(line.geometry.top == Approx(49));
+   CHECK(line.geometry.bottom == Approx(51));
+#else
    CHECK(near(pixel_at(img, 20, 20), red8));    // red, and not cleared
    CHECK(empty(img, 20, 70));                   // no shadow
    CHECK(pixel_at(img, 70, 49).r > 100);        // red stroke
    CHECK(empty(img, 70, 45));                   // 2 wide, not 40
    CHECK(empty(img, 46, 50));                   // butt, not square
+#endif
 }
 
 TEST_CASE("canvas styles: Line Width", "[styles]")
@@ -165,10 +216,17 @@ TEST_CASE("canvas styles: Line Width", "[styles]")
          cnv.line_width(10);
          hline(cnv, 10, 90, 50);
       });
+#if defined(ARTIST_RECORDING)
+      REQUIRE(recorded(img).size() == 1);
+      CHECK(recorded(img, 0).line_width == 10);
+      CHECK(recorded(img, 0).geometry.top == Approx(45));
+      CHECK(recorded(img, 0).geometry.bottom == Approx(55));
+#else
       CHECK(painted(img, 50, 46));
       CHECK(painted(img, 50, 53));
       CHECK(empty(img, 50, 43));
       CHECK(empty(img, 50, 56));
+#endif
    }
 
    {
@@ -181,10 +239,17 @@ TEST_CASE("canvas styles: Line Width", "[styles]")
          cnv.scale(2);
          hline(cnv, 5, 45, 25);
       });
+#if defined(ARTIST_RECORDING)
+      REQUIRE(recorded(img).size() == 1);
+      CHECK(recorded(img, 0).line_width == 10);
+      CHECK(recorded(img, 0).geometry.top == Approx(40));
+      CHECK(recorded(img, 0).geometry.bottom == Approx(60));
+#else
       CHECK(painted(img, 50, 42));
       CHECK(painted(img, 50, 57));
       CHECK(empty(img, 50, 37));
       CHECK(empty(img, 50, 62));
+#endif
    }
 }
 
@@ -202,7 +267,13 @@ TEST_CASE("canvas styles: default line width current behaviour", "[styles]")
    CHECK(std::abs(pixel_at(img, 50, 49).a - 128) < 20);
    CHECK(std::abs(pixel_at(img, 50, 50).a - 128) < 20);
 #endif
+#if defined(ARTIST_RECORDING)
+   REQUIRE(recorded(img).size() == 1);
+   CHECK(recorded(img, 0).geometry.top >= 47);
+   CHECK(recorded(img, 0).geometry.bottom <= 53);
+#else
    CHECK(empty(img, 50, 47));
+#endif
 }
 
 TEST_CASE("canvas styles: zero line width current behaviour", "[styles]")
@@ -243,23 +314,35 @@ TEST_CASE("canvas styles: Line Cap", "[styles]")
    {
       image img{100, 100, 1};
       capped(img, cap);
+#if defined(ARTIST_RECORDING)
+      CHECK(recorded(img, 0).line_cap == canvas::butt);
+#else
       CHECK(painted(img, 32, 50));
       CHECK(empty(img, 27, 50));
+#endif
    }
 
    {
       image img{100, 100, 1};
       capped(img, canvas::round);
+#if defined(ARTIST_RECORDING)
+      CHECK(recorded(img, 0).line_cap == canvas::round);
+#else
       CHECK(painted(img, 22, 50));     // 7.5 from the endpoint
       CHECK(empty(img, 21, 41));       // 12 from it, past the half circle
+#endif
    }
 
    {
       image img{100, 100, 1};
       capped(img, canvas::square);
+#if defined(ARTIST_RECORDING)
+      CHECK(recorded(img, 0).line_cap == canvas::square);
+#else
       CHECK(painted(img, 22, 50));
       CHECK(painted(img, 21, 41));     // the square's corner
       CHECK(empty(img, 17, 50));
+#endif
    }
 }
 
@@ -287,22 +370,34 @@ TEST_CASE("canvas styles: Line Join", "[styles]")
    {
       image img{100, 100, 1};
       joined(img, join);
+#if defined(ARTIST_RECORDING)
+      CHECK(recorded(img, 0).line_join == canvas::miter_join);
+#else
       CHECK(painted(img, 76, 33));
       CHECK(painted(img, 73, 37));
+#endif
    }
 
    {
       image img{100, 100, 1};
       joined(img, canvas::bevel_join);
+#if defined(ARTIST_RECORDING)
+      CHECK(recorded(img, 0).line_join == canvas::bevel_join);
+#else
       CHECK(empty(img, 76, 33));
       CHECK(empty(img, 73, 37));
+#endif
    }
 
    {
       image img{100, 100, 1};
       joined(img, canvas::round_join);
+#if defined(ARTIST_RECORDING)
+      CHECK(recorded(img, 0).line_join == canvas::round_join);
+#else
       CHECK(empty(img, 76, 33));
       CHECK(painted(img, 73, 37));
+#endif
    }
 }
 
@@ -337,14 +432,22 @@ TEST_CASE("canvas styles: miter_limit", "[styles]")
    {
       image img{100, 100, 1};
       vee(img, limit);
+#if defined(ARTIST_RECORDING)
+      CHECK(recorded(img, 0).miter_limit == 10);
+#else
       CHECK(painted(img, 50, 20));
+#endif
    }
 
    {
       image img{100, 100, 1};
       vee(img, 2);
+#if defined(ARTIST_RECORDING)
+      CHECK(recorded(img, 0).miter_limit == 2);
+#else
       CHECK(empty(img, 50, 20));
       CHECK(painted(img, 50, 40));
+#endif
    }
 }
 
@@ -359,9 +462,19 @@ TEST_CASE("canvas styles: Shadow", "[styles]")
          cnv.fill_style(red);
          cnv.fill_rect(10, 10, 20, 20);
       });
+#if defined(ARTIST_RECORDING)
+      REQUIRE(recorded(img).size() == 1);
+      auto const& c = recorded(img, 0);
+      CHECK(same_color(c.paint, red));
+      CHECK(same_rect(c.geometry, {10, 10, 30, 30}));
+      CHECK(c.shadow_offset == point{30, 0});
+      CHECK(same_color(c.shadow_color, blue));
+      CHECK(same_rect(c.bounds, {10, 10, 60, 30}));
+#else
       CHECK(near(pixel_at(img, 20, 20), red8));
       CHECK(near(pixel_at(img, 50, 20), blue8));
       CHECK(empty(img, 70, 20));
+#endif
    }
 
    {
@@ -373,7 +486,12 @@ TEST_CASE("canvas styles: Shadow", "[styles]")
          cnv.fill_style(red);
          cnv.fill_rect(10, 10, 20, 20);
       });
+#if defined(ARTIST_RECORDING)
+      CHECK(recorded(img, 0).shadow_offset == point{30, 0});
+      CHECK(same_color(recorded(img, 0).shadow_color, blue));
+#else
       CHECK(near(pixel_at(img, 50, 20), blue8));
+#endif
    }
 
    {
@@ -384,7 +502,11 @@ TEST_CASE("canvas styles: Shadow", "[styles]")
          cnv.shadow_style({30, 0}, 0, rgba(0, 0, 0, 128));
          cnv.fill_rect(10, 10, 20, 20);
       });
+#if defined(ARTIST_RECORDING)
+      CHECK(same_color(recorded(img, 0).shadow_color, rgba(0, 0, 0, 128)));
+#else
       CHECK(near(pixel_at(img, 50, 20), {0, 0, 0, 128}));
+#endif
    }
 
    {
@@ -397,7 +519,14 @@ TEST_CASE("canvas styles: Shadow", "[styles]")
          cnv.line_width(10);
          hline(cnv, 10, 90, 20);
       });
+#if defined(ARTIST_RECORDING)
+      REQUIRE(recorded(img).size() == 1);
+      CHECK(recorded(img, 0).kind == recording::op::stroke);
+      CHECK(recorded(img, 0).shadow_offset == point{0, 30});
+      CHECK(recorded(img, 0).bounds.bottom == Approx(55));
+#else
       CHECK(near(pixel_at(img, 50, 50), blue8));
+#endif
    }
 
    {
@@ -410,8 +539,13 @@ TEST_CASE("canvas styles: Shadow", "[styles]")
          cnv.shadow_style({30, 0}, 0, blue);
          cnv.fill_rect(5, 5, 10, 10);
       });
+#if defined(ARTIST_RECORDING)
+      CHECK(same_rect(recorded(img, 0).geometry, {10, 10, 30, 30}));
+      CHECK(recorded(img, 0).bounds.right == Approx(60));
+#else
       CHECK(near(pixel_at(img, 50, 20), blue8));
       CHECK(empty(img, 80, 20));
+#endif
    }
 
    {
@@ -422,9 +556,14 @@ TEST_CASE("canvas styles: Shadow", "[styles]")
          cnv.shadow_style(8, rgba(0, 0, 0, 255));
          cnv.fill_rect(40, 40, 20, 20);
       });
+#if defined(ARTIST_RECORDING)
+      CHECK(recorded(img, 0).shadow_blur == 8);
+      CHECK(same_rect(recorded(img, 0).bounds, {32, 32, 68, 68}));
+#else
       auto a = pixel_at(img, 36, 50).a;
       CHECK(a > 10);
       CHECK(a < 250);
+#endif
    }
 }
 
@@ -440,10 +579,16 @@ TEST_CASE("canvas styles: shadow blur spread", "[styles]")
       cnv.shadow_style({0, 0}, 20, rgba(0, 0, 0, 255));
       cnv.fill_rect(-100, -100, 140, 300);
    });
+#if defined(ARTIST_RECORDING)
+   // The falloff is rasterization; the journal holds the blur and its reach.
+   CHECK(recorded(img, 0).shadow_blur == 20);
+   CHECK(recorded(img, 0).bounds.right == Approx(60));
+#else
    auto a = pixel_at(img, 50, 50).a;
    INFO("alpha 10.5 past the edge: " << a);
    CHECK(a > 20);
    CHECK(a < 55);
+#endif
 }
 
 TEST_CASE("canvas styles: shadow of a transparent shape current behaviour",
@@ -479,7 +624,13 @@ TEST_CASE("canvas styles: Compositing", "[styles]")
          cnv.fill_style(rgba(0, 0, 255, 128));
          cnv.fill_rect(40, 40, 20, 20);
       });
+#if defined(ARTIST_RECORDING)
+      REQUIRE(recorded(img).size() == 2);
+      CHECK(recorded(img, 1).composite == canvas::copy);
+      CHECK(same_color(recorded(img, 1).paint, rgba(0, 0, 255, 128)));
+#else
       CHECK(near(pixel_at(img, 50, 50), {0, 0, 128, 128}));
+#endif
    }
 
    {
@@ -493,7 +644,12 @@ TEST_CASE("canvas styles: Compositing", "[styles]")
          cnv.fill_style(blue);
          cnv.fill_rect(40, 40, 20, 20);
       });
+#if defined(ARTIST_RECORDING)
+      REQUIRE(recorded(img).size() == 2);
+      CHECK(recorded(img, 1).composite == canvas::destination_over);
+#else
       CHECK(near(pixel_at(img, 50, 50), red8));
+#endif
    }
 
    {
@@ -506,7 +662,12 @@ TEST_CASE("canvas styles: Compositing", "[styles]")
          cnv.composite_op(canvas::lighter);
          cnv.fill_rect(40, 40, 20, 20);
       });
+#if defined(ARTIST_RECORDING)
+      REQUIRE(recorded(img).size() == 2);
+      CHECK(recorded(img, 1).composite == canvas::lighter);
+#else
       CHECK(near(pixel_at(img, 50, 50), {200, 0, 0, 255}, 6));
+#endif
    }
 }
 

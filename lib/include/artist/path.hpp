@@ -23,6 +23,9 @@ using path_impl = class SkPathBuilder;
 #elif defined(ARTIST_CAIRO)
 struct cairo_artist_path_t;
 using path_impl = cairo_artist_path_t;
+#elif defined(ARTIST_RECORDING)
+namespace cycfi::artist::recording { struct path_impl; }
+using path_impl = cycfi::artist::recording::path_impl;
 #else
 struct path_impl;   // no backend selected: opaque, declaration only
 #endif

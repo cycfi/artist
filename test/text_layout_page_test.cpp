@@ -154,6 +154,14 @@ TEST_CASE("text_layout: Drawing", "[text_layout]")
       ex.flow(280);
       ex.draw(cnv, {10, 100});
    }
+#if defined(ARTIST_RECORDING)
+   // After the background, the line is recorded about the baseline at p.
+   REQUIRE(recorded(img).size() == 2);
+   auto const& line = recorded(img, 1);
+   CHECK(line.kind == recording::op::fill_text);
+   CHECK(line.geometry.left == Approx(10));
+   CHECK(line.geometry.bottom == Approx(100 + font{fd}.metrics().descent));
+#else
    auto p = reinterpret_cast<std::uint8_t const*>(img.pixels());
    int w = int(img.bitmap_size().x), h = int(img.bitmap_size().y);
    int bottom = -1;
@@ -166,6 +174,7 @@ TEST_CASE("text_layout: Drawing", "[text_layout]")
       }
    CHECK(bottom >= 97);
    CHECK(bottom <= 100);
+#endif
 }
 
 TEST_CASE("text_layout: Break Queries", "[text_layout]")

@@ -38,6 +38,9 @@ namespace cycfi::artist
 //#endif
 #elif defined(ARTIST_CAIRO)
    using canvas_impl = cairo_t;
+#elif defined(ARTIST_RECORDING)
+   namespace recording { struct canvas_impl; }
+   using canvas_impl = recording::canvas_impl;
 #else
    // No backend selected: canvas is only ever held through a canvas_impl*, so
    // an opaque forward declaration is enough to include this header (e.g. from

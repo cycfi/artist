@@ -49,4 +49,34 @@ void compare_golden(image const& pm, std::string name);
 // runs, compare against it. Backend/platform-specific, like all goldens.
 void snapshot_golden(image const& pm, std::string name);
 
+#if defined(ARTIST_RECORDING)
+# include <artist/recording.hpp>
+
+// The recording backend keeps a journal instead of pixels. Where the drawing
+// backends probe pixels, tests read the journal through these.
+inline recording::journal const& recorded(image const& img)
+{
+   return recording::journal_of(img);
+}
+
+inline recording::command const& recorded(image const& img, std::size_t i)
+{
+   return recording::journal_of(img).commands().at(i);
+}
+
+inline bool same_color(color a, color b)
+{
+   auto eq = [](float x, float y) { return std::abs(x - y) < 0.01f; };
+   return eq(a.red, b.red) && eq(a.green, b.green)
+      && eq(a.blue, b.blue) && eq(a.alpha, b.alpha);
+}
+
+inline bool same_rect(rect a, rect b)
+{
+   auto eq = [](float x, float y) { return std::abs(x - y) < 0.01f; };
+   return eq(a.left, b.left) && eq(a.top, b.top)
+      && eq(a.right, b.right) && eq(a.bottom, b.bottom);
+}
+#endif
+
 #endif

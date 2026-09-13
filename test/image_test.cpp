@@ -53,7 +53,16 @@ namespace
          canvas cnv{ctx.context()};
          cnv.draw(src, point{0, 0});
       }
+#if defined(ARTIST_RECORDING)
+      // Nothing is rasterized: the draw is recorded over the destination, and
+      // the source's converted pixels are real.
+      REQUIRE(recorded(dst).size() == 1);
+      CHECK(recorded(dst, 0).kind == recording::op::image);
+      CHECK(same_rect(recorded(dst, 0).geometry, {0, 0, src.size().x, src.size().y}));
+      return pixel_at(src, 0, 0);
+#else
       return pixel_at(dst, 0, 0);
+#endif
    }
 
    void png_dims(std::string const& path, std::uint32_t& w, std::uint32_t& h)
@@ -164,6 +173,14 @@ TEST_CASE("Image: Accessors and Pixel Access", "[image]")
          cnv.fill_rect(0, 0, 10, 5);
       }
       CHECK(img.size() == extent{10, 10});
+#if defined(ARTIST_RECORDING)
+      REQUIRE(recorded(img).size() == 2);
+      CHECK(same_rect(recorded(img, 0).geometry, {0, 0, 10, 10}));
+      CHECK(same_rect(recorded(img, 1).geometry, {0, 0, 10, 5}));
+      CHECK(same_color(recorded(img, 1).paint, colors::blue));
+      CHECK(img.bitmap_size() == img.size());
+   }
+#else
       CHECK(near(pixel_at(img, 9, 2), blue));
       CHECK(near(pixel_at(img, 0, 7), red));
       CHECK(near(pixel_at(img, 9, 9), red));
@@ -191,6 +208,7 @@ TEST_CASE("Image: Accessors and Pixel Access", "[image]")
       // Premultiplied: a transparent pixel has no colour left.
       CHECK((p[0] | p[1] | p[2]) == 0);
    }
+#endif
 
    // A make_image image: converted to premultiplied B, G, R, A on every
    // backend. gray8 0x10 becomes opaque gray.
@@ -234,12 +252,22 @@ TEST_CASE("Image: Offscreen Drawing", "[image]")
    // The drawing is in the image once the offscreen_image is destroyed.
    image img{10, 10};
    fill(img, colors::red, {0, 0, 10, 10});
+#if defined(ARTIST_RECORDING)
+   CHECK(recorded(img).size() == 1);
+#else
    CHECK(near(pixel_at(img, 5, 5), red));
+#endif
 
    // Every backend draws over what the image already holds.
    fill(img, colors::blue, {0, 0, 5, 10});
+#if defined(ARTIST_RECORDING)
+   REQUIRE(recorded(img).size() == 2);
+   CHECK(same_color(recorded(img, 0).paint, colors::red));
+   CHECK(same_color(recorded(img, 1).paint, colors::blue));
+#else
    CHECK(near(pixel_at(img, 1, 5), blue));
    CHECK(near(pixel_at(img, 8, 5), red));
+#endif
 }
 
 TEST_CASE("Image: save_png throws on failure", "[image]")
@@ -289,14 +317,19 @@ TEST_CASE("Image: offscreen drawing reaches the image immediately", "[image]")
       canvas cnv{ctx.context()};
       cnv.fill_style(colors::red);
       cnv.fill_rect(0, 0, 10, 10);
+#if defined(ARTIST_RECORDING)
+      CHECK(recorded(img).size() == 1);
+#endif
       img.save_png(path);
    }
    image during{fs::path{path}};
    auto p = reinterpret_cast<std::uint8_t const*>(during.pixels());
    REQUIRE(p != nullptr);
+#if !defined(ARTIST_RECORDING)
    p += 4 * (5 * int(during.bitmap_size().x) + 5);
    CHECK(p[3] == 255);
    CHECK(near(pixel_at(img, 5, 5), red));
+#endif
 }
 
 TEST_CASE("Image: scale", "[image]")
@@ -315,8 +348,13 @@ TEST_CASE("Image: scale", "[image]")
    // wide covers 10 pixels.
    fill(img, colors::red, {0, 0, 10, 20});
    fill(img, colors::blue, {0, 0, 5, 20});
+#if defined(ARTIST_RECORDING)
+   REQUIRE(recorded(img).size() == 2);
+   CHECK(same_rect(recorded(img, 1).geometry, {0, 0, 5, 20}));
+#else
    CHECK(near(pixel_at(img, 9, 20), blue));
    CHECK(near(pixel_at(img, 10, 20), red));
+#endif
 
    // Output: save_png writes the bitmap, and the file loads back at scale 1.
    auto path = get_results_path() + "image_test_scale.png";
@@ -352,8 +390,13 @@ TEST_CASE("Image: draw works in units at any scale", "[image]")
          canvas cnv{ctx.context()};
          cnv.draw(src, point{0, 0});
       }
+#if defined(ARTIST_RECORDING)
+      REQUIRE(recorded(dst).size() == 1);
+      CHECK(same_rect(recorded(dst, 0).geometry, {0, 0, 4, 2}));
+#else
       CHECK(near(pixel_at(dst, 0, 1), red));
       CHECK(near(pixel_at(dst, 3, 1), blue));
+#endif
    }
 
    // A src rectangle in units: the right half, stretched over the whole
@@ -365,8 +408,13 @@ TEST_CASE("Image: draw works in units at any scale", "[image]")
          canvas cnv{ctx.context()};
          cnv.draw(src, rect{2, 0, 4, 2}, rect{0, 0, 4, 2});
       }
+#if defined(ARTIST_RECORDING)
+      REQUIRE(recorded(dst).size() == 1);
+      CHECK(same_rect(recorded(dst, 0).geometry, {0, 0, 4, 2}));
+#else
       CHECK(near(pixel_at(dst, 0, 1), blue));
       CHECK(near(pixel_at(dst, 3, 1), blue));
+#endif
    }
 }
 
@@ -378,14 +426,18 @@ TEST_CASE("Image: loads JPEG", "[image]")
 {
    image img{fs::path{get_images_path() + "formats.jpg"}};
    CHECK(img.size() == extent{32, 16});
+#if !defined(ARTIST_RECORDING)   // the recording backend reads sizes, not pixels
    CHECK(near(pixel_at(img, 8, 8), {200, 40, 40, 255}, 12));
    CHECK(near(pixel_at(img, 24, 8), {40, 40, 200, 255}, 12));
+#endif
 }
 
 TEST_CASE("Image: loads WebP", "[image]")
 {
    image img{fs::path{get_images_path() + "formats.webp"}};
    CHECK(img.size() == extent{32, 16});
+#if !defined(ARTIST_RECORDING)   // the recording backend reads sizes, not pixels
    CHECK(near(pixel_at(img, 8, 8), {200, 40, 40, 255}));
    CHECK(near(pixel_at(img, 24, 8), {0, 0, 0, 0}));
+#endif
 }

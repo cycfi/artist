@@ -1,0 +1,29 @@
+fill [0.00 0.00 640.00 480.00] #363437ff
+fill [20.00 20.00 100.00 60.00] #232375ff
+stroke [19.75 19.75 100.25 60.25] #faebd7cc width=0.50 cap=0 join=2 miter=10.00
+fill [40.00 35.00 120.00 80.00] #20b2aa80
+stroke [5.00 5.00 105.00 105.00] #ff69b4ff width=10.00 cap=0 join=2 miter=10.00
+fill [80.00 40.00 160.00 120.00] #daaa0080
+stroke [78.00 38.00 162.00 122.00] #daaa00ff width=4.00 cap=0 join=2 miter=10.00
+stroke [143.00 23.00 247.00 127.00] #a8a8a8ff width=4.00 cap=0 join=1 miter=10.00
+stroke [39.00 122.00 151.00 226.00] #cc0000ff width=2.00 cap=0 join=1 miter=10.00
+fill [40.00 123.00 150.00 225.00] #33000066
+fill [181.34 162.42 307.99 290.31] #232375ff
+stroke [180.96 162.05 308.36 290.68] #faebd7cc width=0.50 cap=0 join=2 miter=10.00
+fill [185.69 204.59 307.78 327.76] #20b2aa80
+stroke [214.40 133.71 232.19 339.61] #ff69b4ff width=10.00 cap=0 join=2 miter=10.00
+fill [204.33 272.74 324.32 392.72] #daaa0080
+stroke [201.33 269.74 327.32 395.72] #daaa00ff width=4.00 cap=0 join=2 miter=10.00
+stroke [244.25 321.85 434.37 466.75] #a8a8a8ff width=4.00 cap=0 join=1 miter=10.00
+stroke [80.67 306.89 234.06 460.15] #cc0000ff width=2.00 cap=0 join=1 miter=10.00
+fill [82.17 308.39 232.56 458.65] #33000066
+fill [300.00 20.00 600.00 100.00] #ff0000ff gradient
+fill [425.00 35.00 555.00 165.00] #ff0000ff gradient
+stroke [296.00 16.00 604.00 104.00] #232375ff gradient width=8.00 cap=0 join=2 miter=10.00
+image [250.00 120.00 454.80 324.80] #000000ff
+stroke [495.00 195.00 605.00 205.00] #daaa00ff width=10.00 cap=0 join=2 miter=10.00 shadow=[5.00 5.00 5.00 #000000ff]
+stroke [495.00 215.00 605.00 225.00] #729fffff width=10.00 cap=1 join=2 miter=10.00 shadow=[5.00 5.00 5.00 #000000ff]
+stroke [495.00 235.00 605.00 245.00] #20b2aaff width=10.00 cap=2 join=2 miter=10.00 shadow=[5.00 5.00 5.00 #000000ff]
+stroke [475.00 295.00 545.00 385.00] #daaa00ff width=10.00 cap=2 join=0 miter=10.00 shadow=[5.00 5.00 5.00 #000000ff]
+stroke [515.00 295.00 585.00 385.00] #729fffff width=10.00 cap=2 join=1 miter=10.00 shadow=[5.00 5.00 5.00 #000000ff]
+stroke [555.00 295.00 625.00 385.00] #20b2aaff width=10.00 cap=2 join=2 miter=10.00 shadow=[5.00 5.00 5.00 #000000ff]

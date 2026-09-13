@@ -1,0 +1,37 @@
+fill [0.00 0.00 640.00 480.00] #363437ff
+fill_text [20.00 1.52 148.09 50.55] #dcdcdcc8 "Regular"
+fill_text [160.00 1.52 240.24 50.55] #dcdcdcc8 "Bold"
+fill_text [250.00 1.52 328.73 50.55] #dcdcdcc8 "Light"
+fill_text [345.00 1.52 421.32 50.55] #dcdcdcc8 "Italic"
+fill_text [430.00 1.52 561.61 50.55] #dcdcdcc8 "Condensed"
+fill_text [20.00 76.52 195.97 125.55] #dcdcdcc8 "Condensed Italic"
+stroke_text [209.75 76.27 345.09 125.80] #dcdcdcc8 width=0.50 cap=0 join=2 miter=10.00 "Outline"
+fill_text [360.00 59.42 588.92 130.23] #232375ff gradient "Gradient"
+stroke_text [359.75 59.17 589.17 130.48] #dcdcdcc8 width=0.50 cap=0 join=2 miter=10.00 "Gradient"
+stroke_text [19.25 133.67 457.95 205.98] #3232ccff gradient width=1.50 cap=0 join=2 miter=10.00 "Outline Gradient"
+fill_text [500.00 134.42 585.46 205.23] #dcdcdcc8 "fi fl"
+fill_text [20.00 209.42 218.40 280.23] #dcdcdcc8 shadow=[5.00 5.00 5.00 #000000ff] "Shadow"
+fill_text [250.00 209.42 376.50 280.23] #363437ff shadow=[0.00 0.00 8.00 #87cefaff] "Glow"
+stroke [499.75 219.75 500.25 480.25] #ff0000ff width=0.50 cap=0 join=2 miter=10.00
+stroke [399.75 249.75 600.25 250.25] #ff0000ff width=0.50 cap=0 join=2 miter=10.00
+fill_text [500.00 235.04 591.85 254.10] #dcdcdcc8 "text_align(left)"
+stroke [399.75 284.75 600.25 285.25] #ff0000ff width=0.50 cap=0 join=2 miter=10.00
+fill_text [398.77 270.04 500.00 289.10] #dcdcdcc8 "text_align(right)"
+stroke [399.75 319.75 600.25 320.25] #ff0000ff width=0.50 cap=0 join=2 miter=10.00
+fill_text [443.81 305.04 556.19 324.10] #dcdcdcc8 "text_align(center)"
+stroke [399.75 354.75 600.25 355.25] #ff0000ff width=0.50 cap=0 join=2 miter=10.00
+fill_text [500.00 340.04 625.19 359.10] #dcdcdcc8 "text_align(baseline)"
+stroke [399.75 389.75 600.25 390.25] #ff0000ff width=0.50 cap=0 join=2 miter=10.00
+fill_text [500.00 390.00 592.74 409.07] #dcdcdcc8 "text_align(top)"
+stroke [399.75 424.75 600.25 425.25] #ff0000ff width=0.50 cap=0 join=2 miter=10.00
+fill_text [500.00 415.47 615.88 434.53] #dcdcdcc8 "text_align(middle)"
+stroke [399.75 459.75 600.25 460.25] #ff0000ff width=0.50 cap=0 join=2 miter=10.00
+fill_text [500.00 440.93 619.16 460.00] #dcdcdcc8 "text_align(bottom)"
+fill_text [20.00 287.17 370.00 303.52] #dcdcdcc8 "Although I am a typical loner in daily life, my consciousness of"
+fill_text [20.00 303.52 370.00 319.86] #dcdcdcc8 "belonging to the invisible community of those who strive for truth,"
+fill_text [20.00 319.86 329.66 336.20] #dcdcdcc8 "beauty, and justice has preserved me from feeling isolated."
+fill_text [20.00 352.54 370.00 368.88] #dcdcdcc8 "The years of anxious searching in the dark, with their intense"
+fill_text [20.00 368.88 370.00 385.22] #dcdcdcc8 "longing, their alternations of confidence and exhaustion, and final"
+fill_text [20.00 385.22 370.00 401.57] #dcdcdcc8 "emergence into light—only those who have experienced it can"
+fill_text [20.00 401.57 108.75 417.91] #dcdcdcc8 "understand that."
+fill_text [20.00 434.25 106.86 450.59] #dcdcdcc8 "⁠—Albert Einstein"

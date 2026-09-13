@@ -1,0 +1,16 @@
+fill [0.00 0.00 640.00 480.00] #363437ff
+fill [30.00 50.00 130.00 150.00] #00ff0080
+stroke [28.75 48.75 131.25 151.25] #fffff0ff width=5.00 cap=0 join=2 miter=10.00
+stroke [138.75 61.25 291.25 138.75] #87cefaff width=5.00 cap=0 join=2 miter=10.00
+stroke [113.75 211.25 516.25 338.75] #87cefaff width=5.00 cap=0 join=2 miter=10.00
+stroke [113.75 148.75 516.25 401.25] #a8a8a880 width=5.00 cap=0 join=2 miter=10.00
+fill [110.00 270.00 120.00 280.00] #ffffff80
+fill [310.00 270.00 320.00 280.00] #ffffff80
+fill [510.00 270.00 520.00 280.00] #ffffff80
+fill [210.00 145.00 220.00 155.00] #ffffff80
+fill [410.00 395.00 420.00 405.00] #ffffff80
+fill [340.00 25.00 489.98 174.98] #ff0000cc
+stroke [338.75 23.75 491.23 176.23] #fffff0ff width=5.00 cap=0 join=2 miter=10.00
+fill [327.50 12.50 402.50 87.50] #0000ffcc
+stroke [326.25 11.25 403.75 88.75] #fffff0ff width=5.00 cap=0 join=2 miter=10.00
+stroke [388.75 131.20 616.25 276.25] #fffff0ff width=5.00 cap=0 join=2 miter=10.00

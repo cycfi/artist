@@ -1,0 +1,7 @@
+fill [0.00 0.00 640.00 480.00] #2c2a2dff
+fill [126.26 162.66 533.74 430.11] #2c2a2dff shadow=[-1.00 -1.00 10.00 #e0ffffff]
+stroke [277.50 27.50 382.50 132.50] #2c2a2dff width=2.50 cap=0 join=2 miter=10.00 shadow=[-1.00 -1.00 10.00 #e0ffffff]
+fill [126.26 162.66 533.74 430.11] #2c2a2dff shadow=[5.00 5.00 20.00 #000014ff]
+stroke [277.50 27.50 382.50 132.50] #2c2a2dff width=2.50 cap=0 join=2 miter=10.00 shadow=[5.00 5.00 20.00 #000014ff]
+fill [126.26 162.66 533.74 430.11] #daaa00ff gradient shadow=[5.00 5.00 20.00 #000014ff]
+stroke [277.50 27.50 382.50 132.50] #daaa00ff gradient width=2.50 cap=0 join=2 miter=10.00 shadow=[5.00 5.00 20.00 #000014ff]

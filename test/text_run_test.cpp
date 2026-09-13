@@ -192,6 +192,30 @@ TEST_CASE("text_run: Layout", "[text_run]")
    {
       std::string txt =
          "the quick brown fox jumps over the lazy dog and keeps running far away";
+#if defined(ARTIST_RECORDING)
+      // Each line is recorded as one text command, spanning its laid-out
+      // width from the offset.
+      auto lines = [&](bool justify)
+      {
+         image img{600, 200};
+         {
+            offscreen_image ctx{img};
+            canvas cnv{ctx.context()};
+            text_run r{font_descr{"Open Sans", 20}, txt};
+            r.flow(400, justify);
+            REQUIRE(r.num_lines() == 2);
+            r.draw(cnv, {10, 40});
+         }
+         auto cmds = recorded(img).commands();
+         REQUIRE(cmds.size() == 2);
+         return cmds;
+      };
+      auto ragged = lines(false);
+      auto justified = lines(true);
+      CHECK(ragged[0].geometry.right < 410);
+      CHECK(justified[0].geometry.right == Approx(410));
+      CHECK(justified[1].geometry.right == Approx(ragged[1].geometry.right));
+#else
       auto ink = [&](bool justify)
       {
          return render(600, 200, [&](canvas& cnv)
@@ -210,6 +234,7 @@ TEST_CASE("text_run: Layout", "[text_run]")
       // by shaper and anti-aliasing across backends, so allow a few pixels.
       CHECK(std::abs(justified.right(20, 45) - 410) <= 8);
       CHECK(justified.right(47, 72) == ragged.right(47, 72));
+#endif
    }
 }
 
@@ -217,6 +242,25 @@ TEST_CASE("text_run: Drawing", "[text_run]")
 {
    // p is the left end of the first line's baseline. "Hxx" has no
    // descenders, so its ink ends at the baseline.
+#if defined(ARTIST_RECORDING)
+   // The recorded line spans the font's ascent and descent about p.
+   image img{300, 200};
+   {
+      offscreen_image ctx{img};
+      canvas cnv{ctx.context()};
+      text_run r{fd40, "Hxx"};
+      r.flow(280);
+      r.draw(cnv, {10, 100});
+   }
+   auto m = font{fd40}.metrics();
+   REQUIRE(recorded(img).size() == 1);
+   auto const& line = recorded(img, 0);
+   CHECK(line.kind == recording::op::fill_text);
+   CHECK(line.text == "Hxx");
+   CHECK(line.geometry.left == Approx(10));
+   CHECK(line.geometry.top == Approx(100 - m.ascent));
+   CHECK(line.geometry.bottom == Approx(100 + m.descent));
+#else
    auto ink = render(300, 200, [&](canvas& cnv)
    {
       text_run r{fd40, "Hxx"};
@@ -228,6 +272,7 @@ TEST_CASE("text_run: Drawing", "[text_run]")
    CHECK(ink.top() < 80);
    CHECK(ink.left() >= 10);
    CHECK(ink.left() <= 16);
+#endif
 }
 
 TEST_CASE("text_run: Hit Testing", "[text_run]")
