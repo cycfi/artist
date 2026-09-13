@@ -18,6 +18,7 @@ namespace
    struct view_state
    {
       extent            _size       = {};
+      extent            _requested  = {};
       extent            _prime_size = {};
       float             _scale      = 1.0f;
       bool              _animate    = false;
@@ -114,6 +115,23 @@ namespace
       return G_SOURCE_CONTINUE;
    }
 
+   // ARTIST_PERF: start frames only once the drawing area has the requested
+   // size, so every recorded frame has that size. Ask again while the window
+   // manager has not applied it.
+   gboolean perf_wait_for_size(gpointer user_data)
+   {
+      view_state& state = *reinterpret_cast<view_state*>(user_data);
+      int const w = gtk_widget_get_allocated_width(state._da);
+      int const h = gtk_widget_get_allocated_height(state._da);
+      if (w == int(state._requested.x) && h == int(state._requested.y))
+      {
+         state._timer_id = g_idle_add(perf_frame, user_data);
+         return G_SOURCE_REMOVE;
+      }
+      gtk_window_resize(state._window, int(state._requested.x), int(state._requested.y));
+      return G_SOURCE_CONTINUE;
+   }
+
    gboolean animate_cb(gpointer user_data)
    {
       gtk_widget_queue_draw(GTK_WIDGET(user_data));
@@ -145,15 +163,22 @@ namespace
       auto* gdk_win = gtk_widget_get_window(GTK_WIDGET(window));
       state._scale = float(gdk_window_get_scale_factor(gdk_win));
 
-      if (state._animate && !perf_enabled())
+      // Measuring is unattended, so the first-resize prime below is not
+      // needed, and its restore does not always take before recording starts.
+      if (perf_enabled())
+      {
+         g_timeout_add(100, perf_wait_for_size, user_data);
+         return;
+      }
+
+      if (state._animate)
          state._timer_id = g_timeout_add(1000/60, animate_cb, da);
 
       // Prime away the spurious half-size GDK/XWayland first-resize event by
       // triggering a programmatic resize before the user can grab the handle.
       // The bad event fires and is silently suppressed in on_configure. The
       // restore uses the size from before the prime, since configure events
-      // may already have moved _size to the primed width. When measuring
-      // (ARTIST_PERF), frames start only once the window is back at its size.
+      // may already have moved _size to the primed width.
       g_timeout_add(150, [](gpointer data) -> gboolean {
          view_state& st = *reinterpret_cast<view_state*>(data);
          st._prime_size = st._size;
@@ -162,12 +187,6 @@ namespace
             view_state& st2 = *reinterpret_cast<view_state*>(data2);
             gtk_window_resize(st2._window,
                int(st2._prime_size.x), int(st2._prime_size.y));
-            if (perf_enabled())
-               g_timeout_add(100, [](gpointer data3) -> gboolean {
-                  view_state& st3 = *reinterpret_cast<view_state*>(data3);
-                  st3._timer_id = g_idle_add(perf_frame, data3);
-                  return FALSE;
-               }, data2);
             return FALSE;
          }, data);
          return FALSE;
@@ -201,6 +220,7 @@ int run_app(
 {
    view_state state;
    state._size      = window_size;
+   state._requested = window_size;
    state._animate   = animate;
    state._bkd       = background_color;
 

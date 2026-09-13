@@ -33,6 +33,7 @@ namespace
    struct view_state
    {
       extent   _size       = {};
+      extent   _requested  = {};
       extent   _prime_size = {};
       float    _scale      = 1.0f;
       int      _fb_w       = 0;
@@ -293,12 +294,29 @@ namespace
       return G_SOURCE_CONTINUE;
    }
 
+   // ARTIST_PERF: start frames only once the window has the requested size,
+   // so every recorded frame has that size. Ask again while the window
+   // manager has not applied it.
+   gboolean perf_wait_for_size(gpointer user_data)
+   {
+      view_state& state = *reinterpret_cast<view_state*>(user_data);
+      auto* widget = GTK_WIDGET(state._window);
+      int const w = gtk_widget_get_allocated_width(widget);
+      int const h = gtk_widget_get_allocated_height(widget);
+      if (w == int(state._requested.x) && h == int(state._requested.y))
+      {
+         state._timer_id = g_idle_add(perf_frame, user_data);
+         return G_SOURCE_REMOVE;
+      }
+      gtk_window_resize(state._window, int(state._requested.x), int(state._requested.y));
+      return G_SOURCE_CONTINUE;
+   }
+
    // Prime away the spurious half-size GDK/XWayland first-resize event by
    // triggering a programmatic resize before the user can grab the handle.
    // The bad event fires and is silently suppressed in gl_resize. The restore
    // uses the size from before the prime, since resize events may already
-   // have moved _size to the primed width. When measuring (ARTIST_PERF),
-   // frames start only once the window is back at its size.
+   // have moved _size to the primed width.
    void prime_resize(gpointer user_data)
    {
       g_timeout_add(150, [](gpointer data) -> gboolean {
@@ -309,12 +327,6 @@ namespace
             view_state& st2 = *reinterpret_cast<view_state*>(data2);
             gtk_window_resize(st2._window,
                int(st2._prime_size.x), int(st2._prime_size.y));
-            if (perf_enabled())
-               g_timeout_add(100, [](gpointer data3) -> gboolean {
-                  view_state& st3 = *reinterpret_cast<view_state*>(data3);
-                  st3._timer_id = g_idle_add(perf_frame, data3);
-                  return FALSE;
-               }, data2);
             return FALSE;
          }, data);
          return FALSE;
@@ -334,13 +346,15 @@ namespace
       {
          // Measuring draws with EGL straight into the toplevel's X11 window,
          // which GDK's X11 backend decorates server side, so the window is
-         // the content area. GTK must not paint over the frames.
+         // the content area. GTK must not paint over the frames. Measuring is
+         // unattended, so the first-resize prime is not needed; frames wait
+         // for the requested size instead.
          if (!perf_choose_config(state, window))
             std::exit(1);
          gtk_widget_set_app_paintable(window, TRUE);
          gtk_window_resize(GTK_WINDOW(window), state._size.x, state._size.y);
          gtk_widget_show_all(window);
-         prime_resize(user_data);
+         g_timeout_add(100, perf_wait_for_size, user_data);
          return;
       }
 
@@ -395,6 +409,7 @@ int run_app(
 {
    view_state state;
    state._size       = window_size;
+   state._requested  = window_size;
    state._animate    = animate;
    state._bkd        = background_color;
 
