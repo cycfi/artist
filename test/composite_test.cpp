@@ -51,7 +51,11 @@ void composite_draw(canvas& cnv, point p, canvas::composite_op_enum mode)
    }
 
    {
+      // Clip to the cell: the unbounded operators clear the destination
+      // outside what is drawn, as far as the clip.
       auto save = cnv.new_state();
+      cnv.add_rect({p.x, p.y, p.x + 120, p.y + 130});
+      cnv.clip();
       image pm{110, 110};
       {
          offscreen_image ctx{pm};
