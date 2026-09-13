@@ -323,8 +323,10 @@ int run_app(
    // Per-monitor-v2: we render at the real pixel resolution and handle DPI
    // ourselves (target DPI + WM_DPICHANGED), so Windows never bitmap-stretches
    // the window. System-DPI awareness (the old call) left 4K/scaled displays
-   // virtualized and pixelated.
-   SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+   // virtualized and pixelated. Measuring (ARTIST_PERF) runs DPI-unaware, at
+   // 1x, so the pixel count matches a scale-1 display on the other machines.
+   SetProcessDpiAwarenessContext(perf_enabled()?
+      DPI_AWARENESS_CONTEXT_UNAWARE : DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
    window win{window_size, bkd, animate};
 
    MSG msg;

@@ -116,7 +116,8 @@ namespace cycfi::artist
 // schedule. When measuring (ARTIST_PERF), that would leave most of the
 // rasterizing outside the frame time, so the view's own drawing is
 // rasterized into a bitmap now and the bitmap is presented; the frame time
-// covers finished pixels and the present.
+// covers finished pixels and the present. The bitmap is 1x, so the pixel
+// count matches a scale-1 display on the other machines.
 - (void) render
 {
    auto start = std::chrono::steady_clock::now();
@@ -124,7 +125,18 @@ namespace cycfi::artist
    {
       auto const bounds = self.bounds;
       if (!_rep || _rep.size.width != bounds.size.width || _rep.size.height != bounds.size.height)
-         _rep = [self bitmapImageRepForCachingDisplayInRect : bounds];
+         _rep = [[NSBitmapImageRep alloc]
+            initWithBitmapDataPlanes : nullptr
+                          pixelsWide : NSInteger(bounds.size.width)
+                          pixelsHigh : NSInteger(bounds.size.height)
+                       bitsPerSample : 8
+                     samplesPerPixel : 4
+                            hasAlpha : YES
+                            isPlanar : NO
+                      colorSpaceName : NSDeviceRGBColorSpace
+                         bytesPerRow : 0
+                        bitsPerPixel : 0
+         ];
       [self cacheDisplayInRect : bounds toBitmapImageRep : _rep];
       [CATransaction begin];
       [CATransaction setDisableActions : YES];

@@ -131,8 +131,9 @@ namespace cycfi::artist
    self.wantsLayer = YES;
    self.layer      = _metal_layer;
 
-   // HiDPI backing scale
-   _scale = self.window.backingScaleFactor;
+   // HiDPI backing scale. Measuring (ARTIST_PERF) renders at 1x, so the pixel
+   // count matches a scale-1 display on the other machines.
+   _scale = perf_enabled()? 1.0f : self.window.backingScaleFactor;
    if (_scale == 0) _scale = NSScreen.mainScreen.backingScaleFactor;
    _metal_layer.contentsScale  = _scale;
    _metal_layer.drawableSize   = CGSizeMake(
