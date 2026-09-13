@@ -185,4 +185,21 @@ endif()
 # include() runs in the caller's scope, so this updates the includer's
 # CMAKE_PREFIX_PATH directly (no PARENT_SCOPE needed).
 list(PREPEND CMAKE_PREFIX_PATH "${_dest}")
+
+# On Windows the bundle's Skia and its dependencies are DLLs, but Skia is
+# imported as an UNKNOWN library, so they never show up in an executable's
+# TARGET_RUNTIME_DLLS. Record them (release or debug, by configuration) for
+# the post-build copy next to the executables.
+if(WIN32)
+  file(GLOB _rel_dlls "${_dest}/bin/*.dll")
+  file(GLOB _dbg_dlls "${_dest}/debug/bin/*.dll")
+  set(_dlls "")
+  foreach(_dll IN LISTS _rel_dlls)
+    list(APPEND _dlls "$<$<NOT:$<CONFIG:Debug>>:${_dll}>")
+  endforeach()
+  foreach(_dll IN LISTS _dbg_dlls)
+    list(APPEND _dlls "$<$<CONFIG:Debug>:${_dll}>")
+  endforeach()
+  set_property(GLOBAL PROPERTY ARTIST_SKIA_RUNTIME_DLLS "${_dlls}")
+endif()
 message(STATUS "Artist: using prebuilt Skia ${_triplet}@${_ver} (${_dest})")

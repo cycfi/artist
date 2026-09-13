@@ -412,6 +412,18 @@ function(add_example name)
       )
    endif()
 
+   # The prebuilt Skia bundle's DLLs are not in TARGET_RUNTIME_DLLS (see
+   # cmake/SkiaPrebuilt.cmake), so copy them too.
+   get_property(skia_dlls GLOBAL PROPERTY ARTIST_SKIA_RUNTIME_DLLS)
+   if (skia_dlls)
+      add_custom_command(
+         TARGET ${name} POST_BUILD
+         COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${skia_dlls} $<TARGET_FILE_DIR:${name}>
+         COMMAND_EXPAND_LISTS
+      )
+   endif()
+
 endfunction()
 
 set(space_images

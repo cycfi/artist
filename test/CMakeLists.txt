@@ -111,6 +111,18 @@ if (WIN32 AND NOT CMAKE_VERSION VERSION_LESS 3.21)
    )
 endif()
 
+# The prebuilt Skia bundle's DLLs are not in TARGET_RUNTIME_DLLS (see
+# cmake/SkiaPrebuilt.cmake), so copy them too.
+get_property(skia_dlls GLOBAL PROPERTY ARTIST_SKIA_RUNTIME_DLLS)
+if (skia_dlls)
+   add_custom_command(
+      TARGET artist_test POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+         ${skia_dlls} $<TARGET_FILE_DIR:artist_test>
+      COMMAND_EXPAND_LISTS
+   )
+endif()
+
 if (APPLE)
    if (ARTIST_SKIA)
       set(GOLDEN_PATH macos_golden/skia)
