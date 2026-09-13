@@ -199,8 +199,8 @@ width and shape of a stroke, the shadow cast under what is drawn, and how
 new drawing combines with what is already on the canvas. Each is canvas
 state. Set one and it stays in effect for every paint that follows, until
 it is set again or a saved state is restored over it. Every style on this
-page is part of the state that <code>save</code> and <code>restore</code> keep, on every backend,
-so the usual way to apply a style to one shape is inside a
+page is part of the state that <code>save</code> and <code>restore</code> keep, so the usual way
+to apply a style to one shape is inside a
 <a href="states.html" class="xref page">saved state</a>.</p>
 </div>
 <div class="paragraph">
@@ -218,10 +218,7 @@ before <code>fill</code> or <code>stroke</code>. The geometry it paints is the
 Artist follows the W3C canvas API, and the styles map onto its
 <code>fillStyle</code>, <code>strokeStyle</code>, <code>lineWidth</code>, <code>lineCap</code>, <code>lineJoin</code>,
 <code>miterLimit</code>, the four <code>shadow</code> attributes and <code>globalCompositeOperation</code>.
-The differences are mostly in the backends, and are listed under
-<a href="#_backend_differences">Backend Differences</a>. Two of them catch code written against the W3C
-defaults: the default line width is not 1 everywhere, and the default miter
-limit is not 10 everywhere. Set both when they matter.
+They behave as the W3C API specifies, the same on every backend.
 </td>
 </tr>
 </table>
@@ -415,6 +412,12 @@ the displacement of a shadow.</p>
 </tr>
 </tbody>
 </table>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/paint.png"><img src="../_images/canvas/paint.png" alt="A color and a gradient, each as a fill and as a stroke" width="560px"></a>
+</div>
+<div class="title">Figure 1. A color and a gradient, each as a fill and as a stroke.</div>
+</div>
 <div class="paragraph">
 <p>Fill and stroke are separate styles, so one path can be filled in one paint
 and outlined in another. Each holds one paint at a time: setting a color
@@ -451,23 +454,20 @@ coordinates are in, is under <a href="gradients.html" class="xref page">Gradient
 </tr>
 </tbody>
 </table>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/line_width.png"><img src="../_images/canvas/line_width.png" alt="Three widths on the same path" width="560px"></a>
+</div>
+<div class="title">Figure 2. Three widths. The white line is the path.</div>
+</div>
+<div class="paragraph">
+<p>The default width is 1. A width that is zero, negative, infinite or NaN is
+ignored, and the width stays what it was.</p>
+</div>
 <div class="paragraph">
 <p>The width is in user space, under the transform in effect when the path is
 stroked, not when the width is set. After <code>cnv.scale(2)</code>, a width of 10
 strokes 20 device units wide, whichever call came first.</p>
-</div>
-<div class="admonitionblock caution">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-caution" title="Caution"></i>
-</td>
-<td class="content">
-The default width is 1 on Quartz 2D and Direct2D, 2 on Cairo, and
-a one-pixel hairline on Skia. Set it before the first stroke.
-</td>
-</tr>
-</table>
 </div>
 </div>
 <div class="sect2">
@@ -513,7 +513,7 @@ a one-pixel hairline on Skia. Set it before the first stroke.
 <div class="content">
 <a class="image" href="../_images/canvas/line_cap.png"><img src="../_images/canvas/line_cap.png" alt="A line under each cap" width="560px"></a>
 </div>
-<div class="title">Figure 1. The same line under each cap. The grey guides mark where the path ends.</div>
+<div class="title">Figure 3. The same line under each cap. The grey guides mark where the path ends.</div>
 </div>
 <div class="paragraph">
 <p>A cap is drawn at the two open ends of a sub-path. A sub-path closed with
@@ -568,7 +568,8 @@ a one-pixel hairline on Skia. Set it before the first stroke.
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.miter_limit()</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Set the limit to 10.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the limit to 10,
+                                        the default.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
 </tr>
 </tbody>
@@ -577,13 +578,20 @@ a one-pixel hairline on Skia. Set it before the first stroke.
 <div class="content">
 <a class="image" href="../_images/canvas/line_join.png"><img src="../_images/canvas/line_join.png" alt="A corner under each join" width="560px"></a>
 </div>
-<div class="title">Figure 2. The same corner under each join.</div>
+<div class="title">Figure 4. The same corner under each join.</div>
 </div>
 <div class="paragraph">
 <p>A miter grows as the angle between two segments closes. At an angle θ it is
 1 / sin(θ / 2) line widths long, so a limit of 10 keeps a miter at any angle
 above about 11.5 degrees and bevels anything sharper. A limit of 2 bevels
-everything below 60 degrees. The limit only applies to <code>canvas::miter_join</code>.</p>
+everything below 60 degrees. The limit only applies to <code>canvas::miter_join</code>.
+A limit that is zero, negative, infinite or NaN is ignored.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/miter_limit.png"><img src="../_images/canvas/miter_limit.png" alt="A sharp corner under two miter limits" width="560px"></a>
+</div>
+<div class="title">Figure 5. A 24 degree corner: its miter is 4.8 line widths long, inside a limit of 10 and cut back to a bevel by a limit of 2.</div>
 </div>
 </div>
 <div class="sect2">
@@ -606,8 +614,8 @@ everything below 60 degrees. The limit only applies to <code>canvas::miter_join<
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.shadow_style(offset,
     blur, c)</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Cast a shadow of color <code>c</code>
-                                    under every fill and stroke
-                                    that follows, displaced by
+                                    under everything drawn
+                                    afterwards, displaced by
                                     <code>offset</code> and softened by
                                     <code>blur</code>.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
@@ -629,18 +637,30 @@ everything below 60 degrees. The limit only applies to <code>canvas::miter_join<
 </tr>
 </tbody>
 </table>
-<div class="paragraph">
-<p>The shadow is the shape itself, drawn in <code>c</code>, blurred, moved by <code>offset</code>,
-and put down beneath the shape. The alpha of <code>c</code> scales it, so a
-half-transparent color gives a half-strength shadow.</p>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/shadow.png"><img src="../_images/canvas/shadow.png" alt="Four shadows" width="560px"></a>
+</div>
+<div class="title">Figure 6. A hard shadow, a soft one, a glow, and the shadow of a half-transparent shape.</div>
 </div>
 <div class="paragraph">
-<p>On Quartz 2D and Cairo, as in the W3C API, <code>offset</code> and <code>blur</code> are not
-scaled by the transform: after <code>cnv.scale(2)</code>, an offset of 10 is still 10.
-<code>blur</code> is twice the standard deviation of the Gaussian that softens the
-edge, so a shadow fades out over roughly <code>blur</code> units on either side of it.
-A <code>blur</code> of zero gives a hard-edged copy of the shape. Skia and Direct2D
-differ on both counts; see <a href="#_backend_differences">Backend Differences</a>.</p>
+<p>The shadow is what is drawn, in <code>c</code>, blurred, moved by <code>offset</code>, and put
+down beneath it. Fills, strokes, text and images all cast one. Its strength
+is the alpha of what is drawn, point by point, times the alpha of <code>c</code>: a
+half-transparent shape casts a half-strength shadow, and the parts of a
+gradient that fade out cast less.</p>
+</div>
+<div class="paragraph">
+<p><code>offset</code> and <code>blur</code> are in the canvas&#8217;s own units and are not changed by
+the transform: after <code>cnv.scale(2)</code> or a rotation, an offset of 10 across
+is still 10 across. On an image with a scale, they are in the image&#8217;s
+units, not its pixels. <code>blur</code> is twice the standard deviation of the
+Gaussian that softens the edge, so a shadow fades out over roughly <code>blur</code>
+units on either side of it. A <code>blur</code> of zero gives a hard-edged copy.</p>
+</div>
+<div class="paragraph">
+<p>A shadow is drawn only when it can be seen: when <code>c</code> is not fully
+transparent, and <code>offset</code> or <code>blur</code> is not zero.</p>
 </div>
 <div class="admonitionblock tip">
 <table>
@@ -665,8 +685,8 @@ let the restore remove it:
 </div>
 </div>
 <div class="paragraph">
-<p>Setting a fully transparent shadow color is the W3C way, but it does not
-work on Direct2D, which takes the shadow&#8217;s alpha from the fill style.</p>
+<p>Setting a fully transparent shadow color, or no offset and no blur, turns it
+off too.</p>
 </div>
 </div>
 <div class="sect2">
@@ -768,8 +788,8 @@ they overlap and then draw the result over the destination.</p>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::darker</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">max(0, source + destination - 1) on
-                                 Quartz 2D. See the caution below.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The smaller of the two colors, channel
+                                 by channel.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::copy</code></p></td>
@@ -839,140 +859,37 @@ they overlap and then draw the result over the destination.</p>
 </tr>
 </tbody>
 </table>
-<div class="paragraph">
-<p>In the W3C API <code>source_in</code>, <code>source_out</code>, <code>destination_in</code>,
-<code>destination_atop</code> and <code>copy</code> also clear the destination everywhere outside
-the shape being drawn, since the source is transparent there. Only Cairo
-does, and only for the first four; see <a href="#_backend_differences">Backend Differences</a>. Draw with
-them inside a clip when the extent matters.</p>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/composite_ops.png"><img src="../_images/canvas/composite_ops.png" alt="The first twelve modes" width="560px"></a>
 </div>
-<div class="admonitionblock caution">
+<div class="title">Figure 7. The first twelve modes: a circle drawn over a square. The checkerboard shows where nothing is left.</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/blend_modes.png"><img src="../_images/canvas/blend_modes.png" alt="The twelve blend modes" width="560px"></a>
+</div>
+<div class="title">Figure 8. The twelve blend modes, with gradients so the mix varies across the overlap.</div>
+</div>
+<div class="paragraph">
+<p><code>source_in</code>, <code>source_out</code>, <code>destination_in</code>, <code>destination_atop</code> and <code>copy</code>
+also clear the destination everywhere outside what is drawn, as far as the
+clip, since the source is transparent there. Draw with them inside a clip
+when the rest of the canvas matters.</p>
+</div>
+<div class="admonitionblock note">
 <table>
 <tr>
 <td class="icon">
-<i class="fa icon-caution" title="Caution"></i>
+<i class="fa icon-note" title="✏️  NOTE"></i>
 </td>
 <td class="content">
-<code>darker</code> is the one mode whose colors the backends disagree on.
-Quartz 2D implements the plus-darker rule, max(0, source + destination -
-1). Skia, Cairo and Direct2D approximate it with a per-channel minimum. The
-enum has no W3C <code>clear</code>; <code>destination_out</code> with an opaque source, or
-<code>clear_rect</code>, does the same job.
+The enum has no W3C <code>clear</code>. <code>destination_out</code> with an opaque source,
+or <code>clear_rect</code>, does the same job.
 </td>
 </tr>
 </table>
 </div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_backend_differences"><a class="anchor" href="#_backend_differences"></a>Backend Differences</h2>
-<div class="sectionbody">
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 20%;">
-<col style="width: 20%;">
-<col style="width: 20%;">
-<col style="width: 20%;">
-<col style="width: 20%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Quartz 2D</th>
-<th class="tableblock halign-left valign-top">Skia</th>
-<th class="tableblock halign-left valign-top">Cairo</th>
-<th class="tableblock halign-left valign-top">Direct2D</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Default line width</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">1.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">0, a one-pixel hairline.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">2.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">1.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_width(0)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Strokes nothing.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A one-pixel hairline.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Strokes nothing.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Passed to Direct2D.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Default miter limit</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">10.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">4.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">10.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">10.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.shadow_style</code> under a transform</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>offset</code> and <code>blur</code> are not scaled.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Both are divided by the transform&#8217;s scale at the time of the call, so a
-  transform set afterwards scales the shadow.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>offset</code> and <code>blur</code> are not scaled.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>offset</code> is not scaled. <code>blur</code> is divided by the horizontal scale at the
-  time of drawing.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Shadow <code>blur</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Twice the standard deviation.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The standard deviation, so twice as soft.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Twice the standard deviation.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The standard deviation, so twice as soft.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Shadow strength</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The alpha of what is drawn, times the alpha of <code>c</code>. A transparent shape
-  casts none.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The alpha of what is drawn, times the alpha of <code>c</code>. A transparent shape
-  casts none.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The alpha of <code>c</code> alone. A transparent shape still casts one.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The alpha of the fill style, or 1 for a gradient, in place of the alpha of
-  <code>c</code>. It is used for stroke shadows too.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Shadow with a <code>blur</code> of 0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Drawn.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Drawn.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Drawn.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Not drawn.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">What casts a shadow</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Everything drawn, images included.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Fills, strokes, text and images.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Fills, strokes and text. Not images.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Fills, strokes and text. Not images.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>source_in</code>, <code>source_out</code>, <code>destination_in</code>, <code>destination_atop</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Confined to the shape.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Confined to the shape.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Clear the destination outside the shape, as far as the clip.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Clear the destination outside the shape, within its bounding box.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>copy</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Confined to the shape.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Confined to the shape.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Confined to the shape.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Clears the destination outside the shape, within its bounding box.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>darker</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">max(0, source + destination - 1).</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Per-channel minimum.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Per-channel minimum.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Per-channel minimum.</p></td>
-</tr>
-</tbody>
-</table>
-<div class="paragraph">
-<p>Verified by running on Cairo and Quartz 2D, and by reading
-<code>lib/impl/skia/canvas.cpp</code> and <code>lib/impl/windows/direct2d/canvas.cpp</code>.</p>
 </div>
 </div>
 </div>
