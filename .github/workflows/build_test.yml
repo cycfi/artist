@@ -534,15 +534,36 @@ jobs:
         ver=148
         triplet="${{ matrix.config.triplet }}"
         installed="build/vcpkg_installed"
-        test -d "$installed/$triplet"
-        out="${triplet}.tar.zst"
-        tar --zstd -C "$installed" -cf "$out" "$triplet"
-        openssl dgst -sha256 "$out" | awk '{print $NF}' > "$out.sha256"
-        echo "bundle $(du -h "$out" | cut -f1)  sha $(cat "$out.sha256")"
         base="s3://cycfi-media/skia-prebuilt/$ver"
-        aws s3 cp "$out" "$base/$out" --endpoint-url "$AWS_ENDPOINT_URL"
-        aws s3 cp "$out.sha256" "$base/$out.sha256" --endpoint-url "$AWS_ENDPOINT_URL"
-        echo "uploaded skia-prebuilt/$ver/$out"
+        s3() { aws s3 "$@" --endpoint-url "$AWS_ENDPOINT_URL"; }
+
+        # Name the bundle by Skia's vcpkg ABI, which changes with Skia's
+        # sources, recipe, compiler and dependencies. A published bundle is
+        # then never replaced, so a CDN cannot serve it stale, and an
+        # unchanged ABI uploads nothing.
+        abi_info="$installed/$triplet/share/skia/vcpkg_abi_info.txt"
+        test -f "$abi_info"
+        abi=$(openssl dgst -sha256 "$abi_info" | awk '{print $NF}' | cut -c1-16)
+        name="${triplet}-${abi}.tar.zst"
+        current=$(s3 cp "$base/${triplet}.current" - 2>/dev/null || true)
+        if [ "${current%% *}" = "$name" ]; then
+          echo "skia-prebuilt/$ver/$name is already current"
+          exit 0
+        fi
+
+        tar --zstd -C "$installed" -cf "$name" "$triplet"
+        sha=$(openssl dgst -sha256 "$name" | awk '{print $NF}')
+        echo "bundle $(du -h "$name" | cut -f1)  sha $sha"
+        echo "$sha" > "$name.sha256"
+        s3 cp "$name" "$base/$name"
+        s3 cp "$name.sha256" "$base/$name.sha256"
+        # The unversioned names serve checkouts from before the pointer.
+        s3 cp "$base/$name" "$base/${triplet}.tar.zst"
+        s3 cp "$name.sha256" "$base/${triplet}.tar.zst.sha256"
+        # The pointer goes last, once the bundle it names is in place.
+        echo "$name $sha" > "${triplet}.current"
+        s3 cp "${triplet}.current" "$base/${triplet}.current"
+        echo "uploaded skia-prebuilt/$ver/$name"
 
   ###########################################################################
   # Cairo
