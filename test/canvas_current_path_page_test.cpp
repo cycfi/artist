@@ -227,35 +227,6 @@ TEST_CASE("current path: arc_to degenerate cases", "[current_path]")
    }
 }
 
-TEST_CASE("current path: Clipping", "[current_path]")
-{
-   on_canvas([](canvas& cnv)
-   {
-      // clip() consumes the current path.
-      cnv.add_rect(10, 10, 50, 50);
-      cnv.clip();
-      CHECK(cnv.fill_extent() == rect{0, 0, 0, 0});
-      CHECK(near(cnv.clip_extent(), rect{10, 10, 60, 60}));
-
-      // Clipping only ever narrows.
-      cnv.add_rect(0, 0, 30, 30);
-      cnv.clip();
-      CHECK(near(cnv.clip_extent(), rect{10, 10, 30, 30}));
-   });
-
-   on_canvas([](canvas& cnv)
-   {
-      // save/restore puts the clip back.
-      {
-         auto s = cnv.new_state();
-         cnv.add_rect(10, 10, 20, 20);
-         cnv.clip();
-         CHECK(near(cnv.clip_extent(), rect{10, 10, 30, 30}));
-      }
-      CHECK(near(cnv.clip_extent(), rect{0, 0, 100, 100}));
-   });
-}
-
 TEST_CASE("current path: clip(path) current behaviour", "[current_path]")
 {
    // BEHAVIOUR UNDER REVIEW. On Cairo, clip(p) appends p to the current path
@@ -358,6 +329,38 @@ TEST_CASE("current path: clear_rect current behaviour", "[current_path]")
 }
 
 #endif // ARTIST_CAIRO
+
+// Every backend: clip() narrows what clip_extent() reports, and a restore
+// widens it again. The hosts rely on this to repaint only the dirty area.
+TEST_CASE("current path: Clipping", "[current_path]")
+{
+   on_canvas([](canvas& cnv)
+   {
+      // clip() consumes the current path.
+      cnv.add_rect(10, 10, 50, 50);
+      cnv.clip();
+      CHECK(cnv.fill_extent() == rect{0, 0, 0, 0});
+      CHECK(near(cnv.clip_extent(), rect{10, 10, 60, 60}));
+
+      // Clipping only ever narrows.
+      cnv.add_rect(0, 0, 30, 30);
+      cnv.clip();
+      CHECK(near(cnv.clip_extent(), rect{10, 10, 30, 30}));
+   });
+
+   on_canvas([](canvas& cnv)
+   {
+      // save/restore puts the clip back.
+      {
+         auto s = cnv.new_state();
+         cnv.add_rect(10, 10, 20, 20);
+         cnv.clip();
+         CHECK(near(cnv.clip_extent(), rect{10, 10, 30, 30}));
+      }
+      CHECK(near(cnv.clip_extent(), rect{0, 0, 100, 100}));
+   });
+}
+
 
 namespace
 {
