@@ -72,7 +72,8 @@ namespace cycfi::artist
 
 @interface CocoaView : NSView
 {
-   NSTimer*       _task;
+   NSTimer*            _task;
+   NSBitmapImageRep*   _rep;
 }
 
 -(void) start;
@@ -88,78 +89,58 @@ namespace cycfi::artist
 - (void) dealloc
 {
    _task = nil;
+   _rep = nil;
 }
 
-// The view presents its frames itself, as the contents of its layer, flushed
-// to the screen at once. A frame is on screen when render returns, instead of
-// at AppKit's next display cycle, so the whole frame can be timed.
 - (void) start
 {
    self.wantsLayer = YES;
-   self.layerContentsRedrawPolicy = NSViewLayerContentsRedrawNever;
-   self.layer.contentsGravity = kCAGravityTopLeft;
-   [self render];
 }
 
-- (BOOL) wantsUpdateLayer
+- (void) drawRect : (NSRect) dirty
 {
-   return YES;
+   auto cg_ctx = NSGraphicsContext.currentContext.CGContext;
+
+   // Clip to the real view bounds so the canvas clip_extent() reports the
+   // true logical window size. AppKit hands drawRect: a context whose clip
+   // extends over the title-bar strip (e.g. 640x512 for a 640x480 view),
+   // which would push reflowed content (FPS readout, bounce bounds) off
+   // screen. Reflow examples depend on clip_extent() == view size.
+   CGContextClipToRect(cg_ctx, CGRectMake(0, 0, self.bounds.size.width, self.bounds.size.height));
+
+   auto cnv = canvas{(canvas_impl*) cg_ctx};
+   draw(cnv);
 }
 
-- (void) updateLayer
-{
-   [self render];
-}
-
+// One frame. Normally AppKit draws the view and presents it on its own
+// schedule. When measuring (ARTIST_PERF), that would leave most of the
+// rasterizing outside the frame time, so the view's own drawing is
+// rasterized into a bitmap now and the bitmap is presented; the frame time
+// covers finished pixels and the present.
 - (void) render
 {
-   auto const bounds = self.bounds;
-   CGFloat const scale = self.window?
-      self.window.backingScaleFactor : NSScreen.mainScreen.backingScaleFactor;
-   int const w = int(std::ceil(bounds.size.width * scale));
-   int const h = int(std::ceil(bounds.size.height * scale));
-   if (w <= 0 || h <= 0 || !self.layer)
-      return;
-
    auto start = std::chrono::steady_clock::now();
-
-   auto space = CGColorSpaceCreateDeviceRGB();
-   auto ctx = CGBitmapContextCreate(
-      nullptr, w, h, 8, 0, space,
-      kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Little);
-   CGColorSpaceRelease(space);
-
-   // Top-down logical coordinates, as AppKit supplies for a flipped view,
-   // clipped to the view so clip_extent() reports the logical window size.
-   CGContextTranslateCTM(ctx, 0, h);
-   CGContextScaleCTM(ctx, scale, -scale);
-   CGContextClipToRect(ctx, CGRectMake(0, 0, bounds.size.width, bounds.size.height));
-
-   [NSGraphicsContext saveGraphicsState];
-   [NSGraphicsContext setCurrentContext :
-      [NSGraphicsContext graphicsContextWithCGContext : ctx flipped : YES]];
+   if (perf_enabled())
    {
-      auto cnv = canvas{(canvas_impl*) ctx};
-      draw(cnv);
+      auto const bounds = self.bounds;
+      if (!_rep || _rep.size.width != bounds.size.width || _rep.size.height != bounds.size.height)
+         _rep = [self bitmapImageRepForCachingDisplayInRect : bounds];
+      [self cacheDisplayInRect : bounds toBitmapImageRep : _rep];
+      [CATransaction begin];
+      [CATransaction setDisableActions : YES];
+      self.layer.contents = (__bridge id) _rep.CGImage;
+      [CATransaction commit];
    }
-   [NSGraphicsContext restoreGraphicsState];
-   CGContextFlush(ctx);
-
-   auto image = CGBitmapContextCreateImage(ctx);
-   CGContextRelease(ctx);
-
-   [CATransaction begin];
-   [CATransaction setDisableActions : YES];
-   self.layer.contentsScale = scale;
-   self.layer.contents = (__bridge id) image;
-   [CATransaction commit];
+   else
+   {
+      [self display];
+   }
    [CATransaction flush];
-   CGImageRelease(image);
-
    auto stop = std::chrono::steady_clock::now();
+
    elapsed_ = std::chrono::duration<double>{stop - start}.count();
    if (perf_enabled())
-      perf_record(elapsed_, w, h);
+      perf_record(elapsed_, int(_rep.pixelsWide), int(_rep.pixelsHigh));
 }
 
 -(BOOL) isFlipped
@@ -172,13 +153,7 @@ namespace cycfi::artist
 - (void) setFrameSize : (NSSize) newSize
 {
    [super setFrameSize : newSize];
-   [self render];
-}
-
-- (void) viewDidChangeBackingProperties
-{
-   [super viewDidChangeBackingProperties];
-   [self render];
+   [self setNeedsDisplay : YES];
 }
 
 - (void) on_tick : (id) sender
