@@ -135,7 +135,7 @@ window::window(extent size, color bkd, bool animate)
    make_gl_context();
    init_skia();
 
-   if (animate)
+   if (animate && !perf_enabled())
       SetTimer(WND, IDT_TIMER1, 16, (TIMERPROC) nullptr);
 
    SetWindowText(WND, L"Artist");
@@ -249,12 +249,7 @@ LRESULT CALLBACK handle_event(
    {
       case WM_TIMER:
          if (wParam == IDT_TIMER1 && win)
-         {
-            auto start = std::chrono::steady_clock::now();
             win->render();
-            auto stop = std::chrono::steady_clock::now();
-            elapsed_ = std::chrono::duration<double>{stop - start}.count();
-         }
          break;
 
       case WM_PAINT:
@@ -342,6 +337,10 @@ void window::render()
          error("Error: SkSurfaces::WrapBackendRenderTarget returned null.");
    }
 
+   // Time the whole frame, drawing through to the swap. When measuring
+   // (ARTIST_PERF), the flush waits for the GPU and the swap does not wait
+   // for the vblank (see make_gl_context).
+   auto start = std::chrono::steady_clock::now();
    SkCanvas* gpu_canvas = _surface->getCanvas();
    gpu_canvas->save();
    gpu_canvas->scale(_scale, _scale);
@@ -350,8 +349,13 @@ void window::render()
    draw(cnv);
 
    gpu_canvas->restore();
-   _ctx->flushAndSubmit(_surface.get());
+   _ctx->flushAndSubmit(_surface.get(),
+      perf_enabled()? GrSyncCpu::kYes : GrSyncCpu::kNo);
    SwapBuffers(DC);
+   auto stop = std::chrono::steady_clock::now();
+   elapsed_ = std::chrono::duration<double>{stop - start}.count();
+   if (perf_enabled())
+      perf_record(elapsed_, int(_size.x * _scale), int(_size.y * _scale));
 }
 
 // Handle a window resize: store the new logical size, drop the Skia surface so
@@ -431,6 +435,8 @@ int run_app(
          TranslateMessage(&msg);
          DispatchMessage(&msg);
       }
+      if (active && perf_enabled())
+         win.render();
    }
 
    return int(msg.wParam);

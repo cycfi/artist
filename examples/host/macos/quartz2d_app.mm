@@ -4,10 +4,12 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
 #import <Cocoa/Cocoa.h>
+#import <QuartzCore/QuartzCore.h>
 #include <dlfcn.h>
 #include <string>
 #include <stdexcept>
 #include <chrono>
+#include <cmath>
 #include "../../app.hpp"
 #include <artist/resources.hpp>
 
@@ -75,6 +77,7 @@ namespace cycfi::artist
 
 -(void) start;
 -(void) start_animation;
+-(void) render;
 
 @end
 
@@ -87,32 +90,76 @@ namespace cycfi::artist
    _task = nil;
 }
 
+// The view presents its frames itself, as the contents of its layer, flushed
+// to the screen at once. A frame is on screen when render returns, instead of
+// at AppKit's next display cycle, so the whole frame can be timed.
 - (void) start
 {
+   self.wantsLayer = YES;
+   self.layerContentsRedrawPolicy = NSViewLayerContentsRedrawNever;
+   self.layer.contentsGravity = kCAGravityTopLeft;
+   [self render];
 }
 
-- (void) drawRect : (NSRect) dirty
+- (BOOL) wantsUpdateLayer
 {
-   auto draw_f =
-      [&]()
-      {
-         auto cg_ctx = NSGraphicsContext.currentContext.CGContext;
+   return YES;
+}
 
-         // Clip to the real view bounds so the canvas clip_extent() reports the
-         // true logical window size. AppKit hands drawRect: a context whose clip
-         // extends over the title-bar strip (e.g. 640x512 for a 640x480 view),
-         // which would push reflowed content (FPS readout, bounce bounds) off
-         // screen. Reflow examples depend on clip_extent() == view size.
-         CGContextClipToRect(cg_ctx, CGRectMake(0, 0, self.bounds.size.width, self.bounds.size.height));
+- (void) updateLayer
+{
+   [self render];
+}
 
-         auto cnv = canvas{(canvas_impl*) cg_ctx};
-         draw(cnv);
-      };
+- (void) render
+{
+   auto const bounds = self.bounds;
+   CGFloat const scale = self.window?
+      self.window.backingScaleFactor : NSScreen.mainScreen.backingScaleFactor;
+   int const w = int(std::ceil(bounds.size.width * scale));
+   int const h = int(std::ceil(bounds.size.height * scale));
+   if (w <= 0 || h <= 0 || !self.layer)
+      return;
 
-   auto start = std::chrono::high_resolution_clock::now();
-   draw_f();
-   auto stop = std::chrono::high_resolution_clock::now();
+   auto start = std::chrono::steady_clock::now();
+
+   auto space = CGColorSpaceCreateDeviceRGB();
+   auto ctx = CGBitmapContextCreate(
+      nullptr, w, h, 8, 0, space,
+      kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Little);
+   CGColorSpaceRelease(space);
+
+   // Top-down logical coordinates, as AppKit supplies for a flipped view,
+   // clipped to the view so clip_extent() reports the logical window size.
+   CGContextTranslateCTM(ctx, 0, h);
+   CGContextScaleCTM(ctx, scale, -scale);
+   CGContextClipToRect(ctx, CGRectMake(0, 0, bounds.size.width, bounds.size.height));
+
+   [NSGraphicsContext saveGraphicsState];
+   [NSGraphicsContext setCurrentContext :
+      [NSGraphicsContext graphicsContextWithCGContext : ctx flipped : YES]];
+   {
+      auto cnv = canvas{(canvas_impl*) ctx};
+      draw(cnv);
+   }
+   [NSGraphicsContext restoreGraphicsState];
+   CGContextFlush(ctx);
+
+   auto image = CGBitmapContextCreateImage(ctx);
+   CGContextRelease(ctx);
+
+   [CATransaction begin];
+   [CATransaction setDisableActions : YES];
+   self.layer.contentsScale = scale;
+   self.layer.contents = (__bridge id) image;
+   [CATransaction commit];
+   [CATransaction flush];
+   CGImageRelease(image);
+
+   auto stop = std::chrono::steady_clock::now();
    elapsed_ = std::chrono::duration<double>{stop - start}.count();
+   if (perf_enabled())
+      perf_record(elapsed_, w, h);
 }
 
 -(BOOL) isFlipped
@@ -125,18 +172,25 @@ namespace cycfi::artist
 - (void) setFrameSize : (NSSize) newSize
 {
    [super setFrameSize : newSize];
-   [self setNeedsDisplay : YES];
+   [self render];
+}
+
+- (void) viewDidChangeBackingProperties
+{
+   [super viewDidChangeBackingProperties];
+   [self render];
 }
 
 - (void) on_tick : (id) sender
 {
-   [self setNeedsDisplay : YES];
+   [self render];
 }
 
 -(void) start_animation
 {
+   // When measuring (ARTIST_PERF), redraw as fast as the run loop allows.
    _task =
-      [NSTimer scheduledTimerWithTimeInterval : 1.0/60 // 60Hz
+      [NSTimer scheduledTimerWithTimeInterval : perf_enabled()? 0.0 : 1.0/60
            target : self
          selector : @selector(on_tick:)
          userInfo : nil
@@ -233,8 +287,7 @@ int run_app(
 {
    app _app;
    window _win(window_size, bkd);
-   if (animate)
+   if (animate || perf_enabled())
       _win.start_animation();
    return _app.run();
 }
-

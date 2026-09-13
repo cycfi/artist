@@ -125,12 +125,13 @@ namespace
       auto cnv = canvas{gpu_canvas};
       draw(cnv);
       gpu_canvas->restore();
-      state.ctx->flushAndSubmit(state.skia_surface.get());
+      state.ctx->flushAndSubmit(state.skia_surface.get(),
+         perf_enabled()? GrSyncCpu::kYes : GrSyncCpu::kNo);
+      eglSwapBuffers(state.egl_display, state.egl_surface);
 
+      // The frame time runs through to the swap, so it covers presenting.
       auto stop = std::chrono::steady_clock::now();
       elapsed_ = std::chrono::duration<double>{stop - start}.count();
-
-      eglSwapBuffers(state.egl_display, state.egl_surface);
    }
 
    // -------------------------------------------------------------------------
@@ -251,6 +252,11 @@ namespace
       if (!eglMakeCurrent(state.egl_display, state.egl_surface,
                           state.egl_surface, state.egl_context))
          throw std::runtime_error("eglMakeCurrent failed");
+
+      // When measuring (ARTIST_PERF), the swap must not wait for the frame
+      // callback, or every frame is paced to the display rate.
+      if (perf_enabled())
+         eglSwapInterval(state.egl_display, 0);
 
       // Pre-fill both EGL buffers (front + back) with the app background color.
       // Without this, the compositor briefly shows the uninitialized buffer
@@ -467,7 +473,7 @@ int run_app(
          throw std::runtime_error("libdecor_dispatch failed during init");
    }
 
-   if (animate)
+   if (animate && !perf_enabled())
    {
       auto* cb = wl_surface_frame(state.surface);
       wl_callback_add_listener(cb, &frame_listener, &state);
@@ -477,8 +483,23 @@ int run_app(
    // Main event loop
    while (state.running)
    {
-      if (libdecor_dispatch(state.decor, -1) < 0)
+      if (libdecor_dispatch(state.decor, perf_enabled()? 0 : -1) < 0)
          break;
+
+      if (perf_enabled())
+      {
+         // Measuring: redraw continuously, without frame callbacks. The frame
+         // time includes waiting for the compositor to take the frame, so it
+         // covers presenting.
+         auto start = std::chrono::steady_clock::now();
+         render(state);
+         wl_display_roundtrip(state.display);
+         auto stop = std::chrono::steady_clock::now();
+         elapsed_ = std::chrono::duration<double>{stop - start}.count();
+         perf_record(elapsed_,
+            int(std::ceil(state.size.x * state.scale)),
+            int(std::ceil(state.size.y * state.scale)));
+      }
 
       // Apply the coalesced resize: a drag delivers many configure events in a
       // single dispatch; render only the final size once, so the window tracks

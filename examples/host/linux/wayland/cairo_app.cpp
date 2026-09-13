@@ -109,9 +109,6 @@ namespace
       cairo_destroy(cr);
       cairo_surface_destroy(surf);
 
-      auto stop = std::chrono::steady_clock::now();
-      elapsed_ = std::chrono::duration<double>{stop - start}.count();
-
       // Use wp_viewport_set_destination to declare the logical display size.
       // wl_surface_set_buffer_scale only supports integers and breaks at
       // fractional scales (e.g. 1.5×); viewport works for any scale factor.
@@ -124,6 +121,10 @@ namespace
       wl_surface_damage_buffer(state.surface, 0, 0, w, h);
       wl_surface_commit(state.surface);
       wl_display_flush(state.display);
+
+      // The frame time runs through to the commit, so it covers presenting.
+      auto stop = std::chrono::steady_clock::now();
+      elapsed_ = std::chrono::duration<double>{stop - start}.count();
    }
 
    // -------------------------------------------------------------------------
@@ -391,7 +392,7 @@ int run_app(
          throw std::runtime_error("libdecor_dispatch failed during init");
    }
 
-   if (animate)
+   if (animate && !perf_enabled())
    {
       // The initial configure already rendered and committed a frame (leaving
       // buf_released == false). Arm the first frame callback and commit so the
@@ -406,7 +407,7 @@ int run_app(
    // Main event loop
    while (state.running)
    {
-      if (libdecor_dispatch(state.decor, -1) < 0)
+      if (libdecor_dispatch(state.decor, perf_enabled()? 0 : -1) < 0)
          break;
 
       if (state.needs_resize)
@@ -418,6 +419,28 @@ int run_app(
             state.buf_released = true;
             create_buffer(state);
             render(state);
+         }
+      }
+
+      if (perf_enabled())
+      {
+         // Measuring: redraw continuously, without frame callbacks. The frame
+         // time includes waiting for the compositor to take the buffer, so it
+         // covers presenting.
+         if (state.buf_released)
+         {
+            auto start = std::chrono::steady_clock::now();
+            render(state);
+            wl_display_roundtrip(state.display);
+            auto stop = std::chrono::steady_clock::now();
+            elapsed_ = std::chrono::duration<double>{stop - start}.count();
+            perf_record(elapsed_,
+               int(std::ceil(state.size.x * state.scale)),
+               int(std::ceil(state.size.y * state.scale)));
+         }
+         else
+         {
+            wl_display_roundtrip(state.display);
          }
       }
    }

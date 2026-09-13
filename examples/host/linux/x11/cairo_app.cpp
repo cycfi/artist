@@ -69,6 +69,8 @@ namespace
    // Render into the X11 window via Cairo's Xlib backend
    void render(app_state& state)
    {
+      // Time the whole frame: drawing, the flush to the window, and the X
+      // server finishing the requests (XSync waits for it; XFlush does not).
       auto start = std::chrono::steady_clock::now();
 
       auto* cr  = cairo_create(state.surface);
@@ -76,11 +78,15 @@ namespace
       draw(cnv);
       cairo_destroy(cr);
 
+      cairo_surface_flush(state.surface);
+      XSync(state.display, False);
+
       auto stop = std::chrono::steady_clock::now();
       elapsed_ = std::chrono::duration<double>{stop - start}.count();
-
-      cairo_surface_flush(state.surface);
-      XFlush(state.display);
+      if (perf_enabled())
+         perf_record(elapsed_,
+            int(std::lround(state.size.x * state.scale)),
+            int(std::lround(state.size.y * state.scale)));
    }
 
    // -------------------------------------------------------------------------
@@ -242,7 +248,12 @@ int run_app(
       if (!state.running)
          break;
 
-      if (state.animate)
+      if (perf_enabled())
+      {
+         // Measuring: redraw continuously, without the frame timer.
+         render(state);
+      }
+      else if (state.animate)
       {
          render(state);
          next_frame += frame_interval;

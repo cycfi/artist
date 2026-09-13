@@ -121,6 +121,10 @@ namespace cycfi::artist
    _metal_layer.device          = _device;
    _metal_layer.pixelFormat     = MTLPixelFormatBGRA8Unorm;
    _metal_layer.framebufferOnly = NO;
+
+   // When measuring (ARTIST_PERF), presenting must not wait for the display.
+   if (perf_enabled())
+      _metal_layer.displaySyncEnabled = NO;
    _metal_layer.contentsGravity = kCAGravityTopLeft;
    _metal_layer.autoresizingMask = kCALayerHeightSizable | kCALayerWidthSizable;
 
@@ -188,15 +192,22 @@ namespace cycfi::artist
 
    gpu_canvas->restore();
 
-   // Flush Skia and present the drawable
-   _gr_context->flushAndSubmit(surface.get());
+   // Flush Skia and present the drawable. When measuring (ARTIST_PERF), the
+   // flush waits for the GPU and the frame time runs until the present is
+   // scheduled, so it covers the whole frame.
+   _gr_context->flushAndSubmit(surface.get(),
+      perf_enabled()? GrSyncCpu::kYes : GrSyncCpu::kNo);
 
    id<MTLCommandBuffer> cmd = [_queue commandBuffer];
    [cmd presentDrawable : drawable];
    [cmd commit];
+   if (perf_enabled())
+      [cmd waitUntilScheduled];
 
    auto stop = std::chrono::high_resolution_clock::now();
    elapsed_ = std::chrono::duration<double>{stop - start}.count();
+   if (perf_enabled())
+      perf_record(elapsed_, w, h);
 }
 
 // A CAMetalLayer-hosting view does not get drawRect: callbacks, so drive
@@ -238,8 +249,9 @@ namespace cycfi::artist
 
 -(void) start_animation
 {
+   // When measuring (ARTIST_PERF), redraw as fast as the run loop allows.
    _task =
-      [NSTimer scheduledTimerWithTimeInterval : 1.0/60
+      [NSTimer scheduledTimerWithTimeInterval : perf_enabled()? 0.0 : 1.0/60
            target : self
          selector : @selector(on_tick:)
          userInfo : nil
@@ -336,7 +348,7 @@ int run_app(
 {
    app _app;
    window _win(window_size, bkd);
-   if (animate)
+   if (animate || perf_enabled())
       _win.start_animation();
    return _app.run();
 }

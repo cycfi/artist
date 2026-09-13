@@ -16,10 +16,10 @@ extern float elapsed_;
 
 namespace
 {
-   // ARTIST_PERF=N: after 60 warmup frames, sample N render times, print one
+   // ARTIST_PERF=N: after 60 warmup frames, sample N frame times, print one
    // summary line to stdout and exit. This is the artist-side counterpart of
-   // ELEMENTS_PERF, so the same examples that show fps on screen can be
-   // measured unattended. ARTIST_PERF_LABEL names the run in the line.
+   // ELEMENTS_PERF, so every example can be measured unattended. The hosts
+   // record the frames (see perf_record); ARTIST_PERF_LABEL names the run.
    struct perf_recorder
    {
       perf_recorder()
@@ -32,10 +32,12 @@ namespace
          }
       }
 
-      void record(float seconds)
+      void record(float seconds, int w, int h)
       {
          if (!on)
             return;
+         px_w = w;
+         px_h = h;
          if (seen++ < warmup)
             return;
          samples.push_back(seconds * 1000.0f);
@@ -50,10 +52,10 @@ namespace
          auto min = samples.front();
          char const* label = std::getenv("ARTIST_PERF_LABEL");
          std::printf(
-            "ARTIST_PERF example=%s backend=%s samples=%zu warmup=%d "
-            "draw_ms{median=%.3f,mean=%.3f,p95=%.3f,min=%.3f} "
+            "ARTIST_PERF example=%s backend=%s pixels=%dx%d samples=%zu warmup=%d "
+            "frame_ms{median=%.3f,mean=%.3f,p95=%.3f,min=%.3f} "
             "fps{median=%.1f,mean=%.1f}\n",
-            label? label : "?", backend(), n, warmup,
+            label? label : "?", backend(), px_w, px_h, n, warmup,
             median, mean, p95, min, 1000.0f / median, 1000.0f / mean);
          std::fflush(stdout);
          std::_Exit(0);
@@ -78,10 +80,26 @@ namespace
       int                  warmup = 60;
       int                  frames = 600;
       int                  seen = 0;
+      int                  px_w = 0;
+      int                  px_h = 0;
       std::vector<float>   samples;
    };
 
-   perf_recorder perf_;
+   perf_recorder& perf()
+   {
+      static perf_recorder recorder;
+      return recorder;
+   }
+}
+
+bool perf_enabled()
+{
+   return perf().on;
+}
+
+void perf_record(float seconds, int width_px, int height_px)
+{
+   perf().record(seconds, width_px, height_px);
 }
 
 template <int n>
@@ -111,7 +129,6 @@ void print_elapsed(canvas& cnv, point br, color bkd, color c)
    static int refresh = 0;
    static std::string fps_str;
 
-   perf_.record(elapsed_);
    auto ave = ma(elapsed_);
 
    if (++refresh == 30)

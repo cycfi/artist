@@ -118,6 +118,9 @@ namespace
       if (!state.skia_surface)
          return;
 
+      // Time the whole frame, drawing through to the swap. When measuring
+      // (ARTIST_PERF), the flush waits for the GPU and the swap does not wait
+      // for the vblank.
       auto start = std::chrono::steady_clock::now();
 
       SkCanvas* gpu_canvas = state.skia_surface->getCanvas();
@@ -126,12 +129,16 @@ namespace
       auto cnv = canvas{gpu_canvas};
       draw(cnv);
       gpu_canvas->restore();
-      state.ctx->flushAndSubmit(state.skia_surface.get());
+      state.ctx->flushAndSubmit(state.skia_surface.get(),
+         perf_enabled()? GrSyncCpu::kYes : GrSyncCpu::kNo);
+      eglSwapBuffers(state.egl_display, state.egl_surface);
 
       auto stop = std::chrono::steady_clock::now();
       elapsed_ = std::chrono::duration<double>{stop - start}.count();
-
-      eglSwapBuffers(state.egl_display, state.egl_surface);
+      if (perf_enabled())
+         perf_record(elapsed_,
+            int(std::lround(state.size.x * state.scale)),
+            int(std::lround(state.size.y * state.scale)));
    }
 
    // -------------------------------------------------------------------------
@@ -250,6 +257,10 @@ namespace
       if (!eglMakeCurrent(state.egl_display, state.egl_surface,
                           state.egl_surface, state.egl_context))
          throw std::runtime_error("eglMakeCurrent failed");
+
+      // When measuring (ARTIST_PERF), the swap must not wait for the vblank.
+      if (perf_enabled())
+         eglSwapInterval(state.egl_display, 0);
    }
 
    // -------------------------------------------------------------------------
@@ -348,7 +359,12 @@ int run_app(
       if (!state.running)
          break;
 
-      if (state.animate)
+      if (perf_enabled())
+      {
+         // Measuring: redraw continuously, without the frame timer.
+         render(state);
+      }
+      else if (state.animate)
       {
          render(state);
          next_frame += frame_interval;

@@ -38,6 +38,12 @@ void           print_elapsed(
                 , color c = colors::white
                );
 
+// ARTIST_PERF benchmarking. When enabled, hosts redraw continuously, with no
+// frame timer and no vsync, time each whole frame (draw, flush and present)
+// and pass it to perf_record with the frame's size in device pixels.
+bool           perf_enabled();
+void           perf_record(float seconds, int width_px, int height_px);
+
 // Scale a fixed `design`-sized drawing to fit the current window, preserving
 // aspect ratio and centering (letterbox). Intended for static examples: call
 // at the top of draw(). The host save/restores the canvas each frame, so the

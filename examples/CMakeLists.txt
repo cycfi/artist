@@ -28,6 +28,11 @@ if (UNIX AND NOT APPLE AND ARTIST_LINUX_HOST STREQUAL "gtk3")
    set(ENV{PKG_CONFIG_LIBDIR}
       "/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig")
    pkg_check_modules(gtk3 REQUIRED IMPORTED_TARGET gtk+-3.0)
+   if (NOT ARTIST_CAIRO)
+      # X11 and EGL for the ARTIST_PERF path, found from the same system paths.
+      pkg_check_modules(x11_pkg REQUIRED IMPORTED_TARGET x11)
+      pkg_check_modules(egl_pkg REQUIRED IMPORTED_TARGET egl)
+   endif()
    set(ENV{PKG_CONFIG_LIBDIR} "${_saved_pkg_config_libdir}")
    if (NOT ARTIST_CAIRO)
       find_package(OpenGL REQUIRED COMPONENTS OpenGL)
@@ -200,12 +205,12 @@ function(add_example name)
          ${CMAKE_CURRENT_LIST_DIR}/../resources/macos/plist.in
       )
 
+      # The macOS hosts present frames as layer contents (QuartzCore); the
+      # Skia host also renders through Metal.
       target_link_options(${name} PRIVATE -framework AppKit)
+      target_link_libraries(${name} "-framework QuartzCore")
       if (ARTIST_SKIA)
-         target_link_libraries(${name}
-            "-framework Metal"
-            "-framework QuartzCore"
-         )
+         target_link_libraries(${name} "-framework Metal")
       endif()
 
       set_source_files_properties(
@@ -278,7 +283,14 @@ function(add_example name)
          if (ARTIST_CAIRO)
             target_link_libraries(${name} PkgConfig::gtk3)
          else()
-            target_link_libraries(${name} PkgConfig::gtk3 OpenGL::GL)
+            # EGL and X11: under ARTIST_PERF the host swaps frames straight to
+            # the widget's X11 window with EGL.
+            target_link_libraries(${name}
+               PkgConfig::gtk3
+               PkgConfig::x11_pkg
+               PkgConfig::egl_pkg
+               OpenGL::GL
+            )
          endif()
 
       # -------------------------------------------------------------------

@@ -4,10 +4,12 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
 #import <Cocoa/Cocoa.h>
+#import <QuartzCore/QuartzCore.h>
 #include <dlfcn.h>
 #include <string>
 #include <stdexcept>
 #include <chrono>
+#include <cmath>
 #include "../../app.hpp"
 #include <artist/resources.hpp>
 #include <cairo-quartz.h>
@@ -90,6 +92,7 @@ namespace cycfi::artist
 
 -(void) start;
 -(void) start_animation;
+-(void) render;
 
 @end
 
@@ -102,30 +105,67 @@ namespace cycfi::artist
    _task = nil;
 }
 
+// The view presents its frames itself, as the contents of its layer, flushed
+// to the screen at once. A frame is on screen when render returns, instead of
+// at AppKit's next display cycle, so the whole frame can be timed.
 - (void) start
 {
+   self.wantsLayer = YES;
+   self.layerContentsRedrawPolicy = NSViewLayerContentsRedrawNever;
+   self.layer.contentsGravity = kCAGravityTopLeft;
+   [self render];
 }
 
-- (void) drawRect : (NSRect) dirty
+- (BOOL) wantsUpdateLayer
 {
-   auto start = std::chrono::high_resolution_clock::now();
+   return YES;
+}
 
-   // isFlipped=YES has AppKit supply a top-down CGContext. cairo_quartz wraps
-   // it without adding its own flip, so Cairo's coordinate system is top-down.
-   // CG-backed font faces (cairo_quartz_font_face_create_for_cgfont) render
-   // correctly under this CTM; FreeType-backed faces do not.
-   auto cg_ctx = NSGraphicsContext.currentContext.CGContext;
-   auto bounds = [self bounds];
-   auto surface = cairo_quartz_surface_create_for_cg_context(
-      cg_ctx, bounds.size.width, bounds.size.height);
+- (void) updateLayer
+{
+   [self render];
+}
+
+- (void) render
+{
+   auto const bounds = self.bounds;
+   CGFloat const scale = self.window?
+      self.window.backingScaleFactor : NSScreen.mainScreen.backingScaleFactor;
+   int const w = int(std::ceil(bounds.size.width * scale));
+   int const h = int(std::ceil(bounds.size.height * scale));
+   if (w <= 0 || h <= 0 || !self.layer)
+      return;
+
+   auto start = std::chrono::steady_clock::now();
+
+   // A Quartz-backed Cairo surface of its own, so text keeps the CG font
+   // faces the Cairo backend uses on Quartz surfaces. Cairo's coordinates are
+   // top-down; the device scale lets draw() use logical coordinates.
+   auto surface = cairo_quartz_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+   cairo_surface_set_device_scale(surface, scale, scale);
    auto cairo_ctx = cairo_create(surface);
-   auto cnv = canvas{cairo_ctx};
-   draw(cnv);
+   {
+      auto cnv = canvas{cairo_ctx};
+      draw(cnv);
+   }
    cairo_destroy(cairo_ctx);
+   cairo_surface_flush(surface);
+
+   auto image = CGBitmapContextCreateImage(cairo_quartz_surface_get_cg_context(surface));
+
+   [CATransaction begin];
+   [CATransaction setDisableActions : YES];
+   self.layer.contentsScale = scale;
+   self.layer.contents = (__bridge id) image;
+   [CATransaction commit];
+   [CATransaction flush];
+   CGImageRelease(image);
    cairo_surface_destroy(surface);
 
-   auto stop = std::chrono::high_resolution_clock::now();
+   auto stop = std::chrono::steady_clock::now();
    elapsed_ = std::chrono::duration<double>{stop - start}.count();
+   if (perf_enabled())
+      perf_record(elapsed_, w, h);
 }
 
 -(BOOL) isFlipped
@@ -133,23 +173,29 @@ namespace cycfi::artist
    return YES;
 }
 
-// Redraw the whole view as the window resizes so the example reflows live. The
-// Cairo surface is recreated at self.bounds each drawRect:, so it tracks size.
+// Redraw the whole view as the window resizes so the example reflows live.
 - (void) setFrameSize : (NSSize) newSize
 {
    [super setFrameSize : newSize];
-   [self setNeedsDisplay : YES];
+   [self render];
+}
+
+- (void) viewDidChangeBackingProperties
+{
+   [super viewDidChangeBackingProperties];
+   [self render];
 }
 
 - (void) on_tick : (id) sender
 {
-   [self setNeedsDisplay : YES];
+   [self render];
 }
 
 -(void) start_animation
 {
+   // When measuring (ARTIST_PERF), redraw as fast as the run loop allows.
    _task =
-      [NSTimer scheduledTimerWithTimeInterval : 1.0/60
+      [NSTimer scheduledTimerWithTimeInterval : perf_enabled()? 0.0 : 1.0/60
            target : self
          selector : @selector(on_tick:)
          userInfo : nil
@@ -246,7 +292,7 @@ int run_app(
 {
    app _app;
    window _win(window_size, bkd);
-   if (animate)
+   if (animate || perf_enabled())
       _win.start_animation();
    return _app.run();
 }

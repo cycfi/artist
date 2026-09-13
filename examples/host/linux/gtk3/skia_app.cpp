@@ -5,6 +5,8 @@
 =============================================================================*/
 #include "../../../app.hpp"
 #include <gtk/gtk.h>
+#include <gdk/gdkx.h>
+#include <EGL/egl.h>
 #include <GL/gl.h>
 
 #include <SkImage.h>
@@ -31,6 +33,7 @@ namespace
    struct view_state
    {
       extent   _size       = {};
+      extent   _prime_size = {};
       float    _scale      = 1.0f;
       int      _fb_w       = 0;
       int      _fb_h       = 0;
@@ -48,6 +51,17 @@ namespace
       // First-resize guard: GDK/XWayland emits a spurious half-size gl_resize
       // on the very first user resize. We prime it away at startup.
       bool                  _primed     = false;
+
+      // ARTIST_PERF: an EGL context and surface on the toplevel window's own
+      // X11 window, so frames are swapped straight to the window instead of
+      // being composited by GTK in its paint cycle.
+      EGLDisplay   _egl_display = EGL_NO_DISPLAY;
+      EGLConfig    _egl_config  = nullptr;
+      EGLContext   _egl_context = EGL_NO_CONTEXT;
+      EGLSurface   _egl_surface = EGL_NO_SURFACE;
+      int          _stencil     = 0;
+      int          _perf_w      = 0;
+      int          _perf_h      = 0;
    };
 
    void close_window(GtkWidget*, gpointer user_data)
@@ -147,6 +161,166 @@ namespace
       state._surface.reset();
    }
 
+   bool perf_fail(char const* what)
+   {
+      g_printerr("Error: ARTIST_PERF EGL setup: %s (EGL error 0x%x)\n",
+         what, unsigned(eglGetError()));
+      return false;
+   }
+
+   // Choose the EGL config first and give the window that config's X visual,
+   // as the x11 host does. A window surface needs the config's own visual; the
+   // one GTK picks for the window has no EGL config.
+   bool perf_choose_config(view_state& state, GtkWidget* window)
+   {
+      auto* xdisplay = gdk_x11_display_get_xdisplay(gtk_widget_get_display(window));
+      state._egl_display = eglGetDisplay((EGLNativeDisplayType) xdisplay);
+      if (state._egl_display == EGL_NO_DISPLAY)
+         return perf_fail("eglGetDisplay");
+      if (!eglInitialize(state._egl_display, nullptr, nullptr))
+         return perf_fail("eglInitialize");
+
+      EGLint const attribs[] = {
+         EGL_SURFACE_TYPE,    EGL_WINDOW_BIT,
+         EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
+         EGL_RED_SIZE,   8,
+         EGL_GREEN_SIZE, 8,
+         EGL_BLUE_SIZE,  8,
+         EGL_ALPHA_SIZE, 8,
+         EGL_NONE
+      };
+      EGLint count = 0;
+      if (!eglChooseConfig(state._egl_display, attribs, &state._egl_config, 1, &count)
+         || count == 0)
+         return perf_fail("eglChooseConfig");
+      eglGetConfigAttrib(state._egl_display, state._egl_config, EGL_STENCIL_SIZE, &state._stencil);
+
+      EGLint visual_id = 0;
+      eglGetConfigAttrib(state._egl_display, state._egl_config, EGL_NATIVE_VISUAL_ID, &visual_id);
+      auto* visual = gdk_x11_screen_lookup_visual(
+         GDK_X11_SCREEN(gtk_widget_get_screen(window)), VisualID(visual_id));
+      if (!visual)
+         return perf_fail("no GDK visual for the EGL config");
+      gtk_widget_set_visual(window, visual);
+      return true;
+   }
+
+   bool perf_init(view_state& state)
+   {
+      auto* win = gtk_widget_get_window(GTK_WIDGET(state._window));
+      if (!win)
+         return perf_fail("the window has no GdkWindow");
+
+      eglBindAPI(EGL_OPENGL_API);
+      EGLint ctx_attribs[] = { EGL_NONE };
+      state._egl_context = eglCreateContext(
+         state._egl_display, state._egl_config, EGL_NO_CONTEXT, ctx_attribs);
+      if (state._egl_context == EGL_NO_CONTEXT)
+         return perf_fail("eglCreateContext");
+      state._egl_surface = eglCreateWindowSurface(
+         state._egl_display, state._egl_config,
+         (EGLNativeWindowType) gdk_x11_window_get_xid(win), nullptr);
+      if (state._egl_surface == EGL_NO_SURFACE)
+         return perf_fail("eglCreateWindowSurface");
+      if (!eglMakeCurrent(state._egl_display, state._egl_surface,
+                          state._egl_surface, state._egl_context))
+         return perf_fail("eglMakeCurrent");
+
+      // The swap must not wait for the vblank.
+      eglSwapInterval(state._egl_display, 0);
+
+      state._xface = GrGLMakeNativeInterface();
+      if (!state._xface)
+         state._xface = GrGLInterfaces::MakeEGL();
+      if (!state._xface)
+         return perf_fail("Skia GL interface");
+      state._ctx = GrDirectContexts::MakeGL(state._xface);
+      if (!state._ctx)
+         return perf_fail("Skia GL context");
+      return true;
+   }
+
+   // ARTIST_PERF frames: draw, wait for the GPU, and swap straight to the
+   // window. The frame time runs from the start of the drawing to the swap.
+   gboolean perf_frame(gpointer user_data)
+   {
+      view_state& state = *reinterpret_cast<view_state*>(user_data);
+      if (!state._ctx && !perf_init(state))
+         std::exit(1);
+
+      auto* widget = GTK_WIDGET(state._window);
+      int const scale = gdk_window_get_scale_factor(gtk_widget_get_window(widget));
+      int const w = gtk_widget_get_allocated_width(widget) * scale;
+      int const h = gtk_widget_get_allocated_height(widget) * scale;
+      if (w <= 0 || h <= 0)
+         return G_SOURCE_CONTINUE;
+
+      if (!state._surface || w != state._perf_w || h != state._perf_h)
+      {
+         state._surface.reset();
+         GrGLFramebufferInfo info;
+         info.fFBOID  = 0;
+         info.fFormat = GL_RGBA8;
+         auto target = GrBackendRenderTargets::MakeGL(w, h, 0, state._stencil, info);
+         state._surface = SkSurfaces::WrapBackendRenderTarget(
+            state._ctx.get(), target,
+            kBottomLeft_GrSurfaceOrigin, kRGBA_8888_SkColorType,
+            nullptr, nullptr);
+         state._perf_w = w;
+         state._perf_h = h;
+         if (!state._surface)
+         {
+            g_printerr("Error: SkSurfaces::WrapBackendRenderTarget returned null\n");
+            std::exit(1);
+         }
+      }
+
+      auto start = std::chrono::steady_clock::now();
+      SkCanvas* gpu_canvas = state._surface->getCanvas();
+      gpu_canvas->save();
+      gpu_canvas->scale(scale, scale);
+      {
+         auto cnv = canvas{gpu_canvas};
+         draw(cnv);
+      }
+      gpu_canvas->restore();
+      state._ctx->flushAndSubmit(state._surface.get(), GrSyncCpu::kYes);
+      eglSwapBuffers(state._egl_display, state._egl_surface);
+      auto stop = std::chrono::steady_clock::now();
+
+      elapsed_ = std::chrono::duration<double>{stop - start}.count();
+      perf_record(elapsed_, w, h);
+      return G_SOURCE_CONTINUE;
+   }
+
+   // Prime away the spurious half-size GDK/XWayland first-resize event by
+   // triggering a programmatic resize before the user can grab the handle.
+   // The bad event fires and is silently suppressed in gl_resize. The restore
+   // uses the size from before the prime, since resize events may already
+   // have moved _size to the primed width. When measuring (ARTIST_PERF),
+   // frames start only once the window is back at its size.
+   void prime_resize(gpointer user_data)
+   {
+      g_timeout_add(150, [](gpointer data) -> gboolean {
+         view_state& st = *reinterpret_cast<view_state*>(data);
+         st._prime_size = st._size;
+         gtk_window_resize(st._window, int(st._size.x) + 2, int(st._size.y));
+         g_timeout_add(50, [](gpointer data2) -> gboolean {
+            view_state& st2 = *reinterpret_cast<view_state*>(data2);
+            gtk_window_resize(st2._window,
+               int(st2._prime_size.x), int(st2._prime_size.y));
+            if (perf_enabled())
+               g_timeout_add(100, [](gpointer data3) -> gboolean {
+                  view_state& st3 = *reinterpret_cast<view_state*>(data3);
+                  st3._timer_id = g_idle_add(perf_frame, data3);
+                  return FALSE;
+               }, data2);
+            return FALSE;
+         }, data);
+         return FALSE;
+      }, user_data);
+   }
+
    void activate(GtkApplication* app, gpointer user_data)
    {
       view_state& state = *reinterpret_cast<view_state*>(user_data);
@@ -155,6 +329,20 @@ namespace
       gtk_window_set_title(GTK_WINDOW(window), "Artist (gtk3 skia)");
 
       g_signal_connect(window, "destroy", G_CALLBACK(close_window), user_data);
+
+      if (perf_enabled())
+      {
+         // Measuring draws with EGL straight into the toplevel's X11 window,
+         // which GDK's X11 backend decorates server side, so the window is
+         // the content area. GTK must not paint over the frames.
+         if (!perf_choose_config(state, window))
+            std::exit(1);
+         gtk_widget_set_app_paintable(window, TRUE);
+         gtk_window_resize(GTK_WINDOW(window), state._size.x, state._size.y);
+         gtk_widget_show_all(window);
+         prime_resize(user_data);
+         return;
+      }
 
       GtkWidget* gl_area = gtk_gl_area_new();
       state._gl_area = gl_area;
@@ -178,20 +366,7 @@ namespace
       if (state._animate)
          state._timer_id = g_timeout_add(1000/60, animate_cb, gl_area);
 
-      // Prime away the spurious half-size GDK/XWayland first-resize event by
-      // triggering a programmatic resize before the user can grab the handle.
-      // The bad event fires and is silently suppressed in gl_resize.
-      g_timeout_add(150, [](gpointer data) -> gboolean {
-         view_state& st = *reinterpret_cast<view_state*>(data);
-         gtk_window_resize(st._window, int(st._size.x) + 2, int(st._size.y));
-         g_timeout_add(50, [](gpointer data2) -> gboolean {
-            view_state& st2 = *reinterpret_cast<view_state*>(data2);
-            gtk_window_resize(st2._window, int(st2._size.x), int(st2._size.y));
-            return FALSE;
-         }, data);
-         return FALSE;
-      }, user_data);
-
+      prime_resize(user_data);
    }
 }
 
@@ -222,6 +397,11 @@ int run_app(
    state._size       = window_size;
    state._animate    = animate;
    state._bkd        = background_color;
+
+   // Measuring swaps frames straight to the window's X11 window with EGL,
+   // which needs GDK's X11 backend.
+   if (perf_enabled())
+      gdk_set_allowed_backends("x11");
 
    auto* app = gtk_application_new("org.cycfi.artist.gtk3skia",
                                    G_APPLICATION_DEFAULT_FLAGS);

@@ -37,6 +37,7 @@ public:
                ~window();
 
    void        render(HWND hwnd);
+   void        request_frame();
    void        on_resize();
    void        on_dpi_changed(unsigned dpi, RECT const* suggested);
 
@@ -78,7 +79,7 @@ bool window::create_target()
 
    // When measuring (ARTIST_PERF), EndDraw must not wait for the vblank, or
    // every frame is quantised to the display rate and the render cost is lost.
-   auto present = std::getenv("ARTIST_PERF")?
+   auto present = perf_enabled()?
       D2D1_PRESENT_OPTIONS_IMMEDIATELY : D2D1_PRESENT_OPTIONS_NONE;
 
    auto hr = d2d::get_factory().CreateHwndRenderTarget(
@@ -113,6 +114,10 @@ void window::render(HWND hwnd)
       auto stop = std::chrono::steady_clock::now();
       elapsed_ = std::chrono::duration<double>{stop - start}.count();
 
+      auto px = _target->GetPixelSize();
+      if (perf_enabled())
+         perf_record(elapsed_, int(px.width), int(px.height));
+
       if (hr == D2DERR_RECREATE_TARGET)
       {
          // Device loss: drop the device-dependent target; the next WM_PAINT
@@ -122,6 +127,13 @@ void window::render(HWND hwnd)
    }
 
    EndPaint(hwnd, &ps);
+}
+
+// Paint the next frame now. Used by ARTIST_PERF to redraw continuously.
+void window::request_frame()
+{
+   InvalidateRect(_wnd, nullptr, FALSE);
+   UpdateWindow(_wnd);
 }
 
 void window::on_resize()
@@ -259,7 +271,7 @@ window::window(extent size, color bkd, bool animate)
 
    g_window = this;
 
-   if (animate)
+   if (animate && !perf_enabled())
       SetTimer(_wnd, IDT_TIMER1, 16, (TIMERPROC) nullptr);
 
    ShowWindow(_wnd, SW_SHOW);
@@ -326,6 +338,8 @@ int run_app(
          TranslateMessage(&msg);
          DispatchMessage(&msg);
       }
+      if (active && perf_enabled())
+         win.request_frame();
    }
    return (int)msg.wParam;
 }

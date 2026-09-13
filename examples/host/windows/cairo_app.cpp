@@ -29,6 +29,7 @@ public:
                ~window();
 
    void        render(HWND hwnd);
+   void        request_frame();
    void        on_dpi_changed(unsigned dpi, RECT const* suggested);
 
 private:
@@ -94,9 +95,18 @@ void window::render(HWND hwnd)
    BitBlt(hdc, 0, 0, cw, ch, _offscreen_hdc, 0, 0, SRCCOPY);
    auto stop = std::chrono::steady_clock::now();
    elapsed_ = std::chrono::duration<double>{stop - start}.count();
+   if (perf_enabled())
+      perf_record(elapsed_, cw, ch);
 
    SelectObject(_offscreen_hdc, hold);
    EndPaint(hwnd, &ps);
+}
+
+// Paint the next frame now. Used by ARTIST_PERF to redraw continuously.
+void window::request_frame()
+{
+   InvalidateRect(_wnd, nullptr, FALSE);
+   UpdateWindow(_wnd);
 }
 
 void window::make_offscreen_dc(HDC hdc, int w, int h)
@@ -230,7 +240,7 @@ window::window(extent size, color /*bkd*/, bool animate)
 
    g_window = this;
 
-   if (animate)
+   if (animate && !perf_enabled())
       SetTimer(_wnd, IDT_TIMER1, 16, (TIMERPROC) nullptr);
 
    ShowWindow(_wnd, SW_SHOW);
@@ -296,6 +306,8 @@ int run_app(
          TranslateMessage(&msg);
          DispatchMessage(&msg);
       }
+      if (active && perf_enabled())
+         win.request_frame();
    }
 
    return (int)msg.wParam;
