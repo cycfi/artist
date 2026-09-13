@@ -226,7 +226,9 @@ namespace cycfi::artist
                                  D2D1::IdentityMatrix(), 1.0f, nullptr,
                                  D2D1_LAYER_OPTIONS_NONE),
                               layer);
-                           _clips.push_back({layer, geo, false});
+                           auto device = narrowed(device_bounds(current().matrix,
+                              {bounds.left, bounds.top, bounds.right, bounds.bottom}));
+                           _clips.push_back({layer, geo, false, device});
                         }
       // An axis-aligned rectangle clip needs no layer at all.
       void              do_clip(artist::rect const& r)
@@ -237,9 +239,15 @@ namespace cycfi::artist
                            _rt->PushAxisAlignedClip(
                               {r.left, r.top, r.right, r.bottom},
                               D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-                           _clips.push_back({nullptr, nullptr, true});
+                           _clips.push_back(
+                              {nullptr, nullptr, true, narrowed(device_bounds(current().matrix, r))});
                         }
       std::size_t       clip_count() const             { return _clips.size(); }
+      // The active clip's device-space bounds, or none when nothing clips.
+      artist::rect const* device_clip() const
+                        {
+                           return _clips.empty()? nullptr : &_clips.back().device;
+                        }
       void              pop_clips_to(std::size_t depth)
                         {
                            while (_clips.size() > depth)
@@ -260,7 +268,23 @@ namespace cycfi::artist
 
    private:
 
-      struct clip_t { ID2D1Layer* layer; geometry* geo; bool axis_aligned; };
+      // Each clip carries the device-space bounds of everything clipped so
+      // far (its own bounds intersected with the one below), so the active
+      // clip is always the back of the stack.
+      struct clip_t
+      {
+         ID2D1Layer*    layer;
+         geometry*      geo;
+         bool           axis_aligned;
+         artist::rect   device;
+      };
+
+      artist::rect      narrowed(artist::rect const& device_bounds_) const
+                        {
+                           if (_clips.empty())
+                              return device_bounds_;
+                           return artist::intersection(_clips.back().device, device_bounds_);
+                        }
 
       std::stack<info>  _stack;
       artist::path      _path;
@@ -898,12 +922,20 @@ namespace cycfi::artist
 
    rect canvas::clip_extent() const
    {
-      if (auto t = _context->target())
-      {
-         auto s = t->GetSize();   // DIPs
-         return {0, 0, s.width, s.height};
-      }
-      return {0, 0, 0, 0};
+      // The device-space clip, kept by canvas_state as clips push and pop,
+      // brought back to user space as its bounding box under the inverse of
+      // the current transform. Direct2D has no query for the active clip.
+      auto t = _context->target();
+      if (!t)
+         return {0, 0, 0, 0};
+      auto s = t->GetSize();   // DIPs
+      artist::rect device{0, 0, s.width, s.height};
+      if (auto c = _state->device_clip())
+         device = artist::intersection(device, *c);
+      auto inv = _state->current().matrix;
+      if (!inv.Invert())
+         return device;
+      return device_bounds(inv, device);
    }
 
    bool canvas::point_in_path(point p) const
