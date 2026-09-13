@@ -39,6 +39,7 @@
 
 #include <stdexcept>
 #include <chrono>
+#include <cstdlib>
 
 using namespace cycfi::artist;
 float elapsed_ = 0;  // rendering elapsed time
@@ -212,6 +213,17 @@ void window::make_gl_context()
    }
    if (!RC)
       RC = legacy;   // fall back to the legacy (compatibility) context
+
+   // When measuring (ARTIST_PERF), SwapBuffers must not wait for the vblank,
+   // or the time is the display's refresh rate rather than the render cost.
+   if (std::getenv("ARTIST_PERF"))
+   {
+      using swap_interval_fn = BOOL (WINAPI*)(int);
+      auto swap_interval = reinterpret_cast<swap_interval_fn>(
+         wglGetProcAddress("wglSwapIntervalEXT"));
+      if (swap_interval)
+         swap_interval(0);
+   }
 }
 
 void window::init_skia()

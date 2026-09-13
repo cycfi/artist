@@ -80,17 +80,20 @@ void window::render(HWND hwnd)
    cairo_t* context = cairo_create(surface);
    cairo_scale(context, _scale, _scale);
 
+   // Time the whole frame, drawing through to the blit onto the window, so
+   // the fps is what it costs to put a frame on screen.
    auto start = std::chrono::steady_clock::now();
    auto cnv = canvas{context};
    draw(cnv);
-   auto stop = std::chrono::steady_clock::now();
-   elapsed_ = std::chrono::duration<double>{stop - start}.count();
 
    cairo_destroy(context);
+   cairo_surface_flush(surface);
    cairo_surface_destroy(surface);
 
    // Blit the whole client area (resize + timer invalidate the full client).
    BitBlt(hdc, 0, 0, cw, ch, _offscreen_hdc, 0, 0, SRCCOPY);
+   auto stop = std::chrono::steady_clock::now();
+   elapsed_ = std::chrono::duration<double>{stop - start}.count();
 
    SelectObject(_offscreen_hdc, hold);
    EndPaint(hwnd, &ps);
