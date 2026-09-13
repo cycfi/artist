@@ -551,14 +551,28 @@ jobs:
           exit 0
         fi
 
-        tar --zstd -C "$installed" -cf "$name" "$triplet"
-        sha=$(openssl dgst -sha256 "$name" | awk '{print $NF}')
-        echo "bundle $(du -h "$name" | cut -f1)  sha $sha"
-        echo "$sha" > "$name.sha256"
-        s3 cp "$name" "$base/$name"
-        s3 cp "$name.sha256" "$base/$name.sha256"
-        # The unversioned names serve checkouts from before the pointer.
-        s3 cp "$base/$name" "$base/${triplet}.tar.zst"
+        key="skia-prebuilt/$ver/$name"
+        if aws s3api head-object --bucket cycfi-media --key "$key" \
+             --endpoint-url "$AWS_ENDPOINT_URL" > /dev/null 2>&1; then
+          # An earlier run published this ABI but stopped before the pointer.
+          # Reuse its bytes: a new tar of the same tree would differ.
+          s3 cp "$base/$name" "$name"
+          s3 cp "$base/$name.sha256" "$name.sha256"
+          sha=$(tr -d '[:space:]' < "$name.sha256")
+          test "$(openssl dgst -sha256 "$name" | awk '{print $NF}')" = "$sha"
+          echo "reusing $key  sha $sha"
+        else
+          tar --zstd -C "$installed" -cf "$name" "$triplet"
+          sha=$(openssl dgst -sha256 "$name" | awk '{print $NF}')
+          echo "bundle $(du -h "$name" | cut -f1)  sha $sha"
+          echo "$sha" > "$name.sha256"
+          s3 cp "$name" "$base/$name"
+          s3 cp "$name.sha256" "$base/$name.sha256"
+        fi
+        # The unversioned names serve checkouts from before the pointer. The
+        # bundle is uploaded again: the CLI's server-side copy asks for the
+        # object's tags, which R2 does not implement (GetObjectTagging).
+        s3 cp "$name" "$base/${triplet}.tar.zst"
         s3 cp "$name.sha256" "$base/${triplet}.tar.zst.sha256"
         # The pointer goes last, once the bundle it names is in place.
         echo "$name $sha" > "${triplet}.current"
