@@ -12,8 +12,8 @@
 # clear instruction to use the source path ("simple" fallback — we never switch
 # the toolchain mid-configure).
 #
-# Bundles live at ${ARTIST_SKIA_PREBUILT_URL}/${version}/<triplet>.tar.zst (+ .sha256)
-# and are the tarred vcpkg installed/<triplet> tree.
+# Bundles live at ${ARTIST_SKIA_PREBUILT_URL}/${version}/<triplet>-<abi>.tar.zst,
+# named by <triplet>.current, and are the tarred vcpkg installed/<triplet> tree.
 #
 # COMPATIBILITY: <triplet> (os+arch) is necessary but not sufficient, so a gate
 # checks the bundle's baseline against the local toolchain and refuses an
@@ -115,64 +115,99 @@ set(_dest "${_root}/${_triplet}")
 set(_marker "${_dest}/share/unofficial-skia/unofficial-skia-config.cmake")
 
 # --- download + verify + extract ------------------------------------------
-# The sha256 of the extracted bundle is kept beside it and compared with the
-# server's on every configure, so a bundle re-uploaded under the same version
-# replaces the local copy. When the server can't be reached, the local copy
-# is used as is.
-set(_base "${ARTIST_SKIA_PREBUILT_URL}/${_ver}/${_triplet}.tar.zst")
+# <triplet>.current on the server holds "<file> <sha256>" for the latest
+# bundle, whose file name carries its Skia ABI and is never replaced, so a
+# CDN cannot pair a new checksum with an old file. Servers without the pointer
+# fall back to <triplet>.tar.zst and its .sha256. The pointer of the extracted
+# bundle is kept beside it and compared on every configure, so a new bundle
+# replaces the local copy. When the server can't be reached, the local copy is
+# used as is.
+set(_base_url "${ARTIST_SKIA_PREBUILT_URL}/${_ver}")
 set(_tar "${_root}/${_triplet}.tar.zst")
+set(_stored "${_root}/${_triplet}.current")
 set(_shafile "${_root}/${_triplet}.tar.zst.sha256")
-set(_remote_shafile "${_shafile}.remote")
+set(_fetched "${_root}/${_triplet}.fetched")
 file(MAKE_DIRECTORY "${_root}")
 
+set(_file "")
 set(_sha "")
-file(DOWNLOAD "${_base}.sha256" "${_remote_shafile}" STATUS _shast TIMEOUT 30)
-list(GET _shast 0 _shacode)
-if(_shacode EQUAL 0)
-  file(READ "${_remote_shafile}" _sha)
-  string(STRIP "${_sha}" _sha)
-elseif(NOT EXISTS "${_marker}")
-  file(REMOVE "${_remote_shafile}")
+file(DOWNLOAD "${_base_url}/${_triplet}.current" "${_fetched}" STATUS _st TIMEOUT 30)
+list(GET _st 0 _code)
+if(_code EQUAL 0)
+  file(READ "${_fetched}" _pointer)
+  string(STRIP "${_pointer}" _pointer)
+  if(_pointer MATCHES "^([^ ]+) +([0-9a-f]+)$")
+    set(_file "${CMAKE_MATCH_1}")
+    set(_sha "${CMAKE_MATCH_2}")
+  endif()
+endif()
+if(NOT _sha)
+  file(DOWNLOAD "${_base_url}/${_triplet}.tar.zst.sha256" "${_fetched}" STATUS _st TIMEOUT 30)
+  list(GET _st 0 _code)
+  if(_code EQUAL 0)
+    file(READ "${_fetched}" _sha)
+    string(STRIP "${_sha}" _sha)
+    set(_file "${_triplet}.tar.zst")
+  endif()
+endif()
+file(REMOVE "${_fetched}")
+
+if(NOT _sha AND NOT EXISTS "${_marker}")
   message(FATAL_ERROR
     "Artist: no prebuilt Skia bundle for ${_triplet}@${_ver} "
-    "(${_base}.sha256: ${_shast}). ${_help}")
-else()
+    "(${_base_url}/${_triplet}.tar.zst.sha256: ${_st}). ${_help}")
+elseif(NOT _sha)
   message(STATUS "Artist: cannot check prebuilt Skia ${_triplet}@${_ver} "
-    "for updates (${_shast}); using the local copy")
-endif()
-file(REMOVE "${_remote_shafile}")
-
-set(_local_sha "")
-if(EXISTS "${_shafile}")
-  file(READ "${_shafile}" _local_sha)
-  string(STRIP "${_local_sha}" _local_sha)
+    "for updates (${_st}); using the local copy")
 endif()
 
-if(_sha AND (NOT EXISTS "${_marker}" OR NOT _sha STREQUAL _local_sha))
+set(_local "")
+if(EXISTS "${_stored}")
+  file(READ "${_stored}" _local)
+  string(STRIP "${_local}" _local)
+endif()
+
+if(_sha AND (NOT EXISTS "${_marker}" OR NOT "${_file} ${_sha}" STREQUAL _local))
   if(EXISTS "${_dest}")
     message(STATUS "Artist: prebuilt Skia ${_triplet}@${_ver} changed on the server")
   endif()
-  # Written back only after a verified extract, so an interrupted update
-  # is retried on the next configure.
-  file(REMOVE "${_shafile}")
-  file(REMOVE_RECURSE "${_dest}")
-
   message(STATUS "Artist: downloading prebuilt Skia ${_triplet}@${_ver} …")
-  file(DOWNLOAD "${_base}" "${_tar}"
-    EXPECTED_HASH "SHA256=${_sha}"
-    STATUS _dlst SHOW_PROGRESS)
+  # Verified by hand: a failed EXPECTED_HASH raises a CMake error, which would
+  # fail the configure even when the local copy is kept.
+  file(DOWNLOAD "${_base_url}/${_file}" "${_tar}" STATUS _dlst SHOW_PROGRESS)
   list(GET _dlst 0 _dlcode)
+  if(_dlcode EQUAL 0)
+    file(SHA256 "${_tar}" _got)
+    if(NOT _got STREQUAL _sha)
+      set(_dlcode 1)
+      set(_dlst "sha256 ${_got}, expected ${_sha}")
+    endif()
+  endif()
   if(NOT _dlcode EQUAL 0)
     file(REMOVE "${_tar}")
-    message(FATAL_ERROR
-      "Artist: prebuilt Skia download/verify failed for ${_triplet}@${_ver} "
-      "(${_dlst}). Retry, or: ${_help}")
-  endif()
-
-  file(ARCHIVE_EXTRACT INPUT "${_tar}" DESTINATION "${_root}")
-  file(REMOVE "${_tar}")
-  if(EXISTS "${_marker}")
-    file(WRITE "${_shafile}" "${_sha}\n")
+    if(EXISTS "${_marker}")
+      message(WARNING
+        "Artist: prebuilt Skia download/verify failed for ${_triplet}@${_ver} "
+        "(${_dlst}); using the local copy")
+    else()
+      message(FATAL_ERROR
+        "Artist: prebuilt Skia download/verify failed for ${_triplet}@${_ver} "
+        "(${_dlst}). Retry, or: ${_help}")
+    endif()
+  else()
+    # The old copy goes only once the new bundle is verified, and the pointer
+    # is written only after a complete extract, so an interrupted update is
+    # retried on the next configure.
+    file(REMOVE "${_stored}")
+    file(REMOVE "${_shafile}")
+    file(REMOVE_RECURSE "${_dest}")
+    file(ARCHIVE_EXTRACT INPUT "${_tar}" DESTINATION "${_root}")
+    file(REMOVE "${_tar}")
+    if(EXISTS "${_marker}")
+      file(WRITE "${_stored}" "${_file} ${_sha}\n")
+      # The same bundle's checksum, for older checkouts sharing this cache.
+      file(WRITE "${_shafile}" "${_sha}\n")
+    endif()
   endif()
 endif()
 
