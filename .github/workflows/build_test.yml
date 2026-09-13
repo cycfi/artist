@@ -407,6 +407,144 @@ jobs:
         if-no-files-found: ignore
 
   ###########################################################################
+  # Skia prebuilt bundles
+  #
+  # Builds Skia and its dependencies with vcpkg (configure only, no Artist
+  # build or tests) and uploads the vcpkg installed tree to R2 as the
+  # prebuilt bundle cmake/SkiaPrebuilt consumes. Linux runs on 22.04 so the
+  # bundles work on glibc 2.35 and newer.
+  ###########################################################################
+  skia-bundle:
+    name: "Skia bundle (${{ matrix.config.triplet }})"
+    if: >
+      github.event_name != 'workflow_dispatch' ||
+      inputs.job == 'all' ||
+      inputs.job == 'skia'
+    runs-on: ${{ matrix.config.os }}
+    env:
+      VCPKG_BINARY_SOURCES: "clear;http,https://media.cycfi.com/vcpkg-cache/{sha}.zip,read;x-aws,s3://cycfi-media/vcpkg-cache/,write"
+      AWS_ENDPOINT_URL: "https://24c350f8d000d722e6bcc12e3b03469a.r2.cloudflarestorage.com"
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - os: windows-latest
+          triplet: x64-windows
+        - os: ubuntu-22.04
+          triplet: x64-linux
+          pkg_config_path: "/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig"
+        - os: ubuntu-22.04-arm
+          triplet: arm64-linux
+          pkg_config_path: "/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig"
+        - os: macos-latest
+          triplet: arm64-osx
+          pkg_config_path: "/opt/homebrew/lib/pkgconfig"
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Resolve MSVC environment (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+        $vsPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+        $vcvars = Join-Path $vsPath "VC\Auxiliary\Build\vcvars64.bat"
+        echo "VCVARS64=$vcvars" >> $env:GITHUB_ENV
+
+    - name: Install dependencies (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libgl1-mesa-dev libglu1-mesa-dev libegl1-mesa-dev \
+          libharfbuzz-dev libfontconfig1-dev libfreetype6-dev \
+          pkg-config ninja-build autoconf autoconf-archive automake libtool zstd
+
+    - name: Install dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: brew install fontconfig ninja
+
+    - name: Install dependencies (Windows)
+      if: runner.os == 'Windows'
+      run: choco install ninja
+      shell: cmd
+
+    - name: Bootstrap vcpkg (Unix)
+      if: runner.os != 'Windows'
+      run: lib/external/vcpkg/bootstrap-vcpkg.sh -disableMetrics
+
+    - name: Bootstrap vcpkg (Windows)
+      if: runner.os == 'Windows'
+      run: lib\external\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+      shell: cmd
+
+    - name: Build Skia (vcpkg)
+      shell: cmake -P {0}
+      run: |
+        if ("${{ runner.os }}" STREQUAL "Windows")
+          execute_process(
+            COMMAND "$ENV{VCVARS64}" && set
+            OUTPUT_FILE environment_script_output.txt)
+          file(STRINGS environment_script_output.txt output_lines)
+          foreach(line IN LISTS output_lines)
+            if (line MATCHES "^([a-zA-Z0-9_-]+)=(.*)$")
+              set(ENV{${CMAKE_MATCH_1}} "${CMAKE_MATCH_2}")
+            endif()
+          endforeach()
+        endif()
+
+        set(extra_args
+          -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake
+          -DVCPKG_TARGET_TRIPLET=${{ matrix.config.triplet }})
+        if (NOT "${{ runner.os }}" STREQUAL "Windows")
+          set(ENV{PKG_CONFIG_PATH} "${{ matrix.config.pkg_config_path }}:$ENV{PKG_CONFIG_PATH}")
+          list(APPEND extra_args
+            -DVCPKG_ENV_PASSTHROUGH_UNTRACKED=PKG_CONFIG_PATH)
+        endif()
+
+        # Configuring runs the vcpkg manifest install, which builds Skia.
+        execute_process(
+          COMMAND ${CMAKE_COMMAND}
+            -S . -B build
+            -D CMAKE_BUILD_TYPE=$ENV{BUILD_TYPE}
+            -D ARTIST_SKIA=ON
+            -D ARTIST_BUILD_EXAMPLES=OFF
+            -D ARTIST_BUILD_TESTS=OFF
+            -G Ninja
+            -D CMAKE_MAKE_PROGRAM=ninja
+            ${extra_args}
+          RESULT_VARIABLE result
+          ERROR_VARIABLE error_message)
+        if (NOT result EQUAL 0)
+          message(FATAL_ERROR "Configure failed: ${error_message} - ${result}")
+        endif()
+
+    - name: Upload the Skia prebuilt bundle to R2
+      # Skip when the R2 secret is unavailable (e.g. fork PRs).
+      if: env.AWS_ACCESS_KEY_ID != ''
+      shell: bash
+      run: |
+        set -euo pipefail
+        ver=148
+        triplet="${{ matrix.config.triplet }}"
+        installed="build/vcpkg_installed"
+        test -d "$installed/$triplet"
+        out="${triplet}.tar.zst"
+        tar --zstd -C "$installed" -cf "$out" "$triplet"
+        openssl dgst -sha256 "$out" | awk '{print $NF}' > "$out.sha256"
+        echo "bundle $(du -h "$out" | cut -f1)  sha $(cat "$out.sha256")"
+        base="s3://cycfi-media/skia-prebuilt/$ver"
+        aws s3 cp "$out" "$base/$out" --endpoint-url "$AWS_ENDPOINT_URL"
+        aws s3 cp "$out.sha256" "$base/$out.sha256" --endpoint-url "$AWS_ENDPOINT_URL"
+        echo "uploaded skia-prebuilt/$ver/$out"
+
+  ###########################################################################
   # Cairo
   ###########################################################################
   build-cairo:
