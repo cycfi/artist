@@ -297,6 +297,12 @@ namespace cycfi::artist
 
       // Now find the glyph position in the row
       auto const& row = _rows[row_index];
+
+      // The empty last row has no runs; CoreText on macOS 12 crashes when
+      // asked for an offset in it.
+      if (CTLineGetStringRange(row.line).length == 0)
+         return row.pos;
+
       auto offset = CTLineGetOffsetForStringIndex(row.line, u16_index, nullptr);
       return {float(row.pos.x + offset), row.pos.y};
    }
@@ -318,7 +324,7 @@ namespace cycfi::artist
 
       // Core Text reports UTF-16 indices; the API returns code points.
       auto rng = CTLineGetStringRange(i->line);
-      if (p.x <= i->pos.x)
+      if (p.x <= i->pos.x || rng.length == 0)
          return to_u32(rng.location);
 
       if (i != _rows.end()-1 && p.x >= (i->pos.x + i->width))
