@@ -102,18 +102,14 @@ if (ARTIST_SKIA)
       find_library(BROTLICOM_LIB brotlicommon PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
       find_library(BZ2_LIB       bz2          PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
 
-      # Use the system harfbuzz (shared) instead of vcpkg's static harfbuzz.
-      # When GTK is loaded (window host), it brings in the system harfbuzz dynamically.
-      # Having both a static vcpkg harfbuzz AND the system shared harfbuzz in the same
-      # process causes symbol interposition — GTK/Pango calls get routed to the static
-      # 14.x copy with 8.x data structures, causing a crash.  Using the system harfbuzz
-      # exclusively avoids the conflict.
-      find_package(PkgConfig REQUIRED)
-      pkg_check_modules(HARFBUZZ REQUIRED IMPORTED_TARGET harfbuzz)
+      # Skia's own harfbuzz. No GTK runs on macOS to load a second copy, and a
+      # Homebrew harfbuzz would tie apps to Homebrew, which sandboxed plugin
+      # hosts cannot load.
+      find_library(HARFBUZZ_LIB  harfbuzz     PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
 
       set(ARTIST_DEPEPENDENCIES
          unofficial::skia::skia
-         PkgConfig::HARFBUZZ
+         ${HARFBUZZ_LIB}
          ${FREETYPE_LIB}
          ${BROTLIDEC_LIB}
          ${BROTLICOM_LIB}
@@ -441,11 +437,30 @@ if (WIN32 AND ARTIST_DIRECT2D)
    )
 
    # The one non-system dependency: WIC has no WebP codec (it ships as an
-   # optional Store package), so the backend decodes WebP itself with the same
-   # libwebp the Cairo backend uses. Without this, a machine lacking that
-   # package could not read WebP at all. Any libwebp on CMAKE_PREFIX_PATH will
-   # do; there is no need for the full vcpkg manifest here.
-   find_package(WebP CONFIG REQUIRED)
+   # optional Store package), so the backend decodes WebP itself with libwebp.
+   # A libwebp on CMAKE_PREFIX_PATH is used when there is one. Otherwise only
+   # libwebp's decoder is built from source, so nothing has to be installed.
+   find_package(WebP CONFIG QUIET)
+   if (NOT TARGET WebP::webpdecoder)
+      include(FetchContent)
+      foreach (_tool ANIM_UTILS CWEBP DWEBP GIF2WEBP IMG2WEBP VWEBP WEBPINFO
+            LIBWEBPMUX WEBPMUX EXTRAS)
+         set(WEBP_BUILD_${_tool} OFF CACHE BOOL "" FORCE)
+      endforeach()
+      set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+      FetchContent_Declare(libwebp
+         GIT_REPOSITORY https://github.com/webmproject/libwebp.git
+         GIT_TAG v1.6.0
+         GIT_SHALLOW TRUE
+      )
+      FetchContent_MakeAvailable(libwebp)
+      unset(CMAKE_MSVC_RUNTIME_LIBRARY)
+      # Build only what Artist links, not the encoder and the rest.
+      set_property(DIRECTORY ${libwebp_SOURCE_DIR} PROPERTY EXCLUDE_FROM_ALL TRUE)
+      target_include_directories(webpdecoder INTERFACE
+         $<BUILD_INTERFACE:${libwebp_SOURCE_DIR}/src>)
+      add_library(WebP::webpdecoder ALIAS webpdecoder)
+   endif()
    target_link_libraries(artist PUBLIC WebP::webpdecoder)
 endif()
 

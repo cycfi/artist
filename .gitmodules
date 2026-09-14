@@ -8,3 +8,4 @@
 [submodule "lib/external/vcpkg"]
 	path = lib/external/vcpkg
 	url = https://github.com/microsoft/vcpkg.git
+	update = none
