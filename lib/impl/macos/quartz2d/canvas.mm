@@ -901,6 +901,8 @@ namespace cycfi::artist
 
       auto apply_gradient = [&](auto&& apply)
       {
+         // The path is not graphics state: keep it past the clip.
+         auto saved = CGContextCopyPath(ctx);
          CGContextSaveGState(ctx);
          with_shadow_layer(ctx, _state->shadow(), [&]
          {
@@ -911,6 +913,12 @@ namespace cycfi::artist
             apply();                               // Apply the gradient
          });
          CGContextRestoreGState(ctx);
+         CGContextBeginPath(ctx);
+         if (saved)
+         {
+            CGContextAddPath(ctx, saved);
+            CGPathRelease(saved);
+         }
       };
 
       auto apply_fill = [&](auto const& style)
@@ -968,6 +976,8 @@ namespace cycfi::artist
 
       auto apply_gradient = [&](auto&& apply)
       {
+         // The path is not graphics state: keep it past the clip.
+         auto saved = CGContextCopyPath(ctx);
          CGContextSaveGState(ctx);
          with_shadow_layer(ctx, _state->shadow(), [&]
          {
@@ -979,6 +989,12 @@ namespace cycfi::artist
             apply();                               // Apply the gradient
          });
          CGContextRestoreGState(ctx);
+         CGContextBeginPath(ctx);
+         if (saved)
+         {
+            CGContextAddPath(ctx, saved);
+            CGPathRelease(saved);
+         }
       };
 
       auto apply_stroke = [&](auto const& style)

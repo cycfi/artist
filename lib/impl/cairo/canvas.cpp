@@ -1090,6 +1090,36 @@ namespace cycfi::artist
          }
          return out;
       }
+
+      // Sets the current path aside for its lifetime and puts it back on
+      // destruction, so drawing text leaves the path being built alone.
+      class path_keeper
+      {
+      public:
+
+         explicit path_keeper(cairo_t* cr)
+          : _cr{cr}
+          , _saved{cairo_copy_path(cr)}
+         {
+            cairo_new_path(cr);
+         }
+
+         ~path_keeper()
+         {
+            cairo_new_path(_cr);
+            if (_saved->status == CAIRO_STATUS_SUCCESS)
+               cairo_append_path(_cr, _saved);
+            cairo_path_destroy(_saved);
+         }
+
+         path_keeper(path_keeper const&) = delete;
+         path_keeper& operator=(path_keeper const&) = delete;
+
+      private:
+
+         cairo_t*       _cr;
+         cairo_path_t*  _saved;
+      };
    }
 
    void canvas::fill_text(std::string_view utf8, point p)
@@ -1103,6 +1133,7 @@ namespace cycfi::artist
          if (glyphs.empty())
             return;
 
+         path_keeper keep{_context};
          _state->apply_fill_style();
          with_operator(_context, *_state, [&]
          {
@@ -1130,6 +1161,7 @@ namespace cycfi::artist
          p = get_text_start(
             _context, p, _state->_info.align, float(ext.x_advance));
 
+         path_keeper keep{_context};
          _state->apply_fill_style();
          with_operator(_context, *_state, [&]
          {
@@ -1157,6 +1189,7 @@ namespace cycfi::artist
          p = get_text_start(_context, p, _state->_info.align, run.advance_x);
          auto glyphs = make_cairo_glyphs(run, p.x, p.y);
          if (glyphs.empty()) return;
+         path_keeper keep{_context};
          _state->apply_stroke_style();
          cairo_glyph_path(_context, glyphs.data(), int(glyphs.size()));
          stroke();
@@ -1169,6 +1202,7 @@ namespace cycfi::artist
          cairo_text_extents(_context, str.c_str(), &ext);
          _state->apply_stroke_style();
          p = get_text_start(_context, p, _state->_info.align, float(ext.x_advance));
+         path_keeper keep{_context};
          cairo_move_to(_context, p.x, p.y);
          cairo_text_path(_context, str.c_str());
          stroke();

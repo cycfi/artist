@@ -149,3 +149,64 @@ TEST_CASE("canvas text: text_align / text_baseline", "[text]")
       cnv.text_align(canvas::center | canvas::baseline);
    })));
 }
+
+TEST_CASE("canvas text: fill_text / stroke_text leave the current path", "[text]")
+{
+   color const blue = rgba(0, 0, 255, 255);
+
+   auto gradient = []
+   {
+      canvas::linear_gradient gr{0, 0, 60, 0};
+      gr.add_color_stop(0, rgba(0, 0, 255, 255));
+      gr.add_color_stop(1, rgba(0, 0, 255, 255));
+      return gr;
+   };
+
+   struct { char const* name; draw_fn draw; } const cases[] = {
+      {"fill_text", [](canvas& cnv)
+         {
+            cnv.fill_text("Ag", 10, 60);
+         }},
+      {"fill_text with a gradient", [&](canvas& cnv)
+         {
+            cnv.fill_style(gradient());
+            cnv.fill_text("Ag", 10, 60);
+         }},
+      {"fill_text with a shadow", [&](canvas& cnv)
+         {
+            cnv.shadow_style({2, 2}, 0, blue);
+            cnv.fill_text("Ag", 10, 60);
+         }},
+      {"stroke_text", [](canvas& cnv)
+         {
+            cnv.stroke_text("Ag", 10, 60);
+         }},
+      {"stroke_text with a gradient", [&](canvas& cnv)
+         {
+            cnv.stroke_style(gradient());
+            cnv.stroke_text("Ag", 10, 60);
+         }}
+   };
+
+   for (auto const& c : cases)
+   {
+      INFO(c.name);
+      image img{200, 100, 1};
+      render(img, [&](canvas& cnv)
+      {
+         // A wide stroke, so stroking the rectangle would show outside it.
+         cnv.line_width(6);
+         cnv.add_rect(120, 20, 60, 60);
+         c.draw(cnv);
+         cnv.fill();
+      });
+#if defined(ARTIST_RECORDING)
+      auto const& last = recorded(img).commands().back();
+      CHECK(last.kind == recording::op::fill);
+      CHECK(same_rect(last.geometry, {120, 20, 180, 80}));
+#else
+      CHECK(alpha_at(img, 150, 50) > 200);   // the rectangle is still filled
+      CHECK(alpha_at(img, 118, 30) < 30);    // and was never stroked
+#endif
+   }
+}
