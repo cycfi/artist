@@ -102,8 +102,8 @@ namespace cycfi::artist
 - (void) drawRect : (NSRect) dirty
 {
    // When measuring, frames are drawn only by render, into the host's own 1x
-   // bitmap. Drawing here too would size lazily made layers for this 2x
-   // context.
+   // bitmap. AppKit's own first draw of the window comes here with a 2x
+   // context, and a layer made then would keep 4 times the pixels.
    if (perf_enabled())
       return;
 
@@ -131,9 +131,8 @@ namespace cycfi::artist
    auto start = std::chrono::steady_clock::now();
    if (perf_enabled())
    {
-      // A bitmap context of the host's own, not cacheDisplayInRect: AppKit's
-      // context reports the window's backing scale even when its bitmap is
-      // 1x, so the canvas and its layers would size themselves for 2x.
+      // A 1x bitmap context of the host's own, drawn directly, so every
+      // measured frame, the first included, gets a 1x context.
       auto const bounds = self.bounds;
       size_t const w = size_t(bounds.size.width);
       size_t const h = size_t(bounds.size.height);
