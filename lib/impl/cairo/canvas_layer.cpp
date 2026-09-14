@@ -11,10 +11,11 @@
 
 namespace cycfi::artist
 {
-   // The surface is made similar to the canvas's own target
-   // (cairo_surface_create_similar), so it lives where the target does, and
-   // it inherits the target's device scale. It also follows the canvas's
-   // current transform scale, which some hosts use for the display density.
+   // Cairo draws on the CPU, so the layer is an image surface: Cairo's own
+   // rasterizer, rather than a surface similar to the target (a Quartz, Win32
+   // or Xlib surface draws the same work several times slower). It has the
+   // target's device scale and follows the canvas's current transform scale,
+   // which some hosts use for the display density.
    canvas_layer::canvas_layer(canvas& cnv, extent size)
     : _impl{new canvas_layer_impl}
    {
@@ -23,15 +24,17 @@ namespace cycfi::artist
       cairo_get_matrix(cr, &m);
       double const scale = std::max(std::hypot(m.xx, m.yx), 1e-3);
 
-      int const w = std::max(1, int(std::ceil(size.x * scale)));
-      int const h = std::max(1, int(std::ceil(size.y * scale)));
-      _impl->surface = cairo_surface_create_similar(
-         cairo_get_target(cr), CAIRO_CONTENT_COLOR_ALPHA, w, h);
+      double dev_x = 1, dev_y = 1;
+      cairo_surface_get_device_scale(cairo_get_target(cr), &dev_x, &dev_y);
+      int const w = std::max(1, int(std::ceil(size.x * scale * dev_x)));
+      int const h = std::max(1, int(std::ceil(size.y * scale * dev_y)));
+      _impl->surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
       if (cairo_surface_status(_impl->surface) != CAIRO_STATUS_SUCCESS)
       {
          delete _impl;
          throw std::runtime_error{"artist cairo backend: Failed to create canvas layer."};
       }
+      cairo_surface_set_device_scale(_impl->surface, dev_x, dev_y);
       _impl->cr = cairo_create(_impl->surface);
       cairo_scale(_impl->cr, scale, scale);
       _impl->width = size.x;
