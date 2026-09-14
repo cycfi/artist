@@ -5,6 +5,7 @@
 =============================================================================*/
 #include <artist/canvas.hpp>
 #include <artist/image.hpp>
+#include <artist/canvas_layer.hpp>
 #include <artist/detail/font_cache.hpp>
 #include "cairo_private.hpp"
 #include "cairo_text.hpp"
@@ -1254,6 +1255,44 @@ namespace cycfi::artist
          cairo_rectangle(cr, 0, 0, w, h);
          cairo_clip(cr);
          cairo_set_source_surface(cr, surface, -src.left, -src.top);
+         cairo_paint(cr);
+         cairo_restore(cr);
+         cairo_new_path(cr);
+         cairo_append_path(cr, saved);
+         cairo_path_destroy(saved);
+      };
+
+      with_operator(_context, *_state, [&]
+      {
+         if (_state->_info.shadow.active)
+            draw_shadow(_context, *_state, 0, 0, w, h, paint, nullptr);
+         paint(_context);
+      });
+   }
+
+   void canvas::draw(canvas_layer const& layer, rect const& dest)
+   {
+      auto* impl = layer.impl();
+      if (!impl || !impl->surface)
+         return;
+      cairo_surface_flush(impl->surface);
+
+      auto s = new_state();
+      translate(dest.top_left());
+      scale({dest.width() / impl->width, dest.height() / impl->height});
+
+      // The layer surface is impl->scale times the canvas units; map it back.
+      auto* surface = impl->surface;
+      double const w = impl->width, h = impl->height, sc = impl->scale;
+      auto paint = [surface, w, h, sc](cairo_t* cr)
+      {
+         auto* saved = cairo_copy_path(cr);
+         cairo_save(cr);
+         cairo_new_path(cr);
+         cairo_rectangle(cr, 0, 0, w, h);
+         cairo_clip(cr);
+         cairo_scale(cr, 1 / sc, 1 / sc);
+         cairo_set_source_surface(cr, surface, 0, 0);
          cairo_paint(cr);
          cairo_restore(cr);
          cairo_new_path(cr);

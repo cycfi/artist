@@ -57,6 +57,19 @@ namespace cycfi::artist
       CGContextRef            _ctx = nullptr;
       CGColorSpaceRef         _space = nullptr;
    };
+
+   // Quartz 2D draws on the CPU, so a canvas_layer is an image: a bitmap
+   // context at the canvas's device pixel density.
+   class canvas_layer_impl
+   {
+   public:
+
+                     canvas_layer_impl(extent size, float scale)
+                      : img{size, scale}
+                     {}
+
+      image          img;
+   };
 }
 
 #endif

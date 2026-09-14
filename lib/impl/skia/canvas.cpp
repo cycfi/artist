@@ -5,6 +5,7 @@
 =============================================================================*/
 #include <infra/support.hpp>
 #include <artist/canvas.hpp>
+#include <artist/canvas_layer.hpp>
 #include <artist/detail/font_cache.hpp>
 #include <cmath>
 #include <stack>
@@ -808,6 +809,31 @@ namespace cycfi::artist
          };
 
       return std::visit(draw_picture, pic.impl()->base());
+   }
+
+   void canvas::draw(canvas_layer const& layer, rect const& dest)
+   {
+      // A snapshot of a GPU surface shares its texture; it is released before
+      // the next frame draws into the layer, so no copy is made.
+      auto snapshot = layer.impl()->surface->makeImageSnapshot();
+      auto paint = shadowed(_context, *_state, _state->fill_paint());
+      with_blend(_context, paint, [&](SkPaint const& q)
+      {
+         _context->drawImageRect(
+            snapshot,
+            SkRect::MakeIWH(snapshot->width(), snapshot->height()),
+            SkRect{dest.left, dest.top, dest.right, dest.bottom},
+            SkSamplingOptions(),
+            &q,
+            SkCanvas::kStrict_SrcRectConstraint
+         );
+      });
+   }
+
+   void canvas::draw(canvas_layer const& layer, point pos)
+   {
+      auto const size = layer.size();
+      draw(layer, rect{pos.x, pos.y, pos.x + size.x, pos.y + size.y});
    }
 
    void canvas::add_round_rect_impl(rect const& r, float radius)

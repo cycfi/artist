@@ -49,6 +49,8 @@ namespace cycfi::artist
    struct canvas_impl;
 #endif
 
+   class canvas_layer;
+
    class canvas
    {
    public:
@@ -351,6 +353,8 @@ namespace cycfi::artist
       void              draw(image const& pic, point pos, float scale);
       void              draw(image const& pic, float posx, float posy);
       void              draw(image const& pic, float posx, float posy, float scale);
+      void              draw(canvas_layer const& layer, rect const& dest);
+      void              draw(canvas_layer const& layer, point pos = {0, 0});
 
       ///////////////////////////////////////////////////////////////////////////////////
       // States

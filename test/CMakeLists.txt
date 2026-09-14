@@ -15,6 +15,7 @@ set(artist_test_sources
    typography_test.cpp
    geometry_test.cpp
    image_test.cpp
+   canvas_layer_test.cpp
    text_run_test.cpp
    text_layout_page_test.cpp
    canvas_transforms_page_test.cpp

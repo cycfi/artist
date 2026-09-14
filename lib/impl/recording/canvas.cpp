@@ -564,6 +564,14 @@ namespace cycfi::artist
       );
    }
 
+   void canvas::draw(canvas_layer const& /*layer*/, rect const& dest)
+   {
+      _state->record(
+         op::image, recording::transform_bounds(_state->cur().matrix, dest),
+         canvas_state::paint{}, 0
+      );
+   }
+
    ////////////////////////////////////////////////////////////////////////////
    // States
    void canvas::save()

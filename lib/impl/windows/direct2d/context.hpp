@@ -185,4 +185,34 @@ namespace cycfi::artist::d2d
    }
 }
 
+namespace cycfi::artist
+{
+   ////////////////////////////////////////////////////////////////////////////
+   // canvas_layer_impl: a render target compatible with the canvas's target
+   // (CreateCompatibleRenderTarget), on the same device and at the same DPI.
+   // It stays in BeginDraw between frames; canvas::draw ends the draw to take
+   // its bitmap, then begins the next one.
+   ////////////////////////////////////////////////////////////////////////////
+   class canvas_layer_impl
+   {
+   public:
+
+                                 canvas_layer_impl() = default;
+                                 ~canvas_layer_impl()
+                                 {
+                                    if (rt && drawing)
+                                       rt->EndDraw();
+                                    d2d::release(rt);
+                                 }
+
+                                 canvas_layer_impl(canvas_layer_impl const&) = delete;
+      canvas_layer_impl&         operator=(canvas_layer_impl const&) = delete;
+
+      d2d::bitmap_render_target* rt = nullptr;
+      d2d::context               ctx;
+      extent                     size;
+      bool                       drawing = false;
+   };
+}
+
 #endif

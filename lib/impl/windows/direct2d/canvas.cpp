@@ -12,6 +12,7 @@
 #include <infra/support.hpp>
 #include <infra/utf8_utils.hpp>
 #include <artist/canvas.hpp>
+#include <artist/canvas_layer.hpp>
 #include <artist/detail/font_cache.hpp>
 #include "context.hpp"
 #include "path_impl.hpp"
@@ -1371,5 +1372,44 @@ namespace cycfi::artist
             [&](render_target* t, brush*, bool) { paint(t); }, false);
 
       _state->composite_draw(*_context, dest, paint);
+   }
+
+   void canvas::draw(canvas_layer const& layer, rect const& dest)
+   {
+      auto* impl = layer.impl();
+      if (!_context->target() || !impl || !impl->rt)
+         return;
+
+      // The layer's bitmap can be taken only outside its BeginDraw.
+      if (impl->drawing)
+      {
+         impl->rt->EndDraw();
+         impl->drawing = false;
+      }
+
+      d2d::bitmap* bm = nullptr;
+      impl->rt->GetBitmap(&bm);
+      if (bm)
+      {
+         auto paint = [&](render_target* t)
+         {
+            t->DrawBitmap(
+               bm,
+               D2D1::RectF(dest.left, dest.top, dest.right, dest.bottom),
+               1.0f,
+               D2D1_BITMAP_INTERPOLATION_MODE_LINEAR
+            );
+         };
+
+         if (_state->shadow_visible())
+            _state->apply_blur(*_context, {},
+               [&](render_target* t, brush*, bool) { paint(t); }, false);
+
+         _state->composite_draw(*_context, dest, paint);
+         d2d::release(bm);
+      }
+
+      impl->rt->BeginDraw();
+      impl->drawing = true;
    }
 }

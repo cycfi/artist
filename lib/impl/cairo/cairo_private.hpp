@@ -137,4 +137,28 @@ namespace cycfi::artist
       image_impl(image_impl const&)            = delete;
       image_impl& operator=(image_impl const&) = delete;
    };
+
+   class canvas_layer_impl
+   {
+   public:
+
+      cairo_surface_t*  surface = nullptr;
+      cairo_t*          cr = nullptr;
+      float             width = 0;     // canvas units
+      float             height = 0;
+      double            scale = 1;     // layer surface units per canvas unit
+
+      canvas_layer_impl() = default;
+
+      ~canvas_layer_impl()
+      {
+         if (cr)
+            cairo_destroy(cr);
+         if (surface)
+            cairo_surface_destroy(surface);
+      }
+
+      canvas_layer_impl(canvas_layer_impl const&)            = delete;
+      canvas_layer_impl& operator=(canvas_layer_impl const&) = delete;
+   };
 }

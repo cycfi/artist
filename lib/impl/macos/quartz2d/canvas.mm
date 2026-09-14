@@ -4,6 +4,7 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
 #include <artist/canvas.hpp>
+#include <artist/canvas_layer.hpp>
 #include <artist/detail/font_cache.hpp>
 #include <Quartz/Quartz.h>
 #include <stack>
@@ -1131,6 +1132,12 @@ namespace cycfi::artist
       if (sub)
          CGImageRelease(sub);
       CGImageRelease(full);
+   }
+
+   void canvas::draw(canvas_layer const& layer, rect const& dest)
+   {
+      if (auto* impl = layer.impl())
+         draw(impl->img, dest);
    }
 
    void canvas::add_round_rect_impl(const rect& r, float radius)

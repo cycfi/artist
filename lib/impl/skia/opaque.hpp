@@ -8,6 +8,8 @@
 
 #include "SkImage.h"
 #include "SkBitmap.h"
+#include "SkSurface.h"
+#include <artist/point.hpp>
 #include <variant>
 
 namespace cycfi::artist
@@ -25,6 +27,14 @@ namespace cycfi::artist
       base_type const&  base() const { return *this; }
 
       float             scale = 1.0f;   // bitmap pixels per logical unit
+   };
+
+   class canvas_layer_impl
+   {
+   public:
+
+      sk_sp<SkSurface>  surface;
+      extent            size;           // logical units
    };
 }
 

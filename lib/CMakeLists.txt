@@ -232,6 +232,7 @@ set(ARTIST_SOURCES
 set(ARTIST_HEADERS
    include/artist/affine_transform.hpp
    include/artist/canvas.hpp
+   include/artist/canvas_layer.hpp
    include/artist/circle.hpp
    include/artist/color.hpp
    include/artist/detail
@@ -247,6 +248,7 @@ set(ARTIST_HEADERS
 if (APPLE AND ARTIST_QUARTZ_2D)
    set(ARTIST_IMPL
       impl/macos/quartz2d/canvas.mm
+      impl/macos/quartz2d/canvas_layer.mm
       impl/macos/quartz2d/image.mm
       impl/macos/quartz2d/font.mm
       impl/macos/quartz2d/text_run.mm
@@ -258,6 +260,7 @@ if (ARTIST_SKIA)
 
    set(ARTIST_IMPL
       impl/skia/canvas.cpp
+      impl/skia/canvas_layer.cpp
       impl/skia/image.cpp
       impl/skia/font.cpp
       impl/skia/text_run.cpp
@@ -270,6 +273,7 @@ endif()
 if (ARTIST_CAIRO)
    set(ARTIST_IMPL
       impl/cairo/canvas.cpp
+      impl/cairo/canvas_layer.cpp
       impl/cairo/shadow_blur.cpp
       impl/cairo/path.cpp
       impl/cairo/image.cpp
@@ -281,6 +285,7 @@ endif()
 if (WIN32 AND ARTIST_DIRECT2D)
    set(ARTIST_IMPL
       impl/windows/direct2d/canvas.cpp
+      impl/windows/direct2d/canvas_layer.cpp
       impl/windows/direct2d/context.cpp
       impl/windows/direct2d/path.cpp
       impl/windows/direct2d/path_impl.cpp
@@ -293,6 +298,7 @@ endif()
 if (ARTIST_RECORDING)
    set(ARTIST_IMPL
       impl/recording/canvas.cpp
+      impl/recording/canvas_layer.cpp
       impl/recording/path.cpp
       impl/recording/image.cpp
       impl/recording/font.cpp

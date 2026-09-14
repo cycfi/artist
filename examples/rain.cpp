@@ -4,7 +4,9 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
 #include "app.hpp"
+#include <artist/canvas_layer.hpp>
 #include <cstdlib>
+#include <optional>
 #include <vector>
 
 using namespace cycfi::artist;
@@ -89,21 +91,16 @@ void draw(canvas& cnv)
    float const w = bounds.width();
    float const h = bounds.height();
 
-   static image offscreen{extent{w, h}};
-   static float cached_w = w;
-   static float cached_h = h;
-   if (w != cached_w || h != cached_h)
+   // A layer on the canvas's own device: on a GPU canvas the rain is drawn on
+   // the GPU, with no per-frame upload.
+   static std::optional<canvas_layer> layer;
+   if (!layer || layer->size().x != w || layer->size().y != h)
+      layer.emplace(cnv, extent{w, h});
    {
-      offscreen = image{extent{w, h}};
-      cached_w = w;
-      cached_h = h;
+      auto layer_cnv = canvas{layer->context()};
+      rain(layer_cnv, w, h);
    }
-   {
-      auto ctx = offscreen_image{offscreen};
-      auto offscreen_cnv = canvas{ctx.context()};
-      rain(offscreen_cnv, w, h);
-   }
-   cnv.draw(offscreen);
+   cnv.draw(*layer);
 }
 
 int main(int argc, char const* argv[])
