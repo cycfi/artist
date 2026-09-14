@@ -73,7 +73,7 @@ namespace cycfi::artist
 @interface CocoaView : NSView
 {
    NSTimer*            _task;
-   NSBitmapImageRep*   _rep;
+   CGContextRef        _perf_ctx;
 }
 
 -(void) start;
@@ -89,7 +89,9 @@ namespace cycfi::artist
 - (void) dealloc
 {
    _task = nil;
-   _rep = nil;
+   if (_perf_ctx)
+      CGContextRelease(_perf_ctx);
+   _perf_ctx = nullptr;
 }
 
 - (void) start
@@ -99,6 +101,12 @@ namespace cycfi::artist
 
 - (void) drawRect : (NSRect) dirty
 {
+   // When measuring, frames are drawn only by render, into the host's own 1x
+   // bitmap. Drawing here too would size lazily made layers for this 2x
+   // context.
+   if (perf_enabled())
+      return;
+
    auto cg_ctx = NSGraphicsContext.currentContext.CGContext;
 
    // Clip to the real view bounds so the canvas clip_extent() reports the
@@ -123,25 +131,42 @@ namespace cycfi::artist
    auto start = std::chrono::steady_clock::now();
    if (perf_enabled())
    {
+      // A bitmap context of the host's own, not cacheDisplayInRect: AppKit's
+      // context reports the window's backing scale even when its bitmap is
+      // 1x, so the canvas and its layers would size themselves for 2x.
       auto const bounds = self.bounds;
-      if (!_rep || _rep.size.width != bounds.size.width || _rep.size.height != bounds.size.height)
-         _rep = [[NSBitmapImageRep alloc]
-            initWithBitmapDataPlanes : nullptr
-                          pixelsWide : NSInteger(bounds.size.width)
-                          pixelsHigh : NSInteger(bounds.size.height)
-                       bitsPerSample : 8
-                     samplesPerPixel : 4
-                            hasAlpha : YES
-                            isPlanar : NO
-                      colorSpaceName : NSDeviceRGBColorSpace
-                         bytesPerRow : 0
-                        bitsPerPixel : 0
-         ];
-      [self cacheDisplayInRect : bounds toBitmapImageRep : _rep];
+      size_t const w = size_t(bounds.size.width);
+      size_t const h = size_t(bounds.size.height);
+      if (!_perf_ctx
+         || CGBitmapContextGetWidth(_perf_ctx) != w
+         || CGBitmapContextGetHeight(_perf_ctx) != h)
+      {
+         if (_perf_ctx)
+            CGContextRelease(_perf_ctx);
+         auto space = CGColorSpaceCreateDeviceRGB();
+         _perf_ctx = CGBitmapContextCreate(
+            nullptr, w, h, 8, 0, space,
+            CGBitmapInfo(uint32_t(kCGBitmapByteOrder32Little)
+               | uint32_t(kCGImageAlphaPremultipliedFirst)));
+         CGColorSpaceRelease(space);
+      }
+
+      CGContextSaveGState(_perf_ctx);
+      CGContextClearRect(_perf_ctx, CGRectMake(0, 0, w, h));
+      CGContextTranslateCTM(_perf_ctx, 0, h);
+      CGContextScaleCTM(_perf_ctx, 1, -1);
+      {
+         auto cnv = canvas{(canvas_impl*) _perf_ctx};
+         draw(cnv);
+      }
+      CGContextRestoreGState(_perf_ctx);
+
+      auto image = CGBitmapContextCreateImage(_perf_ctx);
       [CATransaction begin];
       [CATransaction setDisableActions : YES];
-      self.layer.contents = (__bridge id) _rep.CGImage;
+      self.layer.contents = (__bridge id) image;
       [CATransaction commit];
+      CGImageRelease(image);
    }
    else
    {
@@ -152,7 +177,7 @@ namespace cycfi::artist
 
    elapsed_ = std::chrono::duration<double>{stop - start}.count();
    if (perf_enabled())
-      perf_record(elapsed_, int(_rep.pixelsWide), int(_rep.pixelsHigh));
+      perf_record(elapsed_, int(self.bounds.size.width), int(self.bounds.size.height));
 }
 
 -(BOOL) isFlipped
