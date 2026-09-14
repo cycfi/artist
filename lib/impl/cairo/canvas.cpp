@@ -1224,12 +1224,12 @@ namespace cycfi::artist
 
    void canvas::text_align(text_halign align)
    {
-      _state->_info.align |= align;
+      _state->_info.align = (_state->_info.align & ~0x3) | align;
    }
 
    void canvas::text_baseline(text_valign align)
    {
-      _state->_info.align |= align;
+      _state->_info.align = (_state->_info.align & ~0x1C) | align;
    }
 
    ////////////////////////////////////////////////////////////////////////////
