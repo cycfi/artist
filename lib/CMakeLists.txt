@@ -179,8 +179,8 @@ if (ARTIST_SKIA)
       # shared harfbuzz in the same process causes symbol interposition — GTK/
       # Pango calls get routed to the static 14.x copy and crash on widget
       # realize. Using the system harfbuzz exclusively avoids the conflict.
-      # (The APPLE block already does this; headless Artist tests never load GTK
-      # so they don't hit it, but Elements does.)
+      # (Headless Artist tests never load GTK so they don't hit it, but Elements
+      # does.)
       find_package(PkgConfig REQUIRED)
       pkg_check_modules(HARFBUZZ REQUIRED IMPORTED_TARGET harfbuzz)
       find_library(FREETYPE_LIB    freetype     PATHS "${_vcpkg_lib}" NO_DEFAULT_PATH REQUIRED)
@@ -384,7 +384,6 @@ target_include_directories(
    PUBLIC
       include
       infra/include
-      infra/external/filesystem/include/
       external/libunibreak/include/
 )
 

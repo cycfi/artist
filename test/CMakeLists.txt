@@ -232,7 +232,6 @@ add_executable(resources_test resources_test.cpp ${CMAKE_CURRENT_LIST_DIR}/../li
 target_include_directories(resources_test PRIVATE
    ${CMAKE_CURRENT_LIST_DIR}/../lib/include
    ${CMAKE_CURRENT_LIST_DIR}/../lib/infra/include
-   ${CMAKE_CURRENT_LIST_DIR}/../lib/infra/external/filesystem/include
 )
 add_test(NAME resources_test COMMAND resources_test)
 
@@ -250,6 +249,5 @@ add_executable(text_layout_test text_layout_test.cpp)
 target_include_directories(text_layout_test PRIVATE
    ${CMAKE_CURRENT_LIST_DIR}/../lib/include
    ${CMAKE_CURRENT_LIST_DIR}/../lib/infra/include
-   ${CMAKE_CURRENT_LIST_DIR}/../lib/infra/external/filesystem/include
 )
 add_test(NAME text_layout_test COMMAND text_layout_test)
