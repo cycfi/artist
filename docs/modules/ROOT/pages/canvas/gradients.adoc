@@ -298,6 +298,8 @@ A bar with a glassy sheen down it, and a round knob lit from the top left:
    cnv.fill();
 ```
 
+image::canvas/gradients_example.png[alt="A gradient filled bar and a round knob", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/gradients_example.png]
+
 The pair of stops at 0.5 is the hard edge that gives the bar its break
 across the middle. The knob's highlight is off centre because the first
 circle is, which is the third arrangement in the radial figure above.
