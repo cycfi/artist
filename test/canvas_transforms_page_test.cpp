@@ -186,3 +186,86 @@ TEST_CASE("canvas transforms: figure", "[transforms]")
    }
    img.save_png(get_results_path() + "canvas_transforms.png");
 }
+
+// The page's code is written as an artist user writes it, so pull in the
+// one name it uses from cycfi rather than cycfi::artist.
+using cycfi::pi;
+
+namespace
+{
+   // The page's == Example, verbatim, so the page's code is the code that
+   // draws the page's figure.
+   void example(canvas& cnv)
+   {
+      auto r = rect{40, 30, 200, 110};
+      auto center = center_point(r);
+
+      {
+         auto state = cnv.new_state();
+
+         cnv.translate(center.x, center.y);
+         cnv.rotate(pi / 6);
+         cnv.translate(-center.x, -center.y);
+
+         cnv.add_rect(r);
+         cnv.fill_style(colors::gold);
+         cnv.fill();
+      }
+
+      // The state is back, so this outlines r where it started.
+      cnv.add_rect(r);
+      cnv.stroke_style(colors::gray[60]);
+      cnv.line_width(1);
+      cnv.stroke();
+   }
+}
+
+TEST_CASE("canvas transforms: example figure", "[transforms]")
+{
+   // The page figure images/canvas/transforms_example.png: what the code
+   // under == Example draws. The example's own coordinates put the rect at
+   // 40, 30 to 200, 110, so it is shifted to sit centred in the figure.
+   float const w = 560, h = 180;
+   image img{w, h, 2};
+   {
+      offscreen_image ctx{img};
+      canvas cnv{ctx.context()};
+      cnv.fill_style(colors::white);
+      cnv.fill_rect(0, 0, w, h);
+      cnv.translate(160, 20);
+      example(cnv);
+   }
+   img.save_png(get_results_path() + "canvas_transforms_example.png");
+
+#if !defined(ARTIST_RECORDING)
+   // Sample the figure. Under the shift the rect covers 200 to 360 by 50
+   // to 130, so its centre is 280, 90. The image is 2x, and the background
+   // is opaque white, so colors are compared, not alpha.
+   auto blue_at = [&img](int x, int y)
+   {
+      auto p = reinterpret_cast<std::uint8_t const*>(img.pixels());
+      return int(p[4 * (2 * y * int(img.bitmap_size().x) + 2 * x) + 0]);
+   };
+   auto gold = [&](int x, int y) { return blue_at(x, y) < 60; };
+   auto blank = [&](int x, int y) { return blue_at(x, y) > 240; };
+
+   // The rotation is about the rect's own centre, so the centre is gold
+   // and the two opposite corners it swings away from are not.
+   CHECK(gold(280, 90));
+   CHECK(blank(205, 55));
+   CHECK(blank(355, 125));
+
+   // The state was put back, so the outline traces the rect where it
+   // started, square to the axes, not where the rotation left it.
+   auto outline = [&](int x, int y)
+   {
+      auto p = reinterpret_cast<std::uint8_t const*>(img.pixels());
+      auto i = 4 * (2 * y * int(img.bitmap_size().x) + 2 * x);
+      return p[i] == p[i + 1] && p[i + 1] == p[i + 2] && p[i] < 200;
+   };
+   CHECK(outline(200, 50));
+   CHECK(outline(360, 50));
+   CHECK(outline(200, 130));
+   CHECK(outline(360, 130));
+#endif
+}
