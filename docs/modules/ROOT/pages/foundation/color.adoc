@@ -244,7 +244,7 @@ neutral backdrop at 60 percent opacity:
 
 ```c++
    constexpr auto panel = colors::dark_slate_blue;
-   constexpr auto hover = panel.level(1.2f);
+   constexpr auto hover = panel.level(1.8f);
 
    auto swatch = [&](rect bounds, bool hovered)
    {
