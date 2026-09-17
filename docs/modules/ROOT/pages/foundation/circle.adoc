@@ -160,14 +160,20 @@ corner.
 Drawing a dial face as a filled circle with a ring inside it:
 
 ```c++
+   auto bounds = rect{0, 0, 200, 140};
    auto dial = circle{center_point(bounds), 40};
 
-   cnv.circle(dial);
+   cnv.add_circle(dial);
    cnv.fill_style(colors::gray[20]);
    cnv.fill();
 
-   cnv.circle(dial.inset(6));
+   cnv.add_circle(dial.inset(6));
    cnv.stroke_style(colors::light_steel_blue);
    cnv.line_width(2);
    cnv.stroke();
 ```
+
+image::foundation/circle_example.png[alt="A dark disc with a lighter ring inside it", width=560px, align=center, title="What the code above draws.", link={imagesdir}/foundation/circle_example.png]
+
+`inset` shrinks about the same centre, so the ring stays concentric with
+the face without any arithmetic on `cx` and `cy`.
