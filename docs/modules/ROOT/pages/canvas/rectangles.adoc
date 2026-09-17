@@ -2,44 +2,177 @@
 
 == Overview
 
-Rectangles are common enough to be worth their own calls, which build
-and paint the shape in one step, leaving the current path untouched.
+A rectangle is the shape user interface code draws most, so the canvas
+carries it as a one-step call. `cnv.fill_rect(r)` is `cnv.add_rect(r);`
+followed by `cnv.fill();`, written once. The other seven calls on this page
+are the same shorthand for the rounded shape, for stroking, and for a
+rectangle given as loose scalars.
 
-== fill_rect / stroke_rect
+Shorthand is all they are. There is no separate rectangle drawing mode: the
+paint comes from the xref:canvas/styles.adoc[fill or stroke style] then in
+effect, the geometry goes through the
+xref:canvas/transforms.adoc[current transform], and the line width, joins,
+shadow and fill rule apply as they would to any other shape.
 
-Builds and paints a rectangle in one step, leaving the current path untouched.
+CAUTION: Because they go through the
+xref:canvas/current_path.adoc[current path], these calls paint whatever was
+already built into it and empty it afterwards, exactly as `fill` and
+`stroke` do. A rectangle painted in the middle of building a shape takes
+the half-built shape with it. Finish or discard the path first.
+
+NOTE: Artist follows the W3C canvas API, with a difference here. There
+`fillRect` and `strokeRect` paint the rectangle alone and leave the current
+default path as it was. In Artist they are built from `add_rect` and
+`fill`, so the current path is both an input to them and a casualty of
+them.
+
+== Include
+
+```c++
+#include <artist/canvas.hpp>
+```
+
+== Declaration
+
+```c++
+   void  fill_rect(rect const& r);
+   void  fill_round_rect(rect const& r, float radius);
+   void  stroke_rect(rect const& r);
+   void  stroke_round_rect(rect const& r, float radius);
+
+   void  fill_rect(float x, float y, float width, float height);
+   void  fill_round_rect(
+            float x, float y,
+            float width, float height,
+            float radius
+         );
+   void  stroke_rect(float x, float y, float width, float height);
+   void  stroke_round_rect(
+            float x, float y,
+            float width, float height,
+            float radius
+         );
+```
+
+== Expressions
 
 === Notation
 
-`r`:: Instance of `rect`
-`x`, `y`, `width`, `height`, `radius`:: `float`
+`cnv`                :: Object of type `canvas`.
+`r`                  :: Object of type xref:foundation/rect.adoc[rect].
+`x`, `y`             :: `float` coordinates of the rectangle's top left
+                        corner.
+`width`, `height`    :: `float` size of the rectangle.
+`radius`             :: A `float` corner radius.
 
-=== Expressions
+=== Filling
 
-[,c++]
-----
-// variant 1
-cnv.fill_rect(r)
-cnv.fill_rect(x, y, width, height)
+[cols="1,1,1"]
+|===
+| Expression                        | Semantics                | Return Type
 
-// variant 2
-cnv.fill_round_rect(r, radius)
-cnv.fill_round_rect(x, y, width, height, radius)
+| `cnv.fill_rect(r)`                | Fill the rectangle `r`
+                                      with the fill style.     | `void`
+| `cnv.fill_rect(x, y, width,
+    height)`                         | As above, from a
+                                      position and a size.     | `void`
+| `cnv.fill_round_rect(r, radius)`  | Fill `r` with its corners
+                                      rounded to `radius`.     | `void`
+| `cnv.fill_round_rect(x, y, width,
+    height, radius)`                 | As above, from a
+                                      position and a size.     | `void`
+|===
 
-// variant 3
-cnv.stroke_rect(r)
-cnv.stroke_rect(x, y, width, height)
+image::canvas/round_rect_radius.png[alt="The same rectangle filled at four corner radii, the last one clamped", width=560px, align=center, title="What radius does, and where it stops.", link={imagesdir}/canvas/round_rect_radius.png]
 
-// variant 4
-cnv.stroke_round_rect(r, radius)
-cnv.stroke_round_rect(x, y, width, height, radius)
-----
+`radius` is clamped to the range 0 to half the shorter side. A radius of
+zero, or any negative radius, gives square corners and the same shape as
+`fill_rect`. A radius past the clamp gives a stadium, the rightmost figure
+above, and never a shape larger than `r`.
 
-=== Semantics
+An empty rectangle, one with zero width or zero height, fills nothing.
 
-. Fills the rectangle `r` (or `x, y, width, height`).
-. Fills it with corners rounded to `radius`.
-. Strokes the rectangle.
-. Strokes it with rounded corners.
+NOTE: The scalar forms take a position and a **size**, not two corners.
+`cnv.fill_rect(20, 20, 40, 40)` covers x 20 to 60, where
+`rect{20, 20, 40, 40}` is the empty rectangle at that corner. The four
+argument `rect` constructor is `left, top, right, bottom`; these calls are
+`x, y, width, height`, as the W3C API has them.
 
-'''
+=== Stroking
+
+[cols="1,1,1"]
+|===
+| Expression                          | Semantics              | Return Type
+
+| `cnv.stroke_rect(r)`                | Outline the rectangle
+                                        `r` with the stroke
+                                        style.                 | `void`
+| `cnv.stroke_rect(x, y, width,
+    height)`                           | As above, from a
+                                        position and a size.   | `void`
+| `cnv.stroke_round_rect(r, radius)`  | Outline `r` with its
+                                        corners rounded to
+                                        `radius`.              | `void`
+| `cnv.stroke_round_rect(x, y, width,
+    height, radius)`                   | As above, from a
+                                        position and a size.   | `void`
+|===
+
+image::canvas/stroke_rect.png[alt="A filled rectangle beside a stroked one, the stroke straddling the rectangle's edge", width=560px, align=center, title="A fill stops at the edge; a stroke is centred on it.", link={imagesdir}/canvas/stroke_rect.png]
+
+The outline is centred on the edge, like every other stroke: half the
+xref:canvas/styles.adoc#_line_width[line width] falls inside the rectangle
+and half outside, so the ink covers a band the rectangle grown and shrunk
+by half that width. A `stroke_rect` and a `fill_rect` of the same `r` do
+not cover the same pixels, and a wide outline eats into the space inside.
+Inset the rectangle by half the line width where the outline has to stay
+within a given bound.
+
+`radius` is clamped the same way as for a fill. A corner rounded to a
+radius above zero is an arc, so
+xref:canvas/styles.adoc#_line_join[`line_join`] has nothing left to shape
+there. At a radius of zero or below it shapes the corners as it does on any
+other square corner.
+
+Unlike a fill, an empty rectangle still strokes: a zero height rectangle
+draws as a line of the stroke's width.
+
+CAUTION: On Quartz 2D the two `round` calls begin a new path before adding
+the rounded rectangle, so they discard whatever the current path already
+held rather than painting it. Cairo and Skia paint it. This is the
+`add_round_rect` difference recorded under
+xref:canvas/current_path.adoc#_backend_differences[Backend Differences],
+reaching these calls through it. Start a round rect on an empty path until
+it is settled.
+
+== Example
+
+A pill shaped toggle with its knob, and a plain outlined frame around the
+pair:
+
+```c++
+   auto frame = rect{20, 20, 280, 100};
+   cnv.stroke_style(rgba(93, 93, 93, 255));
+   cnv.line_width(2);
+   cnv.stroke_rect(frame);
+
+   auto track = rect{50, 48, 170, 92};
+   cnv.fill_style(rgba(21, 101, 192, 255));
+   cnv.fill_round_rect(track, 1000);      // clamped to a stadium
+
+   cnv.fill_style(colors::white);
+   cnv.fill_round_rect(rect{130, 52, 166, 88}, 1000);
+
+   cnv.font(font_descr{"Open Sans", 15});
+   cnv.fill_style(rgba(26, 26, 26, 255));
+   cnv.text_align(canvas::left | canvas::middle);
+   cnv.fill_text("On", 190, 70);
+```
+
+image::canvas/rectangles_example.png[alt="An outlined frame around a blue pill shaped toggle with a white knob", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/rectangles_example.png]
+
+The track and the knob both ask for a radius of 1000, and the clamp takes
+each to half its own shorter side: a stadium for the oblong track, and a
+circle for the square knob. That is the idiom for a pill, and it is why
+these calls clamp rather than reject. Give a radius no shape can reach
+instead of computing one from the height.
