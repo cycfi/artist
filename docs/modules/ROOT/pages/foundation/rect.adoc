@@ -413,17 +413,26 @@ Laying a fixed size badge into the top right of a bounds rect, with a
 margin, and taking the part of it that is actually on screen:
 
 ```c++
+   auto bounds = rect{20, 20, 320, 140};
+   auto clip = rect{0, 0, 280, 160};
+
    auto slot = rect{0, 0, extent{64, 24}};
    auto badge = align(slot, bounds.inset(8), 1.0f, 0.0f);
 
    if (intersects(badge, clip))
    {
       auto visible = intersection(badge, clip);
-      cnv.rect(visible);
-      cnv.fill_style(colors::gray[90]);
+      cnv.add_rect(visible);
+      cnv.fill_style(colors::gray[30]);
       cnv.fill();
    }
 ```
+
+image::foundation/rect_example.png[alt="A dark badge in the top right of a bounds rect, cut off by a clip rect", width=560px, align=center, title="What the code above draws. The grey outline is bounds and the red one is clip; neither is drawn by the example.", link={imagesdir}/foundation/rect_example.png]
+
+`align` places the slot without any arithmetic on the edges: 1.0 is hard
+right, 0.0 hard top, and `inset(8)` is the margin. The badge runs past
+`clip`, so `intersection` cuts it back to the part that is on screen.
 
 And the same layout step written once for either axis:
 
