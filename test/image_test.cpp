@@ -447,25 +447,44 @@ namespace
    // draws the page's figure.
    void example(canvas& cnv)
    {
+      // Render the badge once, at twice the display resolution.
       image badge{64, 64, 2};
       {
          offscreen_image off{badge};
          canvas bc{off.context()};
+
+         canvas::radial_gradient face{{24, 22}, 2, {32, 32}, 34};
+         face.add_color_stop(0, colors::gold);
+         face.add_color_stop(1, colors::dark_goldenrod);
+         bc.fill_style(face);
          bc.add_circle(32, 32, 30);
-         bc.fill_style(colors::gold);
          bc.fill();
+
+         bc.stroke_style(colors::white.opacity(0.75));
+         bc.line_width(2);
+         bc.add_circle(32, 32, 24);
+         bc.stroke();
+
+         bc.fill_style(colors::white);
+         bc.font(font_descr{"Open Sans", 26}.bold());
+         bc.text_align(canvas::center | canvas::middle);
+         bc.fill_text("A", 32, 32);
       }
 
-      cnv.draw(badge, {10, 10});
-      cnv.draw(badge, {90, 10}, 0.5);
+      // Paint it as often as you like. The drawing above ran once.
+      for (int i = 0; i != 4; ++i)
+      {
+         auto s = 1.0f - i * 0.2f;
+         cnv.draw(badge, {20.0f + i * 80, 20 + (64 - 64 * s) / 2}, s);
+      }
    }
 }
 
 TEST_CASE("Image: example figure", "[image]")
 {
    // The page figure images/foundation/image_example.png: what the code
-   // under == Example draws. The badge is painted at its own size and then
-   // at half of it.
+   // under == Example draws. One badge, rendered once and painted four
+   // times at four scales.
    float const w = 560, h = 110;
    image img{w, h, 2};
    {
@@ -473,22 +492,40 @@ TEST_CASE("Image: example figure", "[image]")
       canvas cnv{ctx.context()};
       cnv.fill_style(colors::white);
       cnv.fill_rect(0, 0, w, h);
-      cnv.translate(215, 13);
+      cnv.translate(133, 13);
       example(cnv);
    }
    img.save_png(get_results_path() + "image_example.png");
 
 #if !defined(ARTIST_RECORDING)
-   // Under the shift the full badge covers 225 to 289 by 23 to 87 and the
-   // half size one 305 to 337 by 23 to 55. The image is 2x.
-   auto blue_at = [&img](int x, int y)
+   // The red, green and blue of one pixel of this 2x figure.
+   auto px = [&img](int x, int y)
    {
       auto p = reinterpret_cast<std::uint8_t const*>(img.pixels());
       p += 4 * (2 * y * int(img.bitmap_size().x) + 2 * x);
-      return int(p[0]);
+      return std::array<int, 3>{p[2], p[1], p[0]};
    };
-   CHECK(blue_at(257, 55) < 60);      // the centre of the full badge
-   CHECK(blue_at(321, 39) < 60);      // the centre of the half size one
-   CHECK(blue_at(321, 70) > 240);     // below the half size one, blank
+   auto is_blank = [](std::array<int, 3> c)
+   {
+      return c[0] > 240 && c[1] > 240 && c[2] > 240;
+   };
+
+   // Under the shift the four badges start at x 153, 233, 313 and 393,
+   // each 64 * scale wide and centred on y 65.
+   for (int i = 0; i != 4; ++i)
+   {
+      auto scale = 1.0f - i * 0.2f;
+      auto cx = int(153 + i * 80 + 32 * scale);
+      // The face is gold: red well above blue.
+      auto face = px(cx, 65 - int(18 * scale));
+      CHECK(face[0] > 140);
+      CHECK(face[0] > face[2] + 60);
+      // Clear of the badge, nothing was painted.
+      CHECK(is_blank(px(cx, 65 - int(40 * scale) - 6)));
+   }
+
+   // The badge is lit from the top left, so its face is brighter there
+   // than at the opposite side of the same disc.
+   CHECK(px(172, 50)[0] + px(172, 50)[1] > px(198, 82)[0] + px(198, 82)[1]);
 #endif
 }
