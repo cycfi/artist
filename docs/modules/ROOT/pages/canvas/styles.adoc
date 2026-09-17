@@ -364,7 +364,7 @@ The shadow is scoped to the fill, so the outline casts none:
 
    {
       auto s = cnv.new_state();
-      cnv.shadow_style({0, 2}, 6, colors::black.opacity(0.4));
+      cnv.shadow_style({0, 4}, 16, colors::black.opacity(0.45));
       cnv.fill_style(colors::white);
       cnv.fill_round_rect(panel, 8);
    }

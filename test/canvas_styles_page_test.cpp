@@ -1386,7 +1386,7 @@ namespace
 
       {
          auto s = cnv.new_state();
-         cnv.shadow_style({0, 2}, 6, colors::black.opacity(0.4));
+         cnv.shadow_style({0, 4}, 16, colors::black.opacity(0.45));
          cnv.fill_style(colors::white);
          cnv.fill_round_rect(panel, 8);
       }
@@ -1426,9 +1426,12 @@ TEST_CASE("canvas styles: example figure", "[styles]")
    };
    CHECK(at(280, 90) > 250);                 // the panel is white
    CHECK(at(20, 90) == Approx(238).margin(2));   // the ground is untouched
-   // The shadow is offset down by 2, so it darkens the ground just under
-   // the panel and not the same distance above it.
-   CHECK(at(280, 150) < 230);
-   CHECK(at(280, 38) > 235);
+   // The shadow is offset downward, so the ground just below the panel is
+   // darkened and the ground the same distance above it is darker by less
+   // or not at all. How far the blur reaches above differs by backend, so
+   // only the asymmetry is asserted, not a value there.
+   CHECK(at(280, 157) < at(20, 157) - 4);
+   CHECK(at(280, 157) < at(280, 33));
+   CHECK(at(20, 157) == Approx(238).margin(2));
 #endif
 }
