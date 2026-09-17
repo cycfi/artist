@@ -279,3 +279,5 @@ drawing code still works in its 64 unit size:
    cnv.draw(badge, {10, 10});
    cnv.draw(badge, {90, 10}, 0.5);
 ```
+
+image::foundation/image_example.png[alt="A gold disc drawn at its own size and again at half size", width=560px, align=center, title="What the code above draws: the badge at its own size, then at half of it.", link={imagesdir}/foundation/image_example.png]

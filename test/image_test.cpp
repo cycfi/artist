@@ -441,3 +441,54 @@ TEST_CASE("Image: loads WebP", "[image]")
    CHECK(near(pixel_at(img, 24, 8), {0, 0, 0, 0}));
 #endif
 }
+namespace
+{
+   // The page's == Example, verbatim, so the page's code is the code that
+   // draws the page's figure.
+   void example(canvas& cnv)
+   {
+      image badge{64, 64, 2};
+      {
+         offscreen_image off{badge};
+         canvas bc{off.context()};
+         bc.add_circle(32, 32, 30);
+         bc.fill_style(colors::gold);
+         bc.fill();
+      }
+
+      cnv.draw(badge, {10, 10});
+      cnv.draw(badge, {90, 10}, 0.5);
+   }
+}
+
+TEST_CASE("Image: example figure", "[image]")
+{
+   // The page figure images/foundation/image_example.png: what the code
+   // under == Example draws. The badge is painted at its own size and then
+   // at half of it.
+   float const w = 560, h = 110;
+   image img{w, h, 2};
+   {
+      offscreen_image ctx{img};
+      canvas cnv{ctx.context()};
+      cnv.fill_style(colors::white);
+      cnv.fill_rect(0, 0, w, h);
+      cnv.translate(215, 13);
+      example(cnv);
+   }
+   img.save_png(get_results_path() + "image_example.png");
+
+#if !defined(ARTIST_RECORDING)
+   // Under the shift the full badge covers 225 to 289 by 23 to 87 and the
+   // half size one 305 to 337 by 23 to 55. The image is 2x.
+   auto blue_at = [&img](int x, int y)
+   {
+      auto p = reinterpret_cast<std::uint8_t const*>(img.pixels());
+      p += 4 * (2 * y * int(img.bitmap_size().x) + 2 * x);
+      return int(p[0]);
+   };
+   CHECK(blue_at(257, 55) < 60);      // the centre of the full badge
+   CHECK(blue_at(321, 39) < 60);      // the centre of the half size one
+   CHECK(blue_at(321, 70) > 240);     // below the half size one, blank
+#endif
+}
