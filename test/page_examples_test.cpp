@@ -101,7 +101,7 @@ namespace
    void color_example(canvas& cnv)
    {
       constexpr auto panel = colors::dark_slate_blue;
-      constexpr auto hover = panel.level(1.2f);
+      constexpr auto hover = panel.level(1.8f);
 
       auto swatch = [&](rect bounds, bool hovered)
       {
@@ -220,17 +220,25 @@ namespace
    void rect_example(canvas& cnv)
    {
       auto bounds = rect{20, 20, 320, 140};
-      auto clip = rect{0, 0, 280, 160};
+      auto clip = rect{0, 0, 282, 160};
 
+      // The card.
+      cnv.fill_style(colors::gray[92]);
+      cnv.fill_round_rect(bounds, 6);
+      cnv.stroke_style(colors::gray[70]);
+      cnv.line_width(1);
+      cnv.stroke_round_rect(bounds, 6);
+
+      // A fixed size badge, hard right and hard top inside the margin.
       auto slot = rect{0, 0, extent{64, 24}};
-      auto badge = align(slot, bounds.inset(8), 1.0f, 0.0f);
+      auto badge = align(slot, bounds.inset(10), 1.0f, 0.0f);
 
+      // Only the part of it that is on screen gets painted.
       if (intersects(badge, clip))
       {
          auto visible = intersection(badge, clip);
-         cnv.add_rect(visible);
-         cnv.fill_style(colors::gray[30]);
-         cnv.fill();
+         cnv.fill_style(colors::medium_violet_red);
+         cnv.fill_round_rect(visible, 4);
       }
    }
 }
@@ -246,29 +254,32 @@ TEST_CASE("page examples: rect", "[page-examples]")
       cnv.fill_rect(0, 0, w, h);
       cnv.translate(120, 10);
 
-      // Scaffolding, not part of the example: the two rects it aligns and
-      // clips against, so the reader can see what the badge landed inside.
+      rect_example(cnv);
+
+      // Scaffolding, not part of the example: where clip runs, so the
+      // reader can see what cut the badge.
       {
          auto s = cnv.new_state();
          cnv.line_width(1.25);
-         cnv.stroke_style(rgba(176, 176, 176, 255));
-         cnv.add_rect(rect{20, 20, 320, 140});
-         cnv.stroke();
          cnv.stroke_style(rgba(229, 57, 53, 255));
-         cnv.add_rect(rect{0, 0, 280, 160});
+         cnv.move_to(282, -10);
+         cnv.line_to(282, 170);
          cnv.stroke();
       }
-
-      rect_example(cnv);
    }
    img.save_png(get_results_path() + "rect_example.png");
 
 #if !defined(ARTIST_RECORDING)
-   // bounds.inset(8) is 28, 28 to 312, 132, so a 64 by 24 slot aligned
-   // right and top lands at 248, 28 to 312, 52. The clip cuts it at 280,
-   // so under the shift the badge covers 368 to 400 by 38 to 62.
-   CHECK(at(img, 380, 50)[0] < 120);      // inside the visible badge
-   CHECK(blank(at(img, 415, 50)));        // past the clip, nothing drawn
+   // bounds.inset(10) is 30, 30 to 310, 130, so a 64 by 24 slot aligned
+   // right and top lands at 246, 30 to 310, 54. The clip cuts it at 282,
+   // so under the shift 366 to 402 by 40 to 64 is painted and the rest of
+   // the slot is not.
+   auto badge = at(img, 380, 52);
+   CHECK(badge[0] > 150);                 // the badge is magenta
+   CHECK(badge[1] < 100);
+   CHECK(at(img, 300, 52)[1] > 200);      // left of the badge, only card
+   CHECK(at(img, 420, 52)[1] > 200);      // past the clip, only card
+   CHECK(blank(at(img, 200, 5)));         // above the card, nothing
 #endif
 }
 

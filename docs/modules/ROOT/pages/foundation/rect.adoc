@@ -414,21 +414,29 @@ margin, and taking the part of it that is actually on screen:
 
 ```c++
    auto bounds = rect{20, 20, 320, 140};
-   auto clip = rect{0, 0, 280, 160};
+   auto clip = rect{0, 0, 282, 160};
 
+   // The card.
+   cnv.fill_style(colors::gray[92]);
+   cnv.fill_round_rect(bounds, 6);
+   cnv.stroke_style(colors::gray[70]);
+   cnv.line_width(1);
+   cnv.stroke_round_rect(bounds, 6);
+
+   // A fixed size badge, hard right and hard top inside the margin.
    auto slot = rect{0, 0, extent{64, 24}};
-   auto badge = align(slot, bounds.inset(8), 1.0f, 0.0f);
+   auto badge = align(slot, bounds.inset(10), 1.0f, 0.0f);
 
+   // Only the part of it that is on screen gets painted.
    if (intersects(badge, clip))
    {
       auto visible = intersection(badge, clip);
-      cnv.add_rect(visible);
-      cnv.fill_style(colors::gray[30]);
-      cnv.fill();
+      cnv.fill_style(colors::medium_violet_red);
+      cnv.fill_round_rect(visible, 4);
    }
 ```
 
-image::foundation/rect_example.png[alt="A dark badge in the top right of a bounds rect, cut off by a clip rect", width=560px, align=center, title="What the code above draws. The grey outline is bounds and the red one is clip; neither is drawn by the example.", link={imagesdir}/foundation/rect_example.png]
+image::foundation/rect_example.png[alt="A card with a badge in its top right corner, cut off part way by a clip edge", width=560px, align=center, title="What the code above draws. The red line marks the right edge of clip; it is not drawn by the example.", link={imagesdir}/foundation/rect_example.png]
 
 `align` places the slot without any arithmetic on the edges: 1.0 is hard
 right, 0.0 hard top, and `inset(8)` is the margin. The badge runs past
