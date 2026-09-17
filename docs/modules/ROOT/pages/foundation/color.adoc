@@ -243,14 +243,23 @@ A panel fill and the brighter shade it takes when hovered, laid over a
 neutral backdrop at 60 percent opacity:
 
 ```c++
-   namespace colors = cycfi::artist::colors;
-
    constexpr auto panel = colors::dark_slate_blue;
    constexpr auto hover = panel.level(1.2f);
 
-   cnv.fill_style(colors::gray[20]);
-   cnv.fill_rect(bounds);
+   auto swatch = [&](rect bounds, bool hovered)
+   {
+      cnv.fill_style(colors::gray[20]);
+      cnv.fill_rect(bounds);
 
-   cnv.fill_style((hovered? hover : panel).opacity(0.6f));
-   cnv.fill_rect(bounds);
+      cnv.fill_style((hovered? hover : panel).opacity(0.6f));
+      cnv.fill_rect(bounds);
+   };
+
+   swatch(rect{40, 20, 240, 110}, false);
+   swatch(rect{280, 20, 480, 110}, true);
 ```
+
+image::foundation/color_example.png[alt="Two blue grey swatches, the second lighter than the first", width=560px, align=center, title="What the code above draws: the panel color, and the brighter shade level gives it.", link={imagesdir}/foundation/color_example.png]
+
+Both `panel` and `hover` are `constexpr`, so the hover shade is computed at
+compile time rather than on every frame.
