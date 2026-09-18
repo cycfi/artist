@@ -4,52 +4,208 @@
 
 `draw` paints an xref:foundation/image.adoc[image] onto the canvas. The
 Image page covers the image itself: loading one, building one from pixels,
-and drawing into one. The overloads here differ in how much of the image
-is drawn, where it lands, and at what size.
+and drawing into one. The eight calls here differ only in how much of the
+image is painted, where it lands, and at what size.
 
-Positions and rectangles are in user space. The image's own size, and the
-`src` rectangle, are in the image's units, `size()`, whatever its scale.
+The ink is the image's own. Unlike every other paint on the canvas, the
+xref:canvas/styles.adoc[fill and stroke styles] do not colour it, and the
+xref:canvas/current_path.adoc[current path] is neither painted with it nor
+disturbed by it. Everything else about the drawing state applies as it
+would to any other paint: the geometry goes through the
+xref:canvas/transforms.adoc[current transform], the clip cuts it, the
+image is composited over what is already there, and the
+xref:canvas/styles.adoc#_shadow[shadow] and the
+xref:canvas/styles.adoc#_compositing[compositing operator] take effect.
 
-== draw
+Positions and rectangles passed to `draw` are in user space. The image's
+own `size()`, and the `src` rectangle, are in the image's units, whatever
+its scale. A 2x image covers the same ground as a 1x image of the same
+`size()`; it carries more detail into it.
 
-image::/canvas/draw.svg[alt="draw", width=460px, role=center]
+NOTE: These are the W3C canvas API's `drawImage`, in its three argument
+counts, spelled as C++ overloads.
 
-Draws an `image` onto the canvas.
+== Include
+
+```c++
+#include <artist/canvas.hpp>
+```
+
+The two layer overloads need the layer's own header as well:
+
+```c++
+#include <artist/canvas_layer.hpp>
+```
+
+== Declaration
+
+```c++
+   void  draw(image const& pic, rect const& src, rect const& dest);
+   void  draw(image const& pic, rect const& dest);
+   void  draw(image const& pic, point pos = {0, 0});
+   void  draw(image const& pic, point pos, float scale);
+   void  draw(image const& pic, float posx, float posy);
+   void  draw(image const& pic, float posx, float posy, float scale);
+
+   void  draw(canvas_layer const& layer, rect const& dest);
+   void  draw(canvas_layer const& layer, point pos = {0, 0});
+```
+
+== Expressions
 
 === Notation
 
-`pic`:: Instance of `image`
-`src`, `dest`:: Instance of `rect`
-`pos`:: Instance of `point`
-`posx`, `posy`, `scale`:: `float`
+`cnv`                :: Object of type `canvas`.
+`pic`                :: Object of type xref:foundation/image.adoc[image].
+`layer`              :: Object of type `canvas_layer`.
+`src`, `dest`        :: Objects of type xref:foundation/rect.adoc[rect].
+`pos`                :: Object of type xref:foundation/point.adoc[point].
+`posx`, `posy`       :: `float` coordinates of the image's top left corner.
+`scale`              :: A `float` multiplier on the image's own size.
 
-=== Expressions
+=== Placing an Image
 
-[,c++]
-----
-// variant 1
-cnv.draw(pic)
-cnv.draw(pic, pos)
-cnv.draw(pic, posx, posy)
+[cols="1,1,1"]
+|===
+| Expression                        | Semantics                | Return Type
 
-// variant 2
-cnv.draw(pic, pos, scale)
-cnv.draw(pic, posx, posy, scale)
+| `cnv.draw(pic)`                   | Paint the whole image
+                                      with its top left corner
+                                      at the origin.           | `void`
+| `cnv.draw(pic, pos)`              | As above, with the corner
+                                      at `pos`.                | `void`
+| `cnv.draw(pic, posx, posy)`       | As above, from loose
+                                      coordinates.             | `void`
+|===
 
-// variant 3
-cnv.draw(pic, dest)
+The image is painted at `pic.size()`, its own units, not at its pixel
+count. An image loaded at 2x has twice the pixels of a 1x one of the same
+`size()` and covers exactly the same ground; the extra pixels go into the
+detail. That is what makes one drawing work on displays of different
+densities.
 
-// variant 4
-cnv.draw(pic, src, dest)
-----
+=== Scaling an Image
 
-=== Semantics
+[cols="1,1,1"]
+|===
+| Expression                          | Semantics              | Return Type
 
-. Draws the whole image with its top left corner at `pos` (or
-`posx, posy`), which defaults to the origin.
-. The same, scaled by `scale`.
-. Draws the whole image stretched to fill `dest`.
-. Draws the region `src` of the image stretched to fill `dest`. This is how
-a single frame is taken from a sprite sheet.
+| `cnv.draw(pic, pos, scale)`         | Paint the whole image
+                                        at `pos`, its size
+                                        multiplied by `scale`. | `void`
+| `cnv.draw(pic, posx, posy, scale)`  | As above, from loose
+                                        coordinates.           | `void`
+| `cnv.draw(pic, dest)`               | Paint the whole image
+                                        stretched to fill
+                                        `dest`.                | `void`
+|===
 
-'''
+image::canvas/draw_placement.png[alt="The same image drawn at its own size, at one and a half times, and stretched into a rectangle", width=560px, align=center, title="The same image placed three ways.", link={imagesdir}/canvas/draw_placement.png]
+
+`scale` multiplies both axes, so the shape is kept. `dest` does not: the
+two axes stretch independently to reach its edges, and an image put into a
+rectangle of another proportion comes out squashed, as the rightmost
+figure above shows. Compute `dest` from the image's own aspect ratio where
+that matters.
+
+Nothing is painted outside `dest`, and an empty `dest`, one with zero
+width or zero height, paints nothing at all.
+
+Enlarging is smoothed rather than blocky: a pixel of the image spread over
+several pixels of the canvas is interpolated, so a small image blown up
+comes out soft. There is no control over that.
+
+=== Drawing Part of an Image
+
+[cols="1,1,1"]
+|===
+| Expression                      | Semantics                  | Return Type
+
+| `cnv.draw(pic, src, dest)`      | Paint the region `src` of
+                                    the image, stretched to
+                                    fill `dest`.               | `void`
+|===
+
+image::canvas/draw_src_dest.png[alt="One numbered cell outlined in a strip of four, and the same cell drawn larger beside it", width=560px, align=center, title="Lifting one frame out of a sheet.", link={imagesdir}/canvas/draw_src_dest.png]
+
+This is how a single frame is taken from a sprite sheet, and it is the
+form the other five are built from: each of them calls this one with `src`
+covering the whole image.
+
+`src` is in the image's own units, the same units as `size()`, so it names
+the same region of a 2x image as of a 1x one. That is the point of the
+choice: a sheet can be swapped for a denser one without touching the
+arithmetic that picks the frames out of it.
+
+CAUTION: Keep `src` inside the image and give both rectangles a positive
+width and height. Outside that the backends disagree, and none of the
+three cases is settled. A `src` that runs past the image's edge is clipped
+to it and the result stretched over the whole of `dest` on Quartz 2D,
+while Cairo shrinks what it paints in proportion, as the W3C API says to.
+A `src` of zero width or height paints nothing on Cairo, again as the W3C
+API says, and the whole image stretched across `dest` on Quartz 2D. A
+`dest` whose `right` is left of its `left` mirrors the image on Cairo and
+does not on Quartz 2D.
+
+=== Drawing a Layer
+
+[cols="1,1,1"]
+|===
+| Expression                      | Semantics                  | Return Type
+
+| `cnv.draw(layer)`               | Paint the whole layer with
+                                    its top left corner at the
+                                    origin.                    | `void`
+| `cnv.draw(layer, pos)`          | As above, with the corner
+                                    at `pos`.                  | `void`
+| `cnv.draw(layer, dest)`         | Paint the whole layer
+                                    stretched to fill `dest`.  | `void`
+|===
+
+A `canvas_layer` is an offscreen surface made for one canvas, living on
+that canvas's device at that canvas's pixel density. It is the buffer to
+reach for when the same drawing is put down every frame, an animation for
+instance: draw into it once through its `context()`, then paint it with
+`draw` as often as needed. It keeps what was drawn into it between frames,
+and unlike an `offscreen_image` it offers no access to its pixels.
+
+Its `size()` is in user space units, like an image's, so drawing it at
+`pos` covers `layer.size()` units from there however dense the canvas
+underneath is. A layer is valid only for the canvas it was made for.
+
+== Example
+
+One sheet of four frames, built once, with the whole sheet painted and
+then a single frame of it lifted out at twice the size:
+
+```c++
+   // Four 32 by 32 frames in one image, drawn once.
+   auto sheet = image{128, 32};
+   {
+      offscreen_image ctx{sheet};
+      canvas scnv{ctx.context()};
+      char const* label[] = {"1", "2", "3", "4"};
+      scnv.font(font_descr{"Open Sans", 18});
+      scnv.text_align(canvas::center | canvas::middle);
+      for (int i = 0; i != 4; ++i)
+      {
+         scnv.fill_style(rgba(21, 101, 192, 80 + i * 58));
+         scnv.add_circle(circle{i * 32 + 16.0f, 16, 14});
+         scnv.fill();
+         scnv.fill_style(colors::white);
+         scnv.fill_text(label[i], i * 32 + 16.0f, 16);
+      }
+   }
+
+   // The whole sheet, then its third frame at twice the size.
+   cnv.draw(sheet, point{20, 20});
+   cnv.draw(sheet, rect{64, 0, 96, 32}, rect{20, 72, 84, 136});
+```
+
+image::canvas/images_example.png[alt="A strip of four numbered discs, with the third of them repeated below at twice the size", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/images_example.png]
+
+The frame below is the third disc of the sheet and nothing else, picked
+out by a `src` of `rect{64, 0, 96, 32}`: 32 units wide, starting 64 units
+in. It is soft where the sheet above it is crisp, which is the cost of
+enlarging a raster and the reason a sheet is usually authored at the
+largest size it will be drawn.
