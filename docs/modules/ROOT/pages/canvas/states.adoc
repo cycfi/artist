@@ -2,48 +2,180 @@
 
 == Overview
 
-The canvas holds its styles, transform and clip as one bundle of state.
-Saving pushes a copy of that bundle; restoring pops it. This is how you
-draw under a transform or a clip without disturbing what comes after.
+The canvas draws with whatever styles, transform and clip are in effect at
+the moment of the call. Those settings are not separate knobs but one
+bundle, the drawing state, and the canvas keeps a stack of them.
+`cnv.save()` pushes a copy of the bundle; `cnv.restore()` pops it and makes
+it current again. Everything set in between is undone in one step.
 
-== new_state / save / restore
+This is how drawing code stays composable. A function that translates the
+origin, narrows the clip and picks a font has changed the canvas for
+everything drawn after it, and a clip in particular can only ever be
+narrowed, never widened. Saving first and restoring at the end is the only
+way to hand the canvas back as it was found.
 
-Saves and restores the canvas state: its styles, transform and clip, taken
-together.
+`cnv.new_state()` does that pairing for you. It returns an object that
+saves on construction and restores when it goes out of scope, including
+when an exception carries you out of the block, so the two halves cannot
+drift apart as the code between them grows. Prefer it to a hand written
+`save` and `restore`.
+
+The bundle holds the xref:canvas/styles.adoc[fill and stroke styles],
+whether a colour or a gradient, the line width, cap, join and miter limit,
+the shadow, the composite operation, the
+xref:foundation/font.adoc[font] and the text alignment, the
+xref:canvas/transforms.adoc[current transform], and the clip.
+
+It does not hold the xref:canvas/current_path.adoc[current path]. A shape
+half built before a save is still half built after the restore, and one
+built inside a scope is still there when the scope ends. Nor does it hold
+the pixels: a restore is not an undo, and ink laid down inside a scope
+stays where it landed.
+
+NOTE: These are the W3C canvas API's `save` and `restore`, and the bundle
+is its drawing state, which likewise excludes the current default path and
+the bitmap. `new_state` is Artist's own; the W3C API has no scoped form.
+
+== Include
+
+```c++
+#include <artist/canvas.hpp>
+```
+
+== Declaration
+
+```c++
+   class state
+   {
+   public:
+
+      state(canvas& cnv);
+      state(state&& rhs) noexcept;
+      state(state const&) = delete;
+      ~state();
+
+      state&   operator=(state const&) = delete;
+      state&   operator=(state&& rhs) noexcept;
+   };
+
+   state    new_state();
+   void     save();
+   void     restore();
+```
+
+== Expressions
 
 === Notation
 
-`cnv`:: Instance of `canvas`
+`cnv`          :: Object of type `canvas`.
+`s`, `s2`      :: Objects of type `canvas::state`.
 
-=== Expressions
+=== Saving and Restoring
 
-[,c++]
-----
-// variant 1
-cnv.new_state()
+[cols="1,1,1"]
+|===
+| Expression          | Semantics                      | Return Type
 
-// variant 2
-cnv.save()
-cnv.restore()
-----
+| `cnv.new_state()`   | Push a copy of the drawing
+                        state and return an object
+                        that pops it when destroyed.  | `canvas::state`
+| `cnv.save()`        | Push a copy of the drawing
+                        state.                        | `void`
+| `cnv.restore()`     | Pop the drawing state and make
+                        it current.                   | `void`
+|===
 
-=== Semantics
+image::canvas/state_stack.png[alt="Five swatches painted by the same statement, their colours following a nested save and restore", width=560px, align=center, title="One statement, five results: the fill style follows the stack.", link={imagesdir}/canvas/state_stack.png]
 
-. Saves the state and returns a `canvas::state` that restores it when
-destroyed, including when an exception carries you out of the block. It may
-be moved but not copied.
-. Saves and restores the state by hand. Every `save` needs a matching
-`restore`.
-. Variant 1 is preferable for that reason.
+Every swatch above is painted by the same `fill_round_rect` call. Only the
+depth of the stack differs, and with it the fill style the call reads. What
+goes on comes back off in reverse, so the fourth swatch is the second one's
+colour and the fifth is the first's.
 
-[,c++]
-----
-{
-   auto state = cnv.new_state();
-   cnv.clip(p);
-   cnv.translate(offset);
-   // draw
-}  // the clip and the transform are undone here
-----
+`save` and `restore` have to balance. `cnv.new_state()` is the way to be
+sure of that: it is `save` in a constructor and `restore` in a destructor,
+so the block's shape and the stack's depth are the same thing.
 
-'''
+```c++
+   {
+      auto st = cnv.new_state();
+      cnv.clip(p);
+      cnv.translate(offset);
+      // draw
+   }  // the clip and the transform are undone here
+```
+
+CAUTION: A `restore` with no matching `save` is a no-op in the W3C API, and
+is not one here. On Quartz 2D and Skia it reads the state stack after
+emptying it, which crashes. On Cairo it puts the drawing context into a
+permanent error state, so nothing drawn afterwards appears and no error is
+raised. Only the recording backend does nothing, as the W3C API asks. Keep
+the calls balanced, and prefer `new_state`, which cannot be unbalanced.
+
+CAUTION: The fill rule is in the bundle on Cairo and outside it on
+Quartz 2D. `cnv.fill_rule(rule)` set inside a scope is undone by the restore
+on the first and outlives the scope on the second. Set it where you fill
+rather than relying on either.
+
+=== Constructors and Assignment
+
+[cols="1,1"]
+|===
+| Expression                | Semantics
+
+| `canvas::state(cnv)`      | Push a copy of the drawing state of `cnv`.
+                              What `cnv.new_state()` returns; there is no
+                              default constructor.
+| `canvas::state(std::move(s))`
+                            | Take over the save held by `s`, which is
+                              left holding nothing and pops nothing.
+| `s = std::move(s2)`       | Take over the save held by `s2`, which is
+                              left holding nothing.
+|===
+
+A `state` cannot be copied. Two objects popping one save would unbalance
+the stack, so the copy constructor and the copy assignment operator are
+deleted, and the move operations hand the save over rather than duplicate
+it. The object is only a token for one entry on the stack; it holds no
+copy of the state itself.
+
+CAUTION: Move assignment does not restore first. `s = std::move(s2)`
+overwrites whatever save the target was holding without popping it, so that
+entry stays on the stack for the rest of the drawing. Assign only over a
+`state` that has already been moved from.
+
+== Example
+
+A label drawn inside a panel, rotated and clipped to it, leaving the canvas
+as it was found:
+
+```c++
+   auto panel = rect{20, 20, 260, 120};
+
+   cnv.fill_style(rgba(21, 101, 192, 255));
+   cnv.fill_round_rect(panel, 8);
+
+   {
+      auto st = cnv.new_state();
+      cnv.add_round_rect(panel, 8);
+      cnv.clip();
+      cnv.translate(panel.left + 20, panel.bottom - 26);
+      cnv.rotate(-0.35);
+      cnv.font(font_descr{"Open Sans", 34});
+      cnv.fill_style(colors::white);
+      cnv.fill_text("Artist Artist Artist", 0, 0);
+   }
+
+   // The clip, the transform, the font and the fill style are all back:
+   // this lands outside the panel, unclipped and unrotated.
+   cnv.fill_style(rgba(26, 26, 26, 255));
+   cnv.fill_rect(280, 60, 40, 40);
+```
+
+image::canvas/states_example.png[alt="A blue panel with a rotated white label cut off at its corner, and a dark square outside it", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/states_example.png]
+
+The label is longer than the panel and runs off its corner, where the clip
+cuts it. The square after the block is the proof that the scope closed
+cleanly: it is dark rather than white, square to the axes rather than
+rotated, and outside the panel rather than clipped away. None of the four
+settings had to be put back by hand.
