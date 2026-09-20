@@ -4,13 +4,13 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 
    Asserts the claims of docs/modules/ROOT/pages/canvas.adoc, the Canvas
-   overview, and draws its figure. Each case names the page section it comes
-   from.
+   section page, and draws its figure. Each case names the page section it
+   comes from.
 
-   The overview states in prose what the topic pages state call by call, so
-   the cases here are deliberately the overview's own claims only: the
-   drawing order, the coordinate system, and what the canvas carries between
-   calls. The per-call behaviour is asserted by each topic page's test.
+   The page states in prose what the topic pages state call by call, so the
+   cases here are deliberately its own claims only: the drawing order, the
+   coordinate system, and what the canvas carries between calls. The
+   per-call behaviour is asserted by each topic page's test.
 
    Every probe renders onto a transparent 100 by 100 image and samples
    pixels, so a pixel (x, y) covers [x, x+1) by [y, y+1). Sample points sit
@@ -48,7 +48,7 @@ namespace
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// == Overview / === Drawing Is Immediate
+// == The Drawing Model / === Drawing Is Immediate
 
 TEST_CASE("canvas overview: a later call paints over an earlier one",
    "[canvas_page]")
@@ -73,7 +73,7 @@ TEST_CASE("canvas overview: a later call paints over an earlier one",
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// == Overview / === One Call, Five Steps
+// == The Drawing Model / === One Call, Five Steps
 
 TEST_CASE("canvas overview: the five steps apply to one paint",
    "[canvas_page]")
@@ -127,7 +127,7 @@ TEST_CASE("canvas overview: fill and stroke consume the path", "[canvas_page]")
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// == Overview / === Coordinates and Units
+// == The Drawing Model / === Coordinates and Units
 
 TEST_CASE("canvas overview: the origin is the top left and y grows down",
    "[canvas_page]")
@@ -237,7 +237,7 @@ TEST_CASE("canvas overview: a hairline on a unit boundary straddles two rows",
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// == Overview / === The Canvas Carries State
+// == The Drawing Model / === The Canvas Carries State
 
 TEST_CASE("canvas overview: a style set once applies to what follows",
    "[canvas_page]")

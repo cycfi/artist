@@ -1,5 +1,7 @@
 = Canvas
 
+== Overview
+
 The `canvas` is the surface you draw on, and the type most of Artist is
 reached through. The canvas API is a derivative of and in line with the
 spirit of the HTML5 canvas API, but using a slightly different syntax and
@@ -10,7 +12,25 @@ It is built on top of xref:foundation.adoc[Foundation classes] such as
 points and rectangles, and on drawable classes such as xref:path.adoc[Path]
 and xref:foundation/image.adoc[Image].
 
-== Overview
+== The Pages in This Section
+
+* xref:canvas/transforms.adoc[Transforms] map user space onto the surface.
+* xref:canvas/current_path.adoc[Current Path] builds geometry into the
+  canvas itself, then paints it. For geometry kept as an object, see
+  xref:path.adoc[Path].
+* xref:canvas/styles.adoc[Styles] decide how fills and strokes render.
+* xref:canvas/gradients.adoc[Gradients] fill and stroke with a ramp of
+  color.
+* xref:canvas/rectangles.adoc[Rectangles] build and paint in one step.
+* xref:canvas/text.adoc[Text] draws and measures strings.
+* xref:canvas/images.adoc[Drawing Images] paints an image onto the canvas.
+* xref:canvas/states.adoc[States] save and restore the canvas.
+* xref:canvas/context.adoc[Context] covers where a canvas comes from, how
+  long it lives, and the backend handle underneath it.
+
+Throughout, `cnv` is an instance of `canvas`.
+
+== The Drawing Model
 
 === Drawing Is Immediate
 
@@ -99,7 +119,7 @@ keeps a stack of the whole bundle for exactly this reason, and
 `cnv.new_state()` pushes a copy and pops it at the end of the enclosing
 scope. See xref:canvas/states.adoc[States].
 
-=== Compared With the W3C Canvas API
+== Compared With the W3C Canvas API
 
 The W3C canvas API is the source of record for what each call is meant to
 mean, and Artist follows it. Most of the difference is spelling:
@@ -122,21 +142,3 @@ say so one at a time:
 Artist also has what a browser does not need. A canvas is a view onto a
 surface the host owns, so there is a way to name that surface and to reach
 the backend underneath it: see xref:canvas/context.adoc[Context].
-
-== The Pages in This Section
-
-* xref:canvas/transforms.adoc[Transforms] map user space onto the surface.
-* xref:canvas/current_path.adoc[Current Path] builds geometry into the
-  canvas itself, then paints it. For geometry kept as an object, see
-  xref:path.adoc[Path].
-* xref:canvas/styles.adoc[Styles] decide how fills and strokes render.
-* xref:canvas/gradients.adoc[Gradients] fill and stroke with a ramp of
-  color.
-* xref:canvas/rectangles.adoc[Rectangles] build and paint in one step.
-* xref:canvas/text.adoc[Text] draws and measures strings.
-* xref:canvas/images.adoc[Drawing Images] paints an image onto the canvas.
-* xref:canvas/states.adoc[States] save and restore the canvas.
-* xref:canvas/context.adoc[Context] covers where a canvas comes from, how
-  long it lives, and the backend handle underneath it.
-
-Throughout, `cnv` is an instance of `canvas`.
