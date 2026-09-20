@@ -3,7 +3,7 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 
-   Asserts the claims of docs/modules/ROOT/pages/canvas/management.adoc and
+   Asserts the claims of docs/modules/ROOT/pages/canvas/context.adoc and
    draws its figure. Each case names the page section it comes from.
 
    Every probe renders onto a transparent 100 by 100 image and samples
@@ -58,8 +58,8 @@ static_assert(!std::is_default_constructible_v<canvas>);
 static_assert(std::is_constructible_v<bool, canvas&>);
 static_assert(!std::is_convertible_v<canvas&, bool>);
 
-TEST_CASE("canvas management: the canvas does not own its context",
-   "[canvas_management]")
+TEST_CASE("canvas context: the canvas does not own its context",
+   "[canvas_context]")
 {
    // Destroying the canvas does not destroy the context. A second canvas
    // built on the same context draws, and the first one's ink is still
@@ -92,8 +92,8 @@ TEST_CASE("canvas management: the canvas does not own its context",
 #endif
 }
 
-TEST_CASE("canvas management: the context keeps what the last call left",
-   "[canvas_management]")
+TEST_CASE("canvas context: the context keeps what the last call left",
+   "[canvas_context]")
 {
    // "Destroying the canvas does not put the context back the way it was
    // found." The first canvas translates the context and dies; the second
@@ -122,8 +122,8 @@ TEST_CASE("canvas management: the context keeps what the last call left",
 ///////////////////////////////////////////////////////////////////////////////
 // == Expressions / === Validity
 
-TEST_CASE("canvas management: a canvas on a live context is valid",
-   "[canvas_management]")
+TEST_CASE("canvas context: a canvas on a live context is valid",
+   "[canvas_context]")
 {
    image img{100, 100, 1};
    offscreen_image ctx{img};
@@ -134,8 +134,8 @@ TEST_CASE("canvas management: a canvas on a live context is valid",
 }
 
 #if defined(ARTIST_QUARTZ_2D) || defined(ARTIST_RECORDING)
-TEST_CASE("canvas management: a null context is invalid (current behaviour)",
-   "[canvas_management]")
+TEST_CASE("canvas context: a null context is invalid (current behaviour)",
+   "[canvas_context]")
 {
    // The page's CAUTION. Only a canvas built from a null canvas_impl* is
    // invalid, and only these two backends survive building one: the Cairo
@@ -154,8 +154,8 @@ TEST_CASE("canvas management: a null context is invalid (current behaviour)",
 ///////////////////////////////////////////////////////////////////////////////
 // == Expressions / === Backend Access
 
-TEST_CASE("canvas management: impl is the pointer that went in",
-   "[canvas_management]")
+TEST_CASE("canvas context: impl is the pointer that went in",
+   "[canvas_context]")
 {
    image img{100, 100, 1};
    offscreen_image ctx{img};
@@ -193,9 +193,9 @@ namespace
    }
 }
 
-TEST_CASE("canvas management: Example and its figure", "[canvas_management]")
+TEST_CASE("canvas context: Example and its figure", "[canvas_context]")
 {
-   // The page figure images/canvas/management_example.png. The example sizes
+   // The page figure images/canvas/context_example.png. The example sizes
    // itself to the canvas it is given, so the figure and the probe are one
    // render, at the width the page places the image.
    float const w = 560, h = 200;
@@ -233,5 +233,5 @@ TEST_CASE("canvas management: Example and its figure", "[canvas_management]")
    CHECK(ring.b < 70);
 #endif
 
-   img.save_png(get_results_path() + "canvas_management_example.png");
+   img.save_png(get_results_path() + "canvas_context_example.png");
 }

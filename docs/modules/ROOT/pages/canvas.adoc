@@ -119,10 +119,9 @@ say so one at a time:
   through `cnv.new_state()`, whose scope makes an unbalanced stack
   unwritable.
 
-Artist also has what a browser does not need: a canvas is a view onto a
+Artist also has what a browser does not need. A canvas is a view onto a
 surface the host owns, so there is a way to name that surface and to reach
-the backend underneath it. See
-xref:canvas/management.adoc[Canvas Management].
+the backend underneath it: see xref:canvas/context.adoc[Context].
 
 == The Pages in This Section
 
@@ -137,7 +136,7 @@ xref:canvas/management.adoc[Canvas Management].
 * xref:canvas/text.adoc[Text] draws and measures strings.
 * xref:canvas/images.adoc[Drawing Images] paints an image onto the canvas.
 * xref:canvas/states.adoc[States] save and restore the canvas.
-* xref:canvas/management.adoc[Canvas Management] covers where a canvas
-  comes from, how long it lives, and the backend handle underneath it.
+* xref:canvas/context.adoc[Context] covers where a canvas comes from, how
+  long it lives, and the backend handle underneath it.
 
 Throughout, `cnv` is an instance of `canvas`.

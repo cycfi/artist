@@ -1,4 +1,4 @@
-= Canvas Management
+= Context
 
 == Overview
 
@@ -82,11 +82,14 @@ from decides how long that is:
 * A host window makes one for each draw call and passes the canvas down by
   reference. The reference is good for the duration of that call only, and
   keeping it past the return leaves a canvas on a dead context.
-* xref:foundation/image.adoc[`offscreen_image::context()`] is good while
-  the `offscreen_image` lives, so the canvas goes out of scope first and
-  the image is complete when it does.
-* xref:canvas/images.adoc[`canvas_layer::context()`] is good while the
-  layer lives.
+* xref:foundation/image.adoc[`offscreen_image::context()`] draws into an
+  image held in memory, whose pixels can be read back and saved. It is good
+  while the `offscreen_image` lives, so the canvas goes out of scope first
+  and the image is complete when it does.
+* xref:canvas/images.adoc[`canvas_layer::context()`] draws into a surface on
+  the canvas's own device, the GPU where the canvas renders there, at the
+  canvas's pixel density and with no pixel access. It is good while the
+  layer lives, and only for the canvas the layer was made for.
 
 Destroying the canvas does not destroy the context, and does not put the
 context back the way it was found. Whatever the last drawing call left in
@@ -179,7 +182,7 @@ itself to whatever that canvas turns out to be:
    }
 ```
 
-image::canvas/management_example.png[alt="A blue rounded panel with a white disc at its centre, ringed in near black", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/management_example.png]
+image::canvas/context_example.png[alt="A blue rounded panel with a white disc at its centre, ringed in near black", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/context_example.png]
 
 Each shape is set up, built into the canvas and painted, in that order. The
 ring is a second pass over the circle the disc was filled from, because
