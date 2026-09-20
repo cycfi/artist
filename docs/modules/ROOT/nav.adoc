@@ -22,5 +22,6 @@
 *** xref:canvas/text.adoc[Text]
 *** xref:canvas/images.adoc[Drawing Images]
 *** xref:canvas/states.adoc[States]
+*** xref:canvas/management.adoc[Canvas Management]
 ** xref:text_run.adoc[Text Run]
 ** xref:text_layout.adoc[Text Layout]

@@ -27,6 +27,7 @@ set(artist_test_sources
    canvas_images_page_test.cpp
    canvas_states_page_test.cpp
    canvas_page_test.cpp
+   canvas_management_page_test.cpp
    page_examples_test.cpp
    text_layout_render_test.cpp
    text_edit_sim_test.cpp
