@@ -11,6 +11,7 @@
 *** xref:foundation/color.adoc[Color]
 *** xref:foundation/font.adoc[Font]
 *** xref:foundation/image.adoc[Image]
+*** xref:foundation/canvas_layer.adoc[Canvas Layer]
 *** xref:foundation/resources.adoc[Resources]
 ** xref:path.adoc[Path]
 ** xref:canvas.adoc[Canvas]
