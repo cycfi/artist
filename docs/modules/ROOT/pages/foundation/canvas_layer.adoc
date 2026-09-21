@@ -45,16 +45,16 @@ wherever the canvas renders.
    {
    public:
 
-                        canvas_layer(canvas& cnv, extent size);
-                        canvas_layer(canvas_layer&& rhs) noexcept;
-                        ~canvas_layer();
+                         canvas_layer(canvas& cnv, extent size);
+                         canvas_layer(canvas_layer&& rhs) noexcept;
+                         ~canvas_layer();
 
-                        canvas_layer(canvas_layer const&) = delete;
-      canvas_layer&     operator=(canvas_layer const&) = delete;
-      canvas_layer&     operator=(canvas_layer&& rhs) noexcept;
+                         canvas_layer(canvas_layer const&) = delete;
+      canvas_layer&      operator=(canvas_layer const&) = delete;
+      canvas_layer&      operator=(canvas_layer&& rhs) noexcept;
 
-      canvas_impl*      context() const;
-      extent            size() const;
+      canvas_impl*       context() const;
+      extent             size() const;
       canvas_layer_impl* impl() const;
    };
 ```
