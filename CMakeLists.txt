@@ -62,16 +62,24 @@ if (IPO_SUPPORTED)
    message(STATUS "Link-time optimization supported. Will be enabled in Release build type")
 endif()
 
-if (APPLE)
-  option(ARTIST_QUARTZ_2D "build Artist using quartz 2d on MacOS" ON)
-  option(ARTIST_SKIA "build Artist using skia" OFF)
-else()
-  option(ARTIST_SKIA "build Artist using skia" ON)
-endif()
-
+option(ARTIST_QUARTZ_2D "build Artist using quartz 2d on MacOS" OFF)
+option(ARTIST_SKIA "build Artist using skia" OFF)
 option(ARTIST_CAIRO "build Artist using cairo" OFF)
 option(ARTIST_DIRECT2D "build Artist using Direct2D on Windows" OFF)
 option(ARTIST_RECORDING "build Artist with the headless recording backend" OFF)
+
+# With no backend chosen, use the platform's native one: Direct2D on
+# Windows, Quartz 2D on macOS, Cairo elsewhere.
+if (NOT (ARTIST_QUARTZ_2D OR ARTIST_SKIA OR ARTIST_CAIRO OR ARTIST_DIRECT2D
+      OR ARTIST_RECORDING))
+  if (WIN32)
+    set(ARTIST_DIRECT2D ON)
+  elseif (APPLE)
+    set(ARTIST_QUARTZ_2D ON)
+  else()
+    set(ARTIST_CAIRO ON)
+  endif()
+endif()
 
 if (ARTIST_RECORDING)
   set(ARTIST_DIRECT2D OFF)
