@@ -319,10 +319,15 @@ source_group("Header Files\\artist"
 
 add_library(artist STATIC)
 
-# Only the Cairo backend needs pkg-config here, to find cairo and its
-# companions below. The Skia branches ask for it where they use it, and
-# Quartz2D needs none of it: a macOS build with the default backend does
-# not require pkg-config at all.
+# The Cairo and recording backends need cairo, harfbuzz, fontconfig,
+# freetype and webp. On macOS and Windows a prebuilt bundle supplies them,
+# along with the pkg-config they are found with, so nothing has to be
+# installed; Linux uses its own. Quartz2D and Skia need none of this: a
+# macOS build with the default backend requires no pkg-config at all.
+if (ARTIST_CAIRO OR ARTIST_RECORDING)
+   include(${CMAKE_CURRENT_LIST_DIR}/../cmake/CairoPrebuilt.cmake)
+endif()
+
 if (ARTIST_CAIRO AND NOT MSVC)
    find_package(PkgConfig REQUIRED)
 endif()
@@ -344,10 +349,10 @@ if (ARTIST_CAIRO AND NOT MSVC)
 endif()
 
 if (ARTIST_CAIRO AND MSVC)
-   # cairo, harfbuzz, and fontconfig are meson-built vcpkg ports; they
-   # install pkg-config files only (no cmake config). pkgconf (also in
-   # vcpkg.json) provides the pkg-config executable so pkg_check_modules
-   # works on Windows the same way it does on Linux and macOS.
+   # cairo, harfbuzz and fontconfig install pkg-config files only (no cmake
+   # config), so they are found the same way on every platform. pkgconf
+   # supplies the pkg-config executable on Windows: from the prebuilt bundle,
+   # or from vcpkg.json under a vcpkg toolchain.
    find_package(PkgConfig REQUIRED)
    pkg_check_modules(cairo REQUIRED IMPORTED_TARGET cairo)
    pkg_check_modules(cairo_ft REQUIRED IMPORTED_TARGET cairo-ft)

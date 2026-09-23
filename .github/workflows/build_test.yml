@@ -579,6 +579,135 @@ jobs:
         echo "uploaded skia-prebuilt/$ver/$name"
 
   ###########################################################################
+  # Cairo dependency bundle
+  #
+  # Builds cairo, harfbuzz, fontconfig, freetype, libwebp and the pkgconf
+  # tool with vcpkg (no Artist build) and uploads the vcpkg installed tree to
+  # R2 as the bundle cmake/CairoPrebuilt.cmake consumes, so macOS and Windows
+  # builds of the Cairo backend need nothing installed. Linux uses its own
+  # libraries and has no bundle.
+  ###########################################################################
+  cairo-bundle:
+    name: "Cairo bundle (${{ matrix.config.triplet }})"
+    if: >
+      github.event_name != 'workflow_dispatch' ||
+      inputs.job == 'all' ||
+      inputs.job == 'cairo'
+    runs-on: ${{ matrix.config.os }}
+    env:
+      VCPKG_BINARY_SOURCES: "clear;http,https://media.cycfi.com/vcpkg-cache/{sha}.zip,read;x-aws,s3://cycfi-media/vcpkg-cache/,write"
+      AWS_ENDPOINT_URL: "https://24c350f8d000d722e6bcc12e3b03469a.r2.cloudflarestorage.com"
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - os: windows-latest
+          triplet: x64-windows
+        - os: macos-latest
+          triplet: arm64-osx
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Resolve MSVC environment (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+        $vsPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+        $vcvars = Join-Path $vsPath "VC\Auxiliary\Build\vcvars64.bat"
+        echo "VCVARS64=$vcvars" >> $env:GITHUB_ENV
+
+    - name: Install dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: brew install ninja zstd
+
+    - name: Install dependencies (Windows)
+      if: runner.os == 'Windows'
+      run: choco install ninja
+      shell: cmd
+
+    - name: Bootstrap vcpkg (macOS)
+      if: runner.os == 'macOS'
+      run: git submodule update --init --checkout lib/external/vcpkg && lib/external/vcpkg/bootstrap-vcpkg.sh -disableMetrics
+
+    - name: Bootstrap vcpkg (Windows)
+      if: runner.os == 'Windows'
+      run: git submodule update --init --checkout lib/external/vcpkg && lib\external\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+      shell: cmd
+
+    # Classic mode, not the manifest: the manifest also names Skia, which this
+    # bundle does not carry.
+    - name: Build the Cairo dependencies (vcpkg)
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [ "${{ runner.os }}" = "Windows" ]; then
+          vcpkg=lib/external/vcpkg/vcpkg.exe
+        else
+          vcpkg=lib/external/vcpkg/vcpkg
+        fi
+        "$vcpkg" install --classic \
+          --triplet ${{ matrix.config.triplet }} \
+          --host-triplet ${{ matrix.config.triplet }} \
+          --overlay-triplets=vcpkg/triplets \
+          --x-install-root=installed \
+          cairo[core,freetype,fontconfig] harfbuzz fontconfig freetype libwebp pkgconf
+
+    - name: Upload the Cairo dependency bundle to R2
+      # Skip when the R2 secret is unavailable (e.g. fork PRs).
+      if: env.AWS_ACCESS_KEY_ID != ''
+      shell: bash
+      run: |
+        set -euo pipefail
+        ver=1
+        triplet="${{ matrix.config.triplet }}"
+        installed="installed"
+        base="s3://cycfi-media/cairo-prebuilt/$ver"
+        s3() { aws s3 "$@" --endpoint-url "$AWS_ENDPOINT_URL"; }
+
+        # Name the bundle by cairo's vcpkg ABI, which changes with its
+        # sources, recipe, compiler and dependencies, so a published bundle
+        # is never replaced and an unchanged ABI uploads nothing.
+        abi_info="$installed/$triplet/share/cairo/vcpkg_abi_info.txt"
+        test -f "$abi_info"
+        abi=$(openssl dgst -sha256 "$abi_info" | awk '{print $NF}' | cut -c1-16)
+        name="${triplet}-${abi}.tar.zst"
+        current=$(s3 cp "$base/${triplet}.current" - 2>/dev/null || true)
+        if [ "${current%% *}" = "$name" ]; then
+          echo "cairo-prebuilt/$ver/$name is already current"
+          exit 0
+        fi
+
+        key="cairo-prebuilt/$ver/$name"
+        if aws s3api head-object --bucket cycfi-media --key "$key" \
+             --endpoint-url "$AWS_ENDPOINT_URL" > /dev/null 2>&1; then
+          # An earlier run published this ABI but stopped before the pointer.
+          # Reuse its bytes: a new tar of the same tree would differ.
+          s3 cp "$base/$name" "$name"
+          s3 cp "$base/$name.sha256" "$name.sha256"
+          sha=$(tr -d '[:space:]' < "$name.sha256")
+          test "$(openssl dgst -sha256 "$name" | awk '{print $NF}')" = "$sha"
+          echo "reusing $key  sha $sha"
+        else
+          tar --zstd -C "$installed" -cf "$name" "$triplet"
+          sha=$(openssl dgst -sha256 "$name" | awk '{print $NF}')
+          echo "bundle $(du -h "$name" | cut -f1)  sha $sha"
+          echo "$sha" > "$name.sha256"
+          s3 cp "$name" "$base/$name"
+          s3 cp "$name.sha256" "$base/$name.sha256"
+        fi
+        # The pointer goes last, once the bundle it names is in place.
+        echo "$name $sha" > "${triplet}.current"
+        s3 cp "${triplet}.current" "$base/${triplet}.current"
+        echo "uploaded cairo-prebuilt/$ver/$name"
+
+  ###########################################################################
   # Cairo
   ###########################################################################
   build-cairo:
@@ -672,6 +801,9 @@ jobs:
           endforeach()
         endif()
 
+        # The libraries come from the system here (brew, apt) or from vcpkg
+        # on Windows, so this job keeps testing that path; the prebuilt
+        # bundle is what a plain local build uses.
         set(extra_args)
         if ("${{ runner.os }}" STREQUAL "Windows")
           list(APPEND extra_args
@@ -684,6 +816,7 @@ jobs:
             -B build-cairo
             -D CMAKE_BUILD_TYPE=$ENV{BUILD_TYPE}
             -D ARTIST_CAIRO=ON
+            -D ARTIST_CAIRO_PREBUILT=OFF
             -D ARTIST_BUILD_EXAMPLES=ON
             -D ARTIST_BUILD_TESTS=ON
             -G Ninja

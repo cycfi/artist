@@ -112,9 +112,11 @@ if (WIN32 AND NOT CMAKE_VERSION VERSION_LESS 3.21)
    )
 endif()
 
-# The prebuilt Skia bundle's DLLs are not in TARGET_RUNTIME_DLLS (see
-# cmake/SkiaPrebuilt.cmake), so copy them too.
+# A prebuilt bundle's DLLs are not in TARGET_RUNTIME_DLLS (see
+# cmake/SkiaPrebuilt.cmake and cmake/CairoPrebuilt.cmake), so copy them too.
 get_property(skia_dlls GLOBAL PROPERTY ARTIST_SKIA_RUNTIME_DLLS)
+get_property(cairo_dlls GLOBAL PROPERTY ARTIST_CAIRO_RUNTIME_DLLS)
+list(APPEND skia_dlls ${cairo_dlls})
 if (skia_dlls)
    add_custom_command(
       TARGET artist_test POST_BUILD
