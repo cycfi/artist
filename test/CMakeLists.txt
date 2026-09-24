@@ -127,12 +127,26 @@ if (skia_dlls)
 endif()
 
 if (APPLE)
+   # x86_64 rasterizes a few drawings a shade differently from arm64 (the
+   # same code and OS on one machine, under Rosetta, differ), so each
+   # architecture keeps its own goldens.
+   if (CMAKE_OSX_ARCHITECTURES)
+      list(GET CMAKE_OSX_ARCHITECTURES 0 _golden_arch)
+   else()
+      set(_golden_arch "${CMAKE_SYSTEM_PROCESSOR}")
+   endif()
+   if (_golden_arch MATCHES "x86_64|amd64|x64")
+      set(_golden_suffix "_x64")
+   else()
+      set(_golden_suffix "")
+   endif()
+
    if (ARTIST_SKIA)
-      set(GOLDEN_PATH macos_golden/skia)
+      set(GOLDEN_PATH macos_golden/skia${_golden_suffix})
    elseif (ARTIST_QUARTZ_2D)
-      set(GOLDEN_PATH macos_golden/quartz2d)
+      set(GOLDEN_PATH macos_golden/quartz2d${_golden_suffix})
    elseif (ARTIST_CAIRO)
-      set(GOLDEN_PATH macos_golden/cairo)
+      set(GOLDEN_PATH macos_golden/cairo${_golden_suffix})
    endif()
 
    set(GOLDEN_DIR macos_golden)
