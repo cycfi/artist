@@ -441,6 +441,11 @@ jobs:
         - os: macos-latest
           triplet: arm64-osx
           pkg_config_path: "/opt/homebrew/lib/pkgconfig"
+        # Cross-built on the arm runner, for Intel Macs and for Rosetta
+        # builds on Apple silicon.
+        - os: macos-latest
+          triplet: x64-osx
+          pkg_config_path: "/opt/homebrew/lib/pkgconfig"
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -608,6 +613,10 @@ jobs:
           triplet: x64-windows
         - os: macos-latest
           triplet: arm64-osx
+        # Cross-built on the arm runner, for Intel Macs and for Rosetta
+        # builds on Apple silicon.
+        - os: macos-latest
+          triplet: x64-osx
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -656,7 +665,6 @@ jobs:
         fi
         "$vcpkg" install --classic \
           --triplet ${{ matrix.config.triplet }} \
-          --host-triplet ${{ matrix.config.triplet }} \
           --overlay-triplets=vcpkg/triplets \
           --x-install-root=installed \
           cairo[core,freetype,fontconfig] harfbuzz fontconfig freetype libwebp pkgconf
