@@ -664,12 +664,15 @@ namespace cycfi::artist
          cairo_append_path(_context, cp);
          cairo_path_destroy(cp);
       }
-      // Apply the path's fill rule before clipping — Cairo clips with the
-      // current fill rule, so odd-even paths need it set on the context.
+      // Cairo clips with the context's current fill rule, so the path's own
+      // rule is set for the clip and the canvas's is put back after. The
+      // canvas fill rule is drawing state; clip(p) is not a way to set it.
+      auto saved = cairo_get_fill_rule(_context);
       cairo_set_fill_rule(_context,
          p.impl()->fill_rule == path::fill_odd_even
             ? CAIRO_FILL_RULE_EVEN_ODD : CAIRO_FILL_RULE_WINDING);
       cairo_clip(_context);
+      cairo_set_fill_rule(_context, saved);
    }
 
    rect canvas::clip_extent() const
@@ -799,6 +802,22 @@ namespace cycfi::artist
    void canvas::bezier_curve_to(point cp1, point cp2, point end)
    {
       cairo_curve_to(_context, cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+   }
+
+   canvas::path_holder::path_holder(canvas& cnv)
+    : _cnv(cnv)
+    , _saved(cairo_copy_path(cnv._context))
+   {
+      cairo_new_path(cnv._context);
+   }
+
+   canvas::path_holder::~path_holder()
+   {
+      auto* saved = static_cast<cairo_path_t*>(_saved);
+      cairo_new_path(_cnv._context);
+      if (saved->status == CAIRO_STATUS_SUCCESS && saved->num_data > 0)
+         cairo_append_path(_cnv._context, saved);
+      cairo_path_destroy(saved);
    }
 
    void canvas::add_round_rect_impl(rect const& r, float radius)

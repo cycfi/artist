@@ -375,18 +375,41 @@ namespace cycfi::artist
       };
 
       state             new_state()   { return state{*this}; }
-      void              save();
-      void              restore();
 
       class canvas_state;
       using canvas_state_ptr = std::unique_ptr<canvas_state>;
 
    private:
 
+      // Saving and restoring is only ever done in pairs, so the two halves
+      // are not reachable on their own. An unbalanced restore has no good
+      // answer: the backends variously crash, poison the drawing context, or
+      // silently do nothing. new_state is the whole interface.
+      friend class state;
+
+      void              save();
+      void              restore();
+
       canvas_impl*      _context;
       canvas_state_ptr  _state;
 
       void              add_round_rect_impl(const rect& r, float radius);
+
+      // Saves the current path and clears it, then puts it back. The
+      // one-step rectangle calls paint through this, so they leave the
+      // current path as they found it, as fillRect and strokeRect do in
+      // the W3C canvas API. Defined by each backend, which holds the
+      // current path in its own form.
+      struct path_holder
+      {
+                        path_holder(canvas& cnv);
+                        ~path_holder();
+                        path_holder(path_holder const&) = delete;
+         path_holder&   operator=(path_holder const&) = delete;
+
+         canvas&        _cnv;
+         void*          _saved;
+      };
    };
 }
 

@@ -160,24 +160,28 @@ namespace cycfi::artist
 
    inline void canvas::fill_rect(rect const& r)
    {
+      path_holder hold{*this};
       add_rect(r);
       fill();
    }
 
    inline void canvas::fill_round_rect(rect const& r, float radius)
    {
+      path_holder hold{*this};
       add_round_rect(r, radius);
       fill();
    }
 
    inline void canvas::stroke_rect(rect const& r)
    {
+      path_holder hold{*this};
       add_rect(r);
       stroke();
    }
 
    inline void canvas::stroke_round_rect(rect const& r, float radius)
    {
+      path_holder hold{*this};
       add_round_rect(r, radius);
       stroke();
    }

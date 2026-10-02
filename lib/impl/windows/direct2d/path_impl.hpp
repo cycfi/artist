@@ -291,6 +291,12 @@ namespace cycfi::artist::d2d
 
    inline void path_impl::fill_rule(fill_mode mode)
    {
+      // The cached fill geometry is built for one mode, so it is dropped
+      // when the mode changes and kept when it does not. The canvas applies
+      // the drawing state's rule before every fill, which is usually the
+      // rule already in force.
+      if (_mode == mode)
+         return;
       _mode = mode;
       release(_fill_geometry);
    }

@@ -59,6 +59,9 @@ namespace cycfi::artist::recording
 
       rect                    bounds() const;   // in the space the points are stored in
       bool                    includes(point p) const;
+      bool                    includes(
+                                 point p, artist::path::fill_rule_enum r
+                              ) const;
 
    private:
 
