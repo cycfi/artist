@@ -414,6 +414,12 @@ namespace cycfi::artist
       auto const& stops = lg? lg->color_space : rg->color_space;
       bool linear = lg != nullptr;
 
+      // A gradient with no stops, or two identical radial circles, paints
+      // nothing, as the W3C API specifies. Direct2D would otherwise build a
+      // brush on an empty stop collection.
+      if (stops.empty() || (rg && rg->c1 == rg->c2 && rg->c1_radius == rg->c2_radius))
+         return make_paint(color{0, 0, 0, 0}, target);
+
       auto same = [&](gradient_entry const& e)
       {
          if (e.owner != &target || e.linear != linear || e.stops.size() != stops.size())

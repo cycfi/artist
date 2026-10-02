@@ -5,6 +5,8 @@
 =============================================================================*/
 #include <artist/canvas_layer.hpp>
 #include "context.hpp"
+#include <algorithm>
+#include <cmath>
 #include <stdexcept>
 
 namespace cycfi::artist
@@ -12,9 +14,26 @@ namespace cycfi::artist
    canvas_layer::canvas_layer(canvas& cnv, extent size)
     : _impl{new canvas_layer_impl}
    {
+      // The layer's pixels follow the target's density and the scale in
+      // force on the canvas, so a layer made under scale(2, 2) holds the
+      // detail it will be shown at, as on the other backends.
       auto* target = cnv.impl()->target();
+      D2D1_SIZE_U pixels = {};
+      if (target)
+      {
+         D2D1_MATRIX_3X2_F m;
+         target->GetTransform(&m);
+         float dpi_x, dpi_y;
+         target->GetDpi(&dpi_x, &dpi_y);
+         auto sx = std::hypot(m._11, m._12) * dpi_x / 96;
+         auto sy = std::hypot(m._21, m._22) * dpi_y / 96;
+         pixels = D2D1::SizeU(
+            UINT32(std::max(1.0f, std::ceil(size.x * sx)))
+          , UINT32(std::max(1.0f, std::ceil(size.y * sy)))
+         );
+      }
       if (!target || !SUCCEEDED(target->CreateCompatibleRenderTarget(
-            D2D1::SizeF(size.x, size.y), &_impl->rt)))
+            D2D1::SizeF(size.x, size.y), pixels, &_impl->rt)))
       {
          delete _impl;
          throw std::runtime_error{"artist direct2d backend: Failed to create canvas layer."};
