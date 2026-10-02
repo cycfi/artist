@@ -341,6 +341,11 @@ so overlapping regions of one shape stay filled. `path::fill_odd_even`
 counts crossings alone, so every second region is left empty. The rule
 applies to `fill`, to `clip` and to `point_in_path`, and not to `stroke`.
 
+The rule is part of the xref:canvas/states.adoc[drawing state], not of the
+path being built: `begin_path` does not reset it, nor does a paint, and a
+`new_state` scope puts it back. `cnv.clip(pth)` clips by the rule carried
+by `pth` and leaves the canvas rule alone.
+
 === Erasing
 
 [cols="1,1,1"]
@@ -382,21 +387,13 @@ what a call does to the path around it.
 | Clips to `pth` alone; the current path is left as it was.
 | Clips to `pth` alone; the current path is left as it was.
 | Appends `pth` to the current path, clips to the pair, then discards the
-  path. It also leaves the context set to the fill rule of `pth`.
+  path.
 
 | `cnv.clear_rect(r)`
 | Erases `r`; the current path is left as it was.
 | Erases `r`; the current path is left as it was.
 | Erases `r` **and** whatever is already in the current path, then discards
   the path.
-
-| `cnv.fill_rule(rule)`
-| Canvas state, outside the saved state: it survives `begin_path`, and
-  `save` and `restore` do not put it back.
-| Path state. `begin_path`, `fill` and `stroke` reset it to
-  `path::fill_winding`, so it has to be set after the path is started.
-| Part of the saved state: it survives `begin_path`, and `save` and
-  `restore` put it back.
 
 | `cnv.point_in_path(p)`
 | True inside the fill **or** on the stroke, because the query is made in
@@ -425,11 +422,6 @@ what a call does to the path around it.
 Verified by running on Cairo and by reading `lib/impl/skia/canvas.cpp`,
 `lib/impl/macos/quartz2d/canvas.mm` and
 `lib/include/artist/detail/canvas_impl.hpp`.
-
-CAUTION: On Quartz 2D, `add_round_rect` with a `radius` above zero begins a
-new path before adding the rounded rectangle, so it discards whatever was
-already being built. Cairo and Skia add to the path in place. Start a round
-rect on an empty path until this is settled.
 
 == Example
 

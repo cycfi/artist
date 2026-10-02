@@ -70,37 +70,70 @@ TEST_CASE("canvas rectangles: Overview", "[rectangles]")
    }
 
    {
-      // They go through the current path, so a rectangle painted in the
-      // middle of building a shape takes the half-built shape with it.
+      // They paint the rectangle alone. A shape half built into the current
+      // path is not painted with it, as in the W3C API.
       image img{100, 100, 1};
       render(img, [](canvas& cnv)
       {
          cnv.fill_style(ink_color);
-         cnv.add_rect(5, 5, 20, 20);         // built, never painted itself
+         cnv.add_rect(5, 5, 20, 20);         // built, not painted
          cnv.fill_rect(60, 60, 30, 30);
       });
 #if !defined(ARTIST_RECORDING)
-      CHECK(inked(pixel_at(img, 15, 15)));   // the half-built shape
+      CHECK(clear(pixel_at(img, 15, 15)));   // the half-built shape, unpainted
       CHECK(inked(pixel_at(img, 75, 75)));   // the rectangle asked for
 #endif
    }
 
    {
-      // And they empty the current path afterwards: a bare fill() after one
-      // has nothing left to paint.
+      // And they leave the current path as they found it: what was being
+      // built is still there afterwards, and a later fill() paints it.
       image img{100, 100, 1};
       render(img, [](canvas& cnv)
       {
          cnv.fill_style(ink_color);
+         cnv.add_rect(5, 5, 20, 20);
          cnv.fill_rect(60, 60, 30, 30);
          cnv.fill_style(rgba(0, 0, 255, 255));
-         cnv.fill();
+         cnv.fill();                         // paints the shape, still there
       });
 #if !defined(ARTIST_RECORDING)
-      auto p = pixel_at(img, 75, 75);
-      CHECK(p.r > 200);                      // still the first color
-      CHECK(p.b < 60);                       // not repainted blue
+      auto kept = pixel_at(img, 15, 15);
+      CHECK(kept.b > 200);                   // the kept shape, painted blue
+      CHECK(kept.r < 60);
+      auto box = pixel_at(img, 75, 75);
+      CHECK(box.r > 200);                    // the rectangle, its own color
+      CHECK(box.b < 60);
 #endif
+   }
+
+   {
+      // The same for the round forms and for stroking, on every backend.
+      for (int which = 0; which != 4; ++which)
+      {
+         image img{100, 100, 1};
+         render(img, [which](canvas& cnv)
+         {
+            cnv.fill_style(ink_color);
+            cnv.stroke_style(ink_color);
+            cnv.line_width(4);
+            cnv.add_rect(5, 5, 20, 20);
+            switch (which)
+            {
+               case 0: cnv.fill_rect(rect{60, 60, 90, 90}); break;
+               case 1: cnv.fill_round_rect(rect{60, 60, 90, 90}, 8); break;
+               case 2: cnv.stroke_rect(rect{60, 60, 90, 90}); break;
+               case 3: cnv.stroke_round_rect(rect{60, 60, 90, 90}, 8); break;
+            }
+            cnv.fill_style(rgba(0, 0, 255, 255));
+            cnv.fill();
+         });
+#if !defined(ARTIST_RECORDING)
+         auto kept = pixel_at(img, 15, 15);
+         CHECK(kept.b > 200);                // the path survived the call
+         CHECK(kept.r < 60);
+#endif
+      }
    }
 
    {
@@ -339,30 +372,24 @@ TEST_CASE("canvas rectangles: Stroking", "[rectangles]")
    }
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Current behaviour, on the page as a CAUTION and awaiting a ruling. Quartz
-// 2D's add_round_rect begins a new path before adding the rounded shape, so
-// the two round calls discard the current path instead of painting it. This
-// is the add_round_rect difference recorded on the Current Path page,
-// reaching fill_round_rect and stroke_round_rect through it.
-
-TEST_CASE("canvas rectangles: the round calls and the current path", "[rectangles]")
+TEST_CASE("canvas rectangles: add_round_rect appends", "[rectangles]")
 {
+   // add_round_rect adds to the current path, it does not replace it, so a
+   // rounded shape and a plain one built together fill as one path. Quartz
+   // 2D used to begin a new path here and drop the first shape; fixed
+   // 2026-09-17 with Joel's ruling to follow the W3C API.
    image img{100, 100, 1};
    render(img, [](canvas& cnv)
    {
       cnv.fill_style(ink_color);
       cnv.add_rect(5, 5, 20, 20);
-      cnv.fill_round_rect(rect{60, 60, 90, 90}, 8);
+      cnv.add_round_rect(rect{60, 60, 90, 90}, 8);
+      cnv.fill();
    });
 
 #if !defined(ARTIST_RECORDING)
-   CHECK(inked(pixel_at(img, 75, 75)));       // the rectangle asked for
-# if defined(ARTIST_QUARTZ_2D)
-   CHECK(clear(pixel_at(img, 15, 15)));       // the half-built shape is lost
-# else
-   CHECK(inked(pixel_at(img, 15, 15)));       // the half-built shape painted
-# endif
+   CHECK(inked(pixel_at(img, 15, 15)));       // the first shape, kept
+   CHECK(inked(pixel_at(img, 75, 75)));       // the rounded one
 #endif
 }
 
@@ -479,17 +506,17 @@ namespace
       cnv.line_width(2);
       cnv.stroke_rect(frame);
 
-      auto track = rect{50, 48, 170, 92};
+      auto track = rect{72, 38, 192, 82};
       cnv.fill_style(rgba(21, 101, 192, 255));
       cnv.fill_round_rect(track, 1000);      // clamped to a stadium
 
       cnv.fill_style(colors::white);
-      cnv.fill_round_rect(rect{130, 52, 166, 88}, 1000);
+      cnv.fill_round_rect(rect{152, 42, 188, 78}, 1000);
 
       cnv.font(font_descr{"Open Sans", 15});
       cnv.fill_style(rgba(26, 26, 26, 255));
       cnv.text_align(canvas::left | canvas::middle);
-      cnv.fill_text("On", 190, 70);
+      cnv.fill_text("On", 208, 60);
    }
 }
 
@@ -501,23 +528,32 @@ TEST_CASE("canvas rectangles: Example", "[rectangles]")
 #if !defined(ARTIST_RECORDING)
    // The frame is an outline: ink on the edge, nothing just inside it.
    CHECK(inked(pixel_at(img, 20, 60)));
-   CHECK(clear(pixel_at(img, 30, 60)));
+   CHECK(clear(pixel_at(img, 40, 60)));
 
    // The track is a stadium, 120 by 44, so the clamp is 22: its corner is
    // empty and the middle of its end cap is painted.
-   CHECK(clear(pixel_at(img, 51, 49)));
-   CHECK(inked(pixel_at(img, 51, 70)));
+   CHECK(clear(pixel_at(img, 73, 39)));
+   CHECK(inked(pixel_at(img, 73, 60)));
 
    // The knob sits at the right end of the track and is white, not blue.
-   auto knob = pixel_at(img, 148, 70);
+   auto knob = pixel_at(img, 170, 60);
    CHECK(knob.r > 200);
    CHECK(knob.g > 200);
    CHECK(knob.b > 200);
 
    // The track is blue where the knob is not.
-   auto bar = pixel_at(img, 80, 70);
+   auto bar = pixel_at(img, 100, 60);
    CHECK(bar.b > 150);
    CHECK(bar.r < 100);
+
+   // The drawing is centred in the frame: equal gaps left and right, and
+   // the track the same distance from the top and the bottom.
+   CHECK(clear(pixel_at(img, 60, 60)));       // left gap, before the track
+   CHECK(clear(pixel_at(img, 240, 60)));      // right gap, after the label
+   CHECK(clear(pixel_at(img, 130, 30)));      // above the track
+   CHECK(clear(pixel_at(img, 130, 90)));      // below it, by the same margin
+   CHECK(inked(pixel_at(img, 130, 40)));      // the track's top edge
+   CHECK(inked(pixel_at(img, 130, 80)));      // and its bottom edge
 #endif
 }
 

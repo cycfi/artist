@@ -12,6 +12,7 @@
 =============================================================================*/
 #include "test_support.hpp"
 #include <artist/canvas_layer.hpp>
+#include <artist/path.hpp>
 
 namespace
 {
@@ -501,6 +502,51 @@ TEST_CASE("canvas images: current behaviour, reversed dest", "[images]")
 
 namespace
 {
+   // The page's == Example opens with this, so the helper on the page is the
+   // helper that draws every figure on it.
+   void draw_digit(canvas& cnv, int n, point at)
+   {
+      // Three segment shapes in a 16 by 26 digit: the horizontal bar across
+      // the top, the vertical post down one side, and the pointed middle
+      // bar. The bar is 16 long and the post 13, so they are not one shape
+      // turned; the other four segments are these two turned half a turn.
+      static path const bar{"M 0.5 0 L 15.5 0 L 13.1 2.4 L 2.9 2.4 Z"};
+      static path const post{"M 0 0.5 L 0 12.5 L 2.4 10.1 L 2.4 2.9 Z"};
+      static path const mid{
+         "M 0 13 L 1.2 11.8 L 14.8 11.8 L 16 13 L 14.8 14.2 L 1.2 14.2 Z"
+      };
+
+      // Segments a to g: the shape, where it goes, and whether it is turned.
+      struct placement { path const& shape; float x, y; bool turned; };
+      static placement const seg[] =
+      {
+         {bar, 0, 0, false},   {post, 16, 13, true},  {post, 16, 26, true},
+         {bar, 16, 26, true},  {post, 0, 13, false},  {post, 0, 0, false},
+         {mid, 0, 0, false}
+      };
+      static int const lit[] =
+         {0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f};
+
+      auto st = cnv.new_state();
+      cnv.fill_style(rgba(26, 26, 26, 255));
+      cnv.fill_round_rect(rect{at.x, at.y, at.x + 32, at.y + 32}, 4);
+      cnv.translate(at.x + 8, at.y + 3);
+
+      for (int i = 0; i != 7; ++i)
+      {
+         auto seg_state = cnv.new_state();
+         cnv.translate(seg[i].x, seg[i].y);
+         if (seg[i].turned)
+            cnv.rotate(cycfi::pi);
+         cnv.fill_style(
+            ((lit[n] >> i) & 1)?
+               rgba(255, 255, 255, 255) : rgba(255, 255, 255, 12)
+         );
+         cnv.add_path(seg[i].shape);
+         cnv.fill();
+      }
+   }
+
    color const ghost = rgba(176, 176, 176, 255);   // #b0b0b0
    color const ink = rgba(26, 26, 26, 255);        // #1a1a1a
 
@@ -538,25 +584,18 @@ namespace
       cnv.stroke_rect(r);
    }
 
-   // The figures' source image: four 32 by 32 numbered cells in one strip,
-   // each a disc in a different tint of the accent.
+   // The figures' source image: four 32 by 32 cells of a seven segment
+   // display, reading 0 to 3, so the cell at src offset 64 shows a 2. It is
+   // a 4x image, so the cell blown up to 96 units in the src and dest figure
+   // still reads. The Example's own sheet is 1x, as a reader's would be.
    image make_strip()
    {
-      image strip{128, 32, 2};
+      image strip{128, 32, 4};
       {
          offscreen_image ctx{strip};
          canvas cnv{ctx.context()};
-         char const* label[] = {"1", "2", "3", "4"};
-         cnv.font(font_descr{"Open Sans", 18});
-         cnv.text_align(canvas::center | canvas::middle);
          for (int i = 0; i != 4; ++i)
-         {
-            cnv.fill_style(rgba(21, 101, 192, 80 + i * 58));
-            cnv.add_circle(circle{i * 32 + 16.0f, 16, 14});
-            cnv.fill();
-            cnv.fill_style(colors::white);
-            cnv.fill_text(label[i], i * 32 + 16.0f, 16);
-         }
+            draw_digit(cnv, i, point{i * 32.0f, 0});
       }
       return strip;
    }
@@ -624,53 +663,91 @@ TEST_CASE("canvas images: src and dest figure", "[images]")
 namespace
 {
    // The page's == Example, verbatim, so the page's code is the code that
-   // draws the page's figure and the code the assertions below check.
+   // draws the page's figure and the code the assertions below check. It
+   // opens with draw_digit above, which the page shows first.
    void example(canvas& cnv)
    {
-      // Four 32 by 32 frames in one image, drawn once.
-      auto sheet = image{128, 32};
+      // The ten digits, rendered once into one 320 by 32 sheet.
+      auto sheet = image{320, 32};
       {
          offscreen_image ctx{sheet};
          canvas scnv{ctx.context()};
-         char const* label[] = {"1", "2", "3", "4"};
-         scnv.font(font_descr{"Open Sans", 18});
-         scnv.text_align(canvas::center | canvas::middle);
-         for (int i = 0; i != 4; ++i)
-         {
-            scnv.fill_style(rgba(21, 101, 192, 80 + i * 58));
-            scnv.add_circle(circle{i * 32 + 16.0f, 16, 14});
-            scnv.fill();
-            scnv.fill_style(colors::white);
-            scnv.fill_text(label[i], i * 32 + 16.0f, 16);
-         }
+         for (int d = 0; d != 10; ++d)
+            draw_digit(scnv, d, point{d * 32.0f, 0});
       }
 
-      // The whole sheet, then its third frame at twice the size.
+      // A reading, blitted from the sheet one digit at a time. The 2 is drawn
+      // twice, from the one cell that holds it.
       cnv.draw(sheet, point{20, 20});
-      cnv.draw(sheet, rect{64, 0, 96, 32}, rect{20, 72, 84, 136});
+      char const* reading = "2026";
+      for (int i = 0; reading[i]; ++i)
+      {
+         float x = (reading[i] - '0') * 32.0f;
+         cnv.draw(
+            sheet,
+            rect{x, 0, x + 32, 32},
+            rect{60 + i * 64.0f, 70, 108 + i * 64.0f, 118}
+         );
+      }
    }
 }
 
 TEST_CASE("canvas images: Example", "[images]")
 {
-   image img{160, 156, 1};
+   image img{360, 138, 1};
    render(img, [](canvas& cnv) { example(cnv); });
 
 #if !defined(ARTIST_RECORDING)
-   // The sheet landed at its own size: four cells across 128 units from 20.
-   CHECK(!clear(pixel_at(img, 36, 36)));           // cell 1's disc
-   CHECK(!clear(pixel_at(img, 132, 36)));          // cell 4's disc
-   CHECK(clear(pixel_at(img, 20, 20)));            // the corner between discs
-   CHECK(clear(pixel_at(img, 36, 60)));            // below the sheet
+   // The sheet landed at its own size: ten cells across 320 units from 20.
+   CHECK(!clear(pixel_at(img, 36, 36)));           // inside cell 0
+   CHECK(!clear(pixel_at(img, 324, 36)));          // inside cell 9
+   CHECK(clear(pixel_at(img, 345, 36)));           // past the sheet's right
+   CHECK(clear(pixel_at(img, 36, 62)));            // below it
 
-   // The frame below is cell 3, twice the size, so its disc spans 64 units.
-   CHECK(!clear(pixel_at(img, 52, 104)));          // the middle of the disc
-   CHECK(clear(pixel_at(img, 22, 74)));            // its corner is clear
-   CHECK(clear(pixel_at(img, 90, 104)));           // and it stops at 84
+   // The reading is four 48 unit cells from x 60, spaced 64 apart, so each
+   // cell is painted and the gaps between them are clear.
+   for (int i = 0; i != 4; ++i)
+   {
+      CHECK(!clear(pixel_at(img, 84 + i * 64, 94)));
+      if (i != 3)
+         CHECK(clear(pixel_at(img, 116 + i * 64, 94)));
+   }
 
-   // Cell 3 is the denser tint: the frame drawn is the one asked for. Both
-   // samples are on the disc and clear of the white numeral at its centre.
-   CHECK(pixel_at(img, 72, 104).a > pixel_at(img, 46, 36).a);
+   // The 2 is blitted twice, so the first and third cells of the reading are
+   // the same drawing. Both land on whole units, so the resampling is the
+   // same phase; a count of 1 or 2 apart is the resampler's own arithmetic.
+   // Every cell carries the same opaque panel, so the comparison has to be
+   // on colour: alpha alone cannot tell one digit from another.
+   auto same_pixel =
+      [](rgba8 a, rgba8 b)
+      {
+         return std::abs(a.r - b.r) <= 2 && std::abs(a.g - b.g) <= 2
+            && std::abs(a.b - b.b) <= 2 && std::abs(a.a - b.a) <= 2;
+      };
+
+   // Skia resamples the two blits at slightly different subpixel phases, so
+   // the glyph edges land differently: 106 of the 2304 pixels differ, by up
+   // to 176, while Cairo and Quartz 2D differ in none. The interior is what
+   // identifies the drawing, so allow a tenth of the cell to differ, which
+   // is twice what Skia needs and far less than a different digit would.
+   int differing = 0;
+   for (int y = 0; y != 48; ++y)
+      for (int x = 0; x != 48; ++x)
+         if (!same_pixel(
+               pixel_at(img, 60 + x, 70 + y),
+               pixel_at(img, 188 + x, 70 + y)))
+            ++differing;
+   CHECK(differing * 10 <= 48 * 48);
+
+   // The second cell is a 0 and the first a 2, so they differ.
+   bool same = true;
+   for (int y = 0; y != 48 && same; ++y)
+      for (int x = 0; x != 48 && same; ++x)
+         if (!same_pixel(
+               pixel_at(img, 60 + x, 70 + y),
+               pixel_at(img, 124 + x, 70 + y)))
+            same = false;
+   CHECK(!same);
 #endif
 }
 
@@ -678,9 +755,10 @@ TEST_CASE("canvas images: example figure", "[images]")
 {
    // The page figure images/canvas/images_example.png: what the code under
    // == Example draws, shifted right to sit centred in the figure's width.
-   figure(156, "canvas_images_example.png", [](canvas& cnv)
+   figure(138, "canvas_images_example.png", [](canvas& cnv)
    {
-      cnv.translate(200, 0);
+      cnv.translate(100, 0);
       example(cnv);
    });
 }
+

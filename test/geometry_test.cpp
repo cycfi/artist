@@ -16,19 +16,19 @@ TEST_CASE("Scale and Coordinate Conversion")
       CHECK(u.y == Approx(200.0f).epsilon(0.001));
 
       // After applying a scale transform: verify inverse round-trip.
-      pm_cnv.save();
-      pm_cnv.scale(2.0f, 2.0f);
+      {
+         auto st = pm_cnv.new_state();
+         pm_cnv.scale(2.0f, 2.0f);
 
-      auto d2 = pm_cnv.user_to_device({50.0f, 75.0f});
-      auto u2 = pm_cnv.device_to_user(d2);
-      CHECK(u2.x == Approx(50.0f).epsilon(0.001));
-      CHECK(u2.y == Approx(75.0f).epsilon(0.001));
+         auto d2 = pm_cnv.user_to_device({50.0f, 75.0f});
+         auto u2 = pm_cnv.device_to_user(d2);
+         CHECK(u2.x == Approx(50.0f).epsilon(0.001));
+         CHECK(u2.y == Approx(75.0f).epsilon(0.001));
 
-      // After scaling by 2, device coords should be 2x the user coords.
-      CHECK(d2.x == Approx(100.0f).epsilon(0.001));
-      CHECK(d2.y == Approx(150.0f).epsilon(0.001));
-
-      pm_cnv.restore();
+         // After scaling by 2, device coords should be 2x the user coords.
+         CHECK(d2.x == Approx(100.0f).epsilon(0.001));
+         CHECK(d2.y == Approx(150.0f).epsilon(0.001));
+      }
    }
 }
 
