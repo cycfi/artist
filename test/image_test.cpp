@@ -9,6 +9,7 @@
    (each rasterizer anti-aliases differently) but the behaviour does not.
 =============================================================================*/
 #include "test_support.hpp"
+#include <array>
 #include <fstream>
 #include <type_traits>
 
