@@ -4,14 +4,18 @@
   "dependencies": [
     {
       "name": "skia",
-      "default-features": true,
-      "features": ["gl", "metal"],
+      "default-features": false,
+      "features": ["gl", "metal", "harfbuzz", "icu", "jpeg", "png", "webp"],
       "platform": "osx"
     },
     {
       "name": "skia",
-      "default-features": true,
-      "features": ["gl"],
+      "default-features": false,
+      "features": [
+        "gl", "harfbuzz", "icu", "jpeg", "png", "webp",
+        { "name": "fontconfig", "platform": "linux" },
+        { "name": "freetype", "platform": "linux" }
+      ],
       "platform": "!osx"
     },
     {
