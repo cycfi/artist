@@ -41,34 +41,36 @@ void draw(canvas& cnv)
    // to the real window corner instead of moving with the letterbox.
    auto const win = cnv.clip_extent();
 
-   cnv.save();
-   scale_to_fit(cnv, {window_size.x, window_size.y}, bkd_color);
-   cnv.add_rect({{0, 0}, window_size});
-   cnv.fill_style(bkd_color);
-   cnv.fill();
+   {
+      // The scope undoes scale_to_fit: back to window coordinates.
+      auto st = cnv.new_state();
+      scale_to_fit(cnv, {window_size.x, window_size.y}, bkd_color);
+      cnv.add_rect({{0, 0}, window_size});
+      cnv.fill_style(bkd_color);
+      cnv.fill();
 
-   // Animate box width
-   box_width += width_incr;
-   if (box_width >= max_w || box_width <= min_w)
-      width_incr = -width_incr;
+      // Animate box width
+      box_width += width_incr;
+      if (box_width >= max_w || box_width <= min_w)
+         width_incr = -width_incr;
 
-   // Draw the animated box outline
-   rect const box{20, 20, 20 + box_width, 460};
-   cnv.add_rect(box);
-   cnv.stroke_style(rgba(100, 120, 200, 100));
-   cnv.line_width(1);
-   cnv.stroke();
+      // Draw the animated box outline
+      rect const box{20, 20, 20 + box_width, 460};
+      cnv.add_rect(box);
+      cnv.stroke_style(rgba(100, 120, 200, 100));
+      cnv.line_width(1);
+      cnv.stroke();
 
-   // Reflow and draw every frame, clipped to the box.
-   cnv.save();
-   cnv.add_rect(box);
-   cnv.clip();
-   auto tlayout = text_run{font_descr{"Open Sans", 14}.italic(), text};
-   tlayout.flow(box_width, true);
-   tlayout.draw(cnv, {20, 30}, rgba(220, 220, 220, 200));
-   cnv.restore();
-
-   cnv.restore();   // undo scale_to_fit → back to window coordinates
+      // Reflow and draw every frame, clipped to the box.
+      {
+         auto clipped = cnv.new_state();
+         cnv.add_rect(box);
+         cnv.clip();
+         auto tlayout = text_run{font_descr{"Open Sans", 14}.italic(), text};
+         tlayout.flow(box_width, true);
+         tlayout.draw(cnv, {20, 30}, rgba(220, 220, 220, 200));
+      }
+   }
    print_elapsed(cnv, {win.width(), win.height()}, bkd_color);
 }
 

@@ -20,25 +20,25 @@ void draw(canvas& cnv)
    float const cw = bounds.width();
    float const ch = bounds.height();
 
-   cnv.save();
-   cnv.fill_style(colors::white);
-   cnv.add_rect(bounds);
-   cnv.fill();
+   {
+      auto st = cnv.new_state();
+      cnv.fill_style(colors::white);
+      cnv.add_rect(bounds);
+      cnv.fill();
 
-   cnv.fill_style(colors::black);
-   cnv.shadow_style({4, 4}, 6, colors::gray[30]);
-   cnv.add_round_rect({10, 10, x, y}, 10);
-   cnv.fill();
+      cnv.fill_style(colors::black);
+      cnv.shadow_style({4, 4}, 6, colors::gray[30]);
+      cnv.add_round_rect({10, 10, x, y}, 10);
+      cnv.fill();
 
-   x += x_incr;
-   y += y_incr;
+      x += x_incr;
+      y += y_incr;
 
-   if (x > cw - 40 || x < 100)
-      x_incr = -x_incr;
-   if (y > ch - 40 || y < 100)
-      y_incr = -y_incr;
-
-   cnv.restore();
+      if (x > cw - 40 || x < 100)
+         x_incr = -x_incr;
+      if (y > ch - 40 || y < 100)
+         y_incr = -y_incr;
+   }
    print_elapsed(cnv, {cw, ch}, colors::white, colors::black);
 }
 
