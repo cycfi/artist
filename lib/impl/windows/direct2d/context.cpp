@@ -4,6 +4,7 @@
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 =============================================================================*/
 #include "context.hpp"
+#include <algorithm>
 #include <vector>
 
 namespace cycfi::artist::d2d
@@ -96,13 +97,15 @@ namespace cycfi::artist::d2d
    namespace
    {
       gradient_stop_collection*
-      make_stops(canvas::gradient const& g, render_target& cnv)
+      make_stops(canvas::gradient const& g, render_target& cnv, float start = 0)
       {
+         // start compresses the stops into [start, 1]: see the radial
+         // make_paint below.
          std::vector<gradient_stop> stops;
          for (auto const& space : g.color_space)
             stops.push_back(
                {
-                  space.offset,
+                  start + space.offset * (1 - start),
                   {space.color.red, space.color.green, space.color.blue, space.color.alpha}
                }
             );
@@ -135,9 +138,19 @@ namespace cycfi::artist::d2d
       return result;
    }
 
+   float radial_start(canvas::radial_gradient const& rg)
+   {
+      return rg.c2_radius > 0?
+         std::clamp(rg.c1_radius / rg.c2_radius, 0.0f, 1.0f) : 0.0f;
+   }
+
    brush* make_paint(canvas::radial_gradient const& rg, render_target& target)
    {
-      auto stops = make_stops(rg, target);
+      // Direct2D's radial brush has no inner circle: its ramp starts at the
+      // origin. Running the stops from r1/r2 to 1 instead, with the clamp
+      // holding the first stop inside, gives the first circle its own color.
+      // This is exact for concentric circles.
+      auto stops = make_stops(rg, target, radial_start(rg));
       radial_gradient_brush* result = nullptr;
       auto hr = target.CreateRadialGradientBrush(
          D2D1::RadialGradientBrushProperties(
