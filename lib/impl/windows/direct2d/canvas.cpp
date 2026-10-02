@@ -376,6 +376,7 @@ namespace cycfi::artist
          bool                    linear;
          brush*                  paint;
          render_target*          owner;
+         float                   start;   // radial_start, for radials
       };
       std::vector<gradient_entry> _gradients;
       brush*            gradient_paint(paint_info const& info, render_target& target);
@@ -413,6 +414,7 @@ namespace cycfi::artist
       auto const* rg = std::get_if<canvas::radial_gradient>(&info);
       auto const& stops = lg? lg->color_space : rg->color_space;
       bool linear = lg != nullptr;
+      float start = rg? radial_start(*rg) : 0.0f;
 
       // A gradient with no stops, or two identical radial circles, paints
       // nothing, as the W3C API specifies. Direct2D would otherwise build a
@@ -422,7 +424,8 @@ namespace cycfi::artist
 
       auto same = [&](gradient_entry const& e)
       {
-         if (e.owner != &target || e.linear != linear || e.stops.size() != stops.size())
+         if (e.owner != &target || e.linear != linear || e.stops.size() != stops.size()
+            || e.start != start)
             return false;
          for (std::size_t i = 0; i != stops.size(); ++i)
             if (e.stops[i].offset != stops[i].offset
@@ -444,7 +447,7 @@ namespace cycfi::artist
             _gradients.pop_back();
          }
          auto paint = lg? make_paint(*lg, target) : make_paint(*rg, target);
-         _gradients.insert(_gradients.begin(), {stops, linear, paint, &target});
+         _gradients.insert(_gradients.begin(), {stops, linear, paint, &target, start});
          it = _gradients.begin();
       }
       else if (it != _gradients.begin())
@@ -857,10 +860,18 @@ namespace cycfi::artist
    {
       _context->state(_state.get());
       _state->set_target(_context->target());
+
+      // The transform belongs to the context, as on the other backends: a
+      // canvas starts from what the last one left, and leaves its own behind.
+      // The hosts reset it at the start of each frame.
+      if (auto t = _context->target())
+         t->GetTransform(&_state->current().matrix);
    }
 
    canvas::~canvas()
    {
+      if (auto t = _context->target())
+         t->SetTransform(_state->current().matrix);
    }
 
    ////////////////////////////////////////////////////////////////////////////
@@ -941,9 +952,13 @@ namespace cycfi::artist
 
    ////////////////////////////////////////////////////////////////////////////
    // Paths
+   // begin_path empties the current path, as beginPath does in the W3C API.
+   // path_impl::begin_path only closes the open sub-path.
    void canvas::begin_path()
    {
-      _state->path().impl()->begin_path();
+      auto* p = _state->path().impl();
+      p->clear();
+      p->begin_path();
    }
 
    void canvas::close_path()

@@ -21,12 +21,13 @@ namespace cycfi::artist
       D2D1_SIZE_U pixels = {};
       if (target)
       {
-         D2D1_MATRIX_3X2_F m;
-         target->GetTransform(&m);
+         // The canvas holds its transform until it draws, so the scale comes
+         // from the canvas, not the target.
+         auto m = cnv.transform();
          float dpi_x, dpi_y;
          target->GetDpi(&dpi_x, &dpi_y);
-         auto sx = std::hypot(m._11, m._12) * dpi_x / 96;
-         auto sy = std::hypot(m._21, m._22) * dpi_y / 96;
+         auto sx = float(std::hypot(m.a, m.b)) * dpi_x / 96;
+         auto sy = float(std::hypot(m.c, m.d)) * dpi_y / 96;
          pixels = D2D1::SizeU(
             UINT32(std::max(1.0f, std::ceil(size.x * sx)))
           , UINT32(std::max(1.0f, std::ceil(size.y * sy)))

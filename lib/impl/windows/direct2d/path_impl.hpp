@@ -272,6 +272,10 @@ namespace cycfi::artist::d2d
 
    inline void path_impl::add(rect r, float radius)
    {
+      // At radius zero the corners are plain corners, which line_join shapes.
+      // Direct2D's rounded rectangle would still treat them as arcs.
+      if (radius <= 0)
+         return add(r);
       bool first = empty();
       _ops.push_back({path_op::round_rect_op, {r.left, r.top, r.right, r.bottom, radius, 0}});
       add_gen([=](auto){ return make_round_rect(r, radius); });

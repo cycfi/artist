@@ -160,6 +160,9 @@ namespace cycfi::artist::d2d
    brush* make_paint(canvas::linear_gradient const& lg, render_target& target);
    brush* make_paint(canvas::radial_gradient const& rg, render_target& target);
 
+   // Where a radial gradient's ramp starts, as a fraction of the outer radius.
+   float  radial_start(canvas::radial_gradient const& rg);
+
    // Access the backing WIC bitmap of an image (defined in image.cpp). Returns
    // nullptr for an empty image.
    IWICBitmap* wic_bitmap(image const& img);
