@@ -15,6 +15,7 @@
    drawing itself.
 =============================================================================*/
 #include "test_support.hpp"
+#include <array>
 
 namespace
 {
