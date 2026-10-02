@@ -13,4 +13,6 @@ the drawing calls are expressed in.
 * xref:foundation/font.adoc[Font] describes and resolves a font.
 * xref:foundation/image.adoc[Image] holds a bitmap, loaded from a file,
   built from pixels, or drawn offscreen.
+* xref:foundation/canvas_layer.adoc[Canvas Layer] gives a canvas an
+  offscreen surface on its own device.
 * xref:foundation/resources.adoc[Resources] finds fonts and images on disk.

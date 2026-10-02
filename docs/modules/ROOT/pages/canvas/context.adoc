@@ -86,10 +86,10 @@ from decides how long that is:
   image held in memory, whose pixels can be read back and saved. It is good
   while the `offscreen_image` lives, so the canvas goes out of scope first
   and the image is complete when it does.
-* xref:canvas/images.adoc[`canvas_layer::context()`] draws into a surface on
-  the canvas's own device, the GPU where the canvas renders there, at the
-  canvas's pixel density and with no pixel access. It is good while the
-  layer lives, and only for the canvas the layer was made for.
+* xref:foundation/canvas_layer.adoc[`canvas_layer::context()`] draws into a
+  surface on the canvas's own device, the GPU where the canvas renders
+  there, at the canvas's pixel density and with no pixel access. It is good
+  while the layer lives, and only for the canvas the layer was made for.
 
 Destroying the canvas does not destroy the context, and does not put the
 context back the way it was found. Whatever the last drawing call left in
