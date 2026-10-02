@@ -55,8 +55,8 @@ namespace cycfi::artist
 
       using fill_rule_enum = path::fill_rule_enum;
 
-      fill_rule_enum    fill_rule() const                { return _fill_rule; }
-      void              fill_rule(fill_rule_enum rule)   { _fill_rule = rule; }
+      fill_rule_enum    fill_rule() const              { return current()->_fill_rule; }
+      void              fill_rule(fill_rule_enum rule) { current()->_fill_rule = rule; }
 
       void              save();
       void              restore();
@@ -80,6 +80,7 @@ namespace cycfi::artist
          int            _text_align       = canvas::baseline;
          mode_enum      _mode             = source_over;
          bool           _shadow           = false;
+         fill_rule_enum _fill_rule        = fill_rule_enum::fill_winding;
       };
 
       using state_info_ptr = std::unique_ptr<state_info>;
@@ -89,7 +90,6 @@ namespace cycfi::artist
       state_info const* current() const { return _stack.top().get(); }
 
       state_info_stack  _stack;
-      fill_rule_enum    _fill_rule = fill_rule_enum::fill_winding;
       float             _scale;
       CGAffineTransform _inv_affine;
    };
@@ -601,7 +601,6 @@ namespace cycfi::artist
          auto b = bounds.bottom;
 
          radius = std::min(radius, std::min(bounds.width(), bounds.height()));
-         c.begin_path();
          c.move_to(point{x, y + radius});
          c.line_to(point{x, b - radius});
          c.arc_to(point{x, b }, point{ x + radius, b}, radius);
@@ -1154,6 +1153,28 @@ namespace cycfi::artist
    {
       if (auto* impl = layer.impl())
          draw(impl->img, dest);
+   }
+
+   canvas::path_holder::path_holder(canvas& cnv)
+    : _cnv(cnv)
+    , _saved(nullptr)
+   {
+      auto ctx = CGContextRef(cnv._context);
+      if (!CGContextIsPathEmpty(ctx))
+         _saved = (void*) CGContextCopyPath(ctx);
+      CGContextBeginPath(ctx);
+   }
+
+   canvas::path_holder::~path_holder()
+   {
+      auto ctx = CGContextRef(_cnv._context);
+      CGContextBeginPath(ctx);
+      if (_saved)
+      {
+         auto saved = (CGPathRef) _saved;
+         CGContextAddPath(ctx, saved);
+         CGPathRelease(saved);
+      }
    }
 
    void canvas::add_round_rect_impl(const rect& r, float radius)

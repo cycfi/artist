@@ -100,7 +100,7 @@ densities.
                                         `dest`.                | `void`
 |===
 
-image::canvas/draw_placement.png[alt="The same image drawn at its own size, at one and a half times, and stretched into a rectangle", width=560px, align=center, title="The same image placed three ways.", link={imagesdir}/canvas/draw_placement.png]
+image::canvas/draw_placement.png[alt="A four digit seven segment display drawn at its own size, at one and a half times, and stretched into a rectangle twice as tall", width=560px, align=center, title="The same image placed three ways.", link={imagesdir}/canvas/draw_placement.png]
 
 `scale` multiplies both axes, so the shape is kept. `dest` does not: the
 two axes stretch independently to reach its edges, and an image put into a
@@ -126,7 +126,7 @@ comes out soft. There is no control over that.
                                     fill `dest`.               | `void`
 |===
 
-image::canvas/draw_src_dest.png[alt="One numbered cell outlined in a strip of four, and the same cell drawn larger beside it", width=560px, align=center, title="Lifting one frame out of a sheet.", link={imagesdir}/canvas/draw_src_dest.png]
+image::canvas/draw_src_dest.png[alt="The third cell outlined in a four digit seven segment display, and the same cell drawn larger beside it", width=560px, align=center, title="Lifting one frame out of a sheet.", link={imagesdir}/canvas/draw_src_dest.png]
 
 This is how a single frame is taken from a sprite sheet, and it is the
 form the other five are built from: each of them calls this one with `src`
@@ -135,7 +135,9 @@ covering the whole image.
 `src` is in the image's own units, the same units as `size()`, so it names
 the same region of a 2x image as of a 1x one. That is the point of the
 choice: a sheet can be swapped for a denser one without touching the
-arithmetic that picks the frames out of it.
+arithmetic that picks the frames out of it. In the figure above the cells
+are 32 units wide, so the third of them starts 64 units in, which is the
+`64` in `src`.
 
 CAUTION: Keep `src` inside the image and give both rectangles a positive
 width and height. Outside that the backends disagree, and none of the
@@ -175,37 +177,85 @@ underneath is. A layer is valid only for the canvas it was made for.
 
 == Example
 
-One sheet of four frames, built once, with the whole sheet painted and
-then a single frame of it lifted out at twice the size:
+A seven segment display. The ten digits are rendered once into a single
+sheet, and a reading is then put together by painting one frame of that
+sheet per digit, which is what a sprite sheet is for:
 
 ```c++
-   // Four 32 by 32 frames in one image, drawn once.
-   auto sheet = image{128, 32};
+   // One seven segment digit in a 32 by 32 cell, at the corner `at`.
+   void draw_digit(canvas& cnv, int n, point at)
    {
-      offscreen_image ctx{sheet};
-      canvas scnv{ctx.context()};
-      char const* label[] = {"1", "2", "3", "4"};
-      scnv.font(font_descr{"Open Sans", 18});
-      scnv.text_align(canvas::center | canvas::middle);
-      for (int i = 0; i != 4; ++i)
+      // Three segment shapes in a 16 by 26 digit: the horizontal bar across
+      // the top, the vertical post down one side, and the pointed middle
+      // bar. The bar is 16 long and the post 13, so they are not one shape
+      // turned; the other four segments are these two turned half a turn.
+      static path const bar{"M 0.5 0 L 15.5 0 L 13.1 2.4 L 2.9 2.4 Z"};
+      static path const post{"M 0 0.5 L 0 12.5 L 2.4 10.1 L 2.4 2.9 Z"};
+      static path const mid{
+         "M 0 13 L 1.2 11.8 L 14.8 11.8 L 16 13 L 14.8 14.2 L 1.2 14.2 Z"
+      };
+
+      // Segments a to g: the shape, where it goes, and whether it is turned.
+      struct placement { path const& shape; float x, y; bool turned; };
+      static placement const seg[] =
       {
-         scnv.fill_style(rgba(21, 101, 192, 80 + i * 58));
-         scnv.add_circle(circle{i * 32 + 16.0f, 16, 14});
-         scnv.fill();
-         scnv.fill_style(colors::white);
-         scnv.fill_text(label[i], i * 32 + 16.0f, 16);
+         {bar, 0, 0, false},   {post, 16, 13, true},  {post, 16, 26, true},
+         {bar, 16, 26, true},  {post, 0, 13, false},  {post, 0, 0, false},
+         {mid, 0, 0, false}
+      };
+      static int const lit[] =
+         {0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f};
+
+      auto st = cnv.new_state();
+      cnv.fill_style(rgba(26, 26, 26, 255));
+      cnv.fill_round_rect(rect{at.x, at.y, at.x + 32, at.y + 32}, 4);
+      cnv.translate(at.x + 8, at.y + 3);
+
+      for (int i = 0; i != 7; ++i)
+      {
+         auto seg_state = cnv.new_state();
+         cnv.translate(seg[i].x, seg[i].y);
+         if (seg[i].turned)
+            cnv.rotate(cycfi::pi);
+         cnv.fill_style(
+            ((lit[n] >> i) & 1)?
+               rgba(255, 255, 255, 255) : rgba(255, 255, 255, 12)
+         );
+         cnv.add_path(seg[i].shape);
+         cnv.fill();
       }
    }
 
-   // The whole sheet, then its third frame at twice the size.
+   // The ten digits, rendered once into one 320 by 32 sheet.
+   auto sheet = image{320, 32};
+   {
+      offscreen_image ctx{sheet};
+      canvas scnv{ctx.context()};
+      for (int d = 0; d != 10; ++d)
+         draw_digit(scnv, d, point{d * 32.0f, 0});
+   }
+
+   // A reading, blitted from the sheet one digit at a time. The 2 is drawn
+   // twice, from the one cell that holds it.
    cnv.draw(sheet, point{20, 20});
-   cnv.draw(sheet, rect{64, 0, 96, 32}, rect{20, 72, 84, 136});
+   char const* reading = "2026";
+   for (int i = 0; reading[i]; ++i)
+   {
+      float x = (reading[i] - '0') * 32.0f;
+      cnv.draw(
+         sheet,
+         rect{x, 0, x + 32, 32},
+         rect{60 + i * 64.0f, 70, 108 + i * 64.0f, 118}
+      );
+   }
 ```
 
-image::canvas/images_example.png[alt="A strip of four numbered discs, with the third of them repeated below at twice the size", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/images_example.png]
+image::canvas/images_example.png[alt="A sheet of the ten digits in a seven segment display, and below it a reading of 2026 built from four of its cells", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/images_example.png]
 
-The frame below is the third disc of the sheet and nothing else, picked
-out by a `src` of `rect{64, 0, 96, 32}`: 32 units wide, starting 64 units
-in. It is soft where the sheet above it is crisp, which is the cost of
-enlarging a raster and the reason a sheet is usually authored at the
-largest size it will be drawn.
+The segment drawing runs ten times, once, whatever the reading is and
+however often it changes after that. Every later frame is four `draw`
+calls against a sheet that is already rasterised, and the digit `2` is
+painted twice from the one cell that holds it. Each cell is enlarged from
+32 units to 48 on the way out, which is why the reading is softer than the
+sheet above it; a sheet is usually authored at the largest size it will be
+drawn.

@@ -9,6 +9,12 @@
    Every probe renders onto a transparent 100 by 100 image and samples
    pixels, so a pixel (x, y) covers [x, x+1) by [y, y+1). Sample points sit
    a pixel or two clear of an edge, away from the antialiased boundary.
+
+   One claim of the page has no case here: that an unbalanced stack cannot
+   be written, because canvas::save and canvas::restore are private and
+   canvas::state is their only caller. That is enforced by the compiler,
+   and a requires-expression cannot test it: Clang treats an access error
+   inside one as hard rather than as an unsatisfied requirement.
 =============================================================================*/
 #include "test_support.hpp"
 
@@ -296,42 +302,6 @@ TEST_CASE("canvas states: the stack nests", "[states]")
 #endif
 }
 
-TEST_CASE("canvas states: save and restore by hand", "[states]")
-{
-   // cnv.save() and cnv.restore() are what new_state() calls. The same
-   // drawing done both ways paints the same pixels.
-   auto draw = [](canvas& cnv, bool by_hand)
-   {
-      cnv.fill_style(colors::red);
-      if (by_hand)
-      {
-         cnv.save();
-         cnv.fill_style(colors::blue);
-         cnv.translate(30, 30);
-         cnv.restore();
-      }
-      else
-      {
-         auto st = cnv.new_state();
-         cnv.fill_style(colors::blue);
-         cnv.translate(30, 30);
-      }
-      cnv.fill_rect(10, 10, 40, 40);
-   };
-
-   image one{100, 100, 1};
-   render(one, [&](canvas& cnv) { draw(cnv, true); });
-   image two{100, 100, 1};
-   render(two, [&](canvas& cnv) { draw(cnv, false); });
-
-#if !defined(ARTIST_RECORDING)
-   for (int y = 0; y < 100; y += 7)
-      for (int x = 0; x < 100; x += 7)
-         REQUIRE(pixel_at(one, x, y).a == pixel_at(two, x, y).a);
-   CHECK(reddish(pixel_at(one, 25, 25)));
-#endif
-}
-
 TEST_CASE("canvas states: a clip only ever narrows", "[states]")
 {
    // Nesting a clip intersects it with the one already in effect, and the
@@ -419,30 +389,90 @@ TEST_CASE("canvas states: the state object", "[states]")
 // Behaviour under review. These pin down what the library does today so a
 // change is visible. None of them asserts the behaviour is correct.
 
-TEST_CASE("canvas states: current behaviour, fill_rule", "[states]")
+TEST_CASE("canvas states: the fill rule is in the bundle", "[states]")
 {
-   // The fill rule is part of the saved bundle on Cairo and not on
-   // Quartz 2D, where canvas_state::_fill_rule sits outside the stack.
-   // Setting it inside a scope leaks out of the scope there.
-   image img{100, 100, 1};
-   render(img, [](canvas& cnv)
+   // The fill rule is drawing state like any other setting, on every
+   // backend: a scope restores it, and it is not lost by begin_path or by
+   // an intervening paint, which is what a path-attached rule would do.
    {
-      cnv.fill_style(colors::red);
-      cnv.fill_rule(path::fill_winding);
+      // Restored by the scope.
+      image img{100, 100, 1};
+      render(img, [](canvas& cnv)
       {
+         cnv.fill_style(colors::red);
+         cnv.fill_rule(path::fill_winding);
+         {
+            auto st = cnv.new_state();
+            cnv.fill_rule(path::fill_odd_even);
+         }
+         donut(cnv);
+      });
+#if !defined(ARTIST_RECORDING)
+      CHECK(inked(pixel_at(img, 50, 50)));         // winding fills the hole
+#endif
+   }
+
+   {
+      // In effect inside the scope.
+      image img{100, 100, 1};
+      render(img, [](canvas& cnv)
+      {
+         cnv.fill_style(colors::red);
          auto st = cnv.new_state();
          cnv.fill_rule(path::fill_odd_even);
-      }
-      donut(cnv);
-   });
-
-#if defined(ARTIST_CAIRO)
-   // Restored: the winding rule fills the hole.
-   CHECK(inked(pixel_at(img, 50, 50)));
-#elif defined(ARTIST_QUARTZ_2D)
-   // Not restored: the even-odd rule set inside the scope still applies.
-   CHECK(blank(pixel_at(img, 50, 50)));
+         donut(cnv);
+      });
+#if !defined(ARTIST_RECORDING)
+      CHECK(blank(pixel_at(img, 50, 50)));         // even-odd leaves it
 #endif
+   }
+
+   {
+      // Survives begin_path and an earlier paint: donut() begins a path of
+      // its own, and a rectangle is filled before it.
+      image img{100, 100, 1};
+      render(img, [](canvas& cnv)
+      {
+         cnv.fill_style(colors::red);
+         cnv.fill_rule(path::fill_odd_even);
+         cnv.add_rect(0, 0, 5, 5);
+         cnv.fill();
+         donut(cnv);
+      });
+#if !defined(ARTIST_RECORDING)
+      CHECK(blank(pixel_at(img, 50, 50)));
+#endif
+   }
+
+   {
+      // The default is winding.
+      image img{100, 100, 1};
+      render(img, [](canvas& cnv)
+      {
+         cnv.fill_style(colors::red);
+         donut(cnv);
+      });
+#if !defined(ARTIST_RECORDING)
+      CHECK(inked(pixel_at(img, 50, 50)));
+#endif
+   }
+
+   {
+      // clip(pth) clips by the rule pth carries and leaves the canvas rule
+      // alone, so a later fill is still winding.
+      image img{100, 100, 1};
+      render(img, [](canvas& cnv)
+      {
+         cnv.fill_style(colors::red);
+         path pth{"M 0,0 L 100,0 L 100,100 L 0,100 Z"};
+         pth.fill_rule(path::fill_odd_even);
+         cnv.clip(pth);
+         donut(cnv);
+      });
+#if !defined(ARTIST_RECORDING)
+      CHECK(inked(pixel_at(img, 50, 50)));
+#endif
+   }
 }
 
 TEST_CASE("canvas states: current behaviour, move assignment", "[states]")
@@ -471,38 +501,6 @@ TEST_CASE("canvas states: current behaviour, move assignment", "[states]")
    auto p = pixel_at(img, 25, 25);
    CHECK(p.g > 200);
    CHECK(p.r < 80);
-#endif
-}
-
-TEST_CASE("canvas states: current behaviour, unmatched restore", "[states]")
-{
-   // A restore with no matching save is a no-op in the W3C API. Artist
-   // has three answers. On Quartz 2D and Skia canvas_state::restore()
-   // pops the last entry and the next access to it is a read of an empty
-   // stack, which crashes; those two are not exercised here for that
-   // reason. On Cairo cairo_restore is called all the same and the
-   // context goes into a permanent error state, so nothing drawn
-   // afterwards lands. Only the recording and Direct2D backends guard the
-   // last entry and do nothing, which is the W3C behaviour.
-#if defined(ARTIST_CAIRO)
-   image img{100, 100, 1};
-   render(img, [](canvas& cnv)
-   {
-      cnv.restore();                         // one too many
-      cnv.fill_style(colors::red);
-      cnv.fill_rect(10, 10, 40, 40);
-   });
-   CHECK(blank(pixel_at(img, 25, 25)));      // the context is dead
-#endif
-#if defined(ARTIST_RECORDING)
-   image img{100, 100, 1};
-   render(img, [](canvas& cnv)
-   {
-      cnv.restore();
-      cnv.fill_style(colors::red);
-      cnv.fill_rect(10, 10, 40, 40);
-   });
-   CHECK(recorded(img).count(recording::op::fill) == 1);
 #endif
 }
 
@@ -545,7 +543,7 @@ namespace
 TEST_CASE("canvas states: stack figure", "[states]")
 {
    // The page figure images/canvas/state_stack.png: five swatches painted
-   // by the same statement at five points in a nested save and restore.
+   // by the same statement at five points in a nested pair of scopes.
    // The colour is the current fill style, so the swatches read the stack
    // out loud: what goes on comes back off in reverse.
    figure(190, "canvas_state_stack.png", [](canvas& cnv)
@@ -574,7 +572,7 @@ TEST_CASE("canvas states: stack figure", "[states]")
 
       char const* labels[] =
       {
-         "base", "save", "save", "restore", "restore"
+         "base", "push", "push", "pop", "pop"
       };
       for (int i = 0; i != 5; ++i)
          caption(cnv, labels[i], x0 + i * step + w / 2, 132);

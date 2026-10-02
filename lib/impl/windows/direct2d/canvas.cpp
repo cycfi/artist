@@ -146,6 +146,8 @@ namespace cycfi::artist
          int            text_align     = canvas::baseline;
          composite_op_enum composite   = canvas::source_over;
          std::size_t    clip_depth     = 0;   // # of clip layers active at save
+         artist::path::fill_rule_enum
+                        fill_rule      = artist::path::fill_winding;
       };
 
                         canvas_state();
@@ -943,13 +945,19 @@ namespace cycfi::artist
       _state->path().impl()->close_path();
    }
 
+   // The fill rule is drawing state, not a property of the path being built,
+   // so it is stamped onto the current path at the point of use. path_impl
+   // keeps its cached geometry when the mode is unchanged, which it usually
+   // is, so this costs nothing in the common case.
    void canvas::fill()
    {
+      _state->path().fill_rule(_state->current().fill_rule);
       _state->fill(*_context, false);
    }
 
    void canvas::fill_preserve()
    {
+      _state->path().fill_rule(_state->current().fill_rule);
       _state->fill(*_context, true);
    }
 
@@ -967,6 +975,7 @@ namespace cycfi::artist
    {
       // A single rectangle under a transform without rotation or skew clips
       // axis-aligned: no geometry, no layer.
+      _state->path().fill_rule(_state->current().fill_rule);
       artist::rect r;
       auto const& m = _state->current().matrix;
       if (m._12 == 0 && m._21 == 0 && _state->path().impl()->rect_primitive(r))
@@ -1022,6 +1031,7 @@ namespace cycfi::artist
 
    bool canvas::point_in_path(point p) const
    {
+      _state->path().fill_rule(_state->current().fill_rule);
       return _state->path().includes(p);
    }
 
@@ -1056,6 +1066,20 @@ namespace cycfi::artist
    void canvas::add_rect(rect const& r)
    {
       _state->path().add_rect(r);
+   }
+
+   canvas::path_holder::path_holder(canvas& cnv)
+    : _cnv(cnv)
+    , _saved(new d2d::path_impl(*cnv._state->path().impl()))
+   {
+      cnv.begin_path();
+   }
+
+   canvas::path_holder::~path_holder()
+   {
+      auto* saved = static_cast<d2d::path_impl*>(_saved);
+      *_cnv._state->path().impl() = *saved;
+      delete saved;
    }
 
    void canvas::add_round_rect_impl(rect const& r, float radius)
@@ -1152,7 +1176,7 @@ namespace cycfi::artist
 
    void canvas::fill_rule(path::fill_rule_enum rule)
    {
-      _state->path().fill_rule(rule);
+      _state->current().fill_rule = rule;
    }
 
    ////////////////////////////////////////////////////////////////////////////

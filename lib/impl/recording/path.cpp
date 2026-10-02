@@ -334,6 +334,11 @@ namespace cycfi::artist::recording
 
    bool path_impl::includes(point p) const
    {
+      return includes(p, rule);
+   }
+
+   bool path_impl::includes(point p, artist::path::fill_rule_enum r) const
+   {
       // Winding number over every subpath taken as closed, as a fill does.
       // Odd winding numbers are inside under the even-odd rule too.
       int wn = 0;
@@ -359,7 +364,7 @@ namespace cycfi::artist::recording
             }
          }
       }
-      return rule == artist::path::fill_winding? wn != 0 : (wn & 1) != 0;
+      return r == artist::path::fill_winding? wn != 0 : (wn & 1) != 0;
    }
 }
 

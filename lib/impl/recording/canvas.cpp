@@ -52,6 +52,8 @@ namespace cycfi::artist
          int                        align = canvas::baseline;
          canvas::composite_op_enum  composite = canvas::source_over;
          rect                       clip;          // surface space
+         artist::path::fill_rule_enum
+                                    fill_rule = artist::path::fill_winding;
       };
 
       explicit                      canvas_state(canvas_impl* ctx_);
@@ -350,7 +352,9 @@ namespace cycfi::artist
 
    bool canvas::point_in_path(point p) const
    {
-      return _state->path.includes(_state->cur().matrix.apply(p));
+      return _state->path.includes(
+         _state->cur().matrix.apply(p), _state->cur().fill_rule
+      );
    }
 
    rect canvas::fill_extent() const
@@ -384,6 +388,20 @@ namespace cycfi::artist
    void canvas::add_rect(rect const& r)
    {
       _state->path.add_rect(r);
+   }
+
+   canvas::path_holder::path_holder(canvas& cnv)
+    : _cnv(cnv)
+    , _saved(new recording::path_impl(cnv._state->path))
+   {
+      cnv.begin_path();
+   }
+
+   canvas::path_holder::~path_holder()
+   {
+      auto* saved = static_cast<recording::path_impl*>(_saved);
+      _cnv._state->path = *saved;
+      delete saved;
    }
 
    void canvas::add_round_rect_impl(rect const& r, float radius)
@@ -488,7 +506,7 @@ namespace cycfi::artist
 
    void canvas::fill_rule(path::fill_rule_enum rule)
    {
-      _state->path.rule = rule;
+      _state->cur().fill_rule = rule;
    }
 
    ////////////////////////////////////////////////////////////////////////////

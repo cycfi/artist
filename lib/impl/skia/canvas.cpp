@@ -48,6 +48,7 @@ namespace cycfi::artist
       SkPaint&          stroke_paint();
       class font&       font();
       int&              text_align();
+      artist::path::fill_rule_enum& fill_rule();
       SkPaint&          clear_paint();
       blur_info&        shadow();
       bool&             shadow_visible();
@@ -80,6 +81,8 @@ namespace cycfi::artist
          SkPaint        _stroke_paint;
          class font     _font;
          int            _text_align = 0;
+         artist::path::fill_rule_enum
+                        _fill_rule = artist::path::fill_winding;
          blur_info      _shadow = {{0, 0}, 0, colors::black};
          bool           _shadow_visible = false;
       };
@@ -126,6 +129,11 @@ namespace cycfi::artist
    int& canvas::canvas_state::text_align()
    {
       return current()->_text_align;
+   }
+
+   artist::path::fill_rule_enum& canvas::canvas_state::fill_rule()
+   {
+      return current()->_fill_rule;
    }
 
    SkPaint& canvas::canvas_state::clear_paint()
@@ -351,15 +359,30 @@ namespace cycfi::artist
       _state->path().close();
    }
 
+   namespace
+   {
+      // The fill rule is drawing state, not a property of the path being
+      // built: the builder is reset by begin_path and emptied by every
+      // paint, so the rule is stamped onto the SkPath at the point of use.
+      SkPath with_fill_rule(SkPath path, path::fill_rule_enum rule)
+      {
+         path.setFillType(
+            rule == path::fill_winding?
+               SkPathFillType::kWinding : SkPathFillType::kEvenOdd
+         );
+         return path;
+      }
+   }
+
    void canvas::fill()
    {
-      auto path = _state->path().detach();
+      auto path = with_fill_rule(_state->path().detach(), _state->fill_rule());
       draw_path(_context, *_state, path, _state->fill_paint());
    }
 
    void canvas::fill_preserve()
    {
-      auto path = _state->path().snapshot();
+      auto path = with_fill_rule(_state->path().snapshot(), _state->fill_rule());
       draw_path(_context, *_state, path, _state->fill_paint());
    }
 
@@ -377,7 +400,9 @@ namespace cycfi::artist
 
    void canvas::clip()
    {
-      _context->clipPath(_state->path().detach(), true);
+      _context->clipPath(
+         with_fill_rule(_state->path().detach(), _state->fill_rule()), true
+      );
    }
 
    void canvas::clip(class path const& p)
@@ -404,7 +429,8 @@ namespace cycfi::artist
 
    bool canvas::point_in_path(point p) const
    {
-      return _state->path().snapshot().contains(p.x, p.y);
+      return with_fill_rule(_state->path().snapshot(), _state->fill_rule())
+         .contains(p.x, p.y);
    }
 
    void canvas::move_to(point p)
@@ -675,9 +701,7 @@ namespace cycfi::artist
 
    void canvas::fill_rule(path::fill_rule_enum rule)
    {
-      _state->path().setFillType(
-         rule == path::fill_winding? SkPathFillType::kWinding : SkPathFillType::kEvenOdd
-      );
+      _state->fill_rule() = rule;
    }
 
    namespace
@@ -836,6 +860,20 @@ namespace cycfi::artist
    {
       auto const size = layer.size();
       draw(layer, rect{pos.x, pos.y, pos.x + size.x, pos.y + size.y});
+   }
+
+   canvas::path_holder::path_holder(canvas& cnv)
+    : _cnv(cnv)
+    , _saved(new SkPathBuilder(cnv._state->path()))
+   {
+      cnv._state->path().reset();
+   }
+
+   canvas::path_holder::~path_holder()
+   {
+      auto* saved = static_cast<SkPathBuilder*>(_saved);
+      _cnv._state->path() = *saved;
+      delete saved;
    }
 
    void canvas::add_round_rect_impl(rect const& r, float radius)

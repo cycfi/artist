@@ -21,23 +21,24 @@ void draw(canvas& cnv)
    // the real window corner instead of moving with the letterbox.
    auto const win = cnv.clip_extent();
 
-   cnv.save();
-   scale_to_fit(cnv, {window_size.x, window_size.y}, colors::black);
-   cnv.translate(x, y);
-   cnv.draw(space);
-   x += x_incr;
-   y += y_incr;
+   {
+      // The scope undoes scale_to_fit and the pan: back to window coordinates.
+      auto st = cnv.new_state();
+      scale_to_fit(cnv, {window_size.x, window_size.y}, colors::black);
+      cnv.translate(x, y);
+      cnv.draw(space);
+      x += x_incr;
+      y += y_incr;
 
-   if (x > 0)
-      x_incr = -x_incr;
-   if (y > 0)
-      y_incr = -y_incr;
-   if (x < -(size.x-640))
-      x_incr = -x_incr;
-   if (y < -(size.y-480))
-      y_incr = -y_incr;
-
-   cnv.restore();   // undo scale_to_fit + pan → back to window coordinates
+      if (x > 0)
+         x_incr = -x_incr;
+      if (y > 0)
+         y_incr = -y_incr;
+      if (x < -(size.x-640))
+         x_incr = -x_incr;
+      if (y < -(size.y-480))
+         y_incr = -y_incr;
+   }
    print_elapsed(cnv, {win.width(), win.height()}, colors::black.opacity(0));
 }
 

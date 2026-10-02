@@ -5,8 +5,8 @@
 The canvas draws with whatever styles, transform and clip are in effect at
 the moment of the call. Those settings are not separate knobs but one
 bundle, the drawing state, and the canvas keeps a stack of them.
-`cnv.save()` pushes a copy of the bundle; `cnv.restore()` pops it and makes
-it current again. Everything set in between is undone in one step.
+`cnv.new_state()` pushes a copy of the bundle and pops it again at the end
+of the enclosing scope. Everything set in between is undone in one step.
 
 This is how drawing code stays composable. A function that translates the
 origin, narrows the clip and picks a font has changed the canvas for
@@ -14,16 +14,19 @@ everything drawn after it, and a clip in particular can only ever be
 narrowed, never widened. Saving first and restoring at the end is the only
 way to hand the canvas back as it was found.
 
-`cnv.new_state()` does that pairing for you. It returns an object that
-saves on construction and restores when it goes out of scope, including
-when an exception carries you out of the block, so the two halves cannot
-drift apart as the code between them grows. Prefer it to a hand written
-`save` and `restore`.
+`cnv.new_state()` is the whole interface. It returns an object that pushes
+the state on construction and pops it when it goes out of scope, including
+when an exception carries you out of the block, so the two halves are made
+by the language rather than by the caller and cannot drift apart as the
+code between them grows. There is no way to push or pop on its own: the
+underlying `save` and `restore` are private, and `canvas::state` is their
+only caller.
 
 The bundle holds the xref:canvas/styles.adoc[fill and stroke styles],
 whether a colour or a gradient, the line width, cap, join and miter limit,
 the shadow, the composite operation, the
 xref:foundation/font.adoc[font] and the text alignment, the
+xref:canvas/current_path.adoc#_fill_rule[fill rule], the
 xref:canvas/transforms.adoc[current transform], and the clip.
 
 It does not hold the xref:canvas/current_path.adoc[current path]. A shape
@@ -32,9 +35,11 @@ built inside a scope is still there when the scope ends. Nor does it hold
 the pixels: a restore is not an undo, and ink laid down inside a scope
 stays where it landed.
 
-NOTE: These are the W3C canvas API's `save` and `restore`, and the bundle
-is its drawing state, which likewise excludes the current default path and
-the bitmap. `new_state` is Artist's own; the W3C API has no scoped form.
+NOTE: The bundle is the W3C canvas API's drawing state, which likewise
+excludes the current default path and the bitmap, and a `new_state` scope
+is its `save` and `restore` pair. Artist does not expose those two
+separately. The W3C API does, and leaves an unmatched `restore` as a
+silent no-op; a scope makes the mistake unwritable instead.
 
 == Include
 
@@ -59,8 +64,6 @@ the bitmap. `new_state` is Artist's own; the W3C API has no scoped form.
    };
 
    state    new_state();
-   void     save();
-   void     restore();
 ```
 
 == Expressions
@@ -79,22 +82,21 @@ the bitmap. `new_state` is Artist's own; the W3C API has no scoped form.
 | `cnv.new_state()`   | Push a copy of the drawing
                         state and return an object
                         that pops it when destroyed.  | `canvas::state`
-| `cnv.save()`        | Push a copy of the drawing
-                        state.                        | `void`
-| `cnv.restore()`     | Pop the drawing state and make
-                        it current.                   | `void`
 |===
 
-image::canvas/state_stack.png[alt="Five swatches painted by the same statement, their colours following a nested save and restore", width=560px, align=center, title="One statement, five results: the fill style follows the stack.", link={imagesdir}/canvas/state_stack.png]
+Hold the result in a named local. A temporary is destroyed at the end of
+the full expression, so `cnv.new_state();` on its own pushes and pops the
+state and protects nothing.
+
+image::canvas/state_stack.png[alt="Five swatches painted by the same statement, their colours following a nested pair of scopes", width=560px, align=center, title="One statement, five results: the fill style follows the stack.", link={imagesdir}/canvas/state_stack.png]
 
 Every swatch above is painted by the same `fill_round_rect` call. Only the
 depth of the stack differs, and with it the fill style the call reads. What
 goes on comes back off in reverse, so the fourth swatch is the second one's
 colour and the fifth is the first's.
 
-`save` and `restore` have to balance. `cnv.new_state()` is the way to be
-sure of that: it is `save` in a constructor and `restore` in a destructor,
-so the block's shape and the stack's depth are the same thing.
+A push and a pop have to balance, so the block's shape and the stack's
+depth are the same thing.
 
 ```c++
    {
@@ -104,18 +106,6 @@ so the block's shape and the stack's depth are the same thing.
       // draw
    }  // the clip and the transform are undone here
 ```
-
-CAUTION: A `restore` with no matching `save` is a no-op in the W3C API, and
-is not one here. On Quartz 2D and Skia it reads the state stack after
-emptying it, which crashes. On Cairo it puts the drawing context into a
-permanent error state, so nothing drawn afterwards appears and no error is
-raised. Only the recording backend does nothing, as the W3C API asks. Keep
-the calls balanced, and prefer `new_state`, which cannot be unbalanced.
-
-CAUTION: The fill rule is in the bundle on Cairo and outside it on
-Quartz 2D. `cnv.fill_rule(rule)` set inside a scope is undone by the restore
-on the first and outlives the scope on the second. Set it where you fill
-rather than relying on either.
 
 === Constructors and Assignment
 

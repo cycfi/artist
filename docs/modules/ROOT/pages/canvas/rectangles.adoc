@@ -3,28 +3,23 @@
 == Overview
 
 A rectangle is the shape user interface code draws most, so the canvas
-carries it as a one-step call. `cnv.fill_rect(r)` is `cnv.add_rect(r);`
-followed by `cnv.fill();`, written once. The other seven calls on this page
-are the same shorthand for the rounded shape, for stroking, and for a
-rectangle given as loose scalars.
+carries it as a one-step call. `cnv.fill_rect(r)` paints the rectangle `r`
+then and there. The other seven calls on this page do the same for the
+rounded shape, for stroking, and for a rectangle given as loose scalars.
 
-Shorthand is all they are. There is no separate rectangle drawing mode: the
-paint comes from the xref:canvas/styles.adoc[fill or stroke style] then in
-effect, the geometry goes through the
+They paint the rectangle and nothing else. The
+xref:canvas/current_path.adoc[current path] is neither painted along with
+it nor disturbed by it, so a shape half built when one of these is called
+is still half built afterwards. In every other respect they are ordinary
+paints: the ink comes from the xref:canvas/styles.adoc[fill or stroke
+style] then in effect, the geometry goes through the
 xref:canvas/transforms.adoc[current transform], and the line width, joins,
 shadow and fill rule apply as they would to any other shape.
 
-CAUTION: Because they go through the
-xref:canvas/current_path.adoc[current path], these calls paint whatever was
-already built into it and empty it afterwards, exactly as `fill` and
-`stroke` do. A rectangle painted in the middle of building a shape takes
-the half-built shape with it. Finish or discard the path first.
-
-NOTE: Artist follows the W3C canvas API, with a difference here. There
-`fillRect` and `strokeRect` paint the rectangle alone and leave the current
-default path as it was. In Artist they are built from `add_rect` and
-`fill`, so the current path is both an input to them and a casualty of
-them.
+NOTE: These are the W3C canvas API's `fillRect` and `strokeRect`, and they
+follow its rule of leaving the current default path alone. The two `round`
+forms are Artist's own; the W3C API rounds corners through `roundRect` on
+the path instead.
 
 == Include
 
@@ -137,14 +132,6 @@ other square corner.
 Unlike a fill, an empty rectangle still strokes: a zero height rectangle
 draws as a line of the stroke's width.
 
-CAUTION: On Quartz 2D the two `round` calls begin a new path before adding
-the rounded rectangle, so they discard whatever the current path already
-held rather than painting it. Cairo and Skia paint it. This is the
-`add_round_rect` difference recorded under
-xref:canvas/current_path.adoc#_backend_differences[Backend Differences],
-reaching these calls through it. Start a round rect on an empty path until
-it is settled.
-
 == Example
 
 A pill shaped toggle with its knob, and a plain outlined frame around the
@@ -156,17 +143,17 @@ pair:
    cnv.line_width(2);
    cnv.stroke_rect(frame);
 
-   auto track = rect{50, 48, 170, 92};
+   auto track = rect{72, 38, 192, 82};
    cnv.fill_style(rgba(21, 101, 192, 255));
    cnv.fill_round_rect(track, 1000);      // clamped to a stadium
 
    cnv.fill_style(colors::white);
-   cnv.fill_round_rect(rect{130, 52, 166, 88}, 1000);
+   cnv.fill_round_rect(rect{152, 42, 188, 78}, 1000);
 
    cnv.font(font_descr{"Open Sans", 15});
    cnv.fill_style(rgba(26, 26, 26, 255));
    cnv.text_align(canvas::left | canvas::middle);
-   cnv.fill_text("On", 190, 70);
+   cnv.fill_text("On", 208, 60);
 ```
 
 image::canvas/rectangles_example.png[alt="An outlined frame around a blue pill shaped toggle with a white knob", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/rectangles_example.png]
