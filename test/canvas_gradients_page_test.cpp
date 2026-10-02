@@ -589,11 +589,12 @@ TEST_CASE("canvas gradients: color stops figure", "[gradients]")
    });
 }
 
-TEST_CASE("canvas gradients: Example", "[gradients]")
+
+namespace
 {
-   // The page's == Example, verbatim, so it keeps compiling and running.
-   image img{360, 110, 1};
-   render(img, [](canvas& cnv)
+   // The page's == Example, verbatim, so the page's code is the code that
+   // draws the page's figure and the code the assertions below check.
+   void example(canvas& cnv)
    {
       auto box = rect{40, 40, 240, 92};
       canvas::linear_gradient sheen{box.left, box.top, box.left, box.bottom};
@@ -614,7 +615,13 @@ TEST_CASE("canvas gradients: Example", "[gradients]")
       cnv.fill_style(lit);
       cnv.add_circle(knob);
       cnv.fill();
-   });
+   }
+}
+
+TEST_CASE("canvas gradients: Example", "[gradients]")
+{
+   image img{360, 110, 1};
+   render(img, [](canvas& cnv) { example(cnv); });
 
 #if !defined(ARTIST_RECORDING)
    // The sheen runs light to dark down the bar, broken in the middle by
@@ -627,4 +634,16 @@ TEST_CASE("canvas gradients: Example", "[gradients]")
    // the first circle is offset there.
    CHECK(pixel_at(img, 290, 56).b > pixel_at(img, 310, 76).b);
 #endif
+}
+
+TEST_CASE("canvas gradients: example figure", "[gradients]")
+{
+   // The page figure images/canvas/gradients_example.png: what the code
+   // under == Example draws. The example's own coordinates span x 40 to
+   // 326, so it is shifted right to sit centred in the figure's width.
+   figure(132, "canvas_gradients_example.png", [](canvas& cnv)
+   {
+      cnv.translate(97, 0);
+      example(cnv);
+   });
 }

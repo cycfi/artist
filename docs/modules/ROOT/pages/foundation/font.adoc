@@ -388,9 +388,11 @@ Build a heading font once, then use its metrics to stack two lines and
 right align the second under the first:
 
 ```c++
+   float x = 40, y = 50;
    auto heading = font{font_descr{"Open Sans, Helvetica", 24}.bold()};
 
    cnv.font(heading);
+   cnv.fill_style(colors::black);
    cnv.fill_text("Artist", {x, y});
 
    auto lh = heading.line_height();
@@ -399,3 +401,8 @@ right align the second under the first:
 
    cnv.fill_text("2D Canvas", {x + dx, y + lh});
 ```
+
+image::foundation/font_example.png[alt="The words Artist and 2D Canvas stacked, their right edges aligned", width=560px, align=center, title="What the code above draws: the second line ends where the first does.", link={imagesdir}/foundation/font_example.png]
+
+`dx` is negative here, because "2D Canvas" is the wider of the two, so the
+second line starts further left and the two end together.

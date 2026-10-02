@@ -413,17 +413,34 @@ Laying a fixed size badge into the top right of a bounds rect, with a
 margin, and taking the part of it that is actually on screen:
 
 ```c++
-   auto slot = rect{0, 0, extent{64, 24}};
-   auto badge = align(slot, bounds.inset(8), 1.0f, 0.0f);
+   auto bounds = rect{20, 20, 320, 140};
+   auto clip = rect{0, 0, 282, 160};
 
+   // The card.
+   cnv.fill_style(colors::gray[92]);
+   cnv.fill_round_rect(bounds, 6);
+   cnv.stroke_style(colors::gray[70]);
+   cnv.line_width(1);
+   cnv.stroke_round_rect(bounds, 6);
+
+   // A fixed size badge, hard right and hard top inside the margin.
+   auto slot = rect{0, 0, extent{64, 24}};
+   auto badge = align(slot, bounds.inset(10), 1.0f, 0.0f);
+
+   // Only the part of it that is on screen gets painted.
    if (intersects(badge, clip))
    {
       auto visible = intersection(badge, clip);
-      cnv.rect(visible);
-      cnv.fill_style(colors::gray[90]);
-      cnv.fill();
+      cnv.fill_style(colors::medium_violet_red);
+      cnv.fill_round_rect(visible, 4);
    }
 ```
+
+image::foundation/rect_example.png[alt="A card with a badge in its top right corner, cut off part way by a clip edge", width=560px, align=center, title="What the code above draws. The red line marks the right edge of clip; it is not drawn by the example.", link={imagesdir}/foundation/rect_example.png]
+
+`align` places the slot without any arithmetic on the edges: 1.0 is hard
+right, 0.0 hard top, and `inset(8)` is the margin. The badge runs past
+`clip`, so `intersection` cuts it back to the part that is on screen.
 
 And the same layout step written once for either axis:
 

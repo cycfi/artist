@@ -321,7 +321,19 @@ Building a shape once and drawing it many times:
    auto arrow = path{"M 0 0 L 40 20 L 0 40 L 10 20 Z"};
 
    // ... in the draw function
-   cnv.add_path(arrow);
    cnv.fill_style(colors::navy_blue);
-   cnv.fill();
+   for (int i = 0; i != 3; ++i)
+   {
+      auto s = cnv.new_state();
+      cnv.translate(40.0f + i * 70, 30);
+      cnv.add_path(arrow);
+      cnv.fill();
+   }
 ```
+
+image::path_example.png[alt="The same arrow shape drawn three times across the figure", width=560px, align=center, title="What the code above draws: one path, painted three times under three transforms.", link={imagesdir}/path_example.png]
+
+The `path` holds the geometry in its own coordinates, so where it lands is
+decided by the transform at the time it is added, not by anything stored in
+the path. Parsing the SVG string once and reusing it is the point: the
+string is parsed at construction, not on every fill.

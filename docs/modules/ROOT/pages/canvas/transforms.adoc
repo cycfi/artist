@@ -144,13 +144,31 @@ Rotating a rectangle about its own centre, and putting the transform back
 afterwards:
 
 ```c++
-   auto state = cnv.new_state();
+   auto r = rect{40, 30, 200, 110};
+   auto center = center_point(r);
 
-   cnv.translate(center.x, center.y);
-   cnv.rotate(pi / 6);
-   cnv.translate(-center.x, -center.y);
+   {
+      auto state = cnv.new_state();
 
+      cnv.translate(center.x, center.y);
+      cnv.rotate(pi / 6);
+      cnv.translate(-center.x, -center.y);
+
+      cnv.add_rect(r);
+      cnv.fill_style(colors::gold);
+      cnv.fill();
+   }
+
+   // The state is back, so this outlines r where it started.
    cnv.add_rect(r);
-   cnv.fill_style(colors::gold);
-   cnv.fill();
+   cnv.stroke_style(colors::gray[60]);
+   cnv.line_width(1);
+   cnv.stroke();
 ```
+
+image::canvas/transforms_example.png[alt="A rectangle rotated about its centre, inside the outline of where it started", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/transforms_example.png]
+
+The three calls read outward from the rectangle: move its centre to the
+origin, turn, then move it back. The outline is drawn after the state ends,
+so it lands square to the axes, which is what shows the transform was put
+back.

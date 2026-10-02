@@ -1375,3 +1375,63 @@ TEST_CASE("canvas styles: compositing figures", "[styles]")
    composite_figure("canvas_composite_ops.png", 0, false);
    composite_figure("canvas_blend_modes.png", 12, true);
 }
+
+namespace
+{
+   // The page's == Example, verbatim, so the page's code is the code that
+   // draws the page's figure.
+   void example(canvas& cnv)
+   {
+      auto panel = rect{40, 30, 260, 130};
+
+      {
+         auto s = cnv.new_state();
+         cnv.shadow_style({0, 4}, 16, colors::black.opacity(0.45));
+         cnv.fill_style(colors::white);
+         cnv.fill_round_rect(panel, 8);
+      }
+
+      cnv.stroke_style(colors::gray[40]);
+      cnv.line_width(1);
+      cnv.line_join(canvas::round_join);
+      cnv.stroke_round_rect(panel, 8);
+   }
+}
+
+TEST_CASE("canvas styles: example figure", "[styles]")
+{
+   // The page figure images/canvas/styles_example.png: what the code under
+   // == Example draws. The ground is a light neutral rather than white, so
+   // the white panel and the shadow under it both read.
+   float const w = 560, h = 190;
+   image img{w, h, 2};
+   {
+      offscreen_image ctx{img};
+      canvas cnv{ctx.context()};
+      cnv.fill_style(rgba(238, 238, 238, 255));
+      cnv.fill_rect(0, 0, w, h);
+      cnv.translate(130, 15);
+      example(cnv);
+   }
+   img.save_png(get_results_path() + "canvas_styles_example.png");
+
+#if !defined(ARTIST_RECORDING)
+   // Under the shift the panel covers 170 to 390 by 45 to 145. The image
+   // is 2x. Read the red channel; every color here is neutral.
+   auto at = [&img](int x, int y)
+   {
+      auto p = reinterpret_cast<std::uint8_t const*>(img.pixels());
+      p += 4 * (2 * y * int(img.bitmap_size().x) + 2 * x);
+      return int(p[2]);
+   };
+   CHECK(at(280, 90) > 250);                 // the panel is white
+   CHECK(at(20, 90) == Approx(238).margin(2));   // the ground is untouched
+   // The shadow is offset downward, so the ground just below the panel is
+   // darkened and the ground the same distance above it is darker by less
+   // or not at all. How far the blur reaches above differs by backend, so
+   // only the asymmetry is asserted, not a value there.
+   CHECK(at(280, 157) < at(20, 157) - 4);
+   CHECK(at(280, 157) < at(280, 33));
+   CHECK(at(20, 157) == Approx(238).margin(2));
+#endif
+}

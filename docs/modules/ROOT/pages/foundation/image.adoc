@@ -267,15 +267,42 @@ At scale 2 the badge stays sharp on a high density display, and the
 drawing code still works in its 64 unit size:
 
 ```c++
+   // Render the badge once, at twice the display resolution.
    image badge{64, 64, 2};
    {
       offscreen_image off{badge};
       canvas bc{off.context()};
+
+      canvas::radial_gradient face{{24, 22}, 2, {32, 32}, 34};
+      face.add_color_stop(0, colors::gold);
+      face.add_color_stop(1, colors::dark_goldenrod);
+      bc.fill_style(face);
       bc.add_circle(32, 32, 30);
-      bc.fill_style(colors::gold);
       bc.fill();
+
+      bc.stroke_style(colors::white.opacity(0.75));
+      bc.line_width(2);
+      bc.add_circle(32, 32, 24);
+      bc.stroke();
+
+      bc.fill_style(colors::white);
+      bc.font(font_descr{"Open Sans", 26}.bold());
+      bc.text_align(canvas::center | canvas::middle);
+      bc.fill_text("A", 32, 32);
    }
 
-   cnv.draw(badge, {10, 10});
-   cnv.draw(badge, {90, 10}, 0.5);
+   // Paint it as often as you like. The drawing above ran once.
+   for (int i = 0; i != 4; ++i)
+   {
+      auto s = 1.0f - i * 0.2f;
+      cnv.draw(badge, {20.0f + i * 80, 20 + (64 - 64 * s) / 2}, s);
+   }
 ```
+
+image::foundation/image_example.png[alt="One gold badge painted four times at four sizes", width=560px, align=center, title="What the code above draws: one badge, rendered once and painted four times.", link={imagesdir}/foundation/image_example.png]
+
+The gradient, the ring and the letter are rasterised once, however many
+times the badge is painted. At scale 2 that raster has four times the
+pixels of the 64 unit box it was drawn in, so it stays sharp when the badge
+is painted larger or on a high density display, and the drawing code never
+leaves its own 64 unit coordinates.

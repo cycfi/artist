@@ -212,6 +212,8 @@ A button sized to its label, with the label centred in it. `pos` is a
 `point`:
 
 ```c++
+   auto pos = point{40, 40};
+
    cnv.font(font_descr{"Open Sans", 16}.bold());
    auto m = cnv.measure_text("Cancel");
 
@@ -223,3 +225,9 @@ A button sized to its label, with the label centred in it. `pos` is a
    cnv.text_align(canvas::center | canvas::middle);
    cnv.fill_text("Cancel", center_point(box));
 ```
+
+image::canvas/text_example.png[alt="A rounded button with the word Cancel centred in it", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/text_example.png]
+
+The box is measured before it is drawn, so the button fits its label rather
+than the label being fitted to a fixed button. `ascent + descent` is used
+for the height instead of `size.y`, for the reason under Measurement.

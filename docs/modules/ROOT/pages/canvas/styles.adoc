@@ -360,9 +360,11 @@ A panel, the `rect` `panel`, with a soft drop shadow and a rounded outline.
 The shadow is scoped to the fill, so the outline casts none:
 
 ```c++
+   auto panel = rect{40, 30, 260, 130};
+
    {
       auto s = cnv.new_state();
-      cnv.shadow_style({0, 2}, 6, colors::black.opacity(0.4));
+      cnv.shadow_style({0, 4}, 16, colors::black.opacity(0.45));
       cnv.fill_style(colors::white);
       cnv.fill_round_rect(panel, 8);
    }
@@ -372,3 +374,8 @@ The shadow is scoped to the fill, so the outline casts none:
    cnv.line_join(canvas::round_join);
    cnv.stroke_round_rect(panel, 8);
 ```
+
+image::canvas/styles_example.png[alt="A white rounded panel with a soft shadow and a thin outline", width=560px, align=center, title="What the code above draws, on a light neutral ground so the white panel reads.", link={imagesdir}/canvas/styles_example.png]
+
+The shadow is set inside the saved state, so it is gone by the time the
+outline is stroked and the outline casts none of its own.

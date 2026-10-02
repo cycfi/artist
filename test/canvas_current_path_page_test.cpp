@@ -11,6 +11,7 @@
    cases that use it are guarded.
 =============================================================================*/
 #include "test_support.hpp"
+#include <array>
 #include <numbers>
 #include <vector>
 
@@ -484,4 +485,70 @@ TEST_CASE("current path: fill_rule figure", "[current_path]")
       }
    }
    img.save_png(get_results_path() + "canvas_fill_rule.png");
+}
+
+namespace
+{
+   // The page's == Example, verbatim, so the page's code is the code that
+   // draws the page's figure.
+   void example(canvas& cnv)
+   {
+      auto panel = rect{40, 30, 260, 130};
+      auto mouse = point{150, 80};
+
+      cnv.begin_path();
+      cnv.add_round_rect(panel, 8);
+      cnv.fill_style(colors::white.opacity(0.1));
+      cnv.stroke_style(colors::white.opacity(0.4));
+      cnv.line_width(1);
+      cnv.fill_preserve();
+      cnv.stroke();
+
+      // The path is gone after stroke, so rebuild it to hit test.
+      cnv.begin_path();
+      cnv.add_round_rect(panel, 8);
+      bool hot = cnv.point_in_path(mouse);
+      cnv.begin_path();
+
+      // Mark the mouse, filled when it is inside the panel.
+      cnv.add_circle(mouse.x, mouse.y, 5);
+      cnv.fill_style(hot? colors::gold : colors::gray[50]);
+      cnv.fill();
+   }
+}
+
+TEST_CASE("canvas current_path: example figure", "[current_path]")
+{
+   // The page figure images/canvas/current_path_example.png: what the code
+   // under == Example draws. The ground is dark because the example paints
+   // in translucent white, as panel chrome over an application background.
+   float const w = 560, h = 190;
+   image img{w, h, 2};
+   {
+      offscreen_image ctx{img};
+      canvas cnv{ctx.context()};
+      cnv.fill_style(rgba(54, 52, 55, 255));
+      cnv.fill_rect(0, 0, w, h);
+      cnv.translate(130, 15);
+      example(cnv);
+   }
+   img.save_png(get_results_path() + "canvas_current_path_example.png");
+
+#if !defined(ARTIST_RECORDING)
+   // Under the shift the panel covers 170 to 390 by 45 to 145 and the
+   // mouse marker sits at 280, 95. The image is 2x.
+   auto at = [&img](int x, int y)
+   {
+      auto p = reinterpret_cast<std::uint8_t const*>(img.pixels());
+      p += 4 * (2 * y * int(img.bitmap_size().x) + 2 * x);
+      return std::array<int, 3>{p[2], p[1], p[0]};
+   };
+   // The mouse is inside the panel, so its marker is gold, not grey.
+   auto m = at(280, 95);
+   CHECK(m[0] > 200);
+   CHECK(m[2] < 60);
+   // The panel's translucent fill lightens the ground inside it, and the
+   // ground outside is untouched.
+   CHECK(at(200, 120)[0] > at(20, 120)[0]);
+#endif
 }

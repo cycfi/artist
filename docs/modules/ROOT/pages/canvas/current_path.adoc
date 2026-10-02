@@ -437,6 +437,9 @@ A rounded panel given both a fill and an outline, and the same shape rebuilt
 to hit test a mouse position:
 
 ```c++
+   auto panel = rect{40, 30, 260, 130};
+   auto mouse = point{150, 80};
+
    cnv.begin_path();
    cnv.add_round_rect(panel, 8);
    cnv.fill_style(colors::white.opacity(0.1));
@@ -450,4 +453,16 @@ to hit test a mouse position:
    cnv.add_round_rect(panel, 8);
    bool hot = cnv.point_in_path(mouse);
    cnv.begin_path();
+
+   // Mark the mouse, filled when it is inside the panel.
+   cnv.add_circle(mouse.x, mouse.y, 5);
+   cnv.fill_style(hot? colors::gold : colors::gray[50]);
+   cnv.fill();
 ```
+
+image::canvas/current_path_example.png[alt="A translucent rounded panel with a gold dot inside it", width=560px, align=center, title="What the code above draws, on a dark ground because the panel paints in translucent white.", link={imagesdir}/canvas/current_path_example.png]
+
+`fill_preserve` keeps the path so the stroke can reuse it, but `stroke`
+consumes it, which is why the hit test builds the shape a second time. The
+last `begin_path` leaves the canvas with nothing pending, so the next call
+starts clean.

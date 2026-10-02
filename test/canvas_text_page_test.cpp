@@ -636,3 +636,35 @@ TEST_CASE("canvas text: alignment figure", "[text]")
       }
    });
 }
+
+namespace
+{
+   // The page's == Example, verbatim, so the page's code is the code that
+   // draws the page's figure.
+   void example(canvas& cnv)
+   {
+      auto pos = point{40, 40};
+
+      cnv.font(font_descr{"Open Sans", 16}.bold());
+      auto m = cnv.measure_text("Cancel");
+
+      auto box = rect{pos, extent{m.size.x + 24, m.ascent + m.descent + 12}};
+      cnv.fill_style(colors::gray[30]);
+      cnv.fill_round_rect(box, 6);
+
+      cnv.fill_style(colors::white);
+      cnv.text_align(canvas::center | canvas::middle);
+      cnv.fill_text("Cancel", center_point(box));
+   }
+}
+
+TEST_CASE("canvas text: example figure", "[text]")
+{
+   // The page figure images/canvas/text_example.png: what the code under
+   // == Example draws, with the box it measured marked.
+   figure(112, "canvas_text_example.png", [](canvas& cnv)
+   {
+      cnv.translate(210, 0);
+      example(cnv);
+   });
+}
