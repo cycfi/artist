@@ -1,35 +1,18 @@
 = Canvas
 
-The canvas API is a derivative of and in line with the spirit of the HTML5
-canvas API, but using a slightly different syntax and naming convention
-following standard {cpp} style (e.g. using lower-case and underscores as
-word separators instead of camelCase).
-
-The canvas API is built on top of xref:foundation.adoc[Foundation classes]
-such as points and rectangles, and on drawable classes such as
-xref:path.adoc[Path] and xref:foundation/image.adoc[Image].
-
 == Overview
 
-The `canvas` is the surface you draw on. Usually you do not construct one:
-the host window creates a canvas for its drawing area and hands it to you
-for the duration of the draw call. To draw into an image instead, you
-construct a canvas yourself on an `offscreen_image`'s context; see
-xref:foundation/image.adoc[Image].
+The `canvas` is the surface you draw on, and the type most of Artist is
+reached through. The canvas API is a derivative of and in line with the
+spirit of the HTML5 canvas API, but using a slightly different syntax and
+naming convention following standard {cpp} style (e.g. using lower-case and
+underscores as word separators instead of camelCase).
 
-Drawing follows the pattern of the HTML5 canvas. You set the styles you
-want, build a path, then fill or stroke it. The styles are state held by
-the canvas rather than arguments to each call, so a fill color set once
-applies to every fill that follows until you set another.
+It is built on top of xref:foundation.adoc[Foundation classes] such as
+points and rectangles, and on drawable classes such as xref:path.adoc[Path]
+and xref:foundation/image.adoc[Image].
 
-[,c++]
-----
-cnv.fill_style(colors::navy_blue);
-cnv.add_round_rect(bounds, 5);
-cnv.fill();
-----
-
-The pages in this section catalogue the canvas interface.
+== The Pages in This Section
 
 * xref:canvas/transforms.adoc[Transforms] map user space onto the surface.
 * xref:canvas/current_path.adoc[Current Path] builds geometry into the
@@ -42,40 +25,120 @@ The pages in this section catalogue the canvas interface.
 * xref:canvas/text.adoc[Text] draws and measures strings.
 * xref:canvas/images.adoc[Drawing Images] paints an image onto the canvas.
 * xref:canvas/states.adoc[States] save and restore the canvas.
+* xref:canvas/context.adoc[Context] covers where a canvas comes from, how
+  long it lives, and the backend handle underneath it.
 
 Throughout, `cnv` is an instance of `canvas`.
 
-== Validity
+== The Drawing Model
 
-Tests whether the canvas wraps a real drawing surface, and reaches the
-backend handle underneath.
+=== Drawing Is Immediate
 
-=== Notation
+A canvas paints pixels and keeps no record of what it painted. There is no
+scene graph, no display list, and no object standing for the shape once the
+call returns: a drawing is the sum of the calls made, in the order they
+were made, and the only way to change one is to draw the whole thing again.
+A later call paints over an earlier one.
 
-`cnv`:: Instance of `canvas`
+That is why a host window hands you a canvas for the duration of one draw
+call and takes it back. Interactive code redraws from scratch on every
+frame, which costs nothing to keep in sync because there is nothing to keep
+in sync. For a drawing that is expensive and does not change, render it
+once into an xref:foundation/image.adoc[image] and paint the image each
+frame instead.
 
-=== Expressions
+=== One Call, Five Steps
 
-[,c++]
-----
-// variant 1
-bool(cnv)
+Drawing follows the pattern of the HTML5 canvas: set the styles you want,
+build a path, then fill or stroke it.
 
-// variant 2
-!cnv
+```c++
+   cnv.fill_style(colors::navy_blue);
+   cnv.add_round_rect(bounds, 5);
+   cnv.fill();
+```
 
-// variant 3
-cnv.impl()
-----
+Only the second of those three lines says anything about the shape. The
+rest of what happens is state the canvas is already carrying, and the
+`fill` on the last line is where all of it is applied at once, in a fixed
+order.
 
-=== Semantics
+image::canvas/drawing_model.png[alt="One rounded rectangle shown five times, gaining a rotation, a fill color, a shadow and a circular clip over an amber bar", width=560px, align=center, title="The same fill call at each step of the drawing model.", link={imagesdir}/canvas/drawing_model.png]
 
-. Returns `true` if the canvas wraps a real drawing surface. A canvas
-handed to you by the host is always valid for the duration of the draw
-call; the check exists for code that may run before a surface is ready.
-. The negation of the above.
-. Returns the backend handle: `SkCanvas*` for Skia, `cairo_t*` for Cairo,
-`canvas_impl*` for Quartz2D. Reach for this only when you need a facility
-of the backend that Artist does not expose.
+. **The path.** `add_round_rect` builds geometry into the canvas, in user
+  space, in the units you chose. Nothing is painted yet.
+  See xref:canvas/current_path.adoc[Current Path].
+. **The transform.** The path is mapped onto the surface by the transform
+  in effect. It may be one you set, or one the host or the image arrived
+  with. See xref:canvas/transforms.adoc[Transforms].
+. **The paint.** `fill` colours the shape with the current fill style,
+  which is a colour or a xref:canvas/gradients.adoc[gradient]; `stroke`
+  outlines it with the stroke style, at the current width, cap and join.
+  See xref:canvas/styles.adoc[Styles].
+. **The shadow.** If a shadow is set, the shape is cast behind itself
+  first, offset and blurred.
+. **The composite.** The result is combined with what is already on the
+  canvas, under the current composite operation, and only inside the clip.
+  Outside the clip nothing changes.
 
-'''
+`fill` and `stroke` consume the path. After either returns the canvas is
+building nothing, so a shape that is to be both filled and outlined is
+added twice, or kept as a xref:path.adoc[`path`] object and added again.
+
+=== Coordinates and Units
+
+The origin is the top left corner, x grows to the right and y grows
+downward. Angles are in radians, so a positive angle turns clockwise on
+screen. Coordinates are `float`.
+
+Coordinates are in units, not pixels. A canvas over an image at scale 2
+covers the same ground in twice as many pixels, and the drawing code does
+not change: a 100 unit square is 100 units wide on both, and sharper on
+one. `clip_extent()` reports the area you may paint in, in those units, so
+a drawing can size itself to whatever canvas it is handed without being
+told.
+
+Edges are antialiased. A shape that does not land on a pixel boundary is
+blended into what is behind it rather than snapped, which is the right
+answer for a drawing and the wrong one for a hairline: a 1 unit line
+centred on a whole unit straddles the boundary and covers two rows at half
+strength. Centre such a line on a half unit if it has to be crisp.
+
+=== The Canvas Carries State
+
+Everything but the geometry is state held by the canvas rather than an
+argument to the call. A fill colour set once applies to every fill that
+follows until another is set, and the same is true of the stroke style, the
+line width, cap and join, the shadow, the composite operation, the font,
+the text alignment, the transform and the clip.
+
+That is what makes drawing code composable, and what makes it dangerous: a
+function that narrows the clip or turns the axes has changed the canvas for
+everything drawn after it, and a clip can only ever be narrowed. The canvas
+keeps a stack of the whole bundle for exactly this reason, and
+`cnv.new_state()` pushes a copy and pops it at the end of the enclosing
+scope. See xref:canvas/states.adoc[States].
+
+== Compared With the W3C Canvas API
+
+The W3C canvas API is the source of record for what each call is meant to
+mean, and Artist follows it. Most of the difference is spelling:
+`fillStyle` is `fill_style`, `beginPath` is `begin_path`,
+`globalCompositeOperation` is `global_composite_operation`, and `fillRect`
+takes a xref:foundation/rect.adoc[`rect`] rather than four numbers, with a
+four number overload alongside it.
+
+Three differences are real and worth knowing before the reference pages
+say so one at a time:
+
+* **The path is consumed.** `fill` and `stroke` empty the current path,
+  where the W3C API leaves it in place for the next call.
+* **There is no `globalAlpha`.** Alpha is carried by the colour, so a
+  translucent fill is a translucent `fill_style`.
+* **`save` and `restore` are not exposed.** The pair is only reachable
+  through `cnv.new_state()`, whose scope makes an unbalanced stack
+  unwritable.
+
+Artist also has what a browser does not need. A canvas is a view onto a
+surface the host owns, so there is a way to name that surface and to reach
+the backend underneath it: see xref:canvas/context.adoc[Context].
