@@ -759,12 +759,14 @@ namespace cycfi::artist
 
    void canvas::text_align(text_halign align)
    {
-      _state->text_align() |= align;
+      auto& a = _state->text_align();
+      a = (a & ~0x3) | align;
    }
 
    void canvas::text_baseline(text_valign align)
    {
-      _state->text_align() |= align;
+      auto& a = _state->text_align();
+      a = (a & ~0x1C) | align;
    }
 
    void canvas::draw(image const& pic, rect const& src, rect const& dest)
