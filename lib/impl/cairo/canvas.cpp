@@ -49,6 +49,7 @@ namespace cycfi::artist
 
       void  apply_fill_style();
       void  apply_stroke_style();
+      void  invalidate_pattern();
 
       using state_stack = std::stack<info>;
 
@@ -121,6 +122,15 @@ namespace cycfi::artist
       }
    }
 
+   // cairo_set_source snapshots the pattern-to-user matrix from the CTM in
+   // effect at the call. A gradient set before a transform would otherwise
+   // keep painting under the old CTM, so drop the cached source whenever the
+   // CTM moves and let the next fill or stroke rebuild it.
+   inline void canvas::canvas_state::invalidate_pattern()
+   {
+      _info.pattern_set = _info.none_set;
+   }
+
    ////////////////////////////////////////////////////////////////////////////
    canvas::canvas(canvas_impl* context_)
     : _context{context_}
@@ -144,16 +154,19 @@ namespace cycfi::artist
    void canvas::translate(point p)
    {
       cairo_translate(_context, p.x, p.y);
+      _state->invalidate_pattern();
    }
 
    void canvas::rotate(float rad)
    {
       cairo_rotate(_context, rad);
+      _state->invalidate_pattern();
    }
 
    void canvas::scale(point p)
    {
       cairo_scale(_context, p.x, p.y);
+      _state->invalidate_pattern();
    }
 
    void canvas::skew(double sx, double sy)
@@ -163,6 +176,7 @@ namespace cycfi::artist
       cairo_matrix_t m;
       cairo_matrix_init(&m, 1.0, std::tan(sx), std::tan(sy), 1.0, 0.0, 0.0);
       cairo_transform(_context, &m);
+      _state->invalidate_pattern();
    }
 
    point canvas::device_to_user(point p)
@@ -202,12 +216,14 @@ namespace cycfi::artist
    {
       cairo_matrix_t m{mat.a, mat.b, mat.c, mat.d, mat.tx, mat.ty};
       cairo_set_matrix(_context, &m);
+      _state->invalidate_pattern();
    }
 
    void canvas::transform(double a, double b, double c, double d, double tx, double ty)
    {
       cairo_matrix_t m{a, b, c, d, tx, ty};
       cairo_set_matrix(_context, &m);
+      _state->invalidate_pattern();
    }
 
    ////////////////////////////////////////////////////////////////////////////
