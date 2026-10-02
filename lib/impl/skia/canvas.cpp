@@ -76,7 +76,6 @@ namespace cycfi::artist
             _stroke_paint.setStrokeMiter(10);
          }
 
-         SkPathBuilder  _path;
          SkPaint        _fill_paint;
          SkPaint        _stroke_paint;
          class font     _font;
@@ -94,6 +93,10 @@ namespace cycfi::artist
       state_info const* current() const { return _stack.top().get(); }
 
       state_info_stack  _stack;
+
+      // The current path is not part of the state, as in the W3C API: a
+      // restore keeps the path that was being built.
+      SkPathBuilder     _path;
       SkPaint           _clear_paint;
       affine_transform  _inv_affine;
    };
@@ -108,7 +111,7 @@ namespace cycfi::artist
 
    SkPathBuilder& canvas::canvas_state::path()
    {
-      return current()->_path;
+      return _path;
    }
 
    SkPaint& canvas::canvas_state::fill_paint()
@@ -609,16 +612,20 @@ namespace cycfi::artist
        , std::vector<SkScalar>& pos
       )
       {
-         // comp is color compensation to match quartz-2d
-         constexpr auto comp = 1.3f;
+         // Stops may be added in any order; Skia needs them by offset. The
+         // sort is stable, so stops at one offset keep the order they were
+         // added in, as the W3C API specifies.
+         auto stops = gr.color_space;
+         std::stable_sort(stops.begin(), stops.end(),
+            [](auto const& a, auto const& b) { return a.offset < b.offset; });
 
-         for (auto const& ccs : gr.color_space)
+         for (auto const& ccs : stops)
          {
             colors_.push_back(
                SkColor4f{
-                  std::min(ccs.color.red * comp, 1.0f)
-                , std::min(ccs.color.green * comp, 1.0f)
-                , std::min(ccs.color.blue * comp, 1.0f)
+                  ccs.color.red
+                , ccs.color.green
+                , ccs.color.blue
                 , ccs.color.alpha
                }
             );
@@ -626,8 +633,9 @@ namespace cycfi::artist
          }
       }
 
-      // Build an SkGradient from artist gradient color stops.
-      // kInterpolateColorsInPremul + linear-gamma colorspace matches old behaviour.
+      // Build an SkGradient from artist gradient color stops. The W3C API
+      // interpolates premultiplied colors in sRGB, as Cairo and Quartz 2D do,
+      // not in linear light.
       SkGradient make_sk_gradient(
          std::vector<SkColor4f> const& colors_
        , std::vector<SkScalar> const& pos
@@ -635,15 +643,24 @@ namespace cycfi::artist
       {
          SkGradient::Interpolation interp;
          interp.fInPremul     = SkGradient::Interpolation::InPremul::kYes;
-         interp.fColorSpace   = SkGradient::Interpolation::ColorSpace::kSRGBLinear;
+         interp.fColorSpace   = SkGradient::Interpolation::ColorSpace::kSRGB;
 
          SkGradient::Colors color_spec(
             SkSpan<const SkColor4f>(colors_.data(), colors_.size()),
             SkSpan<const float>(pos.data(), pos.size()),
             SkTileMode::kClamp,
-            SkColorSpace::MakeSRGBLinear()
+            SkColorSpace::MakeSRGB()
          );
          return SkGradient(color_spec, interp);
+      }
+
+      // A gradient with no stops paints nothing, as the W3C API specifies.
+      // Skia makes no shader from no colors and would fall back to the
+      // paint's own color.
+      void paint_nothing(SkPaint& paint)
+      {
+         paint.setShader(nullptr);
+         paint.setColor(SK_ColorTRANSPARENT);
       }
 
       void set_linear(canvas::linear_gradient const& gr, SkPaint& paint)
@@ -656,6 +673,8 @@ namespace cycfi::artist
          std::vector<SkColor4f> colors_;
          std::vector<SkScalar> pos;
          convert_gradient(gr, colors_, pos);
+         if (colors_.empty())
+            return paint_nothing(paint);
          paint.setShader(SkShaders::LinearGradient(points, make_sk_gradient(colors_, pos)));
       }
 
@@ -665,6 +684,11 @@ namespace cycfi::artist
          std::vector<SkColor4f> colors_;
          std::vector<SkScalar> pos;
          convert_gradient(gr, colors_, pos);
+         // Two identical circles also paint nothing, where Skia would paint
+         // the last stop's color.
+         if (colors_.empty() ||
+            (gr.c1 == gr.c2 && gr.c1_radius == gr.c2_radius))
+            return paint_nothing(paint);
          paint.setShader(
             SkShaders::TwoPointConicalGradient(
                {gr.c1.x, gr.c1.y}, gr.c1_radius
@@ -826,7 +850,9 @@ namespace cycfi::artist
                       , src.right * s, src.bottom * s
                      },
                      SkRect{dest.left, dest.top, dest.right, dest.bottom},
-                     SkSamplingOptions(),
+                     // Smoothed, as Cairo and Quartz 2D scale; Skia's
+                     // default samples the nearest pixel.
+                     SkSamplingOptions(SkFilterMode::kLinear),
                      &q,
                      SkCanvas::kStrict_SrcRectConstraint
                   );
@@ -849,7 +875,7 @@ namespace cycfi::artist
             snapshot,
             SkRect::MakeIWH(snapshot->width(), snapshot->height()),
             SkRect{dest.left, dest.top, dest.right, dest.bottom},
-            SkSamplingOptions(),
+            SkSamplingOptions(SkFilterMode::kLinear),
             &q,
             SkCanvas::kStrict_SrcRectConstraint
          );
