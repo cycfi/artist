@@ -57,7 +57,9 @@ elseif(WIN32)
   if(_arch MATCHES "arm64|aarch64")
     set(_triplet "arm64-windows")
   else()
-    set(_triplet "x64-windows")
+    # Static libraries on the static runtime (/MT), as Artist builds: linked
+    # in, so a plugin, loaded by someone else's program, has no DLLs to find.
+    set(_triplet "x64-windows-static")
   endif()
 else()
   if(_arch MATCHES "arm64|aarch64")
@@ -79,6 +81,10 @@ if(WIN32)
   if(DEFINED MSVC_TOOLSET_VERSION AND (MSVC_TOOLSET_VERSION LESS 143
       OR MSVC_TOOLSET_VERSION GREATER_EQUAL 150))
     set(_incompat "MSVC toolset v${MSVC_TOOLSET_VERSION}; the v143 bundle needs v143 to v149")
+  elseif(_triplet MATCHES "-static$" AND DEFINED MSVC_VERSION AND MSVC_VERSION LESS 1944)
+    # Static libraries link only with a toolset at least as new as the one
+    # that built them, Visual Studio 2022 17.14 (MSVC 19.44).
+    set(_incompat "MSVC ${MSVC_VERSION}; the static bundle needs Visual Studio 2022 17.14 (MSVC 19.44) or newer")
   endif()
 elseif(APPLE)
   if(CMAKE_OSX_DEPLOYMENT_TARGET AND CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS "11.0")
@@ -119,10 +125,10 @@ set(_ver "${ARTIST_SKIA_PREBUILT_VERSION}")
 # CMAKE_PREFIX_PATH directly (no PARENT_SCOPE needed).
 list(PREPEND CMAKE_PREFIX_PATH "${_dest}")
 
-# On Windows the bundle's Skia and its dependencies are DLLs, but Skia is
-# imported as an UNKNOWN library, so they never show up in an executable's
-# TARGET_RUNTIME_DLLS. Record them (release or debug, by configuration) for
-# the post-build copy next to the executables.
+# A Windows bundle of DLLs (arm64-windows) has Skia imported as an UNKNOWN
+# library, so they never show up in an executable's TARGET_RUNTIME_DLLS.
+# Record them (release or debug, by configuration) for the post-build copy
+# next to the executables. The static x64 bundle has none.
 if(WIN32)
   file(GLOB _rel_dlls "${_dest}/bin/*.dll")
   file(GLOB _dbg_dlls "${_dest}/debug/bin/*.dll")
