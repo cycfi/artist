@@ -163,8 +163,11 @@ namespace cycfi::artist
       auto justify =
          [&](std::size_t glyph_idx, bool must_break) -> float
          {
-             while (glyph_idx >= glyph_start && glyphs_info.glyphs[glyph_idx].codepoint == 0)
-                --glyph_idx;
+            // Trailing glyphs with no codepoint take no width. Stop at the
+            // line's first glyph: a line of nothing else (.notdef throughout,
+            // as CJK in a Latin font) would step below it, and below 0.
+            while (glyph_idx > glyph_start && glyphs_info.glyphs[glyph_idx].codepoint == 0)
+               --glyph_idx;
 
             auto line_width =
                positions[glyph_idx-glyph_start] +
