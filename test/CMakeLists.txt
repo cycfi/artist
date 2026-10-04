@@ -68,15 +68,12 @@ elseif (MSVC)
       artist_test
       ${artist_test_sources}
    )
-   if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
-      set_property(TARGET artist_test PROPERTY
-         MSVC_RUNTIME_LIBRARY "MultiThreaded"
-      )
-   else()
-      set_property(TARGET artist_test PROPERTY
-         MSVC_RUNTIME_LIBRARY "MultiThreadedDebug"
-      )
-   endif()
+   # Follow the configuration being built, as the library does: keyed off
+   # CMAKE_BUILD_TYPE, RelWithDebInfo got the debug runtime and the link
+   # failed against the library's release one.
+   set_property(TARGET artist_test PROPERTY
+      MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+   )
 
 elseif (UNIX)
 
