@@ -432,6 +432,11 @@ jobs:
         config:
         - os: windows-latest
           triplet: x64-windows
+        # Static libraries on the static runtime (/MT), as Artist, Elements
+        # and Q build: what a plugin, loaded by someone else's program,
+        # links in, since Windows does not look beside it for DLLs.
+        - os: windows-latest
+          triplet: x64-windows-static
         - os: ubuntu-22.04
           triplet: x64-linux
           pkg_config_path: "/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig"
@@ -611,6 +616,11 @@ jobs:
         config:
         - os: windows-latest
           triplet: x64-windows
+        # Static libraries on the static runtime (/MT), as Artist, Elements
+        # and Q build: what a plugin, loaded by someone else's program,
+        # links in, since Windows does not look beside it for DLLs.
+        - os: windows-latest
+          triplet: x64-windows-static
         - os: macos-latest
           triplet: arm64-osx
         # Cross-built on the arm runner, for Intel Macs and for Rosetta
