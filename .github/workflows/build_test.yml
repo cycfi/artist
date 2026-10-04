@@ -1097,7 +1097,8 @@ jobs:
 
   ###########################################################################
   # Status: draws this run's jobs, pass or fail, as status/build.svg on the
-  # www branch, for develop's pushes.
+  # www branch, for develop's pushes. The bundle jobs build Artist's
+  # dependencies, not an OS and backend, and are left out.
   ###########################################################################
   status:
     name: Status
@@ -1123,5 +1124,5 @@ jobs:
         gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs \
           --paginate --jq '.jobs[] | {name, conclusion}' > jobs.jsonl
         python3 .github/scripts/status_grid.py --title "Artist build" \
-          --exclude '^Status$' --out build.svg jobs.jsonl
+          --exclude '^Status$|bundle' --out build.svg jobs.jsonl
         bash .github/scripts/publish_status.sh build.svg
