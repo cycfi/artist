@@ -434,8 +434,10 @@ jobs:
           triplet: x64-windows
         # Static libraries on the static runtime (/MT), as Artist, Elements
         # and Q build: what a plugin, loaded by someone else's program,
-        # links in, since Windows does not look beside it for DLLs.
-        - os: windows-latest
+        # links in, since Windows does not look beside it for DLLs. Built
+        # with Visual Studio 2022 (MSVC 19.44): static libraries link only
+        # with a toolset at least as new as the one that built them.
+        - os: windows-2022
           triplet: x64-windows-static
         - os: ubuntu-22.04
           triplet: x64-linux
@@ -618,8 +620,10 @@ jobs:
           triplet: x64-windows
         # Static libraries on the static runtime (/MT), as Artist, Elements
         # and Q build: what a plugin, loaded by someone else's program,
-        # links in, since Windows does not look beside it for DLLs.
-        - os: windows-latest
+        # links in, since Windows does not look beside it for DLLs. Built
+        # with Visual Studio 2022 (MSVC 19.44): static libraries link only
+        # with a toolset at least as new as the one that built them.
+        - os: windows-2022
           triplet: x64-windows-static
         - os: macos-latest
           triplet: arm64-osx
