@@ -36,7 +36,7 @@ endif()
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
    find_package(Git REQUIRED)
    function(git_submodule_check dir)
-      if (NOT EXISTS "${dir}/CMakeLists.txt")
+      if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${dir}/CMakeLists.txt")
          execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive -- ${dir}
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             COMMAND_ERROR_IS_FATAL ANY)
