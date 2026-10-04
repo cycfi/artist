@@ -62,8 +62,11 @@ endif()
 # --- compatibility gate (bundle baseline vs local toolchain) --------------
 set(_incompat "")
 if(WIN32)
-  if(DEFINED MSVC_TOOLSET_VERSION AND NOT MSVC_TOOLSET_VERSION STREQUAL "143")
-    set(_incompat "MSVC toolset v${MSVC_TOOLSET_VERSION} != bundle v143")
+  # MSVC v14x toolsets are binary compatible as long as the one linking is
+  # at least as new as the one that built the libraries.
+  if(DEFINED MSVC_TOOLSET_VERSION AND (MSVC_TOOLSET_VERSION LESS 143
+      OR MSVC_TOOLSET_VERSION GREATER_EQUAL 150))
+    set(_incompat "MSVC toolset v${MSVC_TOOLSET_VERSION}; the v143 bundle needs v143 to v149")
   endif()
 elseif(APPLE)
   if(CMAKE_OSX_DEPLOYMENT_TARGET AND CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS "11.0")
