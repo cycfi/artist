@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="611" height="360" role="img" aria-label="Artist build">
+<title>Artist build</title>
+<rect width="611" height="360" rx="4" fill="#444"/>
+<g fill="#fff" font-family="Verdana,DejaVu Sans,Geneva,sans-serif" text-anchor="middle">
+<text x="305.5" y="25.0" font-size="18" font-weight="bold">Artist build</text>
+<rect x="0" y="36" width="257" height="26" fill="#555"/>
+<rect x="257" y="36" width="48" height="26" fill="#4c1"/>
+<text x="247" y="53" font-size="12" text-anchor="end">Cairo (Ubuntu GCC)</text>
+<text x="281.0" y="53" font-size="12">pass</text>
+<rect x="0" y="63" width="257" height="26" fill="#555"/>
+<rect x="257" y="63" width="48" height="26" fill="#4c1"/>
+<text x="247" y="80" font-size="12" text-anchor="end">Cairo (Windows MSVC)</text>
+<text x="281.0" y="80" font-size="12">pass</text>
+<rect x="0" y="90" width="257" height="26" fill="#555"/>
+<rect x="257" y="90" width="48" height="26" fill="#4c1"/>
+<text x="247" y="107" font-size="12" text-anchor="end">Cairo (macOS Clang)</text>
+<text x="281.0" y="107" font-size="12">pass</text>
+<rect x="0" y="117" width="257" height="26" fill="#555"/>
+<rect x="257" y="117" width="48" height="26" fill="#4c1"/>
+<text x="247" y="134" font-size="12" text-anchor="end">Cairo bundle (arm64-osx)</text>
+<text x="281.0" y="134" font-size="12">pass</text>
+<rect x="0" y="144" width="257" height="26" fill="#555"/>
+<rect x="257" y="144" width="48" height="26" fill="#4c1"/>
+<text x="247" y="161" font-size="12" text-anchor="end">Cairo bundle (x64-osx)</text>
+<text x="281.0" y="161" font-size="12">pass</text>
+<rect x="0" y="171" width="257" height="26" fill="#555"/>
+<rect x="257" y="171" width="48" height="26" fill="#4c1"/>
+<text x="247" y="188" font-size="12" text-anchor="end">Cairo bundle (x64-windows)</text>
+<text x="281.0" y="188" font-size="12">pass</text>
+<rect x="0" y="198" width="257" height="26" fill="#555"/>
+<rect x="257" y="198" width="48" height="26" fill="#4c1"/>
+<text x="247" y="215" font-size="12" text-anchor="end">Cairo bundle (x64-windows-static)</text>
+<text x="281.0" y="215" font-size="12">pass</text>
+<rect x="0" y="225" width="257" height="26" fill="#555"/>
+<rect x="257" y="225" width="48" height="26" fill="#4c1"/>
+<text x="247" y="242" font-size="12" text-anchor="end">Direct2D (Windows MSVC x64)</text>
+<text x="281.0" y="242" font-size="12">pass</text>
+<rect x="0" y="252" width="257" height="26" fill="#555"/>
+<rect x="257" y="252" width="48" height="26" fill="#4c1"/>
+<text x="247" y="269" font-size="12" text-anchor="end">Linux Hosts (gtk3/cairo)</text>
+<text x="281.0" y="269" font-size="12">pass</text>
+<rect x="0" y="279" width="257" height="26" fill="#555"/>
+<rect x="257" y="279" width="48" height="26" fill="#4c1"/>
+<text x="247" y="296" font-size="12" text-anchor="end">Linux Hosts (gtk3/skia)</text>
+<text x="281.0" y="296" font-size="12">pass</text>
+<rect x="0" y="306" width="257" height="26" fill="#555"/>
+<rect x="257" y="306" width="48" height="26" fill="#4c1"/>
+<text x="247" y="323" font-size="12" text-anchor="end">Linux Hosts (wayland/cairo)</text>
+<text x="281.0" y="323" font-size="12">pass</text>
+<rect x="0" y="333" width="257" height="26" fill="#555"/>
+<rect x="257" y="333" width="48" height="26" fill="#4c1"/>
+<text x="247" y="350" font-size="12" text-anchor="end">Linux Hosts (wayland/skia)</text>
+<text x="281.0" y="350" font-size="12">pass</text>
+<rect x="306" y="36" width="257" height="26" fill="#555"/>
+<rect x="563" y="36" width="48" height="26" fill="#4c1"/>
+<text x="553" y="53" font-size="12" text-anchor="end">Linux Hosts (x11/cairo)</text>
+<text x="587.0" y="53" font-size="12">pass</text>
+<rect x="306" y="63" width="257" height="26" fill="#555"/>
+<rect x="563" y="63" width="48" height="26" fill="#4c1"/>
+<text x="553" y="80" font-size="12" text-anchor="end">Linux Hosts (x11/skia)</text>
+<text x="587.0" y="80" font-size="12">pass</text>
+<rect x="306" y="90" width="257" height="26" fill="#555"/>
+<rect x="563" y="90" width="48" height="26" fill="#4c1"/>
+<text x="553" y="107" font-size="12" text-anchor="end">Quartz2D (macOS Clang)</text>
+<text x="587.0" y="107" font-size="12">pass</text>
+<rect x="306" y="117" width="257" height="26" fill="#555"/>
+<rect x="563" y="117" width="48" height="26" fill="#4c1"/>
+<text x="553" y="134" font-size="12" text-anchor="end">Skia (Ubuntu GCC x64)</text>
+<text x="587.0" y="134" font-size="12">pass</text>
+<rect x="306" y="144" width="257" height="26" fill="#555"/>
+<rect x="563" y="144" width="48" height="26" fill="#4c1"/>
+<text x="553" y="161" font-size="12" text-anchor="end">Skia (Windows MSVC x64)</text>
+<text x="587.0" y="161" font-size="12">pass</text>
+<rect x="306" y="171" width="257" height="26" fill="#555"/>
+<rect x="563" y="171" width="48" height="26" fill="#4c1"/>
+<text x="553" y="188" font-size="12" text-anchor="end">Skia (macOS Clang arm64)</text>
+<text x="587.0" y="188" font-size="12">pass</text>
+<rect x="306" y="198" width="257" height="26" fill="#555"/>
+<rect x="563" y="198" width="48" height="26" fill="#4c1"/>
+<text x="553" y="215" font-size="12" text-anchor="end">Skia bundle (arm64-linux)</text>
+<text x="587.0" y="215" font-size="12">pass</text>
+<rect x="306" y="225" width="257" height="26" fill="#555"/>
+<rect x="563" y="225" width="48" height="26" fill="#4c1"/>
+<text x="553" y="242" font-size="12" text-anchor="end">Skia bundle (arm64-osx)</text>
+<text x="587.0" y="242" font-size="12">pass</text>
+<rect x="306" y="252" width="257" height="26" fill="#555"/>
+<rect x="563" y="252" width="48" height="26" fill="#4c1"/>
+<text x="553" y="269" font-size="12" text-anchor="end">Skia bundle (x64-linux)</text>
+<text x="587.0" y="269" font-size="12">pass</text>
+<rect x="306" y="279" width="257" height="26" fill="#555"/>
+<rect x="563" y="279" width="48" height="26" fill="#4c1"/>
+<text x="553" y="296" font-size="12" text-anchor="end">Skia bundle (x64-osx)</text>
+<text x="587.0" y="296" font-size="12">pass</text>
+<rect x="306" y="306" width="257" height="26" fill="#555"/>
+<rect x="563" y="306" width="48" height="26" fill="#4c1"/>
+<text x="553" y="323" font-size="12" text-anchor="end">Skia bundle (x64-windows)</text>
+<text x="587.0" y="323" font-size="12">pass</text>
+<rect x="306" y="333" width="257" height="26" fill="#555"/>
+<rect x="563" y="333" width="48" height="26" fill="#4c1"/>
+<text x="553" y="350" font-size="12" text-anchor="end">Skia bundle (x64-windows-static)</text>
+<text x="587.0" y="350" font-size="12">pass</text>
+</g>
+</svg>
