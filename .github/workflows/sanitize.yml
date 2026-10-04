@@ -1,0 +1,188 @@
+###############################################################################
+#  Copyright (c) 2016-2026 Joel de Guzman
+#
+#  Distributed under the MIT License (https://opensource.org/licenses/MIT)
+###############################################################################
+# Runs the Artist tests under the sanitizers, on every drawing backend:
+# AddressSanitizer with UndefinedBehaviorSanitizer (MSVC has no UBSan, so
+# Windows runs ASan alone), and ThreadSanitizer on macOS and Linux. Skia runs
+# UBSan, not ASan: ASan changes the layout of Skia's types (TArray gains a
+# member), so ASan-built code disagrees with the prebuilt Skia. With neither
+# on MSVC, Windows Skia is left to build_test.yml. Builds are RelWithDebInfo.
+# The jobs are long, so this runs weekly (GitHub schedules only the default
+# branch, which then tests develop), by hand, and when this file changes. The
+# results go to status/sanitizers.svg on the www branch.
+
+name: Sanitize
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/sanitize.yml'
+
+concurrency:
+  group: sanitize-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sanitize:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        # --- AddressSanitizer + UndefinedBehaviorSanitizer (UBSan alone on Skia) ---
+        - name: "ASan macOS Quartz 2D"
+          os: macos-latest
+          sanitizer: address
+          cmake: -DARTIST_QUARTZ_2D=ON
+        - name: "UBSan macOS Skia"
+          os: macos-latest
+          sanitizer: undefined
+          cmake: -DARTIST_SKIA=ON
+        - name: "ASan macOS Cairo"
+          os: macos-latest
+          sanitizer: address
+          cmake: -DARTIST_CAIRO=ON
+        - name: "ASan Windows Direct2D"
+          os: windows-latest
+          sanitizer: address
+          cmake: -DARTIST_DIRECT2D=ON
+        - name: "ASan Windows Cairo"
+          os: windows-latest
+          sanitizer: address
+          cmake: -DARTIST_CAIRO=ON
+        - name: "ASan Linux Cairo"
+          os: ubuntu-latest
+          sanitizer: address
+          cmake: -DARTIST_CAIRO=ON
+        - name: "UBSan Linux Skia"
+          os: ubuntu-latest
+          sanitizer: undefined
+          cmake: -DARTIST_SKIA=ON
+        # --- ThreadSanitizer ---
+        - name: "TSan macOS Quartz 2D"
+          os: macos-latest
+          sanitizer: thread
+          cmake: -DARTIST_QUARTZ_2D=ON
+        - name: "TSan macOS Skia"
+          os: macos-latest
+          sanitizer: thread
+          cmake: -DARTIST_SKIA=ON
+        - name: "TSan macOS Cairo"
+          os: macos-latest
+          sanitizer: thread
+          cmake: -DARTIST_CAIRO=ON
+        - name: "TSan Linux Cairo"
+          os: ubuntu-latest
+          sanitizer: thread
+          cmake: -DARTIST_CAIRO=ON
+        - name: "TSan Linux Skia"
+          os: ubuntu-latest
+          sanitizer: thread
+          cmake: -DARTIST_SKIA=ON
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        # A scheduled run starts from the default branch; test develop.
+        ref: ${{ github.event_name == 'schedule' && 'develop' || '' }}
+        submodules: recursive
+
+    - name: Install dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: brew install ninja
+
+    - name: Install dependencies (Windows)
+      if: runner.os == 'Windows'
+      run: choco install ninja
+      shell: cmd
+
+    - name: Resolve MSVC environment (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+        $vsPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+        $vcvars = Join-Path $vsPath "VC\Auxiliary\Build\vcvars64.bat"
+        echo "VCVARS64=$vcvars" >> $env:GITHUB_ENV
+
+    - name: Install dependencies (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          ninja-build pkg-config \
+          libgtk-3-dev libcairo2-dev libx11-dev \
+          libgl1-mesa-dev libglu1-mesa-dev libegl1-mesa-dev \
+          libharfbuzz-dev libfontconfig1-dev libfreetype6-dev libwebp-dev
+
+    - name: Sanitizer flags (macOS, Linux)
+      if: runner.os != 'Windows'
+      run: |
+        # vptr checks need RTTI, which the prebuilt Skia is built without.
+        ub="-fno-sanitize=vptr -fno-sanitize-recover=undefined"
+        case "${{ matrix.config.sanitizer }}" in
+          address)   san="address,undefined"; extra="$ub" ;;
+          undefined) san="undefined";         extra="$ub" ;;
+          thread)    san="thread";            extra="" ;;
+        esac
+        flags="-fsanitize=$san $extra -fno-omit-frame-pointer"
+        for v in CFLAGS CXXFLAGS OBJCXXFLAGS; do echo "$v=$flags" >> $GITHUB_ENV; done
+        echo "LDFLAGS=-fsanitize=$san" >> $GITHUB_ENV
+
+    - name: Build and test (macOS, Linux)
+      if: runner.os != 'Windows'
+      env:
+        ASAN_OPTIONS: detect_leaks=0
+        UBSAN_OPTIONS: print_stacktrace=1
+      run: |
+        cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+          -DARTIST_BUILD_TESTS=ON -DARTIST_BUILD_EXAMPLES=OFF \
+          ${{ matrix.config.cmake }}
+        cmake --build build
+        ctest --test-dir build --output-on-failure
+
+    - name: Build and test (Windows)
+      if: runner.os == 'Windows'
+      shell: cmd
+      run: |
+        rem The ASan runtime DLL is found on the PATH vcvars sets.
+        call "%VCVARS64%" || exit /b 1
+        set CFLAGS=/fsanitize=address
+        set CXXFLAGS=/fsanitize=address
+        cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DARTIST_BUILD_TESTS=ON -DARTIST_BUILD_EXAMPLES=OFF ${{ matrix.config.cmake }} || exit /b 1
+        cmake --build build || exit /b 1
+        ctest --test-dir build --output-on-failure
+
+  status:
+    name: Status
+    needs: sanitize
+    if: >
+      always() &&
+      (github.ref == 'refs/heads/develop' || github.event_name == 'schedule')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        sparse-checkout: .github/scripts
+
+    - name: Draw and publish the sanitizer grid
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs \
+          --paginate --jq '.jobs[] | {name, conclusion}' > jobs.jsonl
+        python3 .github/scripts/status_grid.py --title "Artist sanitizers" \
+          --exclude '^Status$' --out sanitizers.svg jobs.jsonl
+        bash .github/scripts/publish_status.sh sanitizers.svg

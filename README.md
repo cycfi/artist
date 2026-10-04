@@ -1,5 +1,8 @@
 # ![Artist-Logo](https://cycfi.github.io/assets/img/artist/logo.png) Artist 2D Canvas Library
 
+[![Build, by platform and backend](https://cycfi.github.io/artist/status/build.svg)](https://github.com/cycfi/artist/actions/workflows/build_test.yml)
+[![Sanitizers, by platform and backend](https://cycfi.github.io/artist/status/sanitizers.svg)](https://github.com/cycfi/artist/actions/workflows/sanitize.yml)
+
 ![alt Artist Sampler](https://cycfi.github.io/assets/img/artist/sampler.jpg)
 
 ## Introduction
