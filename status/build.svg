@@ -1,103 +1,102 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="706" height="110" role="img" aria-label="Artist build">
+<svg xmlns="http://www.w3.org/2000/svg" width="706" height="91" role="img" aria-label="Artist build">
 <title>Artist build</title>
-<rect width="706" height="110" rx="3" fill="#444"/>
+<rect width="706" height="91" rx="3" fill="#444"/>
 <g fill="#fff" font-family="Verdana,DejaVu Sans,Geneva,sans-serif" text-anchor="middle">
-<text x="353.0" y="12.000000000000002" font-size="9.600000000000001" font-weight="bold">Artist build</text>
-<rect x="0" y="17.6" width="133.6" height="14.4" fill="#555"/>
-<rect x="133.6" y="17.6" width="28.6" height="14.4" fill="#4c1"/>
-<text x="128.79999999999998" y="27.46666666666667" font-size="8.0" text-anchor="end">Cairo (Ubuntu GCC)</text>
-<text x="147.9" y="27.46666666666667" font-size="8.0">pass</text>
-<rect x="0" y="33.0" width="133.6" height="14.4" fill="#555"/>
-<rect x="133.6" y="33.0" width="28.6" height="14.4" fill="#4c1"/>
-<text x="128.79999999999998" y="42.86666666666667" font-size="8.0" text-anchor="end">Cairo (Windows MSVC)</text>
-<text x="147.9" y="42.86666666666667" font-size="8.0">pass</text>
-<rect x="0" y="48.400000000000006" width="133.6" height="14.4" fill="#555"/>
-<rect x="133.6" y="48.400000000000006" width="28.6" height="14.4" fill="#4c1"/>
-<text x="128.79999999999998" y="58.26666666666667" font-size="8.0" text-anchor="end">Cairo (macOS Clang)</text>
-<text x="147.9" y="58.26666666666667" font-size="8.0">pass</text>
-<rect x="0" y="63.800000000000004" width="133.6" height="14.4" fill="#555"/>
-<rect x="133.6" y="63.800000000000004" width="28.6" height="14.4" fill="#4c1"/>
-<text x="128.79999999999998" y="73.66666666666667" font-size="8.0" text-anchor="end">Cairo bundle (arm64-osx)</text>
-<text x="147.9" y="73.66666666666667" font-size="8.0">pass</text>
-<rect x="0" y="79.2" width="133.6" height="14.4" fill="#555"/>
-<rect x="133.6" y="79.2" width="28.6" height="14.4" fill="#4c1"/>
-<text x="128.79999999999998" y="89.06666666666668" font-size="8.0" text-anchor="end">Cairo bundle (x64-osx)</text>
-<text x="147.9" y="89.06666666666668" font-size="8.0">pass</text>
-<rect x="0" y="94.6" width="133.6" height="14.4" fill="#555"/>
-<rect x="133.6" y="94.6" width="28.6" height="14.4" fill="#4c1"/>
-<text x="128.79999999999998" y="104.46666666666667" font-size="8.0" text-anchor="end">Cairo bundle (x64-windows)</text>
-<text x="147.9" y="104.46666666666667" font-size="8.0">pass</text>
-<rect x="163.2" y="17.6" width="167.6" height="14.4" fill="#555"/>
-<rect x="330.79999999999995" y="17.6" width="28.6" height="14.4" fill="#4c1"/>
-<text x="325.99999999999994" y="27.46666666666667" font-size="8.0" text-anchor="end">Cairo bundle (x64-windows-static)</text>
-<text x="345.09999999999997" y="27.46666666666667" font-size="8.0">pass</text>
-<rect x="163.2" y="33.0" width="167.6" height="14.4" fill="#555"/>
-<rect x="330.79999999999995" y="33.0" width="28.6" height="14.4" fill="#4c1"/>
-<text x="325.99999999999994" y="42.86666666666667" font-size="8.0" text-anchor="end">Direct2D (Windows MSVC x64)</text>
-<text x="345.09999999999997" y="42.86666666666667" font-size="8.0">pass</text>
-<rect x="163.2" y="48.400000000000006" width="167.6" height="14.4" fill="#555"/>
-<rect x="330.79999999999995" y="48.400000000000006" width="28.6" height="14.4" fill="#4c1"/>
-<text x="325.99999999999994" y="58.26666666666667" font-size="8.0" text-anchor="end">Linux Hosts (gtk3/cairo)</text>
-<text x="345.09999999999997" y="58.26666666666667" font-size="8.0">pass</text>
-<rect x="163.2" y="63.800000000000004" width="167.6" height="14.4" fill="#555"/>
-<rect x="330.79999999999995" y="63.800000000000004" width="28.6" height="14.4" fill="#4c1"/>
-<text x="325.99999999999994" y="73.66666666666667" font-size="8.0" text-anchor="end">Linux Hosts (gtk3/skia)</text>
-<text x="345.09999999999997" y="73.66666666666667" font-size="8.0">pass</text>
-<rect x="163.2" y="79.2" width="167.6" height="14.4" fill="#555"/>
-<rect x="330.79999999999995" y="79.2" width="28.6" height="14.4" fill="#4c1"/>
-<text x="325.99999999999994" y="89.06666666666668" font-size="8.0" text-anchor="end">Linux Hosts (wayland/cairo)</text>
-<text x="345.09999999999997" y="89.06666666666668" font-size="8.0">pass</text>
-<rect x="163.2" y="94.6" width="167.6" height="14.4" fill="#555"/>
-<rect x="330.79999999999995" y="94.6" width="28.6" height="14.4" fill="#4c1"/>
-<text x="325.99999999999994" y="104.46666666666667" font-size="8.0" text-anchor="end">Linux Hosts (wayland/skia)</text>
-<text x="345.09999999999997" y="104.46666666666667" font-size="8.0">pass</text>
-<rect x="360.4" y="17.6" width="124.6" height="14.4" fill="#555"/>
-<rect x="485.0" y="17.6" width="28.6" height="14.4" fill="#4c1"/>
-<text x="480.2" y="27.46666666666667" font-size="8.0" text-anchor="end">Linux Hosts (x11/cairo)</text>
-<text x="499.3" y="27.46666666666667" font-size="8.0">pass</text>
-<rect x="360.4" y="33.0" width="124.6" height="14.4" fill="#555"/>
-<rect x="485.0" y="33.0" width="28.6" height="14.4" fill="#4c1"/>
-<text x="480.2" y="42.86666666666667" font-size="8.0" text-anchor="end">Linux Hosts (x11/skia)</text>
-<text x="499.3" y="42.86666666666667" font-size="8.0">pass</text>
-<rect x="360.4" y="48.400000000000006" width="124.6" height="14.4" fill="#555"/>
-<rect x="485.0" y="48.400000000000006" width="28.6" height="14.4" fill="#4c1"/>
-<text x="480.2" y="58.26666666666667" font-size="8.0" text-anchor="end">Quartz2D (macOS Clang)</text>
-<text x="499.3" y="58.26666666666667" font-size="8.0">pass</text>
-<rect x="360.4" y="63.800000000000004" width="124.6" height="14.4" fill="#555"/>
-<rect x="485.0" y="63.800000000000004" width="28.6" height="14.4" fill="#4c1"/>
-<text x="480.2" y="73.66666666666667" font-size="8.0" text-anchor="end">Skia (Ubuntu GCC x64)</text>
-<text x="499.3" y="73.66666666666667" font-size="8.0">pass</text>
-<rect x="360.4" y="79.2" width="124.6" height="14.4" fill="#555"/>
-<rect x="485.0" y="79.2" width="28.6" height="14.4" fill="#4c1"/>
-<text x="480.2" y="89.06666666666668" font-size="8.0" text-anchor="end">Skia (Windows MSVC x64)</text>
-<text x="499.3" y="89.06666666666668" font-size="8.0">pass</text>
-<rect x="360.4" y="94.6" width="124.6" height="14.4" fill="#555"/>
-<rect x="485.0" y="94.6" width="28.6" height="14.4" fill="#4c1"/>
-<text x="480.2" y="104.46666666666667" font-size="8.0" text-anchor="end">Skia (macOS Clang arm64)</text>
-<text x="499.3" y="104.46666666666667" font-size="8.0">pass</text>
-<rect x="514.5999999999999" y="17.6" width="162.6" height="14.4" fill="#555"/>
-<rect x="677.1999999999999" y="17.6" width="28.6" height="14.4" fill="#4c1"/>
-<text x="672.4" y="27.46666666666667" font-size="8.0" text-anchor="end">Skia bundle (arm64-linux)</text>
-<text x="691.4999999999999" y="27.46666666666667" font-size="8.0">pass</text>
-<rect x="514.5999999999999" y="33.0" width="162.6" height="14.4" fill="#555"/>
-<rect x="677.1999999999999" y="33.0" width="28.6" height="14.4" fill="#4c1"/>
-<text x="672.4" y="42.86666666666667" font-size="8.0" text-anchor="end">Skia bundle (arm64-osx)</text>
-<text x="691.4999999999999" y="42.86666666666667" font-size="8.0">pass</text>
-<rect x="514.5999999999999" y="48.400000000000006" width="162.6" height="14.4" fill="#555"/>
-<rect x="677.1999999999999" y="48.400000000000006" width="28.6" height="14.4" fill="#4c1"/>
-<text x="672.4" y="58.26666666666667" font-size="8.0" text-anchor="end">Skia bundle (x64-linux)</text>
-<text x="691.4999999999999" y="58.26666666666667" font-size="8.0">pass</text>
-<rect x="514.5999999999999" y="63.800000000000004" width="162.6" height="14.4" fill="#555"/>
-<rect x="677.1999999999999" y="63.800000000000004" width="28.6" height="14.4" fill="#4c1"/>
-<text x="672.4" y="73.66666666666667" font-size="8.0" text-anchor="end">Skia bundle (x64-osx)</text>
-<text x="691.4999999999999" y="73.66666666666667" font-size="8.0">pass</text>
-<rect x="514.5999999999999" y="79.2" width="162.6" height="14.4" fill="#555"/>
-<rect x="677.1999999999999" y="79.2" width="28.6" height="14.4" fill="#4c1"/>
-<text x="672.4" y="89.06666666666668" font-size="8.0" text-anchor="end">Skia bundle (x64-windows)</text>
-<text x="691.4999999999999" y="89.06666666666668" font-size="8.0">pass</text>
-<rect x="514.5999999999999" y="94.6" width="162.6" height="14.4" fill="#555"/>
-<rect x="677.1999999999999" y="94.6" width="28.6" height="14.4" fill="#4c1"/>
-<text x="672.4" y="104.46666666666667" font-size="8.0" text-anchor="end">Skia bundle (x64-windows-static)</text>
-<text x="691.4999999999999" y="104.46666666666667" font-size="8.0">pass</text>
+<rect x="0" y="0.0" width="133.6" height="14.4" fill="#555"/>
+<rect x="133.6" y="0.0" width="28.6" height="14.4" fill="#4c1"/>
+<text x="128.79999999999998" y="9.866666666666667" font-size="8.0" text-anchor="end">Cairo (Ubuntu GCC)</text>
+<text x="147.9" y="9.866666666666667" font-size="8.0">pass</text>
+<rect x="0" y="15.4" width="133.6" height="14.4" fill="#555"/>
+<rect x="133.6" y="15.4" width="28.6" height="14.4" fill="#4c1"/>
+<text x="128.79999999999998" y="25.26666666666667" font-size="8.0" text-anchor="end">Cairo (Windows MSVC)</text>
+<text x="147.9" y="25.26666666666667" font-size="8.0">pass</text>
+<rect x="0" y="30.8" width="133.6" height="14.4" fill="#555"/>
+<rect x="133.6" y="30.8" width="28.6" height="14.4" fill="#4c1"/>
+<text x="128.79999999999998" y="40.666666666666664" font-size="8.0" text-anchor="end">Cairo (macOS Clang)</text>
+<text x="147.9" y="40.666666666666664" font-size="8.0">pass</text>
+<rect x="0" y="46.2" width="133.6" height="14.4" fill="#555"/>
+<rect x="133.6" y="46.2" width="28.6" height="14.4" fill="#4c1"/>
+<text x="128.79999999999998" y="56.06666666666667" font-size="8.0" text-anchor="end">Cairo bundle (arm64-osx)</text>
+<text x="147.9" y="56.06666666666667" font-size="8.0">pass</text>
+<rect x="0" y="61.6" width="133.6" height="14.4" fill="#555"/>
+<rect x="133.6" y="61.6" width="28.6" height="14.4" fill="#4c1"/>
+<text x="128.79999999999998" y="71.46666666666667" font-size="8.0" text-anchor="end">Cairo bundle (x64-osx)</text>
+<text x="147.9" y="71.46666666666667" font-size="8.0">pass</text>
+<rect x="0" y="77.0" width="133.6" height="14.4" fill="#555"/>
+<rect x="133.6" y="77.0" width="28.6" height="14.4" fill="#4c1"/>
+<text x="128.79999999999998" y="86.86666666666667" font-size="8.0" text-anchor="end">Cairo bundle (x64-windows)</text>
+<text x="147.9" y="86.86666666666667" font-size="8.0">pass</text>
+<rect x="163.2" y="0.0" width="167.6" height="14.4" fill="#555"/>
+<rect x="330.79999999999995" y="0.0" width="28.6" height="14.4" fill="#4c1"/>
+<text x="325.99999999999994" y="9.866666666666667" font-size="8.0" text-anchor="end">Cairo bundle (x64-windows-static)</text>
+<text x="345.09999999999997" y="9.866666666666667" font-size="8.0">pass</text>
+<rect x="163.2" y="15.4" width="167.6" height="14.4" fill="#555"/>
+<rect x="330.79999999999995" y="15.4" width="28.6" height="14.4" fill="#4c1"/>
+<text x="325.99999999999994" y="25.26666666666667" font-size="8.0" text-anchor="end">Direct2D (Windows MSVC x64)</text>
+<text x="345.09999999999997" y="25.26666666666667" font-size="8.0">pass</text>
+<rect x="163.2" y="30.8" width="167.6" height="14.4" fill="#555"/>
+<rect x="330.79999999999995" y="30.8" width="28.6" height="14.4" fill="#4c1"/>
+<text x="325.99999999999994" y="40.666666666666664" font-size="8.0" text-anchor="end">Linux Hosts (gtk3/cairo)</text>
+<text x="345.09999999999997" y="40.666666666666664" font-size="8.0">pass</text>
+<rect x="163.2" y="46.2" width="167.6" height="14.4" fill="#555"/>
+<rect x="330.79999999999995" y="46.2" width="28.6" height="14.4" fill="#4c1"/>
+<text x="325.99999999999994" y="56.06666666666667" font-size="8.0" text-anchor="end">Linux Hosts (gtk3/skia)</text>
+<text x="345.09999999999997" y="56.06666666666667" font-size="8.0">pass</text>
+<rect x="163.2" y="61.6" width="167.6" height="14.4" fill="#555"/>
+<rect x="330.79999999999995" y="61.6" width="28.6" height="14.4" fill="#4c1"/>
+<text x="325.99999999999994" y="71.46666666666667" font-size="8.0" text-anchor="end">Linux Hosts (wayland/cairo)</text>
+<text x="345.09999999999997" y="71.46666666666667" font-size="8.0">pass</text>
+<rect x="163.2" y="77.0" width="167.6" height="14.4" fill="#555"/>
+<rect x="330.79999999999995" y="77.0" width="28.6" height="14.4" fill="#4c1"/>
+<text x="325.99999999999994" y="86.86666666666667" font-size="8.0" text-anchor="end">Linux Hosts (wayland/skia)</text>
+<text x="345.09999999999997" y="86.86666666666667" font-size="8.0">pass</text>
+<rect x="360.4" y="0.0" width="124.6" height="14.4" fill="#555"/>
+<rect x="485.0" y="0.0" width="28.6" height="14.4" fill="#4c1"/>
+<text x="480.2" y="9.866666666666667" font-size="8.0" text-anchor="end">Linux Hosts (x11/cairo)</text>
+<text x="499.3" y="9.866666666666667" font-size="8.0">pass</text>
+<rect x="360.4" y="15.4" width="124.6" height="14.4" fill="#555"/>
+<rect x="485.0" y="15.4" width="28.6" height="14.4" fill="#4c1"/>
+<text x="480.2" y="25.26666666666667" font-size="8.0" text-anchor="end">Linux Hosts (x11/skia)</text>
+<text x="499.3" y="25.26666666666667" font-size="8.0">pass</text>
+<rect x="360.4" y="30.8" width="124.6" height="14.4" fill="#555"/>
+<rect x="485.0" y="30.8" width="28.6" height="14.4" fill="#4c1"/>
+<text x="480.2" y="40.666666666666664" font-size="8.0" text-anchor="end">Quartz2D (macOS Clang)</text>
+<text x="499.3" y="40.666666666666664" font-size="8.0">pass</text>
+<rect x="360.4" y="46.2" width="124.6" height="14.4" fill="#555"/>
+<rect x="485.0" y="46.2" width="28.6" height="14.4" fill="#4c1"/>
+<text x="480.2" y="56.06666666666667" font-size="8.0" text-anchor="end">Skia (Ubuntu GCC x64)</text>
+<text x="499.3" y="56.06666666666667" font-size="8.0">pass</text>
+<rect x="360.4" y="61.6" width="124.6" height="14.4" fill="#555"/>
+<rect x="485.0" y="61.6" width="28.6" height="14.4" fill="#4c1"/>
+<text x="480.2" y="71.46666666666667" font-size="8.0" text-anchor="end">Skia (Windows MSVC x64)</text>
+<text x="499.3" y="71.46666666666667" font-size="8.0">pass</text>
+<rect x="360.4" y="77.0" width="124.6" height="14.4" fill="#555"/>
+<rect x="485.0" y="77.0" width="28.6" height="14.4" fill="#4c1"/>
+<text x="480.2" y="86.86666666666667" font-size="8.0" text-anchor="end">Skia (macOS Clang arm64)</text>
+<text x="499.3" y="86.86666666666667" font-size="8.0">pass</text>
+<rect x="514.5999999999999" y="0.0" width="162.6" height="14.4" fill="#555"/>
+<rect x="677.1999999999999" y="0.0" width="28.6" height="14.4" fill="#4c1"/>
+<text x="672.4" y="9.866666666666667" font-size="8.0" text-anchor="end">Skia bundle (arm64-linux)</text>
+<text x="691.4999999999999" y="9.866666666666667" font-size="8.0">pass</text>
+<rect x="514.5999999999999" y="15.4" width="162.6" height="14.4" fill="#555"/>
+<rect x="677.1999999999999" y="15.4" width="28.6" height="14.4" fill="#4c1"/>
+<text x="672.4" y="25.26666666666667" font-size="8.0" text-anchor="end">Skia bundle (arm64-osx)</text>
+<text x="691.4999999999999" y="25.26666666666667" font-size="8.0">pass</text>
+<rect x="514.5999999999999" y="30.8" width="162.6" height="14.4" fill="#555"/>
+<rect x="677.1999999999999" y="30.8" width="28.6" height="14.4" fill="#4c1"/>
+<text x="672.4" y="40.666666666666664" font-size="8.0" text-anchor="end">Skia bundle (x64-linux)</text>
+<text x="691.4999999999999" y="40.666666666666664" font-size="8.0">pass</text>
+<rect x="514.5999999999999" y="46.2" width="162.6" height="14.4" fill="#555"/>
+<rect x="677.1999999999999" y="46.2" width="28.6" height="14.4" fill="#4c1"/>
+<text x="672.4" y="56.06666666666667" font-size="8.0" text-anchor="end">Skia bundle (x64-osx)</text>
+<text x="691.4999999999999" y="56.06666666666667" font-size="8.0">pass</text>
+<rect x="514.5999999999999" y="61.6" width="162.6" height="14.4" fill="#555"/>
+<rect x="677.1999999999999" y="61.6" width="28.6" height="14.4" fill="#4c1"/>
+<text x="672.4" y="71.46666666666667" font-size="8.0" text-anchor="end">Skia bundle (x64-windows)</text>
+<text x="691.4999999999999" y="71.46666666666667" font-size="8.0">pass</text>
+<rect x="514.5999999999999" y="77.0" width="162.6" height="14.4" fill="#555"/>
+<rect x="677.1999999999999" y="77.0" width="28.6" height="14.4" fill="#4c1"/>
+<text x="672.4" y="86.86666666666667" font-size="8.0" text-anchor="end">Skia bundle (x64-windows-static)</text>
+<text x="691.4999999999999" y="86.86666666666667" font-size="8.0">pass</text>
 </g>
 </svg>
