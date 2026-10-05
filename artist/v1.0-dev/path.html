@@ -102,6 +102,9 @@
     <a class="nav-link" href="foundation/image.html">Image</a>
   </li>
   <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="foundation/canvas_layer.html">Canvas Layer</a>
+  </li>
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="foundation/resources.html">Resources</a>
   </li>
 </ul>
@@ -136,6 +139,9 @@
   </li>
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="canvas/states.html">States</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas/context.html">Context</a>
   </li>
 </ul>
   </li>
@@ -872,10 +878,27 @@ returning <code>path_impl const*</code>.
    auto arrow = path{"M 0 0 L 40 20 L 0 40 L 10 20 Z"};
 
    // ... in the draw function
-   cnv.add_path(arrow);
    cnv.fill_style(colors::navy_blue);
-   cnv.fill();</code></pre>
+   for (int i = 0; i != 3; ++i)
+   {
+      auto s = cnv.new_state();
+      cnv.translate(40.0f + i * 70, 30);
+      cnv.add_path(arrow);
+      cnv.fill();
+   }</code></pre>
 </div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="_images/path_example.png"><img src="_images/path_example.png" alt="The same arrow shape drawn three times across the figure" width="560px"></a>
+</div>
+<div class="title">Figure 4. What the code above draws: one path, painted three times under three transforms.</div>
+</div>
+<div class="paragraph">
+<p>The <code>path</code> holds the geometry in its own coordinates, so where it lands is
+decided by the transform at the time it is added, not by anything stored in
+the path. Parsing the SVG string once and reusing it is the point: the
+string is parsed at construction, not on every fill.</p>
 </div>
 </div>
 </div>

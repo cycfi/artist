@@ -102,6 +102,9 @@
     <a class="nav-link" href="../foundation/image.html">Image</a>
   </li>
   <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/canvas_layer.html">Canvas Layer</a>
+  </li>
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../foundation/resources.html">Resources</a>
   </li>
 </ul>
@@ -136,6 +139,9 @@
   </li>
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="states.html">States</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="context.html">Context</a>
   </li>
 </ul>
   </li>
@@ -194,147 +200,589 @@
 <h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>A gradient may be used anywhere a color may, as the fill or the stroke.
-You build one by giving it its geometry, then adding color stops along
-it.</p>
+<p>A gradient is a paint that changes across the shape it fills, and it goes
+anywhere a <a href="../foundation/color.html" class="xref page">color</a> goes: as the
+<a href="styles.html" class="xref page">fill style</a> or the stroke style, under <code>fill</code>,
+<code>stroke</code>, <code>fill_rect</code>, <code>fill_text</code> and the rest. You build one in two
+steps. First give it its geometry, a line for a <code>linear_gradient</code> or a pair
+of circles for a <code>radial_gradient</code>. Then add color stops along it, each a
+color at a position between the two ends.</p>
+</div>
+<div class="paragraph">
+<p>The geometry is in user space, read under the transform in effect when the
+path is painted, not when the style is set. A gradient therefore moves,
+scales and rotates with everything else drawn under that transform.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+Artist follows the W3C canvas API, where these are
+<code>createLinearGradient</code>, <code>createRadialGradient</code> and <code>addColorStop</code> on a
+<code>CanvasGradient</code>. Artist makes the gradient a plain value you construct
+yourself rather than one the canvas hands back.
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_linear_gradient"><a class="anchor" href="#_linear_gradient"></a>linear_gradient</h2>
+<h2 id="_include"><a class="anchor" href="#_include"></a>Include</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>A gradient that runs along a line. May be used anywhere a color may.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;</code></pre>
 </div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   struct color_stop
+   {
+      float          offset;
+      struct color   color;
+   };
+
+   struct gradient
+   {
+      void  add_color_stop(color_stop cs);
+      void  add_color_stop(float offset, struct color color_);
+
+      std::vector&lt;color_stop&gt; color_space = {};
+   };
+
+   struct linear_gradient : gradient
+   {
+      linear_gradient(float startx, float starty, float endx, float endy);
+      linear_gradient(point start, point end);
+
+      point start = {};
+      point end = {};
+   };
+
+   struct radial_gradient : gradient
+   {
+      radial_gradient(
+         float c1x, float c1y, float c1r,
+         float c2x, float c2y, float c2r
+      );
+
+      radial_gradient(
+         point c1, float c1r,
+         point c2, float c2r
+      );
+
+      point c1 = {};
+      float c1_radius = {};
+      point c2 = c1;
+      float c2_radius = c1_radius;
+   };</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The four style setters that take them:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   void  fill_style(linear_gradient const&amp; gr);
+   void  fill_style(radial_gradient const&amp; gr);
+   void  stroke_style(linear_gradient const&amp; gr);
+   void  stroke_style(radial_gradient const&amp; gr);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>All of these are nested in <code>canvas</code>, so the types are spelled
+<code>canvas::linear_gradient</code>, <code>canvas::radial_gradient</code> and
+<code>canvas::color_stop</code>. Neither gradient has a default constructor: the
+geometry is given at construction and the stops are added afterwards.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
+<div class="sectionbody">
 <div class="sect2">
 <h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
 <div class="dlist">
 <dl>
-<dt class="hdlist1"><code>start</code>, <code>end</code></dt>
+<dt class="hdlist1"><code>cnv</code>                  </dt>
 <dd>
-<p>Instance of <code>point</code></p>
+<p>Object of type <code>canvas</code>.</p>
 </dd>
-<dt class="hdlist1"><code>startx</code>, <code>starty</code>, <code>endx</code>, <code>endy</code></dt>
+<dt class="hdlist1"><code>gr</code>                   </dt>
 <dd>
-<p><code>float</code></p>
+<p>Object of type <code>canvas::linear_gradient</code> or
+<code>canvas::radial_gradient</code>.</p>
 </dd>
-<dt class="hdlist1"><code>cs</code></dt>
+<dt class="hdlist1"><code>cs</code>                   </dt>
 <dd>
-<p>Instance of <code>canvas::color_stop</code></p>
+<p>Object of type <code>canvas::color_stop</code>.</p>
 </dd>
-<dt class="hdlist1"><code>offset</code></dt>
+<dt class="hdlist1"><code>offset</code>               </dt>
 <dd>
-<p><code>float</code>, from 0.0 at the start to 1.0 at the end</p>
+<p>A <code>float</code> position along the gradient, 0 at the
+start and 1 at the end.</p>
 </dd>
-<dt class="hdlist1"><code>c</code></dt>
+<dt class="hdlist1"><code>c</code>                    </dt>
 <dd>
-<p>Instance of <code>color</code></p>
+<p>Object of type <a href="../foundation/color.html" class="xref page">color</a>.</p>
+</dd>
+<dt class="hdlist1"><code>start</code>, <code>end</code>         </dt>
+<dd>
+<p>Objects of type <a href="../foundation/point.html" class="xref page">point</a>,
+the two ends of a linear gradient&#8217;s line.</p>
+</dd>
+<dt class="hdlist1"><code>startx</code>, <code>starty</code>     </dt>
+<dd>
+<p><code>float</code> components of <code>start</code>.</p>
+</dd>
+<dt class="hdlist1"><code>endx</code>, <code>endy</code>         </dt>
+<dd>
+<p><code>float</code> components of <code>end</code>.</p>
+</dd>
+<dt class="hdlist1"><code>c1</code>, <code>c2</code>             </dt>
+<dd>
+<p>Objects of type <a href="../foundation/point.html" class="xref page">point</a>,
+the centres of a radial gradient&#8217;s two circles.</p>
+</dd>
+<dt class="hdlist1"><code>c1r</code>, <code>c2r</code>           </dt>
+<dd>
+<p><code>float</code> radii of those two circles.</p>
+</dd>
+<dt class="hdlist1"><code>c1x</code>, <code>c1y</code>           </dt>
+<dd>
+<p><code>float</code> components of <code>c1</code>.</p>
+</dd>
+<dt class="hdlist1"><code>c2x</code>, <code>c2y</code>           </dt>
+<dd>
+<p><code>float</code> components of <code>c2</code>.</p>
 </dd>
 </dl>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h3>
-<div class="listingblock">
+<h3 id="_color_stops"><a class="anchor" href="#_color_stops"></a>Color Stops</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>gr.add_color_stop(offset, c)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add a stop: the paint is
+                                     <code>c</code> at <code>offset</code> along the
+                                     gradient.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>gr.add_color_stop(cs)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The same, with the position
+                                     and the color given as one
+                                     <code>color_stop</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="imageblock text-center">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
-canvas::linear_gradient{start, end}
-
-// variant 2
-canvas::linear_gradient{startx, starty, endx, endy}
-
-// variant 3
-gr.add_color_stop(cs)
-gr.add_color_stop(offset, c)</code></pre>
+<a class="image" href="../_images/canvas/color_stops.png"><img src="../_images/canvas/color_stops.png" alt="Four stop lists and the ramp each produces" width="560px"></a>
 </div>
+<div class="title">Figure 1. What the stop list does to the ramp.</div>
+</div>
+<div class="paragraph">
+<p>Between two stops the paint runs evenly from one color to the other, alpha
+included. Outside the outermost stops it does not repeat or fade: the first
+stop&#8217;s color is held all the way back to the start of whatever is being
+painted, and the last stop&#8217;s color all the way forward.</p>
+</div>
+<div class="paragraph">
+<p>A gradient with one stop is that color everywhere, wherever the stop sits.
+A gradient with no stops at all paints nothing, as the W3C API specifies.</p>
+</div>
+<div class="paragraph">
+<p>Stops need not be added in order of offset; they are sorted by offset
+before painting. Two stops at the same offset make a hard edge, with no
+blend between them, which is the way to build a band of flat colors in one
+paint.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+Artist checks none of this. An offset outside 0 to 1 is not defined
+by the W3C API, and the backends disagree on what it does, so keep offsets
+inside that range. The same holds for a negative radius.
+</td>
+</tr>
+</table>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_semantics"><a class="anchor" href="#_semantics"></a>Semantics</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Constructs a gradient running from <code>start</code> to <code>end</code>.</p>
-</li>
-<li>
-<p>The same, with the two points given as four scalars.</p>
-</li>
-<li>
-<p>Adds a color stop: <code>offset</code> is the position along the gradient and <code>c</code> is
-the color there. A <code>color_stop</code> is the pair as a struct.</p>
-</li>
-</ol>
+<h3 id="_stop_members"><a class="anchor" href="#_stop_members"></a>Stop Members</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cs.offset</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Where the stop sits.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cs.color</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The color there.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>gr.color_space</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The stops, in the order
+                     they were added.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>std::vector&lt;color_stop&gt;</code></p></td>
+</tr>
+</tbody>
+</table>
 </div>
-<div class="listingblock">
+<div class="sect2">
+<h3 id="_linear_gradient_construction"><a class="anchor" href="#_linear_gradient_construction"></a>Linear Gradient Construction</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::linear_gradient{start, end}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A gradient running
+                                                        along the line from
+                                                        <code>start</code> to <code>end</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::linear_gradient{startx, starty,
+    endx, endy}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The same, with the
+                                                        two points given as
+                                                        four scalars.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="imageblock text-center">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">auto gr = canvas::linear_gradient{{0, 0}, {0, 100}};
-gr.add_color_stop({0.0, colors::black});
-gr.add_color_stop({1.0, colors::white});
-cnv.fill_style(gr);</code></pre>
+<a class="image" href="../_images/canvas/linear_gradient.png"><img src="../_images/canvas/linear_gradient.png" alt="A linear gradient with its start and end marked" width="560px"></a>
+</div>
+<div class="title">Figure 2. A two stop linear gradient. The ramp runs between start and end; each end color is held past it.</div>
+</div>
+<div class="paragraph">
+<p>Offset 0 sits at <code>start</code> and offset 1 at <code>end</code>. The paint is constant along
+every line perpendicular to that one, so the line sets both the direction
+of the ramp and how long it takes: a short line packs the whole ramp into a
+narrow band, and a line at an angle tilts it.</p>
+</div>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+Give the two points distinct values. The W3C API paints nothing
+when <code>start</code> and <code>end</code> are the same point, and Artist&#8217;s backends do not
+agree on that case.
+</td>
+</tr>
+</table>
 </div>
 </div>
-<hr>
+<div class="sect2">
+<h3 id="_linear_gradient_members"><a class="anchor" href="#_linear_gradient_members"></a>Linear Gradient Members</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>gr.start</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Where offset 0 sits.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>gr.end</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Where offset 1 sits.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_radial_gradient_construction"><a class="anchor" href="#_radial_gradient_construction"></a>Radial Gradient Construction</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::radial_gradient{c1, c1r, c2, c2r}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A gradient running
+                                                        from the circle at
+                                                        <code>c1</code> of radius
+                                                        <code>c1r</code> to the circle
+                                                        at <code>c2</code> of radius
+                                                        <code>c2r</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::radial_gradient{c1x, c1y, c1r,
+    c2x, c2y, c2r}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The same, with the
+                                                        two centres given
+                                                        as scalars.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/radial_gradient.png"><img src="../_images/canvas/radial_gradient.png" alt="Three radial gradients: concentric with a point centre, concentric with a wide first circle, and offset circles" width="560px"></a>
+</div>
+<div class="title">Figure 3. Where the two circles sit decides the shape of the gradient.</div>
+</div>
+<div class="paragraph">
+<p>Offset 0 sits on the first circle and offset 1 on the second, and the ramp
+runs through the ring between them. The three useful arrangements are in
+the figure above:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The two circles concentric with <code>c1_radius</code> zero, which is the plain
+radial fill: the first stop&#8217;s color at the centre, spreading out to the
+second stop&#8217;s color at the rim.</p>
+</li>
+<li>
+<p>The two circles concentric with <code>c1_radius</code> above zero, which holds the
+first stop&#8217;s color flat over a disc that wide before the ramp starts.</p>
+</li>
+<li>
+<p>The first circle offset inside the second, which throws the highlight off
+centre and gives the cone-like look of a lit sphere.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Past the second circle the last stop&#8217;s color is held, as for a linear
+gradient. Two identical circles paint nothing, as the W3C API specifies.</p>
+</div>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+On Direct2D the first circle&#8217;s radius is ignored. The backend&#8217;s
+radial brush has one radius and a focal offset, so <code>c1_radius</code> has nowhere
+to go; a Windows build renders the middle case above as the first.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_radial_gradient_members"><a class="anchor" href="#_radial_gradient_members"></a>Radial Gradient Members</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>gr.c1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The centre of the first circle.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>gr.c1_radius</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Its radius, where offset 0 sits.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>gr.c2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The centre of the second circle.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>gr.c2_radius</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Its radius, where offset 1 sits.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_painting_with_a_gradient"><a class="anchor" href="#_painting_with_a_gradient"></a>Painting with a Gradient</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_style(gr)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fill with <code>gr</code>, replacing whatever
+                            paint the fill style held.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.stroke_style(gr)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stroke with <code>gr</code>, replacing
+                            whatever paint the stroke style
+                            held.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Fill and stroke are separate styles, so one path can be filled in one
+gradient and outlined in another. Setting a color replaces a gradient and
+setting a gradient replaces a color; there is one paint in each style at a
+time. Both are part of the state that
+<a href="states.html" class="xref page">save and restore</a> keep.</p>
+</div>
+<div class="paragraph">
+<p>The gradient is copied when the style is set. Adding a stop to the object
+afterwards changes the object, not the style, so build the gradient first
+and set it last.</p>
+</div>
+<div class="paragraph">
+<p>Coordinates are read at paint time under the transform then in effect, not
+at the time of the <code>fill_style</code> call. A <code>scale</code> between the two stretches
+the ramp along with the shape, and one gradient painted twice under two
+different transforms lands in two different places.</p>
+</div>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+On Quartz 2D a gradient&#8217;s stop colors do not match a flat fill of
+the same color. Stops go through <code>kCGColorSpaceGenericRGB</code> while a flat
+fill goes through the device space, so <code>rgba(255, 0, 0, 255)</code> as a stop
+renders as 255, 38, 0 and a mid grey comes out about 14 percent light.
+Black and white are unaffected. The Skia backend carries a matching
+correction factor for the same reason. Cairo renders stops exactly.
+</td>
+</tr>
+</table>
+</div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_radial_gradient"><a class="anchor" href="#_radial_gradient"></a>radial_gradient</h2>
+<h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>A gradient that runs between two circles.</p>
+<p>A bar with a glassy sheen down it, and a round knob lit from the top left:</p>
 </div>
-<div class="sect2">
-<h3 id="_notation_2"><a class="anchor" href="#_notation_2"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>c1</code>, <code>c2</code></dt>
-<dd>
-<p>Instance of <code>point</code>, the two centres</p>
-</dd>
-<dt class="hdlist1"><code>c1r</code>, <code>c2r</code></dt>
-<dd>
-<p><code>float</code>, the two radii</p>
-</dd>
-<dt class="hdlist1"><code>c1x</code>, <code>c1y</code>, <code>c2x</code>, <code>c2y</code></dt>
-<dd>
-<p><code>float</code></p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_expressions_2"><a class="anchor" href="#_expressions_2"></a>Expressions</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
-canvas::radial_gradient{c1, c1r, c2, c2r}
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   auto box = rect{40, 40, 240, 92};
+   canvas::linear_gradient sheen{box.left, box.top, box.left, box.bottom};
+   sheen.add_color_stop(0, rgba(88, 152, 232, 255));
+   sheen.add_color_stop(0.5, rgba(21, 101, 192, 255));
+   sheen.add_color_stop(0.5, rgba(17, 82, 156, 255));
+   sheen.add_color_stop(1, rgba(38, 118, 209, 255));
+   cnv.fill_style(sheen);
+   cnv.fill_round_rect(box, 8);
 
-// variant 2
-canvas::radial_gradient{c1x, c1y, c1r, c2x, c2y, c2r}</code></pre>
+   auto knob = circle{300, 66, 26};
+   canvas::radial_gradient lit{
+      point{knob.cx - 10, knob.cy - 10}, 2,
+      point{knob.cx, knob.cy}, knob.radius
+   };
+   lit.add_color_stop(0, rgba(150, 196, 255, 255));
+   lit.add_color_stop(1, rgba(17, 82, 156, 255));
+   cnv.fill_style(lit);
+   cnv.add_circle(knob);
+   cnv.fill();</code></pre>
 </div>
 </div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/gradients_example.png"><img src="../_images/canvas/gradients_example.png" alt="A gradient filled bar and a round knob" width="560px"></a>
 </div>
-<div class="sect2">
-<h3 id="_semantics_2"><a class="anchor" href="#_semantics_2"></a>Semantics</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Constructs a gradient running from the circle centred at <code>c1</code> with
-radius <code>c1r</code> to the circle centred at <code>c2</code> with radius <code>c2r</code>.</p>
-</li>
-<li>
-<p>The same, with the centres given as scalars.</p>
-</li>
-<li>
-<p>Give both circles the same centre for the usual radial fill; offset them
-for a cone-like effect.</p>
-</li>
-<li>
-<p>Color stops are added as for <code>linear_gradient</code>.</p>
-</li>
-</ol>
+<div class="title">Figure 4. What the code above draws.</div>
 </div>
-<hr>
+<div class="paragraph">
+<p>The pair of stops at 0.5 is the hard edge that gives the bar its break
+across the middle. The knob&#8217;s highlight is off centre because the first
+circle is, which is the third arrangement in the radial figure above.</p>
 </div>
 </div>
 </div>

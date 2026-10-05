@@ -102,6 +102,9 @@
     <a class="nav-link" href="image.html">Image</a>
   </li>
   <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas_layer.html">Canvas Layer</a>
+  </li>
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="resources.html">Resources</a>
   </li>
 </ul>
@@ -136,6 +139,9 @@
   </li>
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../canvas/states.html">States</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/context.html">Context</a>
   </li>
 </ul>
   </li>
@@ -557,17 +563,28 @@ corner.
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   auto dial = circle{center_point(bounds), 40};
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   auto bounds = rect{0, 0, 200, 140};
+   auto dial = circle{center_point(bounds), 40};
 
-   cnv.circle(dial);
+   cnv.add_circle(dial);
    cnv.fill_style(colors::gray[20]);
    cnv.fill();
 
-   cnv.circle(dial.inset(6));
+   cnv.add_circle(dial.inset(6));
    cnv.stroke_style(colors::light_steel_blue);
    cnv.line_width(2);
    cnv.stroke();</code></pre>
 </div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/foundation/circle_example.png"><img src="../_images/foundation/circle_example.png" alt="A dark disc with a lighter ring inside it" width="560px"></a>
+</div>
+<div class="title">Figure 1. What the code above draws.</div>
+</div>
+<div class="paragraph">
+<p><code>inset</code> shrinks about the same centre, so the ring stays concentric with
+the face without any arithmetic on <code>cx</code> and <code>cy</code>.</p>
 </div>
 </div>
 </div>

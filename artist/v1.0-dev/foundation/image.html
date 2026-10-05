@@ -102,6 +102,9 @@
     <a class="nav-link" href="image.html">Image</a>
   </li>
   <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas_layer.html">Canvas Layer</a>
+  </li>
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="resources.html">Resources</a>
   </li>
 </ul>
@@ -136,6 +139,9 @@
   </li>
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../canvas/states.html">States</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/context.html">Context</a>
   </li>
 </ul>
   </li>
@@ -683,18 +689,50 @@ drawing code still works in its 64 unit size:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   image badge{64, 64, 2};
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   // Render the badge once, at twice the display resolution.
+   image badge{64, 64, 2};
    {
       offscreen_image off{badge};
       canvas bc{off.context()};
+
+      canvas::radial_gradient face{{24, 22}, 2, {32, 32}, 34};
+      face.add_color_stop(0, colors::gold);
+      face.add_color_stop(1, colors::dark_goldenrod);
+      bc.fill_style(face);
       bc.add_circle(32, 32, 30);
-      bc.fill_style(colors::gold);
       bc.fill();
+
+      bc.stroke_style(colors::white.opacity(0.75));
+      bc.line_width(2);
+      bc.add_circle(32, 32, 24);
+      bc.stroke();
+
+      bc.fill_style(colors::white);
+      bc.font(font_descr{"Open Sans", 26}.bold());
+      bc.text_align(canvas::center | canvas::middle);
+      bc.fill_text("A", 32, 32);
    }
 
-   cnv.draw(badge, {10, 10});
-   cnv.draw(badge, {90, 10}, 0.5);</code></pre>
+   // Paint it as often as you like. The drawing above ran once.
+   for (int i = 0; i != 4; ++i)
+   {
+      auto s = 1.0f - i * 0.2f;
+      cnv.draw(badge, {20.0f + i * 80, 20 + (64 - 64 * s) / 2}, s);
+   }</code></pre>
 </div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/foundation/image_example.png"><img src="../_images/foundation/image_example.png" alt="One gold badge painted four times at four sizes" width="560px"></a>
+</div>
+<div class="title">Figure 1. What the code above draws: one badge, rendered once and painted four times.</div>
+</div>
+<div class="paragraph">
+<p>The gradient, the ring and the letter are rasterised once, however many
+times the badge is painted. At scale 2 that raster has four times the
+pixels of the 64 unit box it was drawn in, so it stays sharp when the badge
+is painted larger or on a high density display, and the drawing code never
+leaves its own 64 unit coordinates.</p>
 </div>
 </div>
 </div>

@@ -102,6 +102,9 @@
     <a class="nav-link" href="image.html">Image</a>
   </li>
   <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas_layer.html">Canvas Layer</a>
+  </li>
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="resources.html">Resources</a>
   </li>
 </ul>
@@ -136,6 +139,9 @@
   </li>
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../canvas/states.html">States</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/context.html">Context</a>
   </li>
 </ul>
   </li>
@@ -1094,17 +1100,39 @@ margin, and taking the part of it that is actually on screen:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   auto slot = rect{0, 0, extent{64, 24}};
-   auto badge = align(slot, bounds.inset(8), 1.0f, 0.0f);
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   auto bounds = rect{20, 20, 320, 140};
+   auto clip = rect{0, 0, 282, 160};
 
+   // The card.
+   cnv.fill_style(colors::gray[92]);
+   cnv.fill_round_rect(bounds, 6);
+   cnv.stroke_style(colors::gray[70]);
+   cnv.line_width(1);
+   cnv.stroke_round_rect(bounds, 6);
+
+   // A fixed size badge, hard right and hard top inside the margin.
+   auto slot = rect{0, 0, extent{64, 24}};
+   auto badge = align(slot, bounds.inset(10), 1.0f, 0.0f);
+
+   // Only the part of it that is on screen gets painted.
    if (intersects(badge, clip))
    {
       auto visible = intersection(badge, clip);
-      cnv.rect(visible);
-      cnv.fill_style(colors::gray[90]);
-      cnv.fill();
+      cnv.fill_style(colors::medium_violet_red);
+      cnv.fill_round_rect(visible, 4);
    }</code></pre>
 </div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/foundation/rect_example.png"><img src="../_images/foundation/rect_example.png" alt="A card with a badge in its top right corner, cut off part way by a clip edge" width="560px"></a>
+</div>
+<div class="title">Figure 1. What the code above draws. The red line marks the right edge of clip; it is not drawn by the example.</div>
+</div>
+<div class="paragraph">
+<p><code>align</code> places the slot without any arithmetic on the edges: 1.0 is hard
+right, 0.0 hard top, and <code>inset(8)</code> is the margin. The badge runs past
+<code>clip</code>, so <code>intersection</code> cuts it back to the part that is on screen.</p>
 </div>
 <div class="paragraph">
 <p>And the same layout step written once for either axis:</p>

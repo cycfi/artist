@@ -102,6 +102,9 @@
     <a class="nav-link" href="../foundation/image.html">Image</a>
   </li>
   <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/canvas_layer.html">Canvas Layer</a>
+  </li>
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../foundation/resources.html">Resources</a>
   </li>
 </ul>
@@ -136,6 +139,9 @@
   </li>
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="states.html">States</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="context.html">Context</a>
   </li>
 </ul>
   </li>
@@ -902,9 +908,11 @@ The shadow is scoped to the fill, so the outline casts none:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   {
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   auto panel = rect{40, 30, 260, 130};
+
+   {
       auto s = cnv.new_state();
-      cnv.shadow_style({0, 2}, 6, colors::black.opacity(0.4));
+      cnv.shadow_style({0, 4}, 16, colors::black.opacity(0.45));
       cnv.fill_style(colors::white);
       cnv.fill_round_rect(panel, 8);
    }
@@ -914,6 +922,16 @@ The shadow is scoped to the fill, so the outline casts none:</p>
    cnv.line_join(canvas::round_join);
    cnv.stroke_round_rect(panel, 8);</code></pre>
 </div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/styles_example.png"><img src="../_images/canvas/styles_example.png" alt="A white rounded panel with a soft shadow and a thin outline" width="560px"></a>
+</div>
+<div class="title">Figure 9. What the code above draws, on a light neutral ground so the white panel reads.</div>
+</div>
+<div class="paragraph">
+<p>The shadow is set inside the saved state, so it is gone by the time the
+outline is stroked and the outline casts none of its own.</p>
 </div>
 </div>
 </div>

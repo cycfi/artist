@@ -102,6 +102,9 @@
     <a class="nav-link" href="image.html">Image</a>
   </li>
   <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas_layer.html">Canvas Layer</a>
+  </li>
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="resources.html">Resources</a>
   </li>
 </ul>
@@ -136,6 +139,9 @@
   </li>
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../canvas/states.html">States</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/context.html">Context</a>
   </li>
 </ul>
   </li>
@@ -725,17 +731,31 @@ neutral backdrop at 60 percent opacity:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   namespace colors = cycfi::artist::colors;
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   constexpr auto panel = colors::dark_slate_blue;
+   constexpr auto hover = panel.level(1.8f);
 
-   constexpr auto panel = colors::dark_slate_blue;
-   constexpr auto hover = panel.level(1.2f);
+   auto swatch = [&amp;](rect bounds, bool hovered)
+   {
+      cnv.fill_style(colors::gray[20]);
+      cnv.fill_rect(bounds);
 
-   cnv.fill_style(colors::gray[20]);
-   cnv.fill_rect(bounds);
+      cnv.fill_style((hovered? hover : panel).opacity(0.6f));
+      cnv.fill_rect(bounds);
+   };
 
-   cnv.fill_style((hovered? hover : panel).opacity(0.6f));
-   cnv.fill_rect(bounds);</code></pre>
+   swatch(rect{40, 20, 240, 110}, false);
+   swatch(rect{280, 20, 480, 110}, true);</code></pre>
 </div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/foundation/color_example.png"><img src="../_images/foundation/color_example.png" alt="Two blue grey swatches, the second lighter than the first" width="560px"></a>
+</div>
+<div class="title">Figure 3. What the code above draws: the panel color, and the brighter shade level gives it.</div>
+</div>
+<div class="paragraph">
+<p>Both <code>panel</code> and <code>hover</code> are <code>constexpr</code>, so the hover shade is computed at
+compile time rather than on every frame.</p>
 </div>
 </div>
 </div>

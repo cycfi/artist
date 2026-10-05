@@ -102,6 +102,9 @@
     <a class="nav-link" href="foundation/image.html">Image</a>
   </li>
   <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="foundation/canvas_layer.html">Canvas Layer</a>
+  </li>
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="foundation/resources.html">Resources</a>
   </li>
 </ul>
@@ -136,6 +139,9 @@
   </li>
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="canvas/states.html">States</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas/context.html">Context</a>
   </li>
 </ul>
   </li>
@@ -189,47 +195,26 @@
 </aside>
 <article class="doc">
 <h1 class="page">Canvas</h1>
-<div id="preamble">
-<div class="sectionbody">
-<div class="paragraph">
-<p>The canvas API is a derivative of and in line with the spirit of the HTML5
-canvas API, but using a slightly different syntax and naming convention
-following standard C&#43;&#43; style (e.g. using lower-case and underscores as
-word separators instead of camelCase).</p>
-</div>
-<div class="paragraph">
-<p>The canvas API is built on top of <a href="foundation.html" class="xref page">Foundation classes</a>
-such as points and rectangles, and on drawable classes such as
-<a href="path.html" class="xref page">Path</a> and <a href="foundation/image.html" class="xref page">Image</a>.</p>
-</div>
-</div>
-</div>
 <div class="sect1">
 <h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The <code>canvas</code> is the surface you draw on. Usually you do not construct one:
-the host window creates a canvas for its drawing area and hands it to you
-for the duration of the draw call. To draw into an image instead, you
-construct a canvas yourself on an `offscreen_image&#8217;s context; see
-<a href="foundation/image.html" class="xref page">Image</a>.</p>
+<p>The <code>canvas</code> is the surface you draw on, and the type most of Artist is
+reached through. The canvas API is a derivative of and in line with the
+spirit of the HTML5 canvas API, but using a slightly different syntax and
+naming convention following standard C&#43;&#43; style (e.g. using lower-case and
+underscores as word separators instead of camelCase).</p>
 </div>
 <div class="paragraph">
-<p>Drawing follows the pattern of the HTML5 canvas. You set the styles you
-want, build a path, then fill or stroke it. The styles are state held by
-the canvas rather than arguments to each call, so a fill color set once
-applies to every fill that follows until you set another.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">cnv.fill_style(colors::navy_blue);
-cnv.add_round_rect(bounds, 5);
-cnv.fill();</code></pre>
+<p>It is built on top of <a href="foundation.html" class="xref page">Foundation classes</a> such as
+points and rectangles, and on drawable classes such as <a href="path.html" class="xref page">Path</a>
+and <a href="foundation/image.html" class="xref page">Image</a>.</p>
 </div>
 </div>
-<div class="paragraph">
-<p>The pages in this section catalogue the canvas interface.</p>
 </div>
+<div class="sect1">
+<h2 id="_the_pages_in_this_section"><a class="anchor" href="#_the_pages_in_this_section"></a>The Pages in This Section</h2>
+<div class="sectionbody">
 <div class="ulist">
 <ul>
 <li>
@@ -259,6 +244,10 @@ color.</p>
 <li>
 <p><a href="canvas/states.html" class="xref page">States</a> save and restore the canvas.</p>
 </li>
+<li>
+<p><a href="canvas/context.html" class="xref page">Context</a> covers where a canvas comes from, how
+long it lives, and the backend handle underneath it.</p>
+</li>
 </ul>
 </div>
 <div class="paragraph">
@@ -267,58 +256,165 @@ color.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_validity"><a class="anchor" href="#_validity"></a>Validity</h2>
+<h2 id="_the_drawing_model"><a class="anchor" href="#_the_drawing_model"></a>The Drawing Model</h2>
 <div class="sectionbody">
+<div class="sect2">
+<h3 id="_drawing_is_immediate"><a class="anchor" href="#_drawing_is_immediate"></a>Drawing Is Immediate</h3>
 <div class="paragraph">
-<p>Tests whether the canvas wraps a real drawing surface, and reaches the
-backend handle underneath.</p>
+<p>A canvas paints pixels and keeps no record of what it painted. There is no
+scene graph, no display list, and no object standing for the shape once the
+call returns: a drawing is the sum of the calls made, in the order they
+were made, and the only way to change one is to draw the whole thing again.
+A later call paints over an earlier one.</p>
+</div>
+<div class="paragraph">
+<p>That is why a host window hands you a canvas for the duration of one draw
+call and takes it back. Interactive code redraws from scratch on every
+frame, which costs nothing to keep in sync because there is nothing to keep
+in sync. For a drawing that is expensive and does not change, render it
+once into an <a href="foundation/image.html" class="xref page">image</a> and paint the image each
+frame instead.</p>
+</div>
 </div>
 <div class="sect2">
-<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>cnv</code></dt>
-<dd>
-<p>Instance of <code>canvas</code></p>
-</dd>
-</dl>
+<h3 id="_one_call_five_steps"><a class="anchor" href="#_one_call_five_steps"></a>One Call, Five Steps</h3>
+<div class="paragraph">
+<p>Drawing follows the pattern of the HTML5 canvas: set the styles you want,
+build a path, then fill or stroke it.</p>
 </div>
-</div>
-<div class="sect2">
-<h3 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">// variant 1
-bool(cnv)
-
-// variant 2
-!cnv
-
-// variant 3
-cnv.impl()</code></pre>
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   cnv.fill_style(colors::navy_blue);
+   cnv.add_round_rect(bounds, 5);
+   cnv.fill();</code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>Only the second of those three lines says anything about the shape. The
+rest of what happens is state the canvas is already carrying, and the
+<code>fill</code> on the last line is where all of it is applied at once, in a fixed
+order.</p>
 </div>
-<div class="sect2">
-<h3 id="_semantics"><a class="anchor" href="#_semantics"></a>Semantics</h3>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="_images/canvas/drawing_model.png"><img src="_images/canvas/drawing_model.png" alt="One rounded rectangle shown five times, gaining a rotation, a fill color, a shadow and a circular clip over an amber bar" width="560px"></a>
+</div>
+<div class="title">Figure 1. The same fill call at each step of the drawing model.</div>
+</div>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Returns <code>true</code> if the canvas wraps a real drawing surface. A canvas
-handed to you by the host is always valid for the duration of the draw
-call; the check exists for code that may run before a surface is ready.</p>
+<p><strong>The path.</strong> <code>add_round_rect</code> builds geometry into the canvas, in user
+space, in the units you chose. Nothing is painted yet.
+See <a href="canvas/current_path.html" class="xref page">Current Path</a>.</p>
 </li>
 <li>
-<p>The negation of the above.</p>
+<p><strong>The transform.</strong> The path is mapped onto the surface by the transform
+in effect. It may be one you set, or one the host or the image arrived
+with. See <a href="canvas/transforms.html" class="xref page">Transforms</a>.</p>
 </li>
 <li>
-<p>Returns the backend handle: <code>SkCanvas*</code> for Skia, <code>cairo_t*</code> for Cairo,
-<code>canvas_impl*</code> for Quartz2D. Reach for this only when you need a facility
-of the backend that Artist does not expose.</p>
+<p><strong>The paint.</strong> <code>fill</code> colours the shape with the current fill style,
+which is a colour or a <a href="canvas/gradients.html" class="xref page">gradient</a>; <code>stroke</code>
+outlines it with the stroke style, at the current width, cap and join.
+See <a href="canvas/styles.html" class="xref page">Styles</a>.</p>
+</li>
+<li>
+<p><strong>The shadow.</strong> If a shadow is set, the shape is cast behind itself
+first, offset and blurred.</p>
+</li>
+<li>
+<p><strong>The composite.</strong> The result is combined with what is already on the
+canvas, under the current composite operation, and only inside the clip.
+Outside the clip nothing changes.</p>
 </li>
 </ol>
 </div>
-<hr>
+<div class="paragraph">
+<p><code>fill</code> and <code>stroke</code> consume the path. After either returns the canvas is
+building nothing, so a shape that is to be both filled and outlined is
+added twice, or kept as a <a href="path.html" class="xref page"><code>path</code></a> object and added again.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_coordinates_and_units"><a class="anchor" href="#_coordinates_and_units"></a>Coordinates and Units</h3>
+<div class="paragraph">
+<p>The origin is the top left corner, x grows to the right and y grows
+downward. Angles are in radians, so a positive angle turns clockwise on
+screen. Coordinates are <code>float</code>.</p>
+</div>
+<div class="paragraph">
+<p>Coordinates are in units, not pixels. A canvas over an image at scale 2
+covers the same ground in twice as many pixels, and the drawing code does
+not change: a 100 unit square is 100 units wide on both, and sharper on
+one. <code>clip_extent()</code> reports the area you may paint in, in those units, so
+a drawing can size itself to whatever canvas it is handed without being
+told.</p>
+</div>
+<div class="paragraph">
+<p>Edges are antialiased. A shape that does not land on a pixel boundary is
+blended into what is behind it rather than snapped, which is the right
+answer for a drawing and the wrong one for a hairline: a 1 unit line
+centred on a whole unit straddles the boundary and covers two rows at half
+strength. Centre such a line on a half unit if it has to be crisp.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_the_canvas_carries_state"><a class="anchor" href="#_the_canvas_carries_state"></a>The Canvas Carries State</h3>
+<div class="paragraph">
+<p>Everything but the geometry is state held by the canvas rather than an
+argument to the call. A fill colour set once applies to every fill that
+follows until another is set, and the same is true of the stroke style, the
+line width, cap and join, the shadow, the composite operation, the font,
+the text alignment, the transform and the clip.</p>
+</div>
+<div class="paragraph">
+<p>That is what makes drawing code composable, and what makes it dangerous: a
+function that narrows the clip or turns the axes has changed the canvas for
+everything drawn after it, and a clip can only ever be narrowed. The canvas
+keeps a stack of the whole bundle for exactly this reason, and
+<code>cnv.new_state()</code> pushes a copy and pops it at the end of the enclosing
+scope. See <a href="canvas/states.html" class="xref page">States</a>.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_compared_with_the_w3c_canvas_api"><a class="anchor" href="#_compared_with_the_w3c_canvas_api"></a>Compared With the W3C Canvas API</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The W3C canvas API is the source of record for what each call is meant to
+mean, and Artist follows it. Most of the difference is spelling:
+<code>fillStyle</code> is <code>fill_style</code>, <code>beginPath</code> is <code>begin_path</code>,
+<code>globalCompositeOperation</code> is <code>global_composite_operation</code>, and <code>fillRect</code>
+takes a <a href="foundation/rect.html" class="xref page"><code>rect</code></a> rather than four numbers, with a
+four number overload alongside it.</p>
+</div>
+<div class="paragraph">
+<p>Three differences are real and worth knowing before the reference pages
+say so one at a time:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The path is consumed.</strong> <code>fill</code> and <code>stroke</code> empty the current path,
+where the W3C API leaves it in place for the next call.</p>
+</li>
+<li>
+<p><strong>There is no <code>globalAlpha</code>.</strong> Alpha is carried by the colour, so a
+translucent fill is a translucent <code>fill_style</code>.</p>
+</li>
+<li>
+<p><strong><code>save</code> and <code>restore</code> are not exposed.</strong> The pair is only reachable
+through <code>cnv.new_state()</code>, whose scope makes an unbalanced stack
+unwritable.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Artist also has what a browser does not need. A canvas is a view onto a
+surface the host owns, so there is a way to name that surface and to reach
+the backend underneath it: see <a href="canvas/context.html" class="xref page">Context</a>.</p>
 </div>
 </div>
 </div>

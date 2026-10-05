@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Transforms :: Artist Docs</title>
+    <title>Context :: Artist Docs</title>
     <meta name="generator" content="Antora 3.1.15">
     <link rel="stylesheet" href="../../../_/css/site.css">
 <meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
@@ -116,7 +116,7 @@
     <button class="nav-item-toggle"></button>
     <a class="nav-link" href="../canvas.html">Canvas</a>
 <ul class="nav-list">
-  <li class="nav-item is-current-page" data-depth="3">
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="transforms.html">Transforms</a>
   </li>
   <li class="nav-item" data-depth="3">
@@ -140,7 +140,7 @@
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="states.html">States</a>
   </li>
-  <li class="nav-item" data-depth="3">
+  <li class="nav-item is-current-page" data-depth="3">
     <a class="nav-link" href="context.html">Context</a>
   </li>
 </ul>
@@ -186,7 +186,7 @@
     <li><a href="../index.html">Artist 2D Canvas Library</a></li>
     <li>Reference</li>
     <li><a href="../canvas.html">Canvas</a></li>
-    <li><a href="transforms.html">Transforms</a></li>
+    <li><a href="context.html">Context</a></li>
   </ul>
 </nav>
 </div>
@@ -195,38 +195,30 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Transforms</h1>
+<h1 class="page">Context</h1>
 <div class="sect1">
 <h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The transform maps the coordinates you draw in, user space, onto the
-coordinates of the surface, device space. <code>translate</code>, <code>rotate</code>, <code>scale</code>
-and <code>skew</code> compose: each applies on top of the transform already in
-effect. <code>transform</code> instead reads or replaces the matrix outright.</p>
-</div>
-<div class="imageblock text-center">
-<div class="content">
-<a class="image" href="../_images/canvas/transforms.png"><img src="../_images/canvas/transforms.png" alt="The four composing transforms" width="560px"></a>
-</div>
-<div class="title">Figure 1. Each operation applied to the same square, which is drawn once by the same call. The outline is where it lands with no transform.</div>
+<p>A canvas is a view onto a drawing context that something else owns. It does
+not create the context and does not free it, so it has to be destroyed
+before whatever it borrowed the context from. It cannot be copied, moved or
+assigned either, so it is passed by reference and nothing else;
+<code>draw(canvas&amp; cnv)</code> is the shape every host uses.</p>
 </div>
 <div class="paragraph">
-<p>Angles are in radians, and Artist&#8217;s y axis grows downward, so a positive
-angle turns clockwise on screen. Rotation, scaling and skewing are about
-the origin of user space, not the centre of what you are drawing: translate
-first to work about another point, as the <a href="#_example">Example</a> does.</p>
+<p>Usually you do not construct one. The host window creates a canvas for its
+drawing area and hands it to you for the duration of the draw call, and it
+is gone again when the call returns. To draw into an image instead,
+construct one yourself on the context of an
+<a href="../foundation/image.html" class="xref page"><code>offscreen_image</code></a>, which is what the examples
+throughout this reference do.</p>
 </div>
 <div class="paragraph">
-<p>The transform is part of the canvas state, so <code>save</code> and <code>restore</code>, under
-<a href="states.html" class="xref page">States</a>, put back the one that was in effect.</p>
-</div>
-<div class="paragraph">
-<p>A canvas may already carry a transform when you get it: a host window can
-set one for its drawing area, and a canvas over an
-<a href="../foundation/image.html" class="xref page">image</a> carries that image&#8217;s scale.
-<code>user_to_device</code> and <code>device_to_user</code> are relative to it, so what you get
-back does not depend on what the host or the image set up.</p>
+<p>Underneath the canvas is the backend&#8217;s own drawing context, and <code>impl()</code>
+hands it back. That is the way out of Artist for the one facility the
+library does not wrap, and the way in for a host that already has a context
+of its own.</p>
 </div>
 </div>
 </div>
@@ -245,23 +237,29 @@ back does not depend on what the host or the image set up.</p>
 <div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">      void              translate(point p);
-      void              rotate(float rad);
-      void              scale(point p);
-      void              skew(double sx, double sy);
-      point             device_to_user(point p);
-      point             user_to_device(point p);
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   class canvas
+   {
+   public:
 
-      void              translate(float x, float y);
-      void              scale(float xy);
-      void              scale(float x, float y);
-      point             device_to_user(float x, float y);
-      point             user_to_device(float x, float y);
+      explicit          canvas(canvas_impl* context);
+                        canvas(canvas const&amp; rhs) = delete;
+                        canvas(canvas&amp;&amp; rhs) = delete;
+                        ~canvas();
 
-      affine_transform  transform() const;
-      void              transform(affine_transform const&amp; mat);
-      void              transform(double a, double b, double c, double d, double tx, double ty);</code></pre>
+      canvas&amp;           operator=(canvas const&amp; rhs) = delete;
+
+      canvas_impl*      impl() const;
+      explicit          operator bool() const;
+      bool              operator!() const;
+
+      // Transforms, Current Path, Styles, Gradients, Rectangles, Text,
+      // Drawing Images and States, each on its own page.
+   };</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p><code>canvas_impl</code> is the backend&#8217;s drawing context type, named once per backend
+in <code>canvas.hpp</code>. See <a href="#_backend_access">Backend Access</a>.</p>
 </div>
 </div>
 </div>
@@ -272,116 +270,85 @@ back does not depend on what the host or the image set up.</p>
 <h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
 <div class="dlist">
 <dl>
-<dt class="hdlist1"><code>cnv</code>             </dt>
+<dt class="hdlist1"><code>cnv</code>    </dt>
 <dd>
 <p>Object of type <code>canvas</code>.</p>
 </dd>
-<dt class="hdlist1"><code>p</code>               </dt>
+<dt class="hdlist1"><code>ctx</code>    </dt>
 <dd>
-<p>Object of type <code>point</code>.</p>
-</dd>
-<dt class="hdlist1"><code>x</code>, <code>y</code>          </dt>
-<dd>
-<p><code>float</code> coordinates.</p>
-</dd>
-<dt class="hdlist1"><code>xy</code>              </dt>
-<dd>
-<p>A <code>float</code> scale factor for both axes.</p>
-</dd>
-<dt class="hdlist1"><code>rad</code>             </dt>
-<dd>
-<p>A <code>float</code>, an angle in radians.</p>
-</dd>
-<dt class="hdlist1"><code>sx</code>, <code>sy</code>        </dt>
-<dd>
-<p><code>double</code> angles in radians.</p>
-</dd>
-<dt class="hdlist1"><code>mat</code>             </dt>
-<dd>
-<p>Object of type
-                     <a href="../foundation/affine_transform.html" class="xref page">affine_transform</a>.
-<code>a</code>, <code>b</code>, <code>c</code>,</p>
-</dd>
-<dt class="hdlist1"><code>d</code>, <code>tx</code>, <code>ty</code>   </dt>
-<dd>
-<p><code>double</code> members of a transform matrix.</p>
+<p>A backend drawing context, of type <code>canvas_impl*</code>.</p>
 </dd>
 </dl>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_composition"><a class="anchor" href="#_composition"></a>Composition</h3>
+<h3 id="_construction_and_lifetime"><a class="anchor" href="#_construction_and_lifetime"></a>Construction and Lifetime</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
+<col style="width: 50%;">
+<col style="width: 50%;">
 </colgroup>
 <thead>
 <tr>
 <th class="tableblock halign-left valign-top">Expression</th>
 <th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.translate(p)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Move the origin of user space by
-                            <code>p</code>.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas(ctx)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Draw on the context <code>ctx</code>, which the canvas
+                        borrows and does not own. Explicit: a
+                        <code>canvas_impl*</code> does not convert to a <code>canvas</code> on
+                        its own.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.translate(x, y)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, by <code>x</code> and <code>y</code>.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas(cnv)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Deleted. A canvas cannot be copied.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.rotate(rad)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Rotate user space about its origin
-                            by <code>rad</code>.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.scale(p)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Scale user space by <code>p.x</code> and
-                            <code>p.y</code>.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.scale(xy)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Scale both axes by <code>xy</code>.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.scale(x, y)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Scale by <code>x</code> and <code>y</code>.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.skew(sx, sy)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Skew user space: <code>sx</code> is the angle
-                            by which y shears with x, and <code>sy</code>
-                            the angle by which x shears with
-                            y.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas(std::move(cnv))</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Deleted. A canvas cannot be moved either, so it has
+                        no assignment operator at all.</p></td>
 </tr>
 </tbody>
 </table>
 <div class="paragraph">
-<p>Each call composes on top of the transform in effect, so the call nearest
-the drawing is the one applied first to it: scaling by 2 and then
-translating by 10 moves by 20 device units. Everything drawn afterwards
-follows the transform, line widths and text included.</p>
+<p>The canvas holds the pointer it was given and keeps drawing through it for
+its whole life, so <code>ctx</code> has to outlive the canvas. Where the context comes
+from decides how long that is:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A host window makes one for each draw call and passes the canvas down by
+reference. The reference is good for the duration of that call only, and
+keeping it past the return leaves a canvas on a dead context.</p>
+</li>
+<li>
+<p><a href="../foundation/image.html" class="xref page"><code>offscreen_image::context()</code></a> draws into an
+image held in memory, whose pixels can be read back and saved. It is good
+while the <code>offscreen_image</code> lives, so the canvas goes out of scope first
+and the image is complete when it does.</p>
+</li>
+<li>
+<p><a href="../foundation/canvas_layer.html" class="xref page"><code>canvas_layer::context()</code></a> draws into a
+surface on the canvas&#8217;s own device, the GPU where the canvas renders
+there, at the canvas&#8217;s pixel density and with no pixel access. It is good
+while the layer lives, and only for the canvas the layer was made for.</p>
+</li>
+</ul>
 </div>
 <div class="paragraph">
-<p>The angles <code>skew</code> takes are the ones
-<a href="../foundation/affine_transform.html" class="xref page">affine_transform</a> <code>skew</code> and
-<code>make_skew</code> take.</p>
+<p>Destroying the canvas does not destroy the context, and does not put the
+context back the way it was found. Whatever the last drawing call left in
+the backend&#8217;s own state is still there. A host that reuses one context for
+more than one canvas saves and restores around each of them, as the Skia
+host does.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_conversion"><a class="anchor" href="#_conversion"></a>Conversion</h3>
+<h3 id="_validity"><a class="anchor" href="#_validity"></a>Validity</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 33.3333%;">
@@ -397,71 +364,16 @@ follows the transform, line widths and text included.</p>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.user_to_device(p)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Where the user space point
-                                  <code>p</code> lands in device space.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool(cnv)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code> if the canvas holds a context.
+                  Explicit, so it converts in a condition
+                  and nowhere else.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.user_to_device(x, y)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, for the point <code>x</code>,
-                                  <code>y</code>.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.device_to_user(p)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The user space point that the
-                                  device space point <code>p</code> came
-                                  from. This is what a mouse
-                                  position needs.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.device_to_user(x, y)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, for the point <code>x</code>,
-                                  <code>y</code>.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
-</tr>
-</tbody>
-</table>
-<div class="paragraph">
-<p>The two are inverses of each other, and both are relative to the transform
-the canvas already carried when it was made.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_the_matrix"><a class="anchor" href="#_the_matrix"></a>The Matrix</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.transform()</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The current matrix.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>affine_transform</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.transform(mat)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Replace the current
-                                       matrix with <code>mat</code>.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.transform(a, b, c, d,
-    tx, ty)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Replace it with the six
-                                       members of a matrix.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>!cnv</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The negation of the above.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
 </tr>
 </tbody>
 </table>
@@ -472,13 +384,100 @@ the canvas already carried when it was made.</p>
 <i class="fa icon-caution" title="Caution"></i>
 </td>
 <td class="content">
-These three work on the backend&#8217;s own matrix, not on a matrix
-relative to what the canvas started with, and its value for the same
-drawing state is not the same on every backend. Replacing it therefore
-throws away whatever the host or the image set up, such as a window offset
-or an image&#8217;s scale. Prefer <code>save</code> and <code>restore</code> for putting a transform
-back, and give <code>transform(mat)</code> only a matrix that <code>transform()</code> returned
-from the same canvas.
+There is no portable way to reach a canvas for which these report
+<code>false</code>. Only a canvas built from a null <code>canvas_impl*</code> is invalid, and the
+Cairo, Skia and Direct2D constructors dereference the pointer before the
+object exists: on Cairo a null context is a measured segmentation fault.
+Quartz 2D and the recording backend survive it and report <code>false</code>. Test the
+context before building the canvas, not the canvas after.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_backend_access"><a class="anchor" href="#_backend_access"></a>Backend Access</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.impl()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The context the canvas was built with,
+                  the same pointer that was passed in.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas_impl*</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p><code>canvas_impl</code> is a different type on every backend, and only one of them is
+declared in any one build. Which one follows from the backend the library
+was compiled for:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Backend</th>
+<th class="tableblock halign-left valign-top"><code>canvas_impl</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cairo</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cairo_t</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Skia</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SkCanvas</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Quartz 2D</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Incomplete. The pointer is a <code>CGContextRef</code>, so it is
+                  cast at both ends: the host hands the constructor a
+                  <code>(canvas_impl*) cg_ctx</code>, and <code>CGContextRef(cnv.impl())</code>
+                  gets it back.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Direct2D</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d2d::context</code>, Artist&#8217;s own wrapper rather than a
+                  Direct2D interface.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Recording</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>recording::canvas_impl</code>, the journal the headless
+                  backend appends to.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Reach for <code>impl()</code> only for a facility of the backend that Artist does not
+expose. Code that does is code that only builds on that backend, which is
+the whole point of the rest of this reference.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+The W3C canvas API has no counterpart. A browser context is the
+drawing surface, where an Artist <code>canvas</code> is a view onto a surface the host
+made, so Artist needs a way to name the surface and the W3C API does not.
 </td>
 </tr>
 </table>
@@ -490,44 +489,50 @@ from the same canvas.
 <h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Rotating a rectangle about its own centre, and putting the transform back
-afterwards:</p>
+<p>The function a host calls with the canvas for its drawing area, sizing
+itself to whatever that canvas turns out to be:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   auto r = rect{40, 30, 200, 110};
-   auto center = center_point(r);
-
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   void draw(canvas&amp; cnv)
    {
-      auto state = cnv.new_state();
+      auto bounds = cnv.clip_extent();
+      auto dot = circle{center_point(bounds), 40};
 
-      cnv.translate(center.x, center.y);
-      cnv.rotate(pi / 6);
-      cnv.translate(-center.x, -center.y);
-
-      cnv.add_rect(r);
-      cnv.fill_style(colors::gold);
+      // Set the style, build the path, then paint it.
+      cnv.fill_style(rgba(21, 101, 192, 255));
+      cnv.add_round_rect(bounds.inset(20), 12);
       cnv.fill();
-   }
 
-   // The state is back, so this outlines r where it started.
-   cnv.add_rect(r);
-   cnv.stroke_style(colors::gray[60]);
-   cnv.line_width(1);
-   cnv.stroke();</code></pre>
+      cnv.fill_style(colors::white);
+      cnv.add_circle(dot);
+      cnv.fill();
+
+      // The fill above consumed the circle, so it is added again here.
+      cnv.stroke_style(rgba(26, 26, 26, 255));
+      cnv.line_width(5);
+      cnv.add_circle(dot);
+      cnv.stroke();
+   }</code></pre>
 </div>
 </div>
 <div class="imageblock text-center">
 <div class="content">
-<a class="image" href="../_images/canvas/transforms_example.png"><img src="../_images/canvas/transforms_example.png" alt="A rectangle rotated about its centre, inside the outline of where it started" width="560px"></a>
+<a class="image" href="../_images/canvas/context_example.png"><img src="../_images/canvas/context_example.png" alt="A blue rounded panel with a white disc at its centre, ringed in near black" width="560px"></a>
 </div>
-<div class="title">Figure 2. What the code above draws.</div>
+<div class="title">Figure 1. What the code above draws.</div>
 </div>
 <div class="paragraph">
-<p>The three calls read outward from the rectangle: move its centre to the
-origin, turn, then move it back. The outline is drawn after the state ends,
-so it lands square to the axes, which is what shows the transform was put
-back.</p>
+<p>Each shape is set up, built into the canvas and painted, in that order. The
+ring is a second pass over the circle the disc was filled from, because
+<a href="current_path.html" class="xref page"><code>fill</code> consumes the path</a> and there is
+nothing left to stroke by the time it returns.</p>
+</div>
+<div class="paragraph">
+<p>Nothing in the function knows where its canvas came from. The figure above
+was drawn by handing it a canvas on an
+<a href="../foundation/image.html" class="xref page"><code>offscreen_image</code></a> rather than a window, and
+<code>clip_extent()</code> sized the panel to the image instead.</p>
 </div>
 </div>
 </div>

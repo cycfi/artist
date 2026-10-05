@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>States :: Artist Docs</title>
+    <title>Canvas Layer :: Artist Docs</title>
     <meta name="generator" content="Antora 3.1.15">
     <link rel="stylesheet" href="../../../_/css/site.css">
 <meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
@@ -81,31 +81,31 @@
     <a class="nav-link" href="../foundation.html">Foundation</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/point.html">Point and Extent</a>
+    <a class="nav-link" href="point.html">Point and Extent</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/rect.html">Rect</a>
+    <a class="nav-link" href="rect.html">Rect</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/circle.html">Circle</a>
+    <a class="nav-link" href="circle.html">Circle</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/affine_transform.html">Affine Transform</a>
+    <a class="nav-link" href="affine_transform.html">Affine Transform</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/color.html">Color</a>
+    <a class="nav-link" href="color.html">Color</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/font.html">Font</a>
+    <a class="nav-link" href="font.html">Font</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/image.html">Image</a>
+    <a class="nav-link" href="image.html">Image</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="canvas_layer.html">Canvas Layer</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/canvas_layer.html">Canvas Layer</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../foundation/resources.html">Resources</a>
+    <a class="nav-link" href="resources.html">Resources</a>
   </li>
 </ul>
   </li>
@@ -117,31 +117,31 @@
     <a class="nav-link" href="../canvas.html">Canvas</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="transforms.html">Transforms</a>
+    <a class="nav-link" href="../canvas/transforms.html">Transforms</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="current_path.html">Current Path</a>
+    <a class="nav-link" href="../canvas/current_path.html">Current Path</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="styles.html">Styles</a>
+    <a class="nav-link" href="../canvas/styles.html">Styles</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="gradients.html">Gradients</a>
+    <a class="nav-link" href="../canvas/gradients.html">Gradients</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="rectangles.html">Rectangles</a>
+    <a class="nav-link" href="../canvas/rectangles.html">Rectangles</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="text.html">Text</a>
+    <a class="nav-link" href="../canvas/text.html">Text</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="images.html">Drawing Images</a>
-  </li>
-  <li class="nav-item is-current-page" data-depth="3">
-    <a class="nav-link" href="states.html">States</a>
+    <a class="nav-link" href="../canvas/images.html">Drawing Images</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="context.html">Context</a>
+    <a class="nav-link" href="../canvas/states.html">States</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/context.html">Context</a>
   </li>
 </ul>
   </li>
@@ -185,8 +185,8 @@
   <ul>
     <li><a href="../index.html">Artist 2D Canvas Library</a></li>
     <li>Reference</li>
-    <li><a href="../canvas.html">Canvas</a></li>
-    <li><a href="states.html">States</a></li>
+    <li><a href="../foundation.html">Foundation</a></li>
+    <li><a href="canvas_layer.html">Canvas Layer</a></li>
   </ul>
 </nav>
 </div>
@@ -195,47 +195,37 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">States</h1>
+<h1 class="page">Canvas Layer</h1>
 <div class="sect1">
 <h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The canvas draws with whatever styles, transform and clip are in effect at
-the moment of the call. Those settings are not separate knobs but one
-bundle, the drawing state, and the canvas keeps a stack of them.
-<code>cnv.new_state()</code> pushes a copy of the bundle and pops it again at the end
-of the enclosing scope. Everything set in between is undone in one step.</p>
+<p>A <code>canvas_layer</code> is an offscreen drawing surface made for one
+<a href="../canvas.html" class="xref page">canvas</a>. It lives on that canvas&#8217;s device, the GPU where
+the canvas renders there, at that canvas&#8217;s pixel density. Build a <code>canvas</code>
+on its <code>context()</code> to draw into it, then paint it onto the canvas it was
+made for with <code>draw</code>, which is covered under
+<a href="../canvas/images.html#_drawing_a_layer" class="xref page">Drawing Images</a>.</p>
 </div>
 <div class="paragraph">
-<p>This is how drawing code stays composable. A function that translates the
-origin, narrows the clip and picks a font has changed the canvas for
-everything drawn after it, and a clip in particular can only ever be
-narrowed, never widened. Saving first and restoring at the end is the only
-way to hand the canvas back as it was found.</p>
+<p>A layer starts fully transparent and keeps whatever is drawn into it.
+Nothing is cleared between one <code>draw</code> and the next, so a layer holds the
+drawing that accumulates, or that is put down again unchanged frame after
+frame, and the canvas itself takes only what changes. <code>clear_rect</code> on the
+layer&#8217;s own canvas puts a region back to transparent. The <a href="#_example">Example</a> is
+built that way.</p>
 </div>
 <div class="paragraph">
-<p><code>cnv.new_state()</code> is the whole interface. It returns an object that pushes
-the state on construction and pops it when it goes out of scope, including
-when an exception carries you out of the block, so the two halves are made
-by the language rather than by the caller and cannot drift apart as the
-code between them grows. There is no way to push or pop on its own: the
-underlying <code>save</code> and <code>restore</code> are private, and <code>canvas::state</code> is their
-only caller.</p>
+<p>A layer is not an <a href="image.html" class="xref page">image</a>. It offers no access
+to its pixels and cannot be saved, and it is good only for the canvas it
+was made for. Where the pixels are wanted, or a bitmap that outlives one
+canvas, draw into an <code>image</code> through an <code>offscreen_image</code> instead.</p>
 </div>
 <div class="paragraph">
-<p>The bundle holds the <a href="styles.html" class="xref page">fill and stroke styles</a>,
-whether a colour or a gradient, the line width, cap, join and miter limit,
-the shadow, the composite operation, the
-<a href="../foundation/font.html" class="xref page">font</a> and the text alignment, the
-<a href="current_path.html#_fill_rule" class="xref page">fill rule</a>, the
-<a href="transforms.html" class="xref page">current transform</a>, and the clip.</p>
-</div>
-<div class="paragraph">
-<p>It does not hold the <a href="current_path.html" class="xref page">current path</a>. A shape
-half built before a save is still half built after the restore, and one
-built inside a scope is still there when the scope ends. Nor does it hold
-the pixels: a restore is not an undo, and ink laid down inside a scope
-stays where it landed.</p>
+<p>The layer&#8217;s canvas is a canvas of its own, with its own transform, styles
+and state stack; it shares nothing with the canvas the layer was made for.
+Its origin is the layer&#8217;s top left corner with y running down, and it
+draws in the layer&#8217;s own units, the units <code>size()</code> reports.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -244,11 +234,11 @@ stays where it landed.</p>
 <i class="fa icon-note" title="✏️  NOTE"></i>
 </td>
 <td class="content">
-The bundle is the W3C canvas API&#8217;s drawing state, which likewise
-excludes the current default path and the bitmap, and a <code>new_state</code> scope
-is its <code>save</code> and <code>restore</code> pair. Artist does not expose those two
-separately. The W3C API does, and leaves an unmatched <code>restore</code> as a
-silent no-op; a scope makes the mistake unwritable instead.
+A layer takes its pixel density from the canvas when it is
+constructed, from the canvas&#8217;s device and from the scale in force in the
+current transform. Construct the layer at the density it is to be drawn
+at, before scaling the canvas for anything else, and it stays sharp
+wherever the canvas renders.
 </td>
 </tr>
 </table>
@@ -260,7 +250,7 @@ silent no-op; a scope makes the mistake unwritable instead.
 <div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;</code></pre>
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas_layer.hpp&gt;</code></pre>
 </div>
 </div>
 </div>
@@ -270,20 +260,22 @@ silent no-op; a scope makes the mistake unwritable instead.
 <div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   class state
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   class canvas_layer
    {
    public:
 
-      state(canvas&amp; cnv);
-      state(state&amp;&amp; rhs) noexcept;
-      state(state const&amp;) = delete;
-      ~state();
+                         canvas_layer(canvas&amp; cnv, extent size);
+                         canvas_layer(canvas_layer&amp;&amp; rhs) noexcept;
+                         ~canvas_layer();
 
-      state&amp;   operator=(state const&amp;) = delete;
-      state&amp;   operator=(state&amp;&amp; rhs) noexcept;
-   };
+                         canvas_layer(canvas_layer const&amp;) = delete;
+      canvas_layer&amp;      operator=(canvas_layer const&amp;) = delete;
+      canvas_layer&amp;      operator=(canvas_layer&amp;&amp; rhs) noexcept;
 
-   state    new_state();</code></pre>
+      canvas_impl*       context() const;
+      extent             size() const;
+      canvas_layer_impl* impl() const;
+   };</code></pre>
 </div>
 </div>
 </div>
@@ -295,72 +287,20 @@ silent no-op; a scope makes the mistake unwritable instead.
 <h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
 <div class="dlist">
 <dl>
-<dt class="hdlist1"><code>cnv</code>          </dt>
+<dt class="hdlist1"><code>cnv</code>              </dt>
 <dd>
-<p>Object of type <code>canvas</code>.</p>
+<p>Object of type <a href="../canvas.html" class="xref page">canvas</a>.</p>
 </dd>
-<dt class="hdlist1"><code>s</code>, <code>s2</code>      </dt>
+<dt class="hdlist1"><code>layer</code>, <code>layer2</code>  </dt>
 <dd>
-<p>Objects of type <code>canvas::state</code>.</p>
+<p>Objects of type <code>canvas_layer</code>.</p>
+</dd>
+<dt class="hdlist1"><code>sz</code>               </dt>
+<dd>
+<p>Object of type <a href="point.html" class="xref page">extent</a>, a
+width and height in the canvas&#8217;s units.</p>
 </dd>
 </dl>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_saving_and_restoring"><a class="anchor" href="#_saving_and_restoring"></a>Saving and Restoring</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.new_state()</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Push a copy of the drawing
-                        state and return an object
-                        that pops it when destroyed.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::state</code></p></td>
-</tr>
-</tbody>
-</table>
-<div class="paragraph">
-<p>Hold the result in a named local. A temporary is destroyed at the end of
-the full expression, so <code>cnv.new_state();</code> on its own pushes and pops the
-state and protects nothing.</p>
-</div>
-<div class="imageblock text-center">
-<div class="content">
-<a class="image" href="../_images/canvas/state_stack.png"><img src="../_images/canvas/state_stack.png" alt="Five swatches painted by the same statement, their colours following a nested pair of scopes" width="560px"></a>
-</div>
-<div class="title">Figure 1. One statement, five results: the fill style follows the stack.</div>
-</div>
-<div class="paragraph">
-<p>Every swatch above is painted by the same <code>fill_round_rect</code> call. Only the
-depth of the stack differs, and with it the fill style the call reads. What
-goes on comes back off in reverse, so the fourth swatch is the second one&#8217;s
-colour and the fifth is the first&#8217;s.</p>
-</div>
-<div class="paragraph">
-<p>A push and a pop have to balance, so the block&#8217;s shape and the stack&#8217;s
-depth are the same thing.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   {
-      auto st = cnv.new_state();
-      cnv.clip(p);
-      cnv.translate(offset);
-      // draw
-   }  // the clip and the transform are undone here</code></pre>
-</div>
 </div>
 </div>
 <div class="sect2">
@@ -378,41 +318,101 @@ depth are the same thing.</p>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::state(cnv)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Push a copy of the drawing state of <code>cnv</code>.
-                              What <code>cnv.new_state()</code> returns; there is no
-                              default constructor.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas_layer(cnv, sz)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct a transparent layer <code>sz</code> units
+                                   in size on the device <code>cnv</code> draws to, at
+                                   the pixel density in force on <code>cnv</code>.
+                                   Throws <code>std::runtime_error</code> if the
+                                   surface cannot be created.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::state(std::move(s))</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Take over the save held by <code>s</code>, which is
-                              left holding nothing and pops nothing.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas_layer(std::move(layer))</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Move construct from <code>layer</code>, which is
+                                   left holding nothing.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>s = std::move(s2)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Take over the save held by <code>s2</code>, which is
-                              left holding nothing.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>layer = std::move(layer2)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Move assign <code>layer2</code> to <code>layer</code>. <code>layer2</code>
+                                   is left holding nothing.</p></td>
 </tr>
 </tbody>
 </table>
 <div class="paragraph">
-<p>A <code>state</code> cannot be copied. Two objects popping one save would unbalance
-the stack, so the copy constructor and the copy assignment operator are
-deleted, and the move operations hand the save over rather than duplicate
-it. The object is only a token for one entry on the stack; it holds no
-copy of the state itself.</p>
+<p>A layer owns its surface, so it can be moved but not copied. Give it a
+positive width and height; a degenerate size is not handled the same way
+on every backend.</p>
 </div>
-<div class="admonitionblock caution">
+<div class="admonitionblock warning">
 <table>
 <tr>
 <td class="icon">
-<i class="fa icon-caution" title="Caution"></i>
+<i class="fa icon-warning" title="⚠️  WARNING"></i>
 </td>
 <td class="content">
-Move assignment does not restore first. <code>s = std::move(s2)</code>
-overwrites whatever save the target was holding without popping it, so that
-entry stays on the stack for the rest of the drawing. Assign only over a
-<code>state</code> that has already been moved from.
+A moved from <code>canvas_layer</code> holds nothing. Destroy it or assign
+to it; calling any other member on it, or passing it to <code>draw</code>, is
+undefined behaviour.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_accessors"><a class="anchor" href="#_accessors"></a>Accessors</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>layer.context()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The backend drawing context, from which
+                      a <code>canvas</code> is built:
+                      <code>canvas(layer.context())</code>. Valid only
+                      while the layer lives, so the canvas
+                      must not outlive it.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas_impl*</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>layer.size()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The size of the layer in the canvas&#8217;s
+                      units, as it was constructed. <code>draw</code>
+                      puts the layer down at this size.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>extent</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>layer.impl()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The backend&#8217;s layer handle, for code
+                      that talks to the backend directly.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas_layer_impl*</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p><code>size()</code> is in units, not pixels, so a layer covers the same ground
+however dense the canvas under it is; the density goes into the detail.
+There is no <code>bitmap_size()</code> and no <code>pixels()</code>: what a layer holds is the
+backend&#8217;s, and it is never read back.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="⚠️  WARNING"></i>
+</td>
+<td class="content">
+A layer is good only for the canvas it was made for. Drawing it
+onto another canvas, or drawing into it after that canvas is gone, is
+undefined behaviour. Nothing checks this.
 </td>
 </tr>
 </table>
@@ -424,45 +424,76 @@ entry stays on the stack for the rest of the drawing. Assign only over a
 <h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>A label drawn inside a panel, rotated and clipped to it, leaving the canvas
-as it was found:</p>
+<p>A trace that grows a step at a time. Everything already drawn stays on the
+layer and is never drawn twice; each frame extends it by one step, puts it
+down, and paints the head on the canvas, where it does not persist:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   auto panel = rect{20, 20, 260, 120};
-
-   cnv.fill_style(rgba(21, 101, 192, 255));
-   cnv.fill_round_rect(panel, 8);
-
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   // The grid is drawn once, into the layer, and stays there.
+   canvas_layer trace{cnv, extent{520, 120}};
    {
-      auto st = cnv.new_state();
-      cnv.add_round_rect(panel, 8);
-      cnv.clip();
-      cnv.translate(panel.left + 20, panel.bottom - 26);
-      cnv.rotate(-0.35);
-      cnv.font(font_descr{"Open Sans", 34});
-      cnv.fill_style(colors::white);
-      cnv.fill_text("Artist Artist Artist", 0, 0);
+      canvas lc{trace.context()};
+      lc.stroke_style(colors::dim_gray);
+      lc.line_width(1);
+      for (float x = 65; x &lt; 520; x += 65)
+      {
+         lc.move_to({x, 0});
+         lc.line_to({x, 120});
+      }
+      lc.move_to({0, 60});
+      lc.line_to({520, 60});
+      lc.stroke();
    }
 
-   // The clip, the transform, the font and the fill style are all back:
-   // this lands outside the panel, unclipped and unrotated.
-   cnv.fill_style(rgba(26, 26, 26, 255));
-   cnv.fill_rect(280, 60, 40, 40);</code></pre>
+   auto y_at = [](float x)
+   {
+      return 60 - 48 * std::exp(-x / 220) * std::sin(x * 0.05f);
+   };
+
+   // One frame: extend the trace, then draw the layer and the head.
+   auto frame = [&amp;](float from, float to)
+   {
+      {
+         canvas lc{trace.context()};
+         lc.stroke_style(colors::light_sea_green);
+         lc.line_width(2);
+         lc.move_to({from, y_at(from)});
+         for (float x = from + 2; x &lt;= to; x += 2)
+            lc.line_to({x, y_at(x)});
+         lc.stroke();
+      }
+
+      cnv.fill_style(colors::gray[8]);
+      cnv.fill_rect(rect{20, 30, 540, 150});
+      cnv.draw(trace, point{20, 30});
+      cnv.fill_style(colors::white);
+      cnv.add_circle(20 + to, 30 + y_at(to), 4);
+      cnv.fill();
+   };
+
+   for (float x = 0; x &lt; 480; x += 40)
+      frame(x, x + 40);</code></pre>
 </div>
 </div>
 <div class="imageblock text-center">
 <div class="content">
-<a class="image" href="../_images/canvas/states_example.png"><img src="../_images/canvas/states_example.png" alt="A blue panel with a rotated white label cut off at its corner, and a dark square outside it" width="560px"></a>
+<a class="image" href="../_images/foundation/canvas_layer_example.png"><img src="../_images/foundation/canvas_layer_example.png" alt="A damped sine trace on a dark panel with a grid, a white dot at the right hand end of the trace" width="560px"></a>
 </div>
-<div class="title">Figure 2. What the code above draws.</div>
+<div class="title">Figure 1. The last of twelve frames. Each frame stroked forty more units.</div>
 </div>
 <div class="paragraph">
-<p>The label is longer than the panel and runs off its corner, where the clip
-cuts it. The square after the block is the proof that the scope closed
-cleanly: it is dark rather than white, square to the axes rather than
-rotated, and outside the panel rather than clipped away. None of the four
-settings had to be put back by hand.</p>
+<p>Twelve frames run, and each one strokes forty units of the curve. The
+grid is stroked once, in the first four lines. Drawing straight onto the
+canvas instead would mean re-stroking the whole curve and the whole grid
+every frame, because the canvas is cleared and rebuilt each time and the
+layer is not.</p>
+</div>
+<div class="paragraph">
+<p>The head is the part that moves, so it is painted on the canvas rather than
+into the layer; putting it into the layer would leave a dot behind at every
+step. That is the division to make: what accumulates goes into the layer,
+what changes stays on the canvas.</p>
 </div>
 </div>
 </div>

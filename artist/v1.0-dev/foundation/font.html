@@ -102,6 +102,9 @@
     <a class="nav-link" href="image.html">Image</a>
   </li>
   <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas_layer.html">Canvas Layer</a>
+  </li>
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="resources.html">Resources</a>
   </li>
 </ul>
@@ -136,6 +139,9 @@
   </li>
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../canvas/states.html">States</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/context.html">Context</a>
   </li>
 </ul>
   </li>
@@ -1010,9 +1016,11 @@ right align the second under the first:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   auto heading = font{font_descr{"Open Sans, Helvetica", 24}.bold()};
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   float x = 40, y = 50;
+   auto heading = font{font_descr{"Open Sans, Helvetica", 24}.bold()};
 
    cnv.font(heading);
+   cnv.fill_style(colors::black);
    cnv.fill_text("Artist", {x, y});
 
    auto lh = heading.line_height();
@@ -1021,6 +1029,16 @@ right align the second under the first:</p>
 
    cnv.fill_text("2D Canvas", {x + dx, y + lh});</code></pre>
 </div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/foundation/font_example.png"><img src="../_images/foundation/font_example.png" alt="The words Artist and 2D Canvas stacked, their right edges aligned" width="560px"></a>
+</div>
+<div class="title">Figure 2. What the code above draws: the second line ends where the first does.</div>
+</div>
+<div class="paragraph">
+<p><code>dx</code> is negative here, because "2D Canvas" is the wider of the two, so the
+second line starts further left and the two end together.</p>
 </div>
 </div>
 </div>

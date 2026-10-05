@@ -102,6 +102,9 @@
     <a class="nav-link" href="../foundation/image.html">Image</a>
   </li>
   <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/canvas_layer.html">Canvas Layer</a>
+  </li>
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../foundation/resources.html">Resources</a>
   </li>
 </ul>
@@ -136,6 +139,9 @@
   </li>
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="states.html">States</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="context.html">Context</a>
   </li>
 </ul>
   </li>
@@ -883,6 +889,12 @@ so overlapping regions of one shape stay filled. <code>path::fill_odd_even</code
 counts crossings alone, so every second region is left empty. The rule
 applies to <code>fill</code>, to <code>clip</code> and to <code>point_in_path</code>, and not to <code>stroke</code>.</p>
 </div>
+<div class="paragraph">
+<p>The rule is part of the <a href="states.html" class="xref page">drawing state</a>, not of the
+path being built: <code>begin_path</code> does not reset it, nor does a paint, and a
+<code>new_state</code> scope puts it back. <code>cnv.clip(pth)</code> clips by the rule carried
+by <code>pth</code> and leaves the canvas rule alone.</p>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_erasing"><a class="anchor" href="#_erasing"></a>Erasing</h3>
@@ -964,7 +976,7 @@ what a call does to the path around it.</p>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Clips to <code>pth</code> alone; the current path is left as it was.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Clips to <code>pth</code> alone; the current path is left as it was.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Appends <code>pth</code> to the current path, clips to the pair, then discards the
-  path. It also leaves the context set to the fill rule of <code>pth</code>.</p></td>
+  path.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.clear_rect(r)</code></p></td>
@@ -972,15 +984,6 @@ what a call does to the path around it.</p>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Erases <code>r</code>; the current path is left as it was.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Erases <code>r</code> <strong>and</strong> whatever is already in the current path, then discards
   the path.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_rule(rule)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Canvas state, outside the saved state: it survives <code>begin_path</code>, and
-  <code>save</code> and <code>restore</code> do not put it back.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Path state. <code>begin_path</code>, <code>fill</code> and <code>stroke</code> reset it to
-  <code>path::fill_winding</code>, so it has to be set after the path is started.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Part of the saved state: it survives <code>begin_path</code>, and <code>save</code> and
-  <code>restore</code> put it back.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.point_in_path(p)</code></p></td>
@@ -1016,21 +1019,6 @@ what a call does to the path around it.</p>
 <code>lib/impl/macos/quartz2d/canvas.mm</code> and
 <code>lib/include/artist/detail/canvas_impl.hpp</code>.</p>
 </div>
-<div class="admonitionblock caution">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-caution" title="Caution"></i>
-</td>
-<td class="content">
-On Quartz 2D, <code>add_round_rect</code> with a <code>radius</code> above zero begins a
-new path before adding the rounded rectangle, so it discards whatever was
-already being built. Cairo and Skia add to the path in place. Start a round
-rect on an empty path until this is settled.
-</td>
-</tr>
-</table>
-</div>
 </div>
 </div>
 <div class="sect1">
@@ -1042,7 +1030,10 @@ to hit test a mouse position:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   cnv.begin_path();
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   auto panel = rect{40, 30, 260, 130};
+   auto mouse = point{150, 80};
+
+   cnv.begin_path();
    cnv.add_round_rect(panel, 8);
    cnv.fill_style(colors::white.opacity(0.1));
    cnv.stroke_style(colors::white.opacity(0.4));
@@ -1054,8 +1045,25 @@ to hit test a mouse position:</p>
    cnv.begin_path();
    cnv.add_round_rect(panel, 8);
    bool hot = cnv.point_in_path(mouse);
-   cnv.begin_path();</code></pre>
+   cnv.begin_path();
+
+   // Mark the mouse, filled when it is inside the panel.
+   cnv.add_circle(mouse.x, mouse.y, 5);
+   cnv.fill_style(hot? colors::gold : colors::gray[50]);
+   cnv.fill();</code></pre>
 </div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/current_path_example.png"><img src="../_images/canvas/current_path_example.png" alt="A translucent rounded panel with a gold dot inside it" width="560px"></a>
+</div>
+<div class="title">Figure 3. What the code above draws, on a dark ground because the panel paints in translucent white.</div>
+</div>
+<div class="paragraph">
+<p><code>fill_preserve</code> keeps the path so the stroke can reuse it, but <code>stroke</code>
+consumes it, which is why the hit test builds the shape a second time. The
+last <code>begin_path</code> leaves the canvas with nothing pending, so the next call
+starts clean.</p>
 </div>
 </div>
 </div>
