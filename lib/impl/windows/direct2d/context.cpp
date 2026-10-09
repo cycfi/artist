@@ -9,6 +9,10 @@
 
 namespace cycfi::artist::d2d
 {
+   // The factories live as long as the process. Released from a static
+   // destructor, they would be released while their library unloads, and
+   // with two plugins in one host that faults in ntdll at exit. The
+   // DirectWrite factory below is kept the same way.
    namespace detail
    {
       struct factory_maker
@@ -26,11 +30,6 @@ namespace cycfi::artist::d2d
             );
          }
 
-         ~factory_maker()
-         {
-            release(ptr);
-         }
-
          factory* ptr = nullptr;   // actually an ID2D1Factory1 (base-typed)
       };
 
@@ -43,11 +42,6 @@ namespace cycfi::artist::d2d
                CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER,
                IID_PPV_ARGS(&ptr)
             );
-         }
-
-         ~wic_factory_maker()
-         {
-            release(ptr);
          }
 
          IWICImagingFactory* ptr = nullptr;
