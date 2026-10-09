@@ -89,6 +89,10 @@ namespace cycfi::artist
       _paint.setAntiAlias(true);
       _paint.setStyle(SkPaint::kFill_Style);
 
+      // Left to right, whatever the first strong character: the flow below
+      // walks the glyphs in the text's order, and a run HarfBuzz guesses to
+      // be right to left (one that starts in Hebrew) comes out reversed.
+      _buff.direction(HB_DIRECTION_LTR);
       _buff.shape(_hb_font);
 
       std::string lbrks(_text.size(), 0);
@@ -196,17 +200,15 @@ namespace cycfi::artist
             return line_width;
          };
 
-      // Emit the row [glyph_start, boundary) where boundary == glyph at
-      // text_idx.  When consume is true the boundary glyph is dropped (a space
-      // or hard line break is absorbed by the break); when false it is kept for
-      // the next line (a break between non-space characters, e.g. CJK, must not
-      // lose a glyph).  glyph_idx is rewound so the loop resumes at the first
-      // glyph of the next line.
+      // Emit the row [glyph_start, boundary).  When consume is true the
+      // boundary glyph is dropped (a space or hard line break is absorbed by
+      // the break); when false it is kept for the next line (a break between
+      // non-space characters, e.g. CJK, must not lose a glyph).  glyph_idx is
+      // rewound so the loop resumes at the first glyph of the next line.
       auto new_line =
-         [&](std::size_t text_idx, std::size_t& glyph_idx, bool must_break,
+         [&](std::size_t boundary, std::size_t& glyph_idx, bool must_break,
              bool indeterminate, bool consume)
          {
-            auto boundary = glyphs_info.glyph_index(text_idx);
             auto glyph_count = boundary - glyph_start;
             if (indeterminate)  // Is the last glyph indeterminate?
                ++glyph_count;
@@ -286,13 +288,21 @@ namespace cycfi::artist
          if (_breaks[idx].line == must_break || indeterminate_)
          {
             // We got a hard-break or we are at the end, so must break now
-            new_line(idx, glyph_idx, true, indeterminate_, true);
+            // At this glyph, not at the first of its cluster: a combining
+            // mark shares its base's cluster, and breaking at the base would
+            // rewind the loop to it, over and over.
+            new_line(glyph_idx, glyph_idx, true, indeterminate_, true);
          }
          else if (x > linfo.width && !next_is_hard_break)
          {
             // The line exceeds the target width: break at the last allowed
             // opportunity within the row, scanning back from the overflowing
             // glyph.
+            // A break must land on a glyph of this line. The line's first
+            // glyph can share its cluster with the glyph the last break
+            // consumed (a combining mark after a space), so a break at that
+            // character maps to a glyph before the line, and is skipped.
+            auto const start = static_cast<int>(glyph_start);
             auto first = glyphs_info.glyphs[glyph_start].cluster;
             bool broke = false;
             for (int i = static_cast<int>(idx); i >= static_cast<int>(first); --i)
@@ -302,7 +312,10 @@ namespace cycfi::artist
                if (is_space(_text[i]))
                {
                   // Break at a space: the space is absorbed into the break.
-                  new_line(i, glyph_idx, false, false, true);
+                  auto b = glyphs_info.glyph_index(i);
+                  if (b < start)
+                     continue;
+                  new_line(b, glyph_idx, false, false, true);
                   broke = true;
                   break;
                }
@@ -311,15 +324,22 @@ namespace cycfi::artist
                   // Break after a non-space char (e.g. CJK): keep char i on this
                   // line.  The overflowing glyph itself is skipped here so that
                   // it moves to the next line.
-                  new_line(i+1, glyph_idx, false, false, false);
+                  auto b = glyphs_info.glyph_index(i+1);
+                  if (b <= start)
+                     continue;
+                  new_line(b, glyph_idx, false, false, false);
                   broke = true;
                   break;
                }
             }
             // No break opportunity: force-break before the overflowing glyph,
             // unless it is alone on the line (which would make no progress).
+            // Before its cluster's first glyph, but always past the line's.
             if (!broke && glyph_idx > glyph_start)
-               new_line(idx, glyph_idx, false, false, false);
+            {
+               auto b = std::max(glyphs_info.glyph_index(idx), start + 1);
+               new_line(b, glyph_idx, false, false, false);
+            }
          }
       }
       // A trailing hard line break (text ending in '\n') leaves an empty final

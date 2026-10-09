@@ -512,3 +512,31 @@ TEST_CASE("text_run: Hit Testing outside the Basic Multilingual Plane", "[text_r
       CHECK(r.caret_index(r.caret_point(i)) == i);
    }
 }
+
+TEST_CASE("text_run: combining marks and mixed scripts flow", "[text_run]")
+{
+   // Each of these once broke the Skia flow: a run that starts in Hebrew
+   // (shaped right to left, its glyphs reversed), a text that ends in a
+   // combining mark, and a mark after a space where the line breaks. Each
+   // must flow, at a width that breaks lines, into a bounded number of
+   // lines, every index with a caret position.
+   std::u32string const texts[] = {
+      U"ש中",
+      U".,́",
+      U"á",
+      U"qqqq ́qqqq ́qqqq",
+      U"שלום abc 中文"
+   };
+   for (auto const& t : texts)
+   {
+      for (float width : {1000.0f, 60.0f, 1.0f})
+      {
+         text_run r{fd40, std::u32string_view{t}};
+         r.flow(width);
+         CHECK(r.num_lines() >= 1);
+         CHECK(r.num_lines() <= t.size() + 1);
+         for (std::size_t i = 0; i <= t.size(); ++i)
+            CHECK(r.caret_index(r.caret_point(i)) <= t.size());
+      }
+   }
+}
