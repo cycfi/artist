@@ -278,6 +278,36 @@ namespace cycfi::artist
       return *this;
    }
 
+   inline canvas::group::group(canvas& cnv_, float opacity)
+     : cnv(&cnv_)
+   {
+      cnv->begin_group(opacity);
+   }
+
+   inline canvas::group::group(group&& rhs) noexcept
+    : cnv(rhs.cnv)
+   {
+      rhs.cnv = nullptr;
+   }
+
+   inline canvas::group::~group()
+   {
+      if (cnv)
+         cnv->end_group();
+   }
+
+   inline canvas::group& canvas::group::operator=(group&& rhs) noexcept
+   {
+      if (this != &rhs)
+      {
+         if (cnv)
+            cnv->end_group();
+         cnv = rhs.cnv;
+         rhs.cnv = nullptr;
+      }
+      return *this;
+   }
+
    // Declared in context.hpp
    inline point device_to_user(point p, canvas& cnv)
    {

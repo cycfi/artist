@@ -352,6 +352,18 @@ namespace cycfi::artist
       _state->restore();
    }
 
+   void canvas::begin_group(float opacity)
+   {
+      _context->saveLayerAlphaf(nullptr, opacity);
+      _state->save();
+   }
+
+   void canvas::end_group()
+   {
+      _context->restore();
+      _state->restore();
+   }
+
    void canvas::begin_path()
    {
       _state->path().reset();

@@ -356,6 +356,24 @@ namespace cycfi::artist
       _state->restore();
    }
 
+   void canvas::begin_group(float opacity)
+   {
+      auto ctx = CGContextRef(_context);
+      CGContextSaveGState(ctx);
+      _state->save();
+      CGContextSetAlpha(ctx, opacity);
+      CGContextBeginTransparencyLayer(ctx, nullptr);
+      CGContextSetAlpha(ctx, 1.0);      // the layer's content is drawn opaque
+   }
+
+   void canvas::end_group()
+   {
+      auto ctx = CGContextRef(_context);
+      CGContextEndTransparencyLayer(ctx);
+      CGContextRestoreGState(ctx);
+      _state->restore();
+   }
+
    void canvas::begin_path()
    {
       CGContextBeginPath(CGContextRef(_context));

@@ -603,6 +603,18 @@ namespace cycfi::artist
    {
       _state->restore();
    }
+
+   // The journal records what is drawn, not how it is composited: a group
+   // is a state, and its opacity is not recorded.
+   void canvas::begin_group(float /* opacity */)
+   {
+      _state->save();
+   }
+
+   void canvas::end_group()
+   {
+      _state->restore();
+   }
 }
 
 namespace cycfi::artist::recording

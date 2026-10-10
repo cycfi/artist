@@ -26,6 +26,7 @@ set(artist_test_sources
    canvas_rectangles_page_test.cpp
    canvas_images_page_test.cpp
    canvas_states_page_test.cpp
+   canvas_group_test.cpp
    canvas_page_test.cpp
    canvas_context_page_test.cpp
    page_examples_test.cpp

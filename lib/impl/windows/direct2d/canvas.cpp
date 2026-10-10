@@ -250,6 +250,36 @@ namespace cycfi::artist
                            _clips.push_back(
                               {layer, geo, false, device, m, user});
                         }
+      // A group: a layer with no clip, composited at the opacity when it is
+      // popped on restore.
+      void              do_group(float opacity)
+                        {
+                           if (!_rt)
+                              return;
+                           ID2D1Layer* layer = nullptr;
+                           device_context* dc = nullptr;
+                           if (FAILED(_rt->QueryInterface(&dc)) || !dc)
+                           {
+                              if (FAILED(_rt->CreateLayer(nullptr, &layer)) || !layer)
+                                 return;
+                           }
+                           release(dc);
+                           _rt->SetTransform(current().matrix);
+                           _rt->PushLayer(
+                              D2D1::LayerParameters(
+                                 D2D1::InfiniteRect(), nullptr,
+                                 D2D1_ANTIALIAS_MODE_PER_PRIMITIVE,
+                                 D2D1::IdentityMatrix(), opacity, nullptr,
+                                 D2D1_LAYER_OPTIONS_NONE),
+                              layer);
+                           auto const device = _clips.empty()
+                              ? artist::rect{-1e9f, -1e9f, 1e9f, 1e9f}
+                              : _clips.back().device;
+                           _clips.push_back({layer, nullptr, false, device
+                            , current().matrix
+                            , artist::rect{-1e9f, -1e9f, 1e9f, 1e9f}, opacity});
+                        }
+
       // An axis-aligned rectangle clip needs no layer at all.
       void              do_clip(artist::rect const& r)
                         {
@@ -300,8 +330,9 @@ namespace cycfi::artist
                               {
                                  _rt->PushLayer(
                                     D2D1::LayerParameters(
-                                       r, c.geo, aa,
-                                       D2D1::IdentityMatrix(), 1.0f,
+                                       c.geo? r : D2D1::InfiniteRect(),
+                                       c.geo, aa,
+                                       D2D1::IdentityMatrix(), c.opacity,
                                        nullptr, D2D1_LAYER_OPTIONS_NONE),
                                     c.layer);
                               }
@@ -311,7 +342,12 @@ namespace cycfi::artist
       // The active clip's device-space bounds, or none when nothing clips.
       artist::rect const* device_clip() const
                         {
-                           return _clips.empty()? nullptr : &_clips.back().device;
+                           // Groups do not clip: the clip is the last real
+                           // one below them, if any.
+                           for (auto i = _clips.rbegin(); i != _clips.rend(); ++i)
+                              if (i->axis_aligned || i->geo)
+                                 return &i->device;
+                           return nullptr;
                         }
       void              pop_clips_to(std::size_t depth)
                         {
@@ -344,6 +380,7 @@ namespace cycfi::artist
          artist::rect   device;
          matrix2x2f     matrix;     // as pushed, to push it again
          artist::rect   bounds;     // user space, as pushed
+         float          opacity = 1.0f;   // a group's; a group has no geo
       };
 
       artist::rect      narrowed(artist::rect const& device_bounds_) const
@@ -946,6 +983,17 @@ namespace cycfi::artist
    }
 
    void canvas::restore()
+   {
+      _state->restore();
+   }
+
+   void canvas::begin_group(float opacity)
+   {
+      _state->save();
+      _state->do_group(opacity);
+   }
+
+   void canvas::end_group()
    {
       _state->restore();
    }

@@ -55,6 +55,7 @@ namespace cycfi::artist
 
       info        _info;
       state_stack _stack;
+      std::stack<float> _group_opacity;   // of the open groups
 
       // Inverse of the initial CTM captured at canvas construction.  The host
       // hands us a context whose CTM may already encode a base transform (e.g.
@@ -243,6 +244,33 @@ namespace cycfi::artist
          _state->_stack.pop();
       }
       cairo_restore(_context);
+   }
+
+   // push_group saves the cairo state and pop_group restores it; the group
+   // is then painted at the opacity.
+   void canvas::begin_group(float opacity)
+   {
+      _state->_stack.push(_state->_info);
+      _state->_group_opacity.push(opacity);
+      cairo_push_group(_context);
+   }
+
+   void canvas::end_group()
+   {
+      auto* group = cairo_pop_group(_context);
+      auto opacity = _state->_group_opacity.top();
+      _state->_group_opacity.pop();
+      if (!_state->_stack.empty())
+      {
+         _state->_info = _state->_stack.top();
+         _state->_stack.pop();
+      }
+      cairo_save(_context);
+      cairo_set_source(_context, group);
+      cairo_paint_with_alpha(_context, opacity);
+      cairo_restore(_context);
+      cairo_pattern_destroy(group);
+      _state->invalidate_pattern();
    }
 
    ////////////////////////////////////////////////////////////////////////////

@@ -376,6 +376,29 @@ namespace cycfi::artist
 
       state             new_state()   { return state{*this}; }
 
+      ///////////////////////////////////////////////////////////////////////////////////
+      // Groups: what is drawn in a group is composited onto the canvas as
+      // one, at the group's opacity, when the group ends. Overlapping
+      // shapes inside it do not show through each other. A group saves and
+      // restores the state, as a state does.
+      class group
+      {
+      public:
+                        group(canvas& cnv_, float opacity);
+                        group(group&& rhs) noexcept;
+                        group(group const&) = delete;
+                        ~group();
+
+         group&         operator=(group const&) = delete;
+         group&         operator=(group&& rhs) noexcept;
+
+      private:
+
+         canvas* cnv;
+      };
+
+      group             new_group(float opacity)   { return group{*this, opacity}; }
+
       class canvas_state;
       using canvas_state_ptr = std::unique_ptr<canvas_state>;
 
@@ -386,9 +409,12 @@ namespace cycfi::artist
       // answer: the backends variously crash, poison the drawing context, or
       // silently do nothing. new_state is the whole interface.
       friend class state;
+      friend class group;
 
       void              save();
       void              restore();
+      void              begin_group(float opacity);
+      void              end_group();
 
       canvas_impl*      _context;
       canvas_state_ptr  _state;
