@@ -187,10 +187,6 @@ TEST_CASE("canvas transforms: figure", "[transforms]")
    img.save_png(get_results_path() + "canvas_transforms.png");
 }
 
-// The page's code is written as an artist user writes it, so pull in the
-// one name it uses from cycfi rather than cycfi::artist.
-using cycfi::pi;
-
 namespace
 {
    // The page's == Example, verbatim, so the page's code is the code that
@@ -204,7 +200,7 @@ namespace
          auto state = cnv.new_state();
 
          cnv.translate(center.x, center.y);
-         cnv.rotate(pi / 6);
+         cnv.rotate(cycfi::pi / 6);
          cnv.translate(-center.x, -center.y);
 
          cnv.add_rect(r);

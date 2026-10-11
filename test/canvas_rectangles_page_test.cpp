@@ -508,7 +508,7 @@ namespace
 
       auto track = rect{72, 38, 192, 82};
       cnv.fill_style(rgba(21, 101, 192, 255));
-      cnv.fill_round_rect(track, 1000);      // clamped to a stadium
+      cnv.fill_round_rect(track, 1000);
 
       cnv.fill_style(colors::white);
       cnv.fill_round_rect(rect{152, 42, 188, 78}, 1000);

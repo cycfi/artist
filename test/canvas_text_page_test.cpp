@@ -661,7 +661,7 @@ namespace
 TEST_CASE("canvas text: example figure", "[text]")
 {
    // The page figure images/canvas/text_example.png: what the code under
-   // == Example draws, with the box it measured marked.
+   // === Example draws.
    figure(112, "canvas_text_example.png", [](canvas& cnv)
    {
       cnv.translate(210, 0);

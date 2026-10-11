@@ -140,7 +140,7 @@ TEST_CASE("page examples: color", "[page-examples]")
    img.save_png(get_results_path() + "color_example.png");
 
 #if !defined(ARTIST_RECORDING)
-   // level(1.2) brightens, so the hovered swatch on the right is lighter
+   // level(1.8) brightens, so the hovered swatch on the right is lighter
    // than the plain one on the left in every channel.
    auto plain = at(img, 160, 65);
    auto hot = at(img, 400, 65);

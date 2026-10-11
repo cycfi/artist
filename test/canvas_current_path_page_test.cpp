@@ -504,7 +504,6 @@ namespace
       cnv.fill_preserve();
       cnv.stroke();
 
-      // The path is gone after stroke, so rebuild it to hit test.
       cnv.begin_path();
       cnv.add_round_rect(panel, 8);
       bool hot = cnv.point_in_path(mouse);
