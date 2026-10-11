@@ -31,194 +31,148 @@ To draw into an image, construct an `offscreen_image` on it and build a
 `canvas` on its `context()`. The drawing lands in the image as it is drawn,
 over whatever the image already holds. The recording backend records the
 drawing and leaves the pixels untouched. The canvas must not outlive the
-`offscreen_image`. The <<Example>> shows the pattern.
+`offscreen_image`. The <<_example_2,Offscreen Image example>> shows the
+pattern.
 
-== Include
+== Image
+
+=== Include
 
 ```c++
 #include <artist/image.hpp>
 ```
 
-== Declaration
+=== Declaration
 
 ```c++
-   enum class pixel_format
-   {
-      invalid = -1,
-      gray8,
-      rgb16,
-      rgb32,
-      rgba32,
-   };
+enum class pixel_format
+{
+   invalid = -1,
+   gray8,
+   rgb16,
+   rgb32,            // R, G, B in memory order, then an ignored byte
+   rgba32,
+};
+
+class image
+{
+public:
+
+   explicit          image(float sizex, float sizey, float scale = 1.0f);
+   explicit          image(extent size, float scale = 1.0f);
+   explicit          image(fs::path const& path_);
+
+                     image(image&& rhs) noexcept;
+                     ~image();
+
+   image&            operator=(image&& rhs) noexcept;
+
+   image_impl_ptr    impl() const;
+   extent            size() const;
+   float             scale() const;
+   void              save_png(std::string_view path) const;
+
+   uint32_t*         pixels();
+   uint32_t const*   pixels() const;
+   extent            bitmap_size() const;
+};
+
+using image_ptr = std::shared_ptr<image>;
+
+// Factory functions
+template <pixel_format fmt>      // gray8
+image make_image(std::uint8_t const* data, extent size);
+
+template <pixel_format fmt>      // rgb16
+image make_image(std::uint16_t const* data, extent size);
+
+template <pixel_format fmt>      // rgb32 or rgba32
+image make_image(std::uint32_t const* data, extent size);
 ```
 
-```c++
-   class image
-   {
-   public:
+=== Expressions
 
-      explicit          image(float sizex, float sizey, float scale = 1.0f);
-      explicit          image(extent size, float scale = 1.0f);
-      explicit          image(fs::path const& path_);
+==== Notation
 
-                        image(image const& rhs) = delete;
-                        image(image&& rhs) noexcept;
-                        ~image();
+`img`, `a`, `b`  :: Objects of type `image`.
+`w`, `h`         :: Floating point values for the width and height, in
+                    units.
+`sz`             :: Object of type `extent` for a width and height, in
+                    units.
+`s`              :: Floating point value for the scale, in pixels per
+                    unit.
+`p`              :: Object of type `fs::path` for an image file name,
+                    relative or absolute.
+`str`            :: Object of type `std::string_view` for a file name.
+`d8`             :: Value of type `std::uint8_t const*` for a buffer of
+                    pixels.
+`d16`            :: Value of type `std::uint16_t const*` for a buffer of
+                    pixels.
+`d32`            :: Value of type `std::uint32_t const*` for a buffer of
+                    pixels.
 
-      image&            operator=(image const& rhs) = delete;
-      image&            operator=(image&& rhs) noexcept;
-
-      image_impl_ptr    impl() const;
-      extent            size() const;
-      float             scale() const;
-      void              save_png(std::string_view path) const;
-
-      uint32_t*         pixels();
-      uint32_t const*   pixels() const;
-      extent            bitmap_size() const;
-   };
-
-   using image_ptr = std::shared_ptr<image>;
-```
-
-```c++
-   class offscreen_image
-   {
-   public:
-
-      explicit          offscreen_image(image& img);
-                        ~offscreen_image();
-      offscreen_image&  operator=(offscreen_image const& rhs) = delete;
-
-      canvas_impl*      context() const;
-
-   private:
-                        offscreen_image(offscreen_image const&) = delete;
-   };
-```
-
-```c++
-   // Free functions
-   template <pixel_format fmt>      // gray8
-   image make_image(std::uint8_t const* data, extent size);
-
-   template <pixel_format fmt>      // rgb16
-   image make_image(std::uint16_t const* data, extent size);
-
-   template <pixel_format fmt>      // rgb32 or rgba32
-   image make_image(std::uint32_t const* data, extent size);
-```
-
-== Expressions
-
-=== Notation
-
-`img`, `img2`  :: Objects of type `image`.
-`sx`, `sy`     :: `float` width and height, in units.
-`sz`           :: Object of type `extent`, a width and height in units.
-`s`            :: A `float`, a scale: pixels per unit.
-`p`            :: Object of type `fs::path`, an image file name, relative
-                  or absolute.
-`str`          :: A `std::string_view`, a file name.
-`d8`           :: A `std::uint8_t const*`, a buffer of pixels.
-`d16`          :: A `std::uint16_t const*`, a buffer of pixels.
-`d32`          :: A `std::uint32_t const*`, a buffer of pixels.
-`off`          :: Object of type `offscreen_image`.
-
-=== Constructors and Assignment
+==== Constructors and Assignment
 
 [cols="1,1"]
 |===
 | Expression                  | Semantics
 
-| `image(sx, sy)`             | Construct a blank, fully transparent image
-                                `sx` by `sy` units in size, at scale 1.
-| `image(sx, sy, s)`          | As above, at scale `s`. The bitmap is
-                                `sx * s` by `sy * s` pixels, rounded to
-                                the nearest whole pixel.
-| `image(sz)`                 | As `image(sz.x, sz.y)`.
-| `image(sz, s)`              | As `image(sz.x, sz.y, s)`.
-| `image(p)`                  | Load the image file `p`, at scale 1. Throws
+| `image(w, h)`               | Construct a blank, fully transparent
+                                `image` given `w` and `h` (size in units),
+                                at scale 1.
+| `image(w, h, s)`            | Construct as above, at scale `s`. The
+                                bitmap is `w * s` by `h * s` pixels,
+                                rounded to the nearest whole pixel.
+| `image(sz)`                 | Construct as `image(sz.x, sz.y)`.
+| `image(sz, s)`              | Construct as `image(sz.x, sz.y, s)`.
+| `image(p)`                  | Construct an `image` by loading the file
+                                `p`, at scale 1. Throws
                                 `std::runtime_error` if the file is
                                 missing or cannot be decoded.
 | `image(std::move(img))`     | Move construct from `img`, which is left
                                 holding nothing.
-| `img = std::move(img2)`     | Move assign `img2` to `img`. The two
-                                swap bitmaps, so `img2` is left holding
-                                the one `img` held before.
+| `a = std::move(b)`          | Move assign `b` to `a`. The two swap
+                                bitmaps, so `b` is left holding the one
+                                `a` held before.
 |===
 
-The constructors are `explicit`, so an `extent` or a path does not convert
-to an `image` implicitly.
+NOTE: C++ brace initialization may also be used. The constructors are
+`explicit`, so an `extent` or a path does not convert to an `image`
+implicitly. `image` is non-copyable.
 
 WARNING: An `image` moved from by construction holds nothing. Destroy it
 or assign to it; calling any other member on it is undefined behaviour.
 
-=== Construction from Pixels
-
-`make_image` builds an image from a buffer of `sz.x` by `sz.y` pixels,
-stored row by row from the top with no padding between rows. The format is
-a template argument, and each overload accepts only the formats that match
-its pointer type, so `pixel_format::invalid` is rejected at compile time.
-
-[cols="1,1,1"]
-|===
-| Expression                                    | Semantics                         | Return Type
-
-| `make_image<pixel_format::gray8>(d8, sz)`     | Eight bit gray levels, one byte
-                                                  per pixel. Opaque.                | `image`
-| `make_image<pixel_format::rgb16>(d16, sz)`    | Sixteen bit 5-6-5 pixels, red in
-                                                  the top five bits. Opaque.        | `image`
-| `make_image<pixel_format::rgb32>(d32, sz)`    | Four bytes per pixel: R, G and B
-                                                  in memory order, then a byte
-                                                  that is ignored. Opaque.          | `image`
-| `make_image<pixel_format::rgba32>(d32, sz)`   | Four bytes per pixel: R, G, B and
-                                                  A in memory order, with straight
-                                                  (not premultiplied) alpha.        | `image`
-|===
-
-The pixels are converted into the image's own bitmap, so the buffer can be
-released as soon as `make_image` returns. The image has scale 1.
-
-=== Accessors
+==== Accessors
 
 [cols="1,1,1"]
 |===
 | Expression          | Semantics                              | Return Type
 
-| `img.size()`        | The size of the image in units. `draw`
-                        places the image at this size in user
-                        space, and the `src` rectangle `draw`
-                        takes is in these units.               | `extent`
-| `img.scale()`       | The number of pixels per unit.         | `float`
-| `img.bitmap_size()` | The width and height of the bitmap in
-                        pixels, `size()` times `scale()`.      | `extent`
-| `img.impl()`        | The backend's image handle, for code
-                        that talks to the backend directly.    | `image_impl_ptr`
-|===
-
-=== Pixel Access
-
-[cols="1,1,1"]
-|===
-| Expression      | Semantics                                  | Return Type
-
-| `img.pixels()`  | The first pixel of the bitmap. Each pixel
-                    is four bytes, B, G, R and A in memory
-                    order, with the colour premultiplied by
-                    alpha. Rows run from the top,
-                    `bitmap_size().x` pixels to a row, with no
-                    padding.                                   | `uint32_t*`, or
+| `img.size()`        | Get the size of the image in units.
+                        `draw` places the image at this size in
+                        user space, and the `src` rectangle
+                        `draw` takes is in these units.        | `extent`
+| `img.scale()`       | Get the number of pixels per unit.     | `float`
+| `img.bitmap_size()` | Get the width and height of the bitmap
+                        in pixels, `size()` times `scale()`.   | `extent`
+| `img.pixels()`      | Get a pointer to the first pixel of
+                        the bitmap.                            | `uint32_t*`, or
                                                                  `uint32_t const*`
                                                                  if `img` is
                                                                  `const`
+| `img.impl()`        | Get the backend's image handle, for
+                        calling the backend directly.          | `image_impl_ptr`
 |===
 
-NOTE: Treat the buffer as read only. There is no call to tell the backend
-that the pixels have changed, and Cairo needs one before it uses the image
-again.
+Each pixel is four bytes, B, G, R and A in memory order, with the color
+premultiplied by alpha. Rows run from the top, `bitmap_size().x` pixels to
+a row, with no padding.
 
-=== Output
+NOTE: Treat the buffer as read only. There is no call to mark the pixels
+as changed, and Cairo needs one before it uses the image again.
+
+==== Operation
 
 [cols="1,1,1"]
 |===
@@ -226,49 +180,125 @@ again.
 
 | `img.save_png(str)`   | Write the bitmap to the file `str` as
                           a PNG, `bitmap_size().x` by
-                          `bitmap_size().y` pixels. `str` is
-                          used as given; it is not looked up
-                          through the resource search list.
-                          Throws `std::runtime_error` if the
-                          file cannot be written.              | `void`
+                          `bitmap_size().y` pixels. Throws
+                          `std::runtime_error` if the file
+                          cannot be written.                   | `void`
 |===
 
-Loading the file back gives an image at scale 1, so its `size()` is the
-saved image's `bitmap_size()`.
+`str` is used as given; it is not looked up through the resource search
+list. Loading the file back gives an image at scale 1, so its `size()` is
+the saved image's `bitmap_size()`.
 
-=== Offscreen Construction
+==== Factory
+
+[cols="1,1,1"]
+|===
+| Expression                                    | Semantics                         | Return Type
+
+| `make_image<pixel_format::gray8>(d8, sz)`     | Make an opaque `image` from eight
+                                                  bit gray levels, one byte per
+                                                  pixel.                            | `image`
+| `make_image<pixel_format::rgb16>(d16, sz)`    | Make an opaque `image` from
+                                                  sixteen bit 5-6-5 pixels, red in
+                                                  the top five bits.                | `image`
+| `make_image<pixel_format::rgb32>(d32, sz)`    | Make an opaque `image` from four
+                                                  bytes per pixel: R, G and B in
+                                                  memory order, then a byte that is
+                                                  ignored.                          | `image`
+| `make_image<pixel_format::rgba32>(d32, sz)`   | Make an `image` from four bytes
+                                                  per pixel: R, G, B and A in
+                                                  memory order, with straight (not
+                                                  premultiplied) alpha.             | `image`
+|===
+
+The buffer holds `sz.x` by `sz.y` pixels, stored row by row from the top
+with no padding between rows. The format is a template argument, and each
+overload accepts only the formats that match its pointer type, so
+`pixel_format::invalid` is rejected at compile time.
+
+The pixels are converted into the image's own bitmap, so the buffer can be
+released as soon as `make_image` returns. The image has scale 1.
+
+==== Example
+
+Load an image by name and paint it at half size.
+
+```c++
+#include <artist/image.hpp>
+#include <artist/canvas.hpp>             // For canvas
+...
+using namespace cycfi::artist;
+extern canvas cnv;                       // the canvas to draw on
+...
+   image photo{"photo.jpg"};                             <1>
+   cnv.draw(photo, point{20, 20}, 0.5f);                 <2>
+```
+
+<1> Load `photo.jpg`, found through the
+    xref:foundation/resources.adoc[Resources] search list.
+<2> Paint it with its top left corner at `{20, 20}`, at half of
+    `photo.size()`.
+
+== Offscreen Image
+
+=== Include
+
+```c++
+#include <artist/image.hpp>
+```
+
+=== Declaration
+
+```c++
+class offscreen_image
+{
+public:
+
+   explicit          offscreen_image(image& img);
+                     ~offscreen_image();
+
+   canvas_impl*      context() const;
+};
+```
+
+=== Expressions
+
+==== Notation
+
+`off`            :: Object of type `offscreen_image`.
+`img`            :: Object of type `image`.
+
+==== Constructor
 
 [cols="1,1"]
 |===
 | Expression               | Semantics
 
-| `offscreen_image(img)`   | Begin drawing into `img`, which must
-                             outlive the `offscreen_image`.
+| `offscreen_image(img)`   | Construct an `offscreen_image` that draws
+                             into `img`, which must outlive it.
 |===
 
-An `offscreen_image` is neither copyable nor movable. Its context draws
-into the image in the image's units, scaled by `scale()` to pixels, and
-each drawing call lands in the image as it is made. The destructor ends
-the drawing.
+`offscreen_image` is non-copyable and non-movable. Its context draws into
+the image in the image's units, scaled by `scale()` to pixels, and each
+drawing call lands in the image as it is made. The destructor ends the
+drawing.
 
-=== Offscreen Context
+==== Accessors
 
 [cols="1,1,1"]
 |===
 | Expression        | Semantics                              | Return Type
 
-| `off.context()`   | The backend drawing context, from
+| `off.context()`   | Get the backend drawing context, from
                       which a `canvas` is built:
                       `canvas(off.context())`. Valid only
                       while `off` lives, so the canvas must
                       not outlive it.                        | `canvas_impl*`
 |===
 
-== Example
+==== Example
 
 Render a badge once into an image, then paint it wherever it is needed.
-At scale 2 the badge stays sharp on a high density display, and the
-drawing code still works in its 64 unit size:
 
 ```c++
 #include <artist/image.hpp>
@@ -278,10 +308,10 @@ using namespace cycfi::artist;
 extern canvas cnv;                       // the canvas to draw on
 ...
    // Render the badge once, at twice the display resolution.
-   image badge{64, 64, 2};
+   image badge{64, 64, 2};                                     <1>
    {
-      offscreen_image off{badge};
-      canvas bc{off.context()};
+      offscreen_image off{badge};                              <2>
+      canvas bc{off.context()};                                <3>
 
       canvas::radial_gradient face{{24, 22}, 2, {32, 32}, 34};
       face.add_color_stop(0, colors::gold);
@@ -299,20 +329,23 @@ extern canvas cnv;                       // the canvas to draw on
       bc.font(font_descr{"Open Sans", 26}.bold());
       bc.text_align(canvas::center | canvas::middle);
       bc.fill_text("A", 32, 32);
-   }
+   }                                                           <4>
 
    // Paint it as often as you like. The drawing above ran once.
    for (int i = 0; i != 4; ++i)
    {
       auto s = 1.0f - i * 0.2f;
-      cnv.draw(badge, {20.0f + i * 80, 20 + (64 - 64 * s) / 2}, s);
+      cnv.draw(badge, {20.0f + i * 80, 20 + (64 - 64 * s) / 2}, s);   <5>
    }
 ```
 
-image::foundation/image_example.png[alt="One gold badge painted four times at four sizes", width=560px, align=center, title="What the code above draws: one badge, rendered once and painted four times.", link={imagesdir}/foundation/image_example.png]
+<1> Construct a 64 by 64 unit image at scale 2: 128 by 128 pixels, so the
+    badge stays sharp when painted larger or on a high density display.
+<2> Begin drawing into the image.
+<3> Build a canvas on the offscreen context. The drawing code works in
+    the image's own 64 unit coordinates.
+<4> End the drawing: `bc` and `off` go out of scope, `bc` first.
+<5> Paint the image at four sizes. The gradient, the ring and the letter
+    were rasterized once, however many times the badge is painted.
 
-The gradient, the ring and the letter are rasterised once, however many
-times the badge is painted. At scale 2 that raster has four times the
-pixels of the 64 unit box it was drawn in, so it stays sharp when the badge
-is painted larger or on a high density display, and the drawing code never
-leaves its own 64 unit coordinates.
+image::foundation/image_example.png[alt="One gold badge painted four times at four sizes", width=560px, align=center, title="What the code above draws: one badge, rendered once and painted four times.", link={imagesdir}/foundation/image_example.png]

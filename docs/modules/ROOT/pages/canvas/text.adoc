@@ -5,7 +5,7 @@
 Text is drawn at a point, in the current font, either filled with the fill
 style or outlined with the stroke style. Where the text sits around that
 point is decided by the alignment. `measure_text` reports how much room a
-string takes without drawing it, which is what laying text out needs.
+string takes without drawing it, for laying text out.
 
 The font and the alignment are canvas state. Set one and it stays in effect
 for all the text that follows, until it is set again or the end of a
@@ -34,6 +34,10 @@ width rather than the W3C `TextMetrics`.
 == Declaration
 
 ```c++
+class canvas
+{
+public:
+
    enum text_halign
    {
       left,
@@ -69,81 +73,71 @@ width rather than the W3C `TextMetrics`.
    void           text_align(int align);
    void           text_align(text_halign align);
    void           text_baseline(text_valign align);
+};
 ```
 
-All of these are members of `canvas`, and the enums and `text_metrics` are
-nested in it, so they are spelled `canvas::center`, `canvas::middle`,
-`canvas::text_metrics` and so on.
+The enums and `text_metrics` are nested in `canvas`, so they are spelled
+`canvas::center`, `canvas::middle`, `canvas::text_metrics` and so on.
 
 == Expressions
+
+The text members of xref:canvas.adoc[`canvas`] allow these expressions.
 
 === Notation
 
 `cnv`       :: Object of type `canvas`.
 `f`         :: Object of type xref:foundation/font.adoc[font].
-`utf8`      :: A `std::string_view` holding UTF-8 text.
-`p`         :: Object of type xref:foundation/point.adoc[point].
-`x`, `y`    :: `float` coordinates.
-`h`         :: A `canvas::text_halign`: `canvas::left`, `canvas::center` or
-               `canvas::right`.
-`v`         :: A `canvas::text_valign`: `canvas::baseline`, `canvas::top`,
-               `canvas::middle` or `canvas::bottom`.
+`utf8`      :: Object of type `std::string_view` holding UTF-8 text.
+`p`         :: Object of type xref:foundation/point.adoc[point] for a
+               position.
+`x`, `y`    :: Floating point values for a position.
+`h`         :: Object of type `canvas::text_halign`: `canvas::left`,
+               `canvas::center` or `canvas::right`.
+`v`         :: Object of type `canvas::text_valign`: `canvas::baseline`,
+               `canvas::top`, `canvas::middle` or `canvas::bottom`.
 `m`         :: Object of type `canvas::text_metrics`.
 
-=== Font
+=== Access
 
 [cols="1,1,1"]
 |===
-| Expression              | Semantics                          | Return Type
+| Expression     | Semantics                              | Return Type
 
-| `cnv.font(f)`           | Draw and measure text in `f` from
-                            here on.                           | `void`
+| `m.ascent`     | Access how far the font reaches above
+                   the baseline.                          | `float`
+| `m.descent`    | Access how far the font reaches below
+                   the baseline, as a positive distance.  | `float`
+| `m.leading`    | Access the extra space, zero or more,
+                   the font adds between lines.           | `float`
+| `m.size.x`     | Access the advance width of the
+                   measured text: where text drawn after
+                   it would start.                        | `float`
+| `m.size.y`     | Access a line height.                  | `float`
 |===
 
-A `font_descr` converts to a `font`, so a descriptor can be passed
-directly: `cnv.font(font_descr{"Open Sans", 18}.bold())`. How descriptors
-and fonts are built is under xref:foundation/font.adoc[Font].
-
-=== Drawing
-
-[cols="1,1,1"]
-|===
-| Expression                    | Semantics                    | Return Type
-
-| `cnv.fill_text(utf8, p)`      | Fill `utf8` at `p` with the
-                                  fill style.                  | `void`
-| `cnv.fill_text(utf8, x, y)`   | As above, at `x`, `y`.       | `void`
-| `cnv.stroke_text(utf8, p)`    | Outline `utf8` at `p` with the
-                                  stroke style, at the current
-                                  line width.                  | `void`
-| `cnv.stroke_text(utf8, x, y)` | As above, at `x`, `y`.       | `void`
-|===
-
-image::canvas/text_fill_stroke.png[alt="The same word filled, stroked, and both", width=560px, align=center, title="The same word filled, stroked, and filled then stroked.", link={imagesdir}/canvas/text_fill_stroke.png]
-
-With the default alignment, `p` is where the text's baseline starts: the
-left end of the line the letters sit on. Text follows the transform like
-any other drawing, so after `cnv.scale(2)` it is drawn twice the size.
-
-image::canvas/text_styles.png[alt="Text under a gradient fill, a gradient stroke and a shadow", width=560px, align=center, title="Text takes the same paint and shadow styles as a path.", link={imagesdir}/canvas/text_styles.png]
-
-Both calls paint in one step and leave the current path alone, so text can
-be drawn while a path is still being built.
-
-=== Alignment
+=== Mutators
 
 [cols="1,1,1"]
 |===
 | Expression                    | Semantics                    | Return Type
 
+| `cnv.font(f)`                 | Set the font that text is
+                                  drawn and measured in to
+                                  `f`.                         | `void`
 | `cnv.text_align(h)`           | Set the horizontal alignment
                                   to `h`, leaving the vertical
                                   one as it is.                | `void`
 | `cnv.text_baseline(v)`        | Set the vertical alignment
                                   to `v`, leaving the
                                   horizontal one as it is.     | `void`
-| `cnv.text_align(h \| v)`      | Set both at once.            | `void`
+| `cnv.text_align(h \| v)`      | Set both alignments at once. | `void`
 |===
+
+A `font_descr` converts to a `font`, so a descriptor can be passed
+directly: `cnv.font(font_descr{"Open Sans", 18}.bold())`. How descriptors
+and fonts are built is under xref:foundation/font.adoc[Font].
+
+=== Alignment
 
 [cols="1,2"]
 |===
@@ -174,43 +168,59 @@ NOTE: The W3C canvas API places `top` and `bottom` on the font's em square
 rather than on its ascent and descent, so text aligned that way sits a
 little differently in a browser.
 
-=== Measurement
+=== Accessors
 
 [cols="1,1,1"]
 |===
 | Expression                 | Semantics                   | Return Type
 
-| `cnv.measure_text(utf8)`   | The metrics of `utf8` in the
-                               current font, without
+| `cnv.measure_text(utf8)`   | Get the metrics of `utf8` in
+                               the current font, without
                                drawing it.                 | `canvas::text_metrics`
-| `m.ascent`                 | How far the font reaches
-                               above the baseline.         | `float`
-| `m.descent`                | How far the font reaches
-                               below the baseline, as a
-                               positive distance.          | `float`
-| `m.leading`                | The extra space the font
-                               asks for between lines. Zero
-                               or more.                    | `float`
-| `m.size.x`                 | The advance width of `utf8`:
-                               where text drawn after it
-                               would start.                | `float`
-| `m.size.y`                 | A line height.              | `float`
 |===
 
 `ascent`, `descent` and `leading` belong to the font, not to the string:
 every string in the same font reports the same three. `size.x` is the
 advance, not the extent of the ink, so it counts trailing spaces, and a
-glyph may reach a little past it. The same metrics are drawn under
-xref:foundation/font.adoc#_font_metrics[Font Metrics].
+glyph may reach a little past it. The same metrics are drawn in the
+xref:foundation/font.adoc#_overview[Font] overview.
 
-CAUTION: `size.y` includes `leading` on some backends and not on others.
+NOTE: `size.y` includes `leading` on some backends and not on others.
 For a line height that is the same everywhere, use
 `m.ascent + m.descent + m.leading`.
 
-== Example
+=== Operation
 
-A button sized to its label, with the label centred in it. `pos` is a
-`point`:
+[cols="1,1,1"]
+|===
+| Expression                    | Semantics                    | Return Type
+
+| `cnv.fill_text(utf8, p)`      | Fill `utf8` at `p` with the
+                                  fill style.                  | `void`
+| `cnv.fill_text(utf8, x, y)`   | Fill `utf8` at `x`, `y` with
+                                  the fill style.              | `void`
+| `cnv.stroke_text(utf8, p)`    | Outline `utf8` at `p` with the
+                                  stroke style, at the current
+                                  line width.                  | `void`
+| `cnv.stroke_text(utf8, x, y)` | Outline `utf8` at `x`, `y`
+                                  with the stroke style, at the
+                                  current line width.          | `void`
+|===
+
+image::canvas/text_fill_stroke.png[alt="The same word filled, stroked, and both", width=560px, align=center, title="The same word filled, stroked, and filled then stroked.", link={imagesdir}/canvas/text_fill_stroke.png]
+
+With the default alignment, `p` is where the text's baseline starts: the
+left end of the line the letters sit on. Text follows the transform like
+any other drawing, so after `cnv.scale(2)` it is drawn twice the size.
+
+image::canvas/text_styles.png[alt="Text under a gradient fill, a gradient stroke and a shadow", width=560px, align=center, title="Text takes the same paint and shadow styles as a path.", link={imagesdir}/canvas/text_styles.png]
+
+Both calls paint in one step and leave the current path alone, so text can
+be drawn while a path is still being built.
+
+=== Example
+
+Draw a button sized to its label, with the label centred in it.
 
 ```c++
 #include <artist/canvas.hpp>
@@ -220,20 +230,24 @@ extern canvas cnv;              // the canvas to draw on
 ...
    auto pos = point{40, 40};
 
-   cnv.font(font_descr{"Open Sans", 16}.bold());
-   auto m = cnv.measure_text("Cancel");
+   cnv.font(font_descr{"Open Sans", 16}.bold());                       <1>
+   auto m = cnv.measure_text("Cancel");                                <2>
 
-   auto box = rect{pos, extent{m.size.x + 24, m.ascent + m.descent + 12}};
+   auto box = rect{pos, extent{m.size.x + 24, m.ascent + m.descent + 12}}; <3>
    cnv.fill_style(colors::gray[30]);
    cnv.fill_round_rect(box, 6);
 
    cnv.fill_style(colors::white);
-   cnv.text_align(canvas::center | canvas::middle);
-   cnv.fill_text("Cancel", center_point(box));
+   cnv.text_align(canvas::center | canvas::middle);                    <4>
+   cnv.fill_text("Cancel", center_point(box));                         <5>
 ```
 
-image::canvas/text_example.png[alt="A rounded button with the word Cancel centred in it", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/text_example.png]
+<1> Set the label's font. `font_descr` converts to `font`.
+<2> Measure the label before anything is drawn, so the button fits its
+    label.
+<3> Size the box to the advance width and to `ascent + descent`, a height
+    that is the same on every backend.
+<4> Centre the text on the point given to `fill_text`, both ways.
+<5> Fill the label at the centre of the box.
 
-The box is measured before it is drawn, so the button fits its label rather
-than the label being fitted to a fixed button. `ascent + descent` is used
-for the height instead of `size.y`, for the reason under Measurement.
+image::canvas/text_example.png[alt="A rounded button with the word Cancel centred in it", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/text_example.png]

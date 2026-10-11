@@ -24,50 +24,71 @@ any thread, including while another thread is searching.
 == Declaration
 
 ```c++
-   void      add_search_path(
-                fs::path const& path
-              , bool search_first = false
-             );
-   fs::path  find_file(fs::path const& file);
-   fs::path  find_directory(fs::path const& dir);
-```
+void      add_search_path(fs::path const& path, bool search_first = false);
+fs::path  find_file(fs::path const& file);
+fs::path  find_directory(fs::path const& dir);
 
-```c++
-   // Declared by the library, defined by the host application
-   extern void init_paths();
+// Supplied by the host application
+extern void init_paths();
 ```
 
 `fs` is the alias `cycfi::fs`, which `<infra/filesystem.hpp>` sets to
 `std::filesystem`, or to `ghc::filesystem` on a toolchain without it. The
 header includes it, and the alias is visible inside `cycfi::artist`.
 
+== Client Interface
+
+`init_paths` is declared by the library and defined by the host
+application, to seed the search list. The library calls it the first time
+`find_file` or `find_directory` runs; the application does not call it.
+Every host under `examples/host/` provides one, typically adding the
+application's resource directory.
+
+`void init_paths();` ::
+    Seed the search list through `add_search_path`. Example: the
+    application bundle's resources directory on macOS, or `resources`
+    under the current directory.
+
+WARNING: A program that links Artist must define `init_paths()` or it
+does not link. The companion hook, `get_user_fonts_directory()`, is
+declared in `font.hpp` and is usually defined alongside it; see
+xref:foundation/font.adoc#_client_interface[Font].
+
+NOTE: `find_file` and `find_directory` each carry their own one time
+initializer, so `init_paths()` runs once per function, up to twice in a
+process that calls both. A directory it adds then appears in the list
+twice. The comment in `resources.hpp` says it runs only once; do not rely
+on either count.
+
 == Expressions
 
 === Notation
 
-`p`   :: Object of type `fs::path`, a directory to search.
-`f`   :: Object of type `fs::path`, a file name, relative or absolute.
-`d`   :: Object of type `fs::path`, a directory name, relative or absolute.
+`p`   :: Object of type `fs::path` for a directory to search.
+`f`   :: Object of type `fs::path` for a file name, relative or absolute.
+`d`   :: Object of type `fs::path` for a directory name, relative or
+         absolute.
 
-=== Free Functions
+=== Functions
 
 [cols="1,1,1"]
 |===
 | Expression                 | Semantics                       | Return Type
 
-| `add_search_path(p)`       | Append `p` to the list. It is
+| `add_search_path(p)`       | Append `p` to the list, to be
                                searched after every directory
                                already present.                | `void`
 | `add_search_path(p, true)` | Insert `p` at the front of the
-                               list. It is searched first.      | `void`
-| `find_file(f)`             | If `f` is absolute, `f` itself
-                               when it exists. Otherwise the
-                               first `p` in the list for which
-                               `p / f` exists, returned as
-                               `p / f`. An empty path when
-                               nothing matches.                | `fs::path`
-| `find_directory(d)`        | As `find_file`, but a match must
-                               be a directory.                 | `fs::path`
+                               list, to be searched first.     | `void`
+| `find_file(f)`             | Get the path of `f`: `f` itself
+                               when it is absolute and exists,
+                               otherwise `p / f` for the first
+                               `p` in the list where it exists,
+                               and an empty path when nothing
+                               matches.                        | `fs::path`
+| `find_directory(d)`        | Get the path of `d` as
+                               `find_file` does, where a match
+                               must be a directory.            | `fs::path`
 |===
 
 `add_search_path` does not check that `p` exists and does not remove
@@ -82,52 +103,40 @@ accepts only files.
 An absolute path bypasses the list entirely. It is returned when it
 exists and an empty path when it does not, whatever the list holds.
 
-=== Host Hook
+=== Example
 
-[cols="1,1,1"]
-|===
-| Expression      | Semantics                                   | Return Type
-
-| `init_paths()`  | Seed the search list. The library declares
-                    this and the host application defines it;
-                    every host under `examples/host/` provides
-                    one, typically adding the application's
-                    resource directory. The library calls it
-                    itself the first time `find_file` or
-                    `find_directory` runs. Do not call it.     | `void`
-|===
-
-IMPORTANT: A program that links Artist must define `init_paths()` or it
-does not link. The companion hook, `get_user_fonts_directory()`, is
-declared in `font.hpp` and is usually defined alongside it.
-
-NOTE: `find_file` and `find_directory` each carry their own one time
-initializer, so `init_paths()` runs once per function, up to twice in a
-process that calls both. A directory it adds then appears in the list
-twice. The header describes it as called only once; the discrepancy is
-recorded here as current behaviour and is not something to rely on.
-
-== Example
+Seed the search list in the host, then add the application's own
+directories and resolve an image by name.
 
 ```c++
 #include <artist/resources.hpp>
 #include <artist/image.hpp>              // For image
 ...
+namespace cycfi::artist
+{
+   void init_paths()                                         <1>
+   {
+      add_search_path(fs::current_path() / "resources");
+   }
+}
+...
 using namespace cycfi::artist;
 extern cycfi::fs::path user_override_dir;   // set by the user, or empty
 void use(cycfi::fs::path const& p);         // the application's own
 ...
-   // The host has already seeded the list from init_paths(). Add the
-   // application's own asset directory, then an optional override that
-   // must win over everything else.
-   add_search_path("assets/textures");
+   add_search_path("assets/textures");                       <2>
    if (!user_override_dir.empty())
-      add_search_path(user_override_dir, true);
+      add_search_path(user_override_dir, true);              <3>
 
-   // image resolves a relative name through the same list.
-   image tex{"wood.png"};
+   image tex{"wood.png"};                                    <4>
 
-   // Or resolve it yourself and decide what to do on a miss.
-   if (auto p = find_file("wood.png"); !p.empty())
+   if (auto p = find_file("wood.png"); !p.empty())           <5>
       use(p);
 ```
+
+<1> Define the hook in the host, seeding the list with `resources` under
+    the current directory. See <<_client_interface>>.
+<2> Add the application's own asset directory, searched after the host's.
+<3> Add an optional override directory, searched before everything else.
+<4> Construct an image from a relative name, resolved through the list.
+<5> Resolve the name directly, and decide what to do on a miss.

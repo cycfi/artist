@@ -4,11 +4,11 @@
 
 A `circle` is a centre and a radius: `cx`, `cy` and `radius`, all `float`.
 It is a value type with no invariant, so nothing stops a negative radius;
-see the note under <<Derivation>>.
+see the warning under <<Operation>>.
 
-Only the constructors are `constexpr`. The accessors and the derivation
-members are plain `inline`, so a `circle` can be built at compile time but
-not queried or transformed there. This differs from
+Only the constructors are `constexpr`. The accessors and the operations
+are plain `inline`, so a `circle` can be built at compile time but not
+queried or transformed there. This differs from
 xref:foundation/rect.adoc[Rect], where nearly everything is `constexpr`.
 
 NOTE: `circle.hpp` includes `artist/rect.hpp`, which in turn includes
@@ -23,42 +23,42 @@ NOTE: `circle.hpp` includes `artist/rect.hpp`, which in turn includes
 == Declaration
 
 ```c++
-   struct circle
-   {
-      constexpr   circle();
-      constexpr   circle(float cx, float cy, float radius);
-      constexpr   circle(point c, float radius);
-      constexpr   circle(rect const& r);
-                  circle(circle const&) = default;
-      circle&     operator=(circle const&) = default;
+struct circle
+{
+   constexpr   circle();
+   constexpr   circle(float cx, float cy, float radius);
+   constexpr   circle(point c, float radius);
+   constexpr   circle(rect const& r);
+               circle(circle const&) = default;
+   circle&     operator=(circle const&) = default;
 
-      rect        bounds() const;
-      bool        operator==(circle const& other) const;
-      bool        operator!=(circle const& other) const;
+   rect        bounds() const;
+   bool        operator==(circle const& other) const;
+   bool        operator!=(circle const& other) const;
 
-      point       center() const;
-      circle      inset(float x) const;
-      circle      move(float dx, float dy) const;
-      circle      move_to(float x, float y) const;
+   point       center() const;
+   circle      inset(float x) const;
+   circle      move(float dx, float dy) const;
+   circle      move_to(float x, float y) const;
 
-      float       cx;
-      float       cy;
-      float       radius;
-   };
+   float       cx;
+   float       cy;
+   float       radius;
+};
 ```
 
 == Expressions
 
 === Notation
 
-`c`, `c2`         :: Objects of type `circle`.
+`c`, `a`, `b`     :: Objects of type `circle`.
 `p`               :: Object of type `point`.
 `r`               :: Object of type `rect`.
-`cx`, `cy`        :: Floating point centre coordinates.
-`radius`          :: A floating point radius.
-`x`, `y`          :: Floating point coordinates. For `inset`, `x` is a
-                     distance instead.
-`dx`, `dy`        :: Floating point distances.
+`cx`, `cy`        :: Floating point values for the centre coordinates.
+`radius`          :: Floating point value for the radius.
+`x`, `y`          :: Floating point values for the new centre.
+`dx`, `dy`        :: Floating point values for an offset.
+`d`               :: Floating point value for an inset distance.
 
 === Constructors and Assignment
 
@@ -66,54 +66,37 @@ NOTE: `circle.hpp` includes `artist/rect.hpp`, which in turn includes
 |===
 | Expression                  | Semantics
 
-| `circle{}`                  | Default construct `{0, 0, 0}`, a degenerate
-                                circle at the origin.
-| `circle{cx, cy, radius}`    | Construct from the centre coordinates and
-                                the radius.
-| `circle{p, radius}`         | Construct from a centre `point` and the
-                                radius.
-| `circle(r)`                 | Construct from a `rect`. The centre is
-                                `center_point(r)` and the radius is
-                                `std::min(r.width(), r.height())`.
-| `circle(c)`                 | Copy construct from `c`.
-| `c = c2`                    | Assign `c2` to `c`.
+| `circle()`                  | Construct a `circle` at the origin with a
+                                radius of zero.
+| `circle(cx, cy, radius)`    | Construct a `circle` given `cx`, `cy`
+                                (centre coordinates) and `radius`.
+| `circle(p, radius)`         | Construct a `circle` given `p` (centre) and
+                                `radius`.
+| `circle(r)`                 | Construct a `circle` centred on `r`, with the
+                                smaller side of `r` as its radius.
+| `circle(c)`                 | Copy construct from `circle c`.
+| `a = b`                     | Assign `b` to `a`.
 |===
 
-CAUTION: The `rect` constructor takes the smaller side as the *radius*,
-not as the diameter, so the circle it builds is twice the size that fits
-in `r`. `circle{rect{0, 0, 100, 60}}` is centred at `{50, 30}` with a
-radius of 60, and its `bounds()` is 120 by 120 around a rect that is 100
-by 60. Pass `std::min(r.width(), r.height()) / 2` yourself if you want the
-inscribed circle.
+NOTE: C++ brace initialization may also be used. `circle` is not an
+aggregate, so braces call the constructors above.
 
-NOTE: The members have no default member initializers, and the
-constructors are user provided, so `circle` is not an aggregate. Every
-member is set by whichever constructor runs; there is no partial
-initialization to worry about.
+WARNING: `circle(r)` takes the smaller side of `r` as the *radius*, not as
+the diameter, so the circle it builds is twice the size that fits in `r`.
+`circle(rect{0, 0, 100, 60})` is centred at `{50, 30}` with a radius of 60,
+and its `bounds()` is 120 by 120 around a rect that is 100 by 60. Pass
+`std::min(r.width(), r.height()) / 2` as the radius for the inscribed
+circle.
 
-=== Comparison
-
-[cols="1,1,1"]
-|===
-| Expression   | Semantics                                   | Return Type
-
-| `c == c2`    | Compare `cx`, `cy` and `radius`. The
-                 comparison is exact, so two circles
-                 differing only by rounding are not equal.    | `bool`
-| `c != c2`    | The negation of the above.                  | `bool`
-|===
-
-=== Members
-
-The members are public and directly assignable.
+=== Access
 
 [cols="1,1,1"]
 |===
 | Expression  | Semantics                                    | Return Type
 
-| `c.cx`      | The x coordinate of the centre.              | `float`
-| `c.cy`      | The y coordinate of the centre.              | `float`
-| `c.radius`  | The radius.                                  | `float`
+| `c.cx`      | Access the x coordinate of the centre.       | `float`
+| `c.cy`      | Access the y coordinate of the centre.       | `float`
+| `c.radius`  | Access the radius.                           | `float`
 |===
 
 === Accessors
@@ -122,42 +105,50 @@ The members are public and directly assignable.
 |===
 | Expression    | Semantics                                  | Return Type
 
-| `c.center()`  | The centre as a `point`, `{cx, cy}`.       | `point`
-| `c.bounds()`  | The axis aligned bounding box,
+| `c.center()`  | Get the centre, `{cx, cy}`.                | `point`
+| `c.bounds()`  | Get the axis aligned bounding box,
                   `{cx-radius, cy-radius, cx+radius,
-                  cy+radius}`. The circle is tangent to all
-                  four sides.                                | `rect`
+                  cy+radius}`.                               | `rect`
 |===
 
-=== Derivation
-
-Each is `const` and returns a new circle; `c` is not modified.
+=== Operation
 
 [cols="1,1,1"]
 |===
 | Expression         | Semantics                             | Return Type
 
-| `c.inset(x)`       | A copy of `c` with the radius reduced
-                       by `x`, the centre unchanged. A
-                       negative `x` grows the circle.        | `circle`
-| `c.move(dx, dy)`   | A copy of `c` with the centre moved by
-                       `dx` and `dy`, the radius unchanged.  | `circle`
-| `c.move_to(x, y)`  | A copy of `c` with the centre placed
-                       at `{x, y}`, the radius unchanged.    | `circle`
+| `c.inset(d)`       | Get a copy of `c` with the radius
+                       reduced by `d`, the centre unchanged. | `circle`
+| `c.move(dx, dy)`   | Get a copy of `c` with the centre
+                       moved by `dx` and `dy`.               | `circle`
+| `c.move_to(x, y)`  | Get a copy of `c` with the centre
+                       placed at `{x, y}`.                   | `circle`
 |===
 
-IMPORTANT: `inset` does not clamp. Insetting further than the radius gives
-a negative radius, and `bounds()` on that circle returns a rect for which
-`is_valid` is `false`. Check the radius yourself if the inset can exceed
-it.
+WARNING: `inset` does not clamp, and a negative `d` grows the circle.
+Insetting further than the radius gives a negative radius, and `bounds()`
+on that circle returns a rect for which `is_valid` is `false`. Check the
+radius yourself if the inset can exceed it.
 
-NOTE: `move_to` places the *centre*, unlike
-xref:foundation/rect.adoc[`rect::move_to`], which places the top left
-corner.
+NOTE: `move_to` places the *centre*.
+xref:foundation/rect.adoc[`rect::move_to`] places the top left corner.
 
-== Example
+=== Comparison
 
-Drawing a dial face as a filled circle with a ring inside it:
+[cols="1,1,1"]
+|===
+| Expression   | Semantics                                   | Return Type
+
+| `a == b`     | Equality.                                   | `bool`
+| `a != b`     | Non-Equality.                               | `bool`
+|===
+
+NOTE: The comparison of `cx`, `cy` and `radius` is exact, so two circles
+differing only by rounding are not equal.
+
+=== Example
+
+Draw a dial face: a filled circle with a ring inside it.
 
 ```c++
 #include <artist/circle.hpp>
@@ -167,19 +158,22 @@ using namespace cycfi::artist;
 extern canvas cnv;                       // the canvas to draw on
 ...
    auto bounds = rect{0, 0, 200, 140};
-   auto dial = circle{center_point(bounds), 40};
+   auto dial = circle{center_point(bounds), 40};         <1>
 
-   cnv.add_circle(dial);
+   cnv.add_circle(dial);                                 <2>
    cnv.fill_style(colors::gray[20]);
    cnv.fill();
 
-   cnv.add_circle(dial.inset(6));
+   cnv.add_circle(dial.inset(6));                        <3>
    cnv.stroke_style(colors::light_steel_blue);
    cnv.line_width(2);
    cnv.stroke();
 ```
 
-image::foundation/circle_example.png[alt="A dark disc with a lighter ring inside it", width=560px, align=center, title="What the code above draws.", link={imagesdir}/foundation/circle_example.png]
+<1> Construct a circle of radius 40 at the centre of `bounds`.
+<2> Add the circle to the current path and fill it.
+<3> Inset the circle by 6 and stroke it. `inset` shrinks about the same
+    centre, so the ring stays concentric with the face without any
+    arithmetic on `cx` and `cy`.
 
-`inset` shrinks about the same centre, so the ring stays concentric with
-the face without any arithmetic on `cx` and `cy`.
+image::foundation/circle_example.png[alt="A dark disc with a lighter ring inside it", width=560px, align=center, title="What the code above draws.", link={imagesdir}/foundation/circle_example.png]

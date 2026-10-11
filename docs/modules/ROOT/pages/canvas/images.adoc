@@ -7,10 +7,10 @@ Image page covers the image itself: loading one, building one from pixels,
 and drawing into one. The eight calls here differ only in how much of the
 image is painted, where it lands, and at what size.
 
-The ink is the image's own. Unlike every other paint on the canvas, the
-xref:canvas/styles.adoc[fill and stroke styles] do not colour it, and the
-xref:canvas/current_path.adoc[current path] is neither painted with it nor
-disturbed by it. Everything else about the drawing state applies as it
+The ink is the image's own: unlike every other paint on the canvas, the
+xref:canvas/styles.adoc[fill and stroke styles] do not colour it. The
+`draw` calls leave the xref:canvas/current_path.adoc[current path] as it
+is. Everything else about the drawing state applies as it
 would to any other paint: the geometry goes through the
 xref:canvas/transforms.adoc[current transform], the clip cuts it, the
 image is composited over what is already there, and the
@@ -40,6 +40,10 @@ The two layer overloads need the layer's own header as well:
 == Declaration
 
 ```c++
+class canvas
+{
+public:
+
    void  draw(image const& pic, rect const& src, rect const& dest);
    void  draw(image const& pic, rect const& dest);
    void  draw(image const& pic, point pos = {0, 0});
@@ -49,56 +53,71 @@ The two layer overloads need the layer's own header as well:
 
    void  draw(canvas_layer const& layer, rect const& dest);
    void  draw(canvas_layer const& layer, point pos = {0, 0});
+};
 ```
 
 == Expressions
+
+The image drawing members of xref:canvas.adoc[`canvas`] allow these
+expressions.
 
 === Notation
 
 `cnv`                :: Object of type `canvas`.
 `pic`                :: Object of type xref:foundation/image.adoc[image].
-`layer`              :: Object of type `canvas_layer`.
+`layer`              :: Object of type
+                        xref:foundation/canvas_layer.adoc[canvas_layer].
 `src`, `dest`        :: Objects of type xref:foundation/rect.adoc[rect].
-`pos`                :: Object of type xref:foundation/point.adoc[point].
-`posx`, `posy`       :: `float` coordinates of the image's top left corner.
-`scale`              :: A `float` multiplier on the image's own size.
+`pos`                :: Object of type xref:foundation/point.adoc[point]
+                        for the top left corner.
+`posx`, `posy`       :: Floating point values for the top left corner.
+`scale`              :: Floating point value for a multiplier on the
+                        image's own size.
 
-=== Placing an Image
+=== Operation
 
 [cols="1,1,1"]
 |===
-| Expression                        | Semantics                | Return Type
+| Expression                          | Semantics                     | Return Type
 
-| `cnv.draw(pic)`                   | Paint the whole image
-                                      with its top left corner
-                                      at the origin.           | `void`
-| `cnv.draw(pic, pos)`              | As above, with the corner
-                                      at `pos`.                | `void`
-| `cnv.draw(pic, posx, posy)`       | As above, from loose
-                                      coordinates.             | `void`
+| `cnv.draw(pic)`                     | Paint the whole of `pic` with
+                                        its top left corner at the
+                                        origin.                       | `void`
+| `cnv.draw(pic, pos)`                | Paint the whole of `pic` with
+                                        its top left corner at
+                                        `pos`.                        | `void`
+| `cnv.draw(pic, posx, posy)`         | Paint the whole of `pic` with
+                                        its top left corner at
+                                        `posx`, `posy`.               | `void`
+| `cnv.draw(pic, pos, scale)`         | Paint the whole of `pic` at
+                                        `pos`, its size multiplied by
+                                        `scale`.                      | `void`
+| `cnv.draw(pic, posx, posy, scale)`  | Paint the whole of `pic` at
+                                        `posx`, `posy`, its size
+                                        multiplied by `scale`.        | `void`
+| `cnv.draw(pic, dest)`               | Paint the whole of `pic`
+                                        stretched to fill `dest`.     | `void`
+| `cnv.draw(pic, src, dest)`          | Paint the region `src` of
+                                        `pic`, stretched to fill
+                                        `dest`.                       | `void`
+| `cnv.draw(layer)`                   | Paint the whole of `layer`
+                                        with its top left corner at
+                                        the origin.                   | `void`
+| `cnv.draw(layer, pos)`              | Paint the whole of `layer`
+                                        with its top left corner at
+                                        `pos`.                        | `void`
+| `cnv.draw(layer, dest)`             | Paint the whole of `layer`
+                                        stretched to fill `dest`.     | `void`
 |===
+
+=== Placing an Image
 
 The image is painted at `pic.size()`, its own units, not at its pixel
 count. An image loaded at 2x has twice the pixels of a 1x one of the same
 `size()` and covers exactly the same ground; the extra pixels go into the
-detail. That is what makes one drawing work on displays of different
-densities.
+detail. One drawing therefore works on displays of different densities.
 
 === Scaling an Image
-
-[cols="1,1,1"]
-|===
-| Expression                          | Semantics              | Return Type
-
-| `cnv.draw(pic, pos, scale)`         | Paint the whole image
-                                        at `pos`, its size
-                                        multiplied by `scale`. | `void`
-| `cnv.draw(pic, posx, posy, scale)`  | As above, from loose
-                                        coordinates.           | `void`
-| `cnv.draw(pic, dest)`               | Paint the whole image
-                                        stretched to fill
-                                        `dest`.                | `void`
-|===
 
 image::canvas/draw_placement.png[alt="A four digit seven segment display drawn at its own size, at one and a half times, and stretched into a rectangle twice as tall", width=560px, align=center, title="The same image placed three ways.", link={imagesdir}/canvas/draw_placement.png]
 
@@ -119,15 +138,6 @@ comes out soft. There is no control over that.
 
 === Drawing Part of an Image
 
-[cols="1,1,1"]
-|===
-| Expression                      | Semantics                  | Return Type
-
-| `cnv.draw(pic, src, dest)`      | Paint the region `src` of
-                                    the image, stretched to
-                                    fill `dest`.               | `void`
-|===
-
 image::canvas/draw_src_dest.png[alt="The third cell outlined in a four digit seven segment display, and the same cell drawn larger beside it", width=560px, align=center, title="Lifting one frame out of a sheet.", link={imagesdir}/canvas/draw_src_dest.png]
 
 This is how a single frame is taken from a sprite sheet, and it is the
@@ -135,36 +145,22 @@ form the other five are built from: each of them calls this one with `src`
 covering the whole image.
 
 `src` is in the image's own units, the same units as `size()`, so it names
-the same region of a 2x image as of a 1x one. That is the point of the
-choice: a sheet can be swapped for a denser one without touching the
-arithmetic that picks the frames out of it. In the figure above the cells
-are 32 units wide, so the third of them starts 64 units in, which is the
-`64` in `src`.
+the same region of a 2x image as of a 1x one. A sheet can therefore be
+swapped for a denser one without touching the arithmetic that picks the
+frames out of it. In the figure above the cells are 32 units wide, so the
+third of them starts 64 units in, which is the `64` in `src`.
 
-CAUTION: Keep `src` inside the image and give both rectangles a positive
-width and height. Outside that the backends disagree, and none of the
-three cases is settled. A `src` that runs past the image's edge is clipped
-to it and the result stretched over the whole of `dest` on Quartz 2D,
-while Cairo shrinks what it paints in proportion, as the W3C API says to.
+WARNING: Keep `src` inside the image and give both rectangles a positive
+width and height. Outside that the backends disagree. A `src` that runs
+past the image's edge is clipped to it and the result stretched over the
+whole of `dest` on Quartz 2D, while Cairo shrinks what it paints in
+proportion, as the W3C API says to.
 A `src` of zero width or height paints nothing on Cairo, again as the W3C
 API says, and the whole image stretched across `dest` on Quartz 2D. A
 `dest` whose `right` is left of its `left` mirrors the image on Cairo and
 does not on Quartz 2D.
 
 === Drawing a Layer
-
-[cols="1,1,1"]
-|===
-| Expression                      | Semantics                  | Return Type
-
-| `cnv.draw(layer)`               | Paint the whole layer with
-                                    its top left corner at the
-                                    origin.                    | `void`
-| `cnv.draw(layer, pos)`          | As above, with the corner
-                                    at `pos`.                  | `void`
-| `cnv.draw(layer, dest)`         | Paint the whole layer
-                                    stretched to fill `dest`.  | `void`
-|===
 
 A `canvas_layer` is an offscreen surface made for one canvas, living on
 that canvas's device at that canvas's pixel density. It is the buffer to
@@ -177,11 +173,10 @@ Its `size()` is in user space units, like an image's, so drawing it at
 `pos` covers `layer.size()` units from there however dense the canvas
 underneath is. A layer is valid only for the canvas it was made for.
 
-== Example
+=== Example
 
-A seven segment display. The ten digits are rendered once into a single
-sheet, and a reading is then put together by painting one frame of that
-sheet per digit, which is what a sprite sheet is for:
+Render the ten digits of a seven segment display once into a single sheet,
+then put a reading together by painting one frame of the sheet per digit.
 
 ```c++
 #include <artist/canvas.hpp>
@@ -239,30 +234,33 @@ extern canvas cnv;              // the canvas to draw on
       offscreen_image ctx{sheet};
       canvas scnv{ctx.context()};
       for (int d = 0; d != 10; ++d)
-         draw_digit(scnv, d, point{d * 32.0f, 0});
+         draw_digit(scnv, d, point{d * 32.0f, 0});           <1>
    }
 
    // A reading, blitted from the sheet one digit at a time. The 2 is drawn
    // twice, from the one cell that holds it.
-   cnv.draw(sheet, point{20, 20});
+   cnv.draw(sheet, point{20, 20});                           <2>
    char const* reading = "2026";
    for (int i = 0; reading[i]; ++i)
    {
       float x = (reading[i] - '0') * 32.0f;
-      cnv.draw(
+      cnv.draw(                                              <3>
          sheet,
          rect{x, 0, x + 32, 32},
-         rect{60 + i * 64.0f, 70, 108 + i * 64.0f, 118}
+         rect{60 + i * 64.0f, 70, 108 + i * 64.0f, 118}   <4>
       );
    }
 ```
 
-image::canvas/images_example.png[alt="A sheet of the ten digits in a seven segment display, and below it a reading of 2026 built from four of its cells", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/images_example.png]
+<1> Render the ten digits into `sheet`. The segment drawing runs ten
+    times, whatever the reading is and however often it changes after
+    that.
+<2> Paint the whole sheet at its own size, with its top left corner at
+    20, 20.
+<3> Paint the cell that holds each digit, picked out by `src`. Every later
+    frame is four `draw` calls against a sheet that is already rasterised.
+<4> Enlarge each cell from 32 units to 48. The reading is softer than the
+    sheet above it as a result; a sheet is usually authored at the largest
+    size it will be drawn.
 
-The segment drawing runs ten times, once, whatever the reading is and
-however often it changes after that. Every later frame is four `draw`
-calls against a sheet that is already rasterised, and the digit `2` is
-painted twice from the one cell that holds it. Each cell is enlarged from
-32 units to 48 on the way out, which is why the reading is softer than the
-sheet above it; a sheet is usually authored at the largest size it will be
-drawn.
+image::canvas/images_example.png[alt="A sheet of the ten digits in a seven segment display, and below it a reading of 2026 built from four of its cells", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/images_example.png]

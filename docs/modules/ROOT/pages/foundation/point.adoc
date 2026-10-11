@@ -4,8 +4,8 @@
 
 A `point` is a position in the 2D cartesian coordinate space: two `float`
 members, `x` and `y`. An `extent` is the same pair of numbers used to mean
-a size rather than a position. `extent` derives from `point` and deletes
-the three members that only make sense for a position, so a size cannot be
+a size rather than a position. `extent` derives from `point` and leaves
+out the members that only make sense for a position, so a size cannot be
 moved or reflected by accident.
 
 `point` and `extent` are the two types the rest of the library measures
@@ -28,219 +28,279 @@ The width is `e.x` and the height is `e.y`. Only
 xref:foundation/rect.adoc[`rect`] spells the two out, through `width()`
 and `height()`.
 
-== Include
+== Axis
+
+=== Include
 
 ```c++
 #include <artist/point.hpp>
 ```
 
-== Declaration
+=== Declaration
 
 ```c++
-   enum class axis : bool { x = false, y = true };
+enum class axis : bool { x = false, y = true };
 
-   constexpr axis other(axis a);
+constexpr axis other(axis a);
 ```
 
-```c++
-   struct point
-   {
-      constexpr         point();
-      constexpr         point(float x, float y);
-      constexpr         point(point const&) = default;
-      constexpr point&  operator=(point const&) = default;
+=== Expressions
 
-      constexpr bool    operator==(point const& other) const;
-      constexpr bool    operator!=(point const& other) const;
+==== Notation
 
-      constexpr point   move(float dx, float dy) const;
-      constexpr point   move_to(float x, float y) const;
-      constexpr point   reflect(point p) const;
+`ax`              :: Object of type `axis`.
 
-      constexpr float&  operator[](axis a);
-      constexpr float   operator[](axis a) const;
-
-      float             x;
-      float             y;
-   };
-```
-
-```c++
-   struct extent : point
-   {
-      using point::point;
-
-      constexpr         extent(point p);
-
-      point             move(float dx, float dy) const = delete;
-      point             move_to(float x, float y) const = delete;
-      point             reflect(point p) const = delete;
-   };
-```
-
-== Expressions
-
-=== Notation
-
-`p`, `p2`         :: Objects of type `point`.
-`e`, `e2`         :: Objects of type `extent`.
-`a`               :: Object of type `axis`.
-`x`, `y`          :: Floating point coordinates.
-`dx`, `dy`        :: Floating point distances.
-
-=== Axis
+==== Constants
 
 [cols="1,1,1"]
 |===
 | Expression    | Semantics                                  | Return Type
 
-| `axis::x`     | The horizontal axis. Converts to `false`.  | `axis`
-| `axis::y`     | The vertical axis. Converts to `true`.     | `axis`
-| `other(a)`    | The axis that `a` is not.                  | `axis`
+| `axis::x`     | Get the horizontal axis, `false` as a
+                  `bool`.                                    | `axis`
+| `axis::y`     | Get the vertical axis, `true` as a
+                  `bool`.                                    | `axis`
 |===
 
 The underlying type is `bool`, so an `axis` is one byte and
 `bool(axis::y)` is `true`. The enumeration is scoped, so the conversion
 has to be written out.
 
-=== Point Construction and Assignment
+==== Functions
+
+[cols="1,1,1"]
+|===
+| Expression    | Semantics                                  | Return Type
+
+| `other(ax)`   | Get the axis that `ax` is not.             | `axis`
+|===
+
+==== Example
+
+Step a point along an axis, then across it.
+
+```c++
+#include <artist/point.hpp>
+...
+using namespace cycfi::artist;
+...
+   auto ax = axis::y;
+   auto p = point{10, 20};
+   p[ax] += 5;                                           <1>
+   p[other(ax)] += 5;                                    <2>
+```
+
+<1> Step along the vertical axis, to `{10, 25}`.
+<2> Step across it, along the other axis, to `{15, 25}`.
+
+== Point
+
+=== Include
+
+```c++
+#include <artist/point.hpp>
+```
+
+=== Declaration
+
+```c++
+struct point
+{
+   constexpr         point();
+   constexpr         point(float x, float y);
+   constexpr         point(point const&) = default;
+   constexpr point&  operator=(point const &) = default;
+
+   constexpr bool    operator==(point const& other) const;
+   constexpr bool    operator!=(point const& other) const;
+
+   constexpr point   move(float dx, float dy) const;
+   constexpr point   move_to(float x, float y) const;
+   constexpr point   reflect(point p) const;
+
+   constexpr float&  operator[](axis a);
+   constexpr float   operator[](axis a) const;
+
+   float             x;
+   float             y;
+};
+```
+
+=== Expressions
+
+==== Notation
+
+`p`, `a`, `b`     :: Objects of type `point`.
+`q`               :: Object of type `point` to reflect.
+`ax`              :: Object of type `axis`.
+`x`, `y`          :: Floating point values for the coordinates.
+`dx`, `dy`        :: Floating point values for an offset.
+
+==== Constructors and Assignment
 
 [cols="1,1"]
 |===
 | Expression       | Semantics
 
-| `point{}`        | Default construct `{0, 0}`, the origin.
-| `point{x, y}`    | Construct from the two coordinates.
-| `point(p)`       | Copy construct from `p`.
-| `p = p2`         | Assign `p2` to `p`.
+| `point()`        | Construct a `point` at the origin, `{0, 0}`.
+| `point(x, y)`    | Construct a `point` given `x` and `y`
+                     (coordinates).
+| `point(p)`       | Copy construct from `point p`.
+| `a = b`          | Assign `b` to `a`.
 |===
 
-NOTE: `point` has user declared constructors, so it is not an aggregate.
-Both members are always set: there is no way to get a partly initialized
-`point`, and `point{}` is the origin rather than indeterminate.
+NOTE: C++ brace initialization may also be used. `point` is not an
+aggregate, so braces call the constructors above.
 
-CAUTION: The members are `float`, and brace initialization forbids
+NOTE: The members are `float`, and brace initialization forbids
 narrowing. `point{1, 2}` compiles because the literals convert exactly,
 but `point{n, 2}` with an `int` variable `n` does not. Write
 `point(n, 2)` with parentheses, or convert at the call site.
 
-=== Comparison
-
-[cols="1,1,1"]
-|===
-| Expression   | Semantics                                   | Return Type
-
-| `p == p2`    | Compare `x` and `y`. The comparison is
-                 exact, so two points differing only by
-                 rounding are not equal.                     | `bool`
-| `p != p2`    | The negation of the above.                  | `bool`
-|===
-
-=== Members
-
-The members are public and directly assignable.
+==== Access
 
 [cols="1,1,1"]
 |===
 | Expression  | Semantics                                    | Return Type
 
-| `p.x`       | The x coordinate.                            | `float`
-| `p.y`       | The y coordinate.                            | `float`
+| `p.x`       | Access the x coordinate.                     | `float`
+| `p.y`       | Access the y coordinate.                     | `float`
 |===
 
-=== Subscript
+==== Indexing
 
 [cols="1,1,1"]
 |===
 | Expression  | Semantics                                    | Return Type
 
-| `p[a]`      | The coordinate on axis `a`: `x` for
-                `axis::x`, `y` for `axis::y`. On a
-                non-const `point` this is a reference, so
-                `p[a] = v` assigns the member.                | `float&`
-| `p[a]`      | The same on a const `point`, by value.       | `float`
+| `p[ax]`     | Access the coordinate on `ax`: `x` for
+                `axis::x`, `y` for `axis::y`.                | `float&`, or
+                                                               `float` if `p`
+                                                               is `const`
 |===
 
-Subscript is what makes an algorithm axis agnostic. A routine that snaps
-along one axis can take an `axis` parameter, use `p[a]` throughout, and
-work in both directions without a second copy.
+Subscript makes an algorithm axis agnostic. A routine that snaps along
+one axis can take an `axis` parameter, use `p[ax]` throughout, and work in
+both directions without a second copy.
 
-=== Derivation
-
-Each is `const` and returns a new `point`; `p` is not modified.
+==== Operation
 
 [cols="1,1,1"]
 |===
 | Expression          | Semantics                            | Return Type
 
-| `p.move(dx, dy)`    | A copy of `p` displaced by `dx` and
+| `p.move(dx, dy)`    | Get a copy of `p` moved by `dx` and
                         `dy`.                                | `point`
-| `p.move_to(x, y)`   | A copy of `p` placed at `{x, y}`,
-                        which discards the original
-                        coordinates.                         | `point`
-| `p.reflect(p2)`     | The reflection of `p2` through `p`,
-                        which is `{2x - p2.x, 2y - p2.y}`.   | `point`
+| `p.move_to(x, y)`   | Get a copy of `p` placed at
+                        `{x, y}`.                            | `point`
+| `p.reflect(q)`      | Get the reflection of `q` through
+                        `p`, `{2 * p.x - q.x,
+                        2 * p.y - q.y}`.                     | `point`
 |===
 
-CAUTION: `reflect` reflects its *argument*, not the object it is called
-on. `p.reflect(p2)` treats `p` as the centre of rotation and returns `p2`
+WARNING: `reflect` reflects its *argument*, not the object it is called
+on. `p.reflect(q)` treats `p` as the centre of rotation and returns `q`
 rotated 180 degrees about it, so `point(0, 0).reflect(point(3, 4))` is
-`{-3, -4}`. The reading suggested by the name, reflecting `p` about `p2`,
-is `p2.reflect(p)`.
+`{-3, -4}`. To reflect `p` about `q`, write `q.reflect(p)`.
 
-=== Extent Construction and Assignment
-
-[cols="1,1"]
-|===
-| Expression       | Semantics
-
-| `extent{}`       | Default construct `{0, 0}`, an empty size.
-| `extent{x, y}`   | Construct from the width and the height, through
-                     the inherited `point` constructor.
-| `extent(p)`      | Construct from a `point`, taking `p.x` as the
-                     width and `p.y` as the height.
-| `extent(e)`      | Copy construct from `e`.
-| `e = e2`         | Assign `e2` to `e`.
-|===
-
-Both coordinates are required. `+extent{10}+` does not compile: the one
-argument constructor takes a `point`, which a single number does not
-convert to, and the inherited `point` constructor takes two.
-
-=== Extent and Point
-
-`extent` publicly derives from `point` and its `point` constructor is not
-explicit, so the two convert freely in both directions.
+==== Comparison
 
 [cols="1,1,1"]
 |===
 | Expression   | Semantics                                   | Return Type
 
-| `e.x`        | The width.                                  | `float`
-| `e.y`        | The height.                                 | `float`
-| `e[a]`       | The size along axis `a`. Subscript is
-                 inherited and not deleted.                  | `float&`
-| `e == e2`    | Componentwise, through `point::operator==`.
-                 `e == p` and `p == e` compile too.          | `bool`
-| `e.move(dx, dy)` +
-  `e.move_to(x, y)` +
-  `e.reflect(p)`
-               | Deleted. Each is a compile error.           | deleted
+| `a == b`     | Equality.                                   | `bool`
+| `a != b`     | Non-Equality.                               | `bool`
 |===
 
-The three deleted members hide the base versions rather than removing
-them, so `static_cast<point const&>(e).move(dx, dy)` still compiles. That
-is the escape hatch when a size genuinely has to be treated as a position.
+NOTE: The comparison of `x` and `y` is exact, so two points differing only
+by rounding are not equal.
 
-IMPORTANT: The separation is a naming aid, not a type barrier. `extent e =
-p;` and `point p = e;` both compile silently, so passing a position where
-a size is expected is not caught. Only the three deleted members are
-enforced.
+==== Example
 
-== Example
+Write a helper that moves a point along either axis.
 
-An axis agnostic helper that grows a `point` along one axis only, and the
-`extent` returned by a `rect`:
+```c++
+#include <artist/point.hpp>
+...
+using namespace cycfi::artist;
+...
+constexpr point advance(point p, axis ax, float d)
+{
+   p[ax] += d;                                           <1>
+   return p;
+}
+
+constexpr auto p = advance(point(10, 20), axis::y, 5);   <2>
+```
+
+<1> Add `d` to the coordinate on `ax`, through the reference `p[ax]`
+    returns.
+<2> Construct a point and advance it by 5 along y, at compile time. `p` is
+    `{10, 25}`.
+
+== Extent
+
+=== Include
+
+```c++
+#include <artist/point.hpp>
+```
+
+=== Declaration
+
+```c++
+struct extent : point
+{
+   using point::point;
+
+   constexpr         extent(point p);
+};
+```
+
+=== Expressions
+
+`extent` is derived from `point`, and its Access, Indexing and Comparison
+expressions are those of `point`, with `x` the width and `y` the height.
+In addition, `extent` allows these expressions.
+
+==== Notation
+
+`e`, `a`, `b`     :: Objects of type `extent`.
+`p`               :: Object of type `point`.
+`w`, `h`          :: Floating point values for the width and height.
+
+==== Constructors and Assignment
+
+[cols="1,1"]
+|===
+| Expression       | Semantics
+
+| `extent()`       | Construct an empty `extent`, `{0, 0}`.
+| `extent(w, h)`   | Construct an `extent` given `w` and `h` (width and
+                     height), through the inherited `point`
+                     constructor.
+| `extent(p)`      | Construct an `extent` from `p`, with `p.x` as the
+                     width and `p.y` as the height.
+| `extent(e)`      | Copy construct from `extent e`.
+| `a = b`          | Assign `b` to `a`.
+|===
+
+NOTE: C++ brace initialization may also be used.
+
+Both coordinates are required. `+extent{10}+` does not compile: the one
+argument constructor takes a `point`, which a single number does not
+convert to, and the inherited `point` constructor takes two.
+
+WARNING: The separation is a naming aid, not a type barrier. `extent` and
+`point` convert to each other implicitly: `extent e = p;` and
+`point p = e;` both compile, and so do `e == p` and `p == e`. Passing a
+position where a size is expected is not caught.
+
+==== Example
+
+Get the size of a `rect`, and the side of the largest square that fits
+in it.
 
 ```c++
 #include <artist/point.hpp>
@@ -250,15 +310,9 @@ An axis agnostic helper that grows a `point` along one axis only, and the
 using namespace cycfi::artist;
 extern rect bounds;                      // a rect laid out elsewhere
 ...
-   constexpr point advance(point p, axis a, float d)
-   {
-      p[a] += d;
-      return p;
-   }
-
-   constexpr auto p = advance(point(10, 20), axis::y, 5);   // {10, 25}
-
-   // rect::size() hands back an extent; x is the width, y the height.
-   auto size = bounds.size();
-   auto square = std::min(size.x, size.y);
+   auto size = bounds.size();                            <1>
+   auto side = std::min(size.x, size.y);                 <2>
 ```
+
+<1> Get the size of `bounds` as an `extent`.
+<2> Read the width from `x` and the height from `y`.

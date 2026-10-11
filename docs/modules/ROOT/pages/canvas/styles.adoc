@@ -31,6 +31,10 @@ every backend, an approximation of the W3C plus-darker formula.
 == Declaration
 
 ```c++
+class canvas
+{
+public:
+
    enum line_cap_enum
    {
       butt,
@@ -98,41 +102,104 @@ every backend, an approximation of the W3C plus-darker formula.
 
    void     global_composite_operation(composite_op_enum mode);
    void     composite_op(composite_op_enum mode);
+};
 ```
 
-All of these are members of `canvas`, and the enums are nested in it, so
-the values are spelled `canvas::round`, `canvas::miter_join`,
-`canvas::copy` and so on.
+The enums are nested in `canvas`, so the values are spelled
+`canvas::round`, `canvas::miter_join`, `canvas::copy` and so on.
 
 == Expressions
+
+The style members of xref:canvas.adoc[`canvas`] allow these expressions.
 
 === Notation
 
 `cnv`                :: Object of type `canvas`.
 `c`                  :: Object of type xref:foundation/color.adoc[color].
-`gr`                 :: Object of type `canvas::linear_gradient` or
-                        `canvas::radial_gradient`.
-`w`                  :: A `float` line width.
-`limit`              :: A `float` miter limit, a multiple of the line width.
-`offset`             :: Object of type xref:foundation/point.adoc[point],
+`lg`                 :: Object of type
+                        xref:canvas/gradients.adoc[`canvas::linear_gradient`].
+`rg`                 :: Object of type
+                        xref:canvas/gradients.adoc[`canvas::radial_gradient`].
+`w`                  :: Floating point value for a line width.
+`limit`              :: Floating point value for a miter limit, in line
+                        widths.
+`offset`             :: Object of type xref:foundation/point.adoc[point] for
                         the displacement of a shadow.
-`offsetx`, `offsety` :: `float` components of the displacement.
-`blur`               :: A `float`, the softness of a shadow.
-`mode`               :: A `canvas::composite_op_enum`.
+`offsetx`, `offsety` :: Floating point values for the displacement of a
+                        shadow.
+`blur`               :: Floating point value for the softness of a shadow.
+`mode`               :: Object of type `canvas::composite_op_enum`.
 
-=== Paint
+=== Mutators
 
 [cols="1,1,1"]
 |===
-| Expression              | Semantics                          | Return Type
+| Expression                              | Semantics                       | Return Type
 
-| `cnv.fill_style(c)`     | Fill with the flat color `c`.      | `void`
-| `cnv.fill_style(gr)`    | Fill with the gradient `gr`.       | `void`
-| `cnv.stroke_style(c)`   | Stroke with the flat color `c`.    | `void`
-| `cnv.stroke_style(gr)`  | Stroke with the gradient `gr`.     | `void`
-| `cnv.fill_color(c)`     | The same as `cnv.fill_style(c)`.   | `void`
-| `cnv.stroke_color(c)`   | The same as `cnv.stroke_style(c)`. | `void`
+| `cnv.fill_style(c)`                     | Set the fill style to the flat
+                                            color `c`.                      | `void`
+| `cnv.fill_style(lg)`                    | Set the fill style to the
+                                            gradient `lg`.                  | `void`
+| `cnv.fill_style(rg)`                    | Set the fill style to the
+                                            gradient `rg`.                  | `void`
+| `cnv.stroke_style(c)`                   | Set the stroke style to the
+                                            flat color `c`.                 | `void`
+| `cnv.stroke_style(lg)`                  | Set the stroke style to the
+                                            gradient `lg`.                  | `void`
+| `cnv.stroke_style(rg)`                  | Set the stroke style to the
+                                            gradient `rg`.                  | `void`
+| `cnv.fill_color(c)`                     | Set the fill style to the flat
+                                            color `c`, the same as
+                                            `cnv.fill_style(c)`.            | `void`
+| `cnv.stroke_color(c)`                   | Set the stroke style to the
+                                            flat color `c`, the same as
+                                            `cnv.stroke_style(c)`.          | `void`
+| `cnv.line_width(w)`                     | Set the line width to `w`.      | `void`
+| `cnv.line_cap(canvas::butt)`            | Set the line cap to end a
+                                            stroke exactly at the end of
+                                            the path (the default).         | `void`
+| `cnv.line_cap(canvas::round)`           | Set the line cap to extend a
+                                            stroke past the end by a half
+                                            circle whose radius is half the
+                                            line width.                     | `void`
+| `cnv.line_cap(canvas::square)`          | Set the line cap to extend a
+                                            stroke past the end by half the
+                                            line width, squared off.        | `void`
+| `cnv.line_join(canvas::bevel_join)`     | Set the line join to cut a
+                                            corner flat, across the outer
+                                            edges of the two segments.      | `void`
+| `cnv.line_join(canvas::round_join)`     | Set the line join to round a
+                                            corner with an arc whose radius
+                                            is half the line width.         | `void`
+| `cnv.line_join(canvas::miter_join)`     | Set the line join to extend the
+                                            outer edges of both segments
+                                            until they meet in a point (the
+                                            default).                       | `void`
+| `cnv.miter_limit(limit)`                | Set the miter limit to `limit`
+                                            line widths, past which a miter
+                                            is cut back to a bevel.         | `void`
+| `cnv.miter_limit()`                     | Set the miter limit to 10, the
+                                            default.                        | `void`
+| `cnv.shadow_style(offset, blur, c)`     | Set the shadow to the color
+                                            `c`, displaced by `offset` and
+                                            softened by `blur`.             | `void`
+| `cnv.shadow_style(offsetx, offsety,
+  blur, c)`                               | Set the shadow to the color
+                                            `c`, displaced by `offsetx` and
+                                            `offsety` and softened by
+                                            `blur`.                         | `void`
+| `cnv.shadow_style(blur, c)`             | Set the shadow to the color `c`
+                                            with no offset, softened by
+                                            `blur`: a glow.                 | `void`
+| `cnv.composite_op(mode)`                | Set the composite operation to
+                                            `mode`.                         | `void`
+| `cnv.global_composite_operation(mode)`  | Set the composite operation to
+                                            `mode`, the same as
+                                            `cnv.composite_op(mode)`, under
+                                            its W3C name.                   | `void`
 |===
+
+=== Paint
 
 image::canvas/paint.png[alt="A color and a gradient, each as a fill and as a stroke", width=560px, align=center, title="A color and a gradient, each as a fill and as a stroke.", link={imagesdir}/canvas/paint.png]
 
@@ -147,18 +214,11 @@ coordinates are in, is under xref:canvas/gradients.adoc[Gradients].
 
 === Line Width
 
-[cols="1,1,1"]
-|===
-| Expression              | Semantics                          | Return Type
-
-| `cnv.line_width(w)`     | Stroke `w` units wide, centred on
-                            the path, half on each side.       | `void`
-|===
-
 image::canvas/line_width.png[alt="Three widths on the same path", width=560px, align=center, title="Three widths. The white line is the path.", link={imagesdir}/canvas/line_width.png]
 
-The default width is 1. A width that is zero, negative, infinite or NaN is
-ignored, and the width stays what it was.
+The stroke is centred on the path, half on each side. The default width is
+1. A width that is zero, negative, infinite or NaN is ignored, and the
+width stays what it was.
 
 The width is in user space, under the transform in effect when the path is
 stroked, not when the width is set. After `cnv.scale(2)`, a width of 10
@@ -166,49 +226,12 @@ strokes 20 device units wide, whichever call came first.
 
 === Line Cap
 
-[cols="1,1,1"]
-|===
-| Expression                       | Semantics                 | Return Type
-
-| `cnv.line_cap(canvas::butt)`     | End a stroke exactly at
-                                     the end of the path. The
-                                     default.                  | `void`
-| `cnv.line_cap(canvas::round)`    | Extend it past the end by
-                                     a half circle whose radius
-                                     is half the line width.   | `void`
-| `cnv.line_cap(canvas::square)`   | Extend it past the end by
-                                     half the line width,
-                                     squared off.              | `void`
-|===
-
 image::canvas/line_cap.png[alt="A line under each cap", width=560px, align=center, title="The same line under each cap. The grey guides mark where the path ends.", link={imagesdir}/canvas/line_cap.png]
 
 A cap is drawn at the two open ends of a sub-path. A sub-path closed with
 `close_path` has no ends, and its corners are joins instead.
 
 === Line Join
-
-[cols="1,1,1"]
-|===
-| Expression                          | Semantics              | Return Type
-
-| `cnv.line_join(canvas::bevel_join)` | Cut the corner flat,
-                                        across the outer edges
-                                        of the two segments.   | `void`
-| `cnv.line_join(canvas::round_join)` | Round the corner with
-                                        an arc whose radius is
-                                        half the line width.   | `void`
-| `cnv.line_join(canvas::miter_join)` | Extend the outer edges
-                                        of both segments until
-                                        they meet in a point.
-                                        The default.           | `void`
-| `cnv.miter_limit(limit)`            | Cut a miter back to a
-                                        bevel when it would be
-                                        longer than `limit`
-                                        line widths.           | `void`
-| `cnv.miter_limit()`                 | Set the limit to 10,
-                                        the default.           | `void`
-|===
 
 image::canvas/line_join.png[alt="A corner under each join", width=560px, align=center, title="The same corner under each join.", link={imagesdir}/canvas/line_join.png]
 
@@ -221,25 +244,6 @@ A limit that is zero, negative, infinite or NaN is ignored.
 image::canvas/miter_limit.png[alt="A sharp corner under two miter limits", width=560px, align=center, title="A 24 degree corner: its miter is 4.8 line widths long, inside a limit of 10 and cut back to a bevel by a limit of 2.", link={imagesdir}/canvas/miter_limit.png]
 
 === Shadow
-
-[cols="1,1,1"]
-|===
-| Expression                      | Semantics                   | Return Type
-
-| `cnv.shadow_style(offset,
-    blur, c)`                      | Cast a shadow of color `c`
-                                    under everything drawn
-                                    afterwards, displaced by
-                                    `offset` and softened by
-                                    `blur`.                     | `void`
-| `cnv.shadow_style(offsetx,
-    offsety, blur, c)`             | As above, with the offset
-                                    as two scalars.             | `void`
-| `cnv.shadow_style(blur, c)`     | As above, with no offset,
-                                    so the shadow spreads
-                                    evenly around the shape: a
-                                    glow.                       | `void`
-|===
 
 image::canvas/shadow.png[alt="Four shadows", width=560px, align=center, title="A hard shadow, a soft one, a glow, and the shadow of a half-transparent shape.", link={imagesdir}/canvas/shadow.png]
 
@@ -280,20 +284,6 @@ Setting a fully transparent shadow color, or no offset and no blur, turns it
 off too.
 
 === Compositing
-
-[cols="1,1,1"]
-|===
-| Expression                                | Semantics        | Return Type
-
-| `cnv.composite_op(mode)`                  | Combine what is
-                                              drawn afterwards
-                                              with what is
-                                              already on the
-                                              canvas by
-                                              `mode`.          | `void`
-| `cnv.global_composite_operation(mode)`    | The same, under
-                                              its W3C name.    | `void`
-|===
 
 In the table below the _source_ is what is being drawn and the
 _destination_ is what is already on the canvas. The first twelve modes are
@@ -363,10 +353,10 @@ NOTE: The enum has no W3C `clear`. `destination_out` with an opaque source,
 or `clear_rect`, does the same job. Nor does it have the W3C `overlay` and
 `lighten` blend modes.
 
-== Example
+=== Example
 
-A panel, the `rect` `panel`, with a soft drop shadow and a rounded outline.
-The shadow is scoped to the fill, so the outline casts none:
+Draw a panel with a soft drop shadow and a rounded outline, with the shadow
+scoped to the fill so the outline casts none.
 
 ```c++
 #include <artist/canvas.hpp>
@@ -377,19 +367,21 @@ extern canvas cnv;              // the canvas to draw on
    auto panel = rect{40, 30, 260, 130};
 
    {
-      auto s = cnv.new_state();
-      cnv.shadow_style({0, 4}, 16, colors::black.opacity(0.45));
+      auto s = cnv.new_state();                             <1>
+      cnv.shadow_style({0, 4}, 16, colors::black.opacity(0.45));   <2>
       cnv.fill_style(colors::white);
       cnv.fill_round_rect(panel, 8);
    }
 
-   cnv.stroke_style(colors::gray[40]);
+   cnv.stroke_style(colors::gray[40]);                      <3>
    cnv.line_width(1);
    cnv.line_join(canvas::round_join);
    cnv.stroke_round_rect(panel, 8);
 ```
 
-image::canvas/styles_example.png[alt="A white rounded panel with a soft shadow and a thin outline", width=560px, align=center, title="What the code above draws, on a light neutral ground so the white panel reads.", link={imagesdir}/canvas/styles_example.png]
+<1> Save the drawing state for the fill.
+<2> Cast a soft shadow 4 units down, under the fill only.
+<3> Set the stroke style after the state ends. The shadow is gone, so the
+    outline casts none of its own.
 
-The shadow is set inside the saved state, so it is gone by the time the
-outline is stroked and the outline casts none of its own.
+image::canvas/styles_example.png[alt="A white rounded panel with a soft shadow and a thin outline", width=560px, align=center, title="What the code above draws, on a light neutral ground so the white panel reads.", link={imagesdir}/canvas/styles_example.png]

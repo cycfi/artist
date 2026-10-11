@@ -3,10 +3,10 @@
 == Overview
 
 The canvas draws with whatever styles, transform and clip are in effect at
-the moment of the call. Those settings are not separate knobs but one
-bundle, the drawing state, and the canvas keeps a stack of them.
-`cnv.new_state()` pushes a copy of the bundle and pops it again at the end
-of the enclosing scope. Everything set in between is undone in one step.
+the moment of the call. Those settings form one bundle, the drawing state,
+and the canvas keeps a stack of them. `cnv.new_state()` pushes a copy of
+the bundle and pops it again at the end of the enclosing scope. Everything
+set in between is undone in one step.
 
 This is how drawing code stays composable. A function that translates the
 origin, narrows the clip and picks a font has changed the canvas for
@@ -16,11 +16,8 @@ way to hand the canvas back as it was found.
 
 `cnv.new_state()` is the whole interface. It returns an object that pushes
 the state on construction and pops it when it goes out of scope, including
-when an exception carries you out of the block, so the two halves are made
-by the language rather than by the caller and cannot drift apart as the
-code between them grows. There is no way to push or pop on its own: the
-underlying `save` and `restore` are private, and `canvas::state` is their
-only caller.
+when an exception carries you out of the block. There is no way to push or
+pop on its own.
 
 The bundle holds the xref:canvas/styles.adoc[fill and stroke styles],
 whether a colour or a gradient, the line width, cap, join and miter limit,
@@ -38,8 +35,16 @@ stays where it landed.
 NOTE: The bundle is the W3C canvas API's drawing state, which likewise
 excludes the current default path and the bitmap, and a `new_state` scope
 is its `save` and `restore` pair. Artist does not expose those two
-separately. The W3C API does, and leaves an unmatched `restore` as a
-silent no-op; a scope makes the mistake unwritable instead.
+separately.
+
+== Design Rationale
+
+The push and the pop are paired by the language: the object `new_state`
+returns pops in its destructor, so the two halves cannot drift apart as the
+code between them grows. The underlying `save` and `restore` are private,
+and `canvas::state` is their only caller. The W3C API exposes the two
+separately and leaves an unmatched `restore` as a silent no-op; a scope
+makes that mistake unwritable.
 
 == Include
 
@@ -50,38 +55,70 @@ silent no-op; a scope makes the mistake unwritable instead.
 == Declaration
 
 ```c++
+class canvas
+{
+public:
+
    class state
    {
    public:
 
-      state(canvas& cnv);
-      state(state&& rhs) noexcept;
-      state(state const&) = delete;
-      ~state();
+               state(canvas& cnv);
+               state(state&& rhs) noexcept;
+               ~state();
 
-      state&   operator=(state const&) = delete;
       state&   operator=(state&& rhs) noexcept;
    };
 
-   state    new_state();
+   state       new_state();
+};
 ```
 
 == Expressions
 
+The state members of xref:canvas.adoc[`canvas`] allow these expressions.
+
 === Notation
 
-`cnv`          :: Object of type `canvas`.
-`s`, `s2`      :: Objects of type `canvas::state`.
+`cnv`             :: Object of type `canvas`.
+`s`, `a`, `b`     :: Objects of type `canvas::state`.
 
-=== Saving and Restoring
+=== Constructors and Assignment
+
+[cols="1,1"]
+|===
+| Expression                       | Semantics
+
+| `canvas::state(cnv)`             | Construct a `canvas::state` that pushes
+                                     a copy of the drawing state of `cnv`.
+| `canvas::state(std::move(s))`    | Move construct from `s`, taking over
+                                     its save.
+| `a = std::move(b)`               | Move assign `b` to `a`, taking over its
+                                     save.
+|===
+
+NOTE: C++ brace initialization may also be used.
+
+`canvas::state` is non-copyable: two objects popping one save would
+unbalance the stack. A move hands the save over, and the moved-from object
+holds nothing and pops nothing. The object is a token for one entry on the
+stack and holds no copy of the state itself.
+
+WARNING: Move assignment does not restore first. `a = std::move(b)`
+overwrites whatever save `a` was holding without popping it, so that entry
+stays on the stack for the rest of the drawing. Assign only over a `state`
+that has already been moved from.
+
+=== Operation
 
 [cols="1,1,1"]
 |===
 | Expression          | Semantics                      | Return Type
 
 | `cnv.new_state()`   | Push a copy of the drawing
-                        state and return an object
-                        that pops it when destroyed.  | `canvas::state`
+                        state and return a
+                        `canvas::state` that pops it
+                        when destroyed.                | `canvas::state`
 |===
 
 Hold the result in a named local. A temporary is destroyed at the end of
@@ -114,37 +151,10 @@ point offset;                   // where to move the origin
    }  // the clip and the transform are undone here
 ```
 
-=== Constructors and Assignment
+=== Example
 
-[cols="1,1"]
-|===
-| Expression                | Semantics
-
-| `canvas::state(cnv)`      | Push a copy of the drawing state of `cnv`.
-                              What `cnv.new_state()` returns; there is no
-                              default constructor.
-| `canvas::state(std::move(s))`
-                            | Take over the save held by `s`, which is
-                              left holding nothing and pops nothing.
-| `s = std::move(s2)`       | Take over the save held by `s2`, which is
-                              left holding nothing.
-|===
-
-A `state` cannot be copied. Two objects popping one save would unbalance
-the stack, so the copy constructor and the copy assignment operator are
-deleted, and the move operations hand the save over rather than duplicate
-it. The object is only a token for one entry on the stack; it holds no
-copy of the state itself.
-
-CAUTION: Move assignment does not restore first. `s = std::move(s2)`
-overwrites whatever save the target was holding without popping it, so that
-entry stays on the stack for the rest of the drawing. Assign only over a
-`state` that has already been moved from.
-
-== Example
-
-A label drawn inside a panel, rotated and clipped to it, leaving the canvas
-as it was found:
+Draw a label inside a panel, rotated and clipped to it, and leave the
+canvas as it was found.
 
 ```c++
 #include <artist/canvas.hpp>
@@ -158,9 +168,9 @@ extern canvas cnv;              // the canvas to draw on
    cnv.fill_round_rect(panel, 8);
 
    {
-      auto st = cnv.new_state();
+      auto st = cnv.new_state();                            <1>
       cnv.add_round_rect(panel, 8);
-      cnv.clip();
+      cnv.clip();                                           <2>
       cnv.translate(panel.left + 20, panel.bottom - 26);
       cnv.rotate(-0.35);
       cnv.font(font_descr{"Open Sans", 34});
@@ -171,13 +181,14 @@ extern canvas cnv;              // the canvas to draw on
    // The clip, the transform, the font and the fill style are all back:
    // this lands outside the panel, unclipped and unrotated.
    cnv.fill_style(rgba(26, 26, 26, 255));
-   cnv.fill_rect(280, 60, 40, 40);
+   cnv.fill_rect(280, 60, 40, 40);                          <3>
 ```
 
-image::canvas/states_example.png[alt="A blue panel with a rotated white label cut off at its corner, and a dark square outside it", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/states_example.png]
+<1> Save the drawing state for the label.
+<2> Clip to the panel. The label is longer than the panel and runs off its
+    corner, where the clip cuts it.
+<3> Fill a square after the scope ends. It is dark, square to the axes and
+    outside the panel: none of the four settings had to be put back by
+    hand.
 
-The label is longer than the panel and runs off its corner, where the clip
-cuts it. The square after the block is the proof that the scope closed
-cleanly: it is dark rather than white, square to the axes rather than
-rotated, and outside the panel rather than clipped away. None of the four
-settings had to be put back by hand.
+image::canvas/states_example.png[alt="A blue panel with a rotated white label cut off at its corner, and a dark square outside it", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/states_example.png]

@@ -17,183 +17,6 @@ want.
 The library ships a large set of named colors and a neutral gray ramp in
 the `cycfi::artist::colors` namespace. See <<Predefined Colors>>.
 
-== Include
-
-```c++
-#include <artist/color.hpp>
-```
-
-== Declaration
-
-```c++
-   struct color
-   {
-      constexpr         color() = default;
-      constexpr         color(
-                           float red, float green
-                         , float blue, float alpha = 1.0f
-                        );
-
-      constexpr color   opacity(float alpha_) const;
-      constexpr color   level(float amount) const;
-
-      float red   = 0.0f;
-      float green = 0.0f;
-      float blue  = 0.0f;
-      float alpha = 0.0f;
-   };
-```
-
-```c++
-   // Free functions
-   constexpr bool    operator==(color const& a, color const& b);
-   constexpr bool    operator!=(color const& a, color const& b);
-
-   constexpr color   operator+(color const& a, color const& b);
-   constexpr color   operator-(color const& a, color const& b);
-   constexpr color   operator*(color const& a, float b);
-   constexpr color   operator*(float a, color const& b);
-
-   constexpr color   rgb(std::uint32_t rgb);
-   constexpr color   rgba(std::uint32_t rgba);
-   constexpr color   rgb(std::uint8_t r, std::uint8_t g, std::uint8_t b);
-   constexpr color   rgba(
-                        std::uint8_t r, std::uint8_t g
-                      , std::uint8_t b, std::uint8_t a
-                     );
-   constexpr color   hsl(float h, float s, float l);
-```
-
-== Expressions
-
-=== Notation
-
-`c`, `c2`               :: Objects of type `color`.
-`r`, `g`, `b`, `a`      :: Floating point component values, nominally 0.0
-                           to 1.0.
-`ur`, `ug`, `ub`, `ua`  :: Objects of type `std::uint8_t`, 0 to 255.
-`u`                     :: Object of type `std::uint32_t`, typically a hex
-                           literal.
-`h`                     :: Floating point hue in degrees, 0 to 360.
-`s`, `l`                :: Floating point saturation and lightness, 0.0 to
-                           1.0.
-`amount`, `k`           :: Floating point multipliers.
-`i`                     :: An integer index.
-
-=== Constructors and Assignment
-
-[cols="1,1"]
-|===
-| Expression              | Semantics
-
-| `color{}`               | Default construct `{0, 0, 0, 0}`, transparent
-                            black.
-| `color{r, g, b}`        | Construct from the three color components.
-                            Alpha takes its default of 1.0, fully opaque.
-| `color{r, g, b, a}`     | Construct from all four components.
-| `color(c)`              | Copy construct from `c`.
-| `c = c2`                | Assign `c2` to `c`.
-|===
-
-NOTE: `color` declares its own constructors, so it is not an aggregate and
-brace initialization calls a constructor rather than initializing members
-in order. That is why `color{r, g, b}` is opaque, picking up the default
-argument, while `color{}` is transparent, picking up the member
-initializers.
-
-=== Comparison
-
-[cols="1,1,1"]
-|===
-| Expression   | Semantics                                   | Return Type
-
-| `c == c2`    | Compare all four components. The comparison
-                 is exact, so two colors differing only by
-                 rounding are not equal.                     | `bool`
-| `c != c2`    | The negation of the above.                  | `bool`
-|===
-
-=== Members
-
-The members are public and directly assignable. There are no accessors.
-
-[cols="1,1,1"]
-|===
-| Expression  | Semantics                                    | Return Type
-
-| `c.red`     | The red component.                           | `float`
-| `c.green`   | The green component.                         | `float`
-| `c.blue`    | The blue component.                          | `float`
-| `c.alpha`   | The alpha component, 0.0 fully transparent
-                and 1.0 fully opaque.                        | `float`
-|===
-
-=== Derivation
-
-Both are `const` and return a new color; `c` is not modified.
-
-[cols="1,1,1"]
-|===
-| Expression        | Semantics                              | Return Type
-
-| `c.opacity(a)`    | A copy of `c` with the alpha replaced
-                      by `a`. The color components are
-                      untouched.                             | `color`
-| `c.level(amount)` | A copy of `c` with the three color
-                      components multiplied by `amount`.
-                      The alpha is untouched.                | `color`
-|===
-
-NOTE: `level` does not clamp. An `amount` above 1 pushes components past
-1.0, and they stay there until a backend clips them.
-
-=== Arithmetic
-
-[cols="1,1,1"]
-|===
-| Expression  | Semantics                                    | Return Type
-
-| `c + c2`    | Sum the three color components. The alpha
-                is `c.alpha + c2.alpha * (1 - c.alpha)`, the
-                usual source over rule.                      | `color`
-| `c - c2`    | Difference of the three color components.
-                The alpha uses the same source over formula
-                as `+`, not a difference.                    | `color`
-| `c * k`     | Multiply the three color components by `k`,
-                leaving the alpha unchanged. Equivalent to
-                `c.level(k)`.                                | `color`
-| `k * c`     | The same, with the operands reversed.        | `color`
-|===
-
-CAUTION: These are plain component arithmetic, not a compositing model.
-Nothing is clamped, so a sum can exceed 1.0 and a difference can go
-negative. The alpha of `c - c2` combining rather than subtracting is what
-the implementation does today; do not rely on it.
-
-=== Free Functions
-
-[cols="1,1,1"]
-|===
-| Expression             | Semantics                         | Return Type
-
-| `rgb(u)`               | Unpack `u` as `0xRRGGBB` and scale
-                           each byte by 1/255. The alpha is
-                           1.0.                              | `color`
-| `rgba(u)`              | Unpack `u` as `0xRRGGBBAA` and
-                           scale each byte by 1/255.         | `color`
-| `rgb(ur, ug, ub)`      | As above, from three separate
-                           bytes. The alpha is 1.0.          | `color`
-| `rgba(ur, ug, ub, ua)` | As above, from four separate
-                           bytes.                            | `color`
-| `hsl(h, s, l)`         | Convert hue, saturation and
-                           lightness to red, green and blue.
-                           The alpha is 1.0.                 | `color`
-|===
-
-NOTE: `hsl` clamps `h` to 359.99 before converting, so `hsl(360, s, l)` is
-close to, but not exactly, `hsl(0, s, l)`. Nothing wraps or clamps a
-negative hue, so keep `h` within 0 to 360.
-
 == Predefined Colors
 
 The `cycfi::artist::colors` namespace holds 131 named colors and a 101
@@ -220,29 +43,219 @@ matters. Three pairs are the same color under two names: `tan` and
 
 image::foundation/gray_ramp.svg[alt="The gray ramp", width=560px, align=center, title="colors::gray is 101 neutrals from black to white, one per percent.", link={imagesdir}/foundation/gray_ramp.svg]
 
+`colors::gray[i]` is the neutral at `i` percent, and `colors::grey` is
+another name for the same ramp. See <<_constants>>.
+
+== Include
+
+```c++
+#include <artist/color.hpp>
+```
+
+== Declaration
+
+```c++
+struct color
+{
+   constexpr         color() = default;
+   constexpr         color(
+                        float red, float green
+                      , float blue, float alpha = 1.0f
+                     );
+
+   constexpr color   opacity(float alpha_) const;
+   constexpr color   level(float amount) const;
+
+   float red   = 0.0f;
+   float green = 0.0f;
+   float blue  = 0.0f;
+   float alpha = 0.0f;
+};
+
+constexpr bool    operator==(color const& a, color const& b);
+constexpr bool    operator!=(color const& a, color const& b);
+
+constexpr color   operator+(color const& a, color const& b);
+constexpr color   operator-(color const& a, color const& b);
+constexpr color   operator*(color const& a, float b);
+constexpr color   operator*(float a, color const& b);
+
+constexpr color   rgb(std::uint32_t rgb);
+constexpr color   rgba(std::uint32_t rgba);
+constexpr color   rgb(std::uint8_t r, std::uint8_t g, std::uint8_t b);
+constexpr color   rgba(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a);
+constexpr color   hsl(float h, float s, float l);
+
+namespace colors
+{
+   constexpr color alice_blue = rgb(240, 248, 255);
+   ...                                   // 131 named colors
+   constexpr color gray[] = { ... };     // 101 entries
+   constexpr auto grey = gray;
+}
+```
+
+== Expressions
+
+=== Notation
+
+`c`, `a`, `b`                   :: Objects of type `color`.
+`red`, `green`, `blue`, `alpha` :: Floating point values for the
+                                   components, nominally 0.0 to 1.0.
+`ur`, `ug`, `ub`, `ua`          :: Values of type `std::uint8_t` for the
+                                   components, 0 to 255.
+`u`                             :: Value of type `std::uint32_t` for packed
+                                   components, typically a hex literal.
+`h`                             :: Floating point value for the hue, in
+                                   degrees, 0 to 360.
+`s`, `l`                        :: Floating point values for the saturation
+                                   and lightness, 0.0 to 1.0.
+`k`                             :: Floating point value for a multiplier.
+`i`                             :: Integer value for an index, 0 to 100.
+`name`                          :: One of the color names in `colors`.
+
+=== Constructors and Assignment
+
+[cols="1,1"]
+|===
+| Expression                        | Semantics
+
+| `color()`                         | Construct transparent black,
+                                      `{0, 0, 0, 0}`.
+| `color(red, green, blue)`         | Construct an opaque `color` given
+                                      `red`, `green` and `blue`. The alpha
+                                      takes its default of 1.0.
+| `color(red, green, blue, alpha)`  | Construct a `color` given all four
+                                      components.
+| `color(c)`                        | Copy construct from `color c`.
+| `a = b`                           | Assign `b` to `a`.
+|===
+
+NOTE: C++ brace initialization may also be used. `color` is not an
+aggregate, so braces call the constructors above: `color{red, green,
+blue}` is opaque, picking up the default argument, while `color{}` is
+transparent, picking up the member initializers.
+
+=== Access
+
 [cols="1,1,1"]
 |===
-| Expression      | Semantics                        | Return Type
+| Expression  | Semantics                                    | Return Type
 
-| `colors::gray`  | An array of 101 neutral colors
-                    from black to white, one per
-                    percent, so `gray[i]` is the
-                    neutral at `i` percent. Valid
-                    indices are 0 to 100.            | `color const[101]`
-| `colors::grey`  | A synonym for `colors::gray`.    | `color const*`
+| `c.red`     | Access the red component.                    | `float`
+| `c.green`   | Access the green component.                  | `float`
+| `c.blue`    | Access the blue component.                   | `float`
+| `c.alpha`   | Access the alpha component, 0.0 fully
+                transparent and 1.0 fully opaque.            | `float`
 |===
 
-IMPORTANT: The ramp has 101 entries, not 256. `gray[128]` and `gray[255]`
+=== Operation
+
+[cols="1,1,1"]
+|===
+| Expression          | Semantics                            | Return Type
+
+| `c.opacity(alpha)`  | Get a copy of `c` with the alpha
+                        replaced by `alpha`.                 | `color`
+| `c.level(k)`        | Get a copy of `c` with the red,
+                        green and blue multiplied by `k`,
+                        the alpha unchanged.                 | `color`
+|===
+
+NOTE: `level` does not clamp. A `k` above 1 pushes components past 1.0,
+and they stay there until a backend clips them.
+
+=== Comparison
+
+[cols="1,1,1"]
+|===
+| Expression   | Semantics                                   | Return Type
+
+| `a == b`     | Equality.                                   | `bool`
+| `a != b`     | Non-Equality.                               | `bool`
+|===
+
+NOTE: The comparison of the four components is exact, so two colors
+differing only by rounding are not equal.
+
+=== Arithmetic
+
+[cols="1,1,1"]
+|===
+| Expression  | Semantics                                    | Return Type
+
+| `a + b`     | Add the red, green and blue components. The
+                alpha is `a.alpha + b.alpha * (1 - a.alpha)`,
+                the usual source over rule.                  | `color`
+| `a - b`     | Subtract the red, green and blue components.
+                The alpha uses the source over formula of
+                `+`.                                         | `color`
+| `c * k`     | Multiply the red, green and blue components
+                by `k`, the alpha unchanged, as
+                `c.level(k)` does.                           | `color`
+| `k * c`     | Multiply as `c * k`.                         | `color`
+|===
+
+WARNING: These are plain component arithmetic, not a compositing model.
+Nothing is clamped, so a sum can exceed 1.0 and a difference can go
+negative. The alpha of `a - b` combining rather than subtracting is what
+the implementation does today; do not rely on it.
+
+=== Conversions
+
+[cols="1,1,1"]
+|===
+| Expression             | Semantics                         | Return Type
+
+| `rgb(u)`               | Convert `u`, packed as `0xRRGGBB`,
+                           to a `color`, each byte scaled by
+                           1/255 and the alpha 1.0.          | `color`
+| `rgba(u)`              | Convert `u`, packed as
+                           `0xRRGGBBAA`, to a `color`, each
+                           byte scaled by 1/255.             | `color`
+| `rgb(ur, ug, ub)`      | Convert three bytes to a `color`,
+                           each scaled by 1/255 and the
+                           alpha 1.0.                        | `color`
+| `rgba(ur, ug, ub, ua)` | Convert four bytes to a `color`,
+                           each scaled by 1/255.             | `color`
+| `hsl(h, s, l)`         | Convert `h`, `s` and `l` (hue,
+                           saturation and lightness) to a
+                           `color`, the alpha 1.0.           | `color`
+|===
+
+NOTE: `hsl` clamps `h` to 359.99 before converting, so `hsl(360, s, l)` is
+close to, but not exactly, `hsl(0, s, l)`. Nothing wraps or clamps a
+negative hue, so keep `h` within 0 to 360.
+
+=== Constants
+
+[cols="1,1,1"]
+|===
+| Expression          | Semantics                        | Return Type
+
+| `colors::name`      | Get the named color `name`. See
+                        <<_predefined_colors>>.          | `color`
+| `colors::gray`      | Get the gray ramp: 101 neutral
+                        colors from black to white, one
+                        per percent.                     | `color const[101]`
+| `colors::grey`      | Get the gray ramp, through a
+                        pointer.                         | `color const*`
+| `colors::gray[i]`   | Get the neutral at `i` percent,
+                        from black at 0 to white at
+                        100.                             | `color`
+|===
+
+WARNING: The ramp has 101 entries, not 256. `gray[128]` and `gray[255]`
 are out of bounds.
 
 NOTE: `grey` is declared `constexpr auto grey = gray;`, so the array decays
 and `grey` is a pointer, not an array. Indexing works as expected, but
 `grey` cannot be used where an array is required, `std::size` for one.
 
-== Example
+=== Example
 
-A panel fill and the brighter shade it takes when hovered, laid over a
-neutral backdrop at 60 percent opacity:
+Fill a panel, and the brighter shade it takes when hovered, over a neutral
+backdrop at 60 percent opacity.
 
 ```c++
 #include <artist/color.hpp>
@@ -251,15 +264,15 @@ neutral backdrop at 60 percent opacity:
 using namespace cycfi::artist;
 extern canvas cnv;                       // the canvas to draw on
 ...
-   constexpr auto panel = colors::dark_slate_blue;
-   constexpr auto hover = panel.level(1.8f);
+   constexpr auto panel = colors::dark_slate_blue;            <1>
+   constexpr auto hover = panel.level(1.8f);                  <2>
 
    auto swatch = [&](rect bounds, bool hovered)
    {
-      cnv.fill_style(colors::gray[20]);
+      cnv.fill_style(colors::gray[20]);                       <3>
       cnv.fill_rect(bounds);
 
-      cnv.fill_style((hovered? hover : panel).opacity(0.6f));
+      cnv.fill_style((hovered? hover : panel).opacity(0.6f)); <4>
       cnv.fill_rect(bounds);
    };
 
@@ -267,7 +280,10 @@ extern canvas cnv;                       // the canvas to draw on
    swatch(rect{280, 20, 480, 110}, true);
 ```
 
-image::foundation/color_example.png[alt="Two blue grey swatches, the second lighter than the first", width=560px, align=center, title="What the code above draws: the panel color, and the brighter shade level gives it.", link={imagesdir}/foundation/color_example.png]
+<1> Get a named color for the panel.
+<2> Get a brighter shade of it for the hover. Both are `constexpr`, so the
+    shade is computed at compile time, not on every frame.
+<3> Fill the backdrop with the neutral at 20 percent.
+<4> Fill the panel color over it at 60 percent opacity.
 
-Both `panel` and `hover` are `constexpr`, so the hover shade is computed at
-compile time rather than on every frame.
+image::foundation/color_example.png[alt="Two blue grey swatches, the second lighter than the first", width=560px, align=center, title="What the code above draws: the panel color, and the brighter shade level gives it.", link={imagesdir}/foundation/color_example.png]

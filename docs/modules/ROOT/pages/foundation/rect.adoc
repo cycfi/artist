@@ -31,97 +31,105 @@ NOTE: `rect.hpp` includes `artist/point.hpp`, so `point`, `extent` and
 == Declaration
 
 ```c++
-   struct rect
-   {
-      constexpr         rect();
-      constexpr         rect(float left, float top,
-                           float right, float bottom);
-      constexpr         rect(point origin, float right, float bottom);
-      constexpr         rect(point top_left, point bottom_right);
-      constexpr         rect(float left, float top, extent size);
-      constexpr         rect(point origin, extent size);
+struct rect
+{
+   constexpr         rect();
+   constexpr         rect(float left, float top, float right, float bottom);
+   constexpr         rect(point origin, float right, float bottom);
+   constexpr         rect(point top_left, point bottom_right);
+   constexpr         rect(float left, float top, extent size);
+   constexpr         rect(point origin, extent size);
 
-      constexpr         rect(rect const&) = default;
-      constexpr rect&   operator=(rect const&) = default;
+   constexpr         rect(rect const&) = default;
+   constexpr rect&   operator=(rect const&) = default;
 
-      constexpr bool    operator==(rect const& other) const;
-      constexpr bool    operator!=(rect const& other) const;
+   constexpr bool    operator==(rect const& other) const;
+   constexpr bool    operator!=(rect const& other) const;
 
-      constexpr bool    is_empty() const;
-      constexpr bool    includes(point p) const;
-      constexpr bool    includes(rect const& other) const;
+   constexpr bool    is_empty() const;
+   constexpr bool    includes(point p) const;
+   constexpr bool    includes(rect const& other) const;
 
-      constexpr float   width() const;
-      constexpr void    width(float width_);
-      constexpr float   height() const;
-      constexpr void    height(float height_);
-      constexpr extent  size() const;
-      constexpr void    size(extent size_);
+   constexpr float   width() const;
+   constexpr void    width(float width_);
+   constexpr float   height() const;
+   constexpr void    height(float height_);
+   constexpr extent  size() const;
+   constexpr void    size(extent size_);
 
-      constexpr point   top_left() const;
-      constexpr point   bottom_right() const;
-      constexpr point   top_right() const;
-      constexpr point   bottom_left() const;
+   constexpr point   top_left() const;
+   constexpr point   bottom_right() const;
+   constexpr point   top_right() const;
+   constexpr point   bottom_left() const;
 
-      constexpr rect    move(float dx, float dy) const;
-      constexpr rect    move_to(float x, float y) const;
-      constexpr rect    inset(float x_inset, float y_inset) const;
-      constexpr rect    inset(float xy_inset) const;
+   constexpr rect    move(float dx, float dy) const;
+   constexpr rect    move_to(float x, float y) const;
+   constexpr rect    inset(float x_inset, float y_inset) const;
+   constexpr rect    inset(float xy_inset) const;
 
-      float             left;
-      float             top;
-      float             right;
-      float             bottom;
-   };
-```
+   float             left;
+   float             top;
+   float             right;
+   float             bottom;
+};
 
-```c++
-   constexpr bool    is_valid(rect const& r);
-   constexpr bool    is_same_size(rect const& a, rect const& b);
-   bool              intersects(rect const& a, rect const& b);
+// Free Functions
+constexpr bool       is_valid(rect const& r);
+constexpr bool       is_same_size(rect const& a, rect const& b);
+bool                 intersects(rect const& a, rect const& b);
 
-   constexpr point   center_point(rect const& r);
-   constexpr float   area(rect const& r);
-   rect              union_(rect const& a, rect const& b);
-   rect              intersection(rect const& a, rect const& b);
+constexpr point      center_point(rect const& r);
+constexpr float      area(rect const& r);
+rect                 union_(rect const& a, rect const& b);
+rect                 intersection(rect const& a, rect const& b);
 
-   constexpr void    clear(rect& r);
-   rect              center(rect const& r, rect const& encl);
-   rect              center_h(rect const& r, rect const& encl);
-   rect              center_v(rect const& r, rect const& encl);
-   rect              align(rect const& r, rect const& encl,
-                        float x_align, float y_align);
-   rect              align_h(rect const& r, rect const& encl,
-                        float x_align);
-   rect              align_v(rect const& r, rect const& encl,
-                        float y_align);
-```
+constexpr void       clear(rect& r);
+rect                 center(rect const& r, rect const& encl);
+rect                 center_h(rect const& r, rect const& encl);
+rect                 center_v(rect const& r, rect const& encl);
+rect                 align(rect const& r, rect const& encl, float x_align, float y_align);
+rect                 align_h(rect const& r, rect const& encl, float x_align);
+rect                 align_v(rect const& r, rect const& encl, float y_align);
 
-```c++
-   constexpr float   axis_extent(rect const& r, axis a);
-   constexpr float   axis_min(rect const& r, axis a);
-   constexpr float   axis_max(rect const& r, axis a);
-   constexpr float&  axis_min(rect& r, axis a);
-   constexpr float&  axis_max(rect& r, axis a);
+constexpr float      axis_extent(rect const& r, axis a);
+constexpr float      axis_min(rect const& r, axis a);
+constexpr float      axis_max(rect const& r, axis a);
+constexpr float&     axis_min(rect& r, axis a);
+constexpr float&     axis_max(rect& r, axis a);
 
-   constexpr rect    make_rect(axis a,
-                        float this_axis_min, float other_axis_min,
-                        float this_axis_max, float other_axis_max);
+constexpr rect       make_rect(
+                        axis a
+                      , float this_axis_min
+                      , float other_axis_min
+                      , float this_axis_max
+                      , float other_axis_max
+                     );
 ```
 
 == Expressions
 
 === Notation
 
-`r`, `r2`         :: Objects of type `rect`.
-`encl`            :: An enclosing `rect`.
-`p`, `p2`         :: Objects of type `point`.
-`e`               :: Object of type `extent`.
-`a`               :: Object of type `axis`.
-`left`, `top`, `right`, `bottom` :: Floating point edge coordinates.
-`x`, `y`          :: Floating point coordinates.
-`w`, `h`          :: A floating point width and height.
-`dx`, `dy`        :: Floating point distances.
+`r`, `a`, `b`     :: Objects of type `rect`.
+`encl`            :: Object of type `rect` that encloses `r`.
+`tl`, `br`        :: Objects of type `point` for the top left and bottom
+                     right corners.
+`p`               :: Object of type `point` to test.
+`e`               :: Object of type `extent` for a size.
+`ax`              :: Object of type `axis`.
+`left`, `top`, `right`, `bottom` :: Floating point values for the edges.
+`x`, `y`          :: Floating point values for the new top left corner.
+`w`, `h`          :: Floating point values for the width and height.
+`dx`, `dy`        :: Floating point values for an offset.
+`d`               :: Floating point value for an inset distance on all
+                     four sides.
+`ix`, `iy`        :: Floating point values for the horizontal and vertical
+                     inset distances.
+`fx`, `fy`        :: Floating point values for the horizontal and vertical
+                     alignment fractions.
+`amin`, `amax`    :: Floating point values for the edges along `ax`.
+`omin`, `omax`    :: Floating point values for the edges along
+                     `other(ax)`.
 
 === Constructors and Assignment
 
@@ -129,82 +137,48 @@ NOTE: `rect.hpp` includes `artist/point.hpp`, so `point`, `extent` and
 |===
 | Expression                        | Semantics
 
-| `rect{}`                          | Default construct `{0, 0, 0, 0}`, an
-                                      empty rect at the origin.
-| `rect{left, top, right, bottom}`  | Construct from the four edges.
-| `rect{origin, right, bottom}`     | Construct from a top left `point`
-                                      and the *absolute* right and bottom
-                                      edges.
-| `rect{top_left, bottom_right}`    | Construct from the two opposite
-                                      corners.
-| `rect{left, top, e}`              | Construct from the top left edges
-                                      and a size. The right edge is
-                                      `left + e.x`, the bottom
-                                      `top + e.y`.
-| `rect{origin, e}`                 | Construct from a top left `point`
-                                      and a size.
-| `rect(r)`                         | Copy construct from `r`.
-| `r = r2`                          | Assign `r2` to `r`.
+| `rect()`                          | Construct an empty `rect` at the
+                                      origin, `{0, 0, 0, 0}`.
+| `rect(left, top, right, bottom)`  | Construct a `rect` given `left`,
+                                      `top`, `right` and `bottom` (edges).
+| `rect(tl, right, bottom)`         | Construct a `rect` given `tl` (top
+                                      left corner) and the *absolute*
+                                      `right` and `bottom` edges.
+| `rect(tl, br)`                    | Construct a `rect` given `tl` and
+                                      `br` (opposite corners).
+| `rect(left, top, e)`              | Construct a `rect` given `left`,
+                                      `top` (top left edges) and `e`
+                                      (size). The right edge is
+                                      `left + e.x`, the bottom `top + e.y`.
+| `rect(tl, e)`                     | Construct a `rect` given `tl` (top
+                                      left corner) and `e` (size).
+| `rect(r)`                         | Copy construct from `rect r`.
+| `a = b`                           | Assign `b` to `a`.
 |===
 
-CAUTION: `rect{origin, right, bottom}` takes *absolute* edges, while
-`rect{origin, e}` takes a size. The two have the same shape at the call
-site and different meanings: `rect{point(10, 10), 100, 100}` is 90 by 90,
-`rect{point(10, 10), extent(100, 100)}` is 100 by 100. Reach for the
-`extent` form whenever the second argument is a size.
-
-NOTE: `rect` has user declared constructors, so it is not an aggregate.
-All four members are set by whichever constructor runs. As with
+NOTE: C++ brace initialization may also be used. `rect` is not an
+aggregate, so braces call the constructors above. As with
 xref:foundation/point.adoc[`point`], brace initialization forbids
 narrowing, so `rect{n, top, right, bottom}` with an `int` `n` does not
 compile; write `rect(n, top, right, bottom)` with parentheses.
 
-=== Comparison
+WARNING: `rect(tl, right, bottom)` takes *absolute* edges, while
+`rect(tl, e)` takes a size. The two have the same shape at the call
+site and different meanings: `rect{point(10, 10), 100, 100}` is 90 by 90,
+`rect{point(10, 10), extent(100, 100)}` is 100 by 100. Reach for the
+`extent` form whenever the second argument is a size.
 
-[cols="1,1,1"]
-|===
-| Expression   | Semantics                                   | Return Type
-
-| `r == r2`    | Compare all four edges. The comparison is
-                 exact, so two rects differing only by
-                 rounding are not equal.                     | `bool`
-| `r != r2`    | The negation of the above.                  | `bool`
-|===
-
-=== Members
-
-The members are public and directly assignable.
+=== Access
 
 [cols="1,1,1"]
 |===
 | Expression  | Semantics                                    | Return Type
 
-| `r.left`    | The left edge, the smaller `x`.              | `float`
-| `r.top`     | The top edge, the smaller `y`.               | `float`
-| `r.right`   | The right edge, the larger `x`.              | `float`
-| `r.bottom`  | The bottom edge, the larger `y`.             | `float`
+| `r.left`    | Access the left edge, the smaller `x`.       | `float`
+| `r.top`     | Access the top edge, the smaller `y`.        | `float`
+| `r.right`   | Access the right edge, the larger `x`.       | `float`
+| `r.bottom`  | Access the bottom edge, the larger `y`.      | `float`
 |===
-
-=== Query
-
-[cols="1,1,1"]
-|===
-| Expression        | Semantics                              | Return Type
-
-| `r.is_empty()`    | `true` if *either* dimension is
-                      degenerate, that is if
-                      `left == right` or `top == bottom`.    | `bool`
-| `r.includes(p)`   | `true` if `p` lies within `r`. The
-                      test is inclusive on all four edges,
-                      so a point on the border is included.  | `bool`
-| `r.includes(r2)`  | `true` if all four edges of `r2` lie
-                      within `r`. Inclusive, so `r`
-                      includes itself.                       | `bool`
-|===
-
-IMPORTANT: `is_empty()` is not `r.size() == extent(0, 0)`. One degenerate
-dimension is enough: `rect(0, 0, 100, 0)` is empty and its `size()` is
-`{100, 0}`.
 
 === Accessors
 
@@ -212,68 +186,68 @@ dimension is enough: `rect(0, 0, 100, 0)` is empty and its `size()` is
 |===
 | Expression          | Semantics                            | Return Type
 
-| `r.width()`         | `right - left`. Negative if `r` is
-                        invalid.                             | `float`
-| `r.height()`        | `bottom - top`. Negative if `r` is
-                        invalid.                             | `float`
-| `r.size()`          | `{width(), height()}` as an
-                        `extent`.                            | `extent`
-| `r.top_left()`      | `{left, top}`.                       | `point`
-| `r.top_right()`     | `{right, top}`.                      | `point`
-| `r.bottom_left()`   | `{left, bottom}`.                    | `point`
-| `r.bottom_right()`  | `{right, bottom}`.                   | `point`
+| `r.width()`         | Get the width, `right - left`,
+                        negative when `right < left`.        | `float`
+| `r.height()`        | Get the height, `bottom - top`,
+                        negative when `bottom < top`.        | `float`
+| `r.size()`          | Get the size, `{width(), height()}`. | `extent`
+| `r.top_left()`      | Get the top left corner,
+                        `{left, top}`.                       | `point`
+| `r.top_right()`     | Get the top right corner,
+                        `{right, top}`.                      | `point`
+| `r.bottom_left()`   | Get the bottom left corner,
+                        `{left, bottom}`.                    | `point`
+| `r.bottom_right()`  | Get the bottom right corner,
+                        `{right, bottom}`.                   | `point`
+| `r.is_empty()`      | Test whether *either* dimension is
+                        zero, `left == right` or
+                        `top == bottom`.                     | `bool`
+| `r.includes(p)`     | Test whether `p` lies within `r`,
+                        borders included.                    | `bool`
+| `a.includes(b)`     | Test whether all four edges of `b`
+                        lie within `a`, borders included, so
+                        a rect includes itself.              | `bool`
 |===
 
-=== Mutators
+NOTE: One zero dimension is enough for `is_empty()`:
+`rect(0, 0, 100, 0)` is empty, and its `size()` is `{100, 0}`.
 
-These modify `r` in place and return nothing, unlike the derivation
-members below.
+=== Mutators
 
 [cols="1,1,1"]
 |===
 | Expression     | Semantics                                 | Return Type
 
-| `r.width(w)`   | Set the width by moving the *right* edge
-                   to `left + w`. The left edge does not
-                   move.                                     | `void`
-| `r.height(h)`  | Set the height by moving the *bottom*
-                   edge to `top + h`. The top edge does not
-                   move.                                     | `void`
-| `r.size(e)`    | Both of the above, from an `extent`.      | `void`
-| `clear(r)`     | Set all four edges to zero, which leaves
-                   an empty rect at the origin. A free
-                   function, not a member.                   | `void`
+| `r.width(w)`   | Set the width, moving the *right* edge to
+                   `left + w`.                               | `void`
+| `r.height(h)`  | Set the height, moving the *bottom* edge
+                   to `top + h`.                             | `void`
+| `r.size(e)`    | Set the width and height from `e`, moving
+                   the right and bottom edges.               | `void`
 |===
 
-`clear` is worth knowing because `inset` calls it; see the caution under
-<<Derivation>>.
-
-=== Derivation
-
-Each is `const` and returns a new rect; `r` is not modified.
+=== Operation
 
 [cols="1,1,1"]
 |===
 | Expression           | Semantics                           | Return Type
 
-| `r.move(dx, dy)`     | A copy of `r` displaced by `dx` and
-                         `dy`. All four edges shift, so the
-                         size is unchanged.                  | `rect`
-| `r.move_to(x, y)`    | A copy of `r` with its *top left
+| `r.move(dx, dy)`     | Get a copy of `r` moved by `dx` and
+                         `dy`, the size unchanged.           | `rect`
+| `r.move_to(x, y)`    | Get a copy of `r` with its *top left
                          corner* at `{x, y}`, the size
                          unchanged.                          | `rect`
-| `r.inset(x, y)`      | A copy of `r` shrunk by `x` on the
-                         left and right and by `y` on the
-                         top and bottom, so the width drops
-                         by `2x` and the height by `2y`. A
-                         negative argument grows the rect.   | `rect`
-| `r.inset(xy)`        | The same distance on both axes.     | `rect`
+| `r.inset(ix, iy)`    | Get a copy of `r` shrunk by `ix` on
+                         the left and right and by `iy` on
+                         the top and bottom.                 | `rect`
+| `r.inset(d)`         | Get a copy of `r` shrunk by `d` on
+                         all four sides.                     | `rect`
 |===
 
-CAUTION: `inset` clamps, and it clamps hard. If the inset would leave an
-invalid rect, the result is not a negative rect but `{0, 0, 0, 0}`: the
-implementation calls `clear` on it, which discards the position as well as
-the size. Over-insetting on one axis alone is enough, so
+WARNING: A negative inset grows the rect, and `inset` clamps hard. If the
+inset would leave an invalid rect, the result is `{0, 0, 0, 0}`: `inset`
+calls `clear` on it, which discards the position as well as the size.
+Over-insetting on one axis alone is enough, so
 `rect(0, 0, 100, 60).inset(40)` is `{0, 0, 0, 0}` rather than a rect
 20 wide. Check `width()` and `height()` against the inset first if the
 distance is not known to be small. This is the opposite of
@@ -283,57 +257,96 @@ and hands back a negative radius.
 NOTE: `move_to` places the *top left corner*, where
 xref:foundation/circle.adoc[`circle::move_to`] places the centre.
 
-NOTE: There is no `inset()` with no arguments. The two overloads take one
-or two distances and neither has a default argument.
-
-== Free Functions
-
-The notation of the previous section carries over.
-
-=== Validity and Measurement
+=== Comparison
 
 [cols="1,1,1"]
 |===
-| Expression            | Semantics                          | Return Type
+| Expression   | Semantics                                   | Return Type
 
-| `is_valid(r)`         | `true` if `+left <= right+` and
-                          `+top <= bottom+`. An empty rect
-                          is valid; an inverted one is not.  | `bool`
-| `is_same_size(r, r2)` | `true` if the widths match and the
-                          heights match. Position is
-                          ignored.                           | `bool`
-| `center_point(r)`     | The midpoint,
-                          `{left + width()/2,
-                          top + height()/2}`.                | `point`
-| `area(r)`             | `width() * height()`. Negative if
-                          exactly one dimension is inverted. | `float`
-| `intersects(r, r2)`   | `true` if the two rects overlap.
-                          Not `constexpr`.                   | `bool`
+| `a == b`     | Equality.                                   | `bool`
+| `a != b`     | Non-Equality.                               | `bool`
 |===
 
-CAUTION: `intersects` is *strict* where `includes` is inclusive. Two rects
+NOTE: The comparison of the four edges is exact, so two rects differing
+only by rounding are not equal.
+
+=== Functions
+
+[cols="1,1,1"]
+|===
+| Expression                  | Semantics                    | Return Type
+
+| `is_valid(r)`               | Test whether `+left <= right+`
+                                and `+top <= bottom+`. An
+                                empty rect is valid.         | `bool`
+| `is_same_size(a, b)`        | Test whether `a` and `b` have
+                                the same width and height,
+                                wherever they are.           | `bool`
+| `intersects(a, b)`          | Test whether `a` and `b`
+                                overlap.                     | `bool`
+| `center_point(r)`           | Get the centre of `r`,
+                                `{left + width()/2,
+                                top + height()/2}`.          | `point`
+| `area(r)`                   | Get the area,
+                                `width() * height()`,
+                                negative when exactly one
+                                dimension is inverted.       | `float`
+| `union_(a, b)`              | Get the smallest rect covering
+                                `a` and `b`: the min of the
+                                left and top edges, the max
+                                of the right and bottom.     | `rect`
+| `intersection(a, b)`        | Get the overlap of `a` and
+                                `b`: the max of the left and
+                                top edges, the min of the
+                                right and bottom.            | `rect`
+| `clear(r)`                  | Set all four edges of `r` to
+                                zero, an empty rect at the
+                                origin.                      | `void`
+| `center(r, encl)`           | Get a copy of `r` centred in
+                                `encl`, the same as
+                                `align(r, encl, 0.5, 0.5)`.  | `rect`
+| `center_h(r, encl)`         | Get a copy of `r` centred
+                                horizontally in `encl`, with
+                                `r.top` kept.                | `rect`
+| `center_v(r, encl)`         | Get a copy of `r` centred
+                                vertically in `encl`, with
+                                `r.left` kept.               | `rect`
+| `align(r, encl, fx, fy)`    | Get a copy of `r` placed in
+                                `encl` at the fractions `fx`
+                                and `fy`: `0` against the
+                                left or top of `encl`, `1`
+                                against the right or bottom,
+                                `0.5` centred.               | `rect`
+| `align_h(r, encl, fx)`      | Get a copy of `r` placed
+                                horizontally in `encl` at the
+                                fraction `fx`, with `r.top`
+                                kept.                        | `rect`
+| `align_v(r, encl, fy)`      | Get a copy of `r` placed
+                                vertically in `encl` at the
+                                fraction `fy`, with `r.left`
+                                kept.                        | `rect`
+| `axis_extent(r, ax)`        | Get the size of `r` along
+                                `ax`: `width()` for
+                                `axis::x`, `height()` for
+                                `axis::y`.                   | `float`
+| `axis_min(r, ax)`           | Access the lower edge along
+                                `ax`: `left` for `axis::x`,
+                                `top` for `axis::y`.         | `float&`, or
+                                                               `float` if `r`
+                                                               is `const`
+| `axis_max(r, ax)`           | Access the upper edge along
+                                `ax`: `right` for `axis::x`,
+                                `bottom` for `axis::y`.      | `float&`, or
+                                                               `float` if `r`
+                                                               is `const`
+|===
+
+NOTE: `intersects` is *strict* where `includes` is inclusive. Two rects
 that share an edge do not intersect, yet each includes the points along
 that edge. `rect(0, 0, 10, 10)` and `rect(10, 0, 20, 10)` give
 `intersects` `false` and both give `includes(point(10, 5))` `true`.
 
-=== Combination
-
-Neither is `constexpr`.
-
-[cols="1,1,1"]
-|===
-| Expression              | Semantics                        | Return Type
-
-| `union_(r, r2)`         | The smallest rect covering both:
-                            the min of the left and top
-                            edges, the max of the right and
-                            bottom.                          | `rect`
-| `intersection(r, r2)`   | The overlap: the max of the left
-                            and top edges, the min of the
-                            right and bottom.                | `rect`
-|===
-
-IMPORTANT: `intersection` does not test for overlap first. On rects that
+WARNING: `intersection` does not test for overlap first. On rects that
 do not intersect it returns an inverted rect, for example
 `{100, 100, 10, 10}`. Guard it with `intersects`, or test the result with
 `is_valid`.
@@ -342,76 +355,45 @@ NOTE: `union_` takes no notice of emptiness, so `union_(rect{}, r)` always
 stretches the result back to the origin. Skip the empty operand rather
 than folding it in.
 
-=== Placement
+The placement functions, `center` to `align_v`, keep the size of `r` and
+never modify `encl`. The fractions are not clamped and nothing requires
+`r` to fit inside `encl`. A fraction outside `0` to `1` places `r` outside
+`encl`, and if `r` is the larger of the two the alignment runs the other
+way, which is occasionally what you want.
 
-Each returns a copy of `r` repositioned inside `encl`; the size is never
-changed and `encl` is never modified. None is `constexpr`.
-
-[cols="1,1,1"]
-|===
-| Expression                  | Semantics                    | Return Type
-
-| `center(r, encl)`           | `r` centred in `encl` on both
-                                axes. The same result as
-                                `align(r, encl, 0.5, 0.5)`.  | `rect`
-| `center_h(r, encl)`         | Centred horizontally. `r.top`
-                                is kept.                     | `rect`
-| `center_v(r, encl)`         | Centred vertically. `r.left`
-                                is kept.                     | `rect`
-| `align(r, encl, x, y)`      | Positioned by two fractions.
-                                `0` puts `r` against the
-                                left or top of `encl`, `1`
-                                against the right or bottom,
-                                `0.5` centres it.            | `rect`
-| `align_h(r, encl, x)`       | Horizontal fraction only.
-                                `r.top` is kept.             | `rect`
-| `align_v(r, encl, y)`       | Vertical fraction only.
-                                `r.left` is kept.            | `rect`
-|===
-
-NOTE: The fractions are not clamped and nothing requires `r` to fit inside
-`encl`. A fraction outside `0` to `1` places `r` outside `encl`, and if
-`r` is the larger of the two the alignment runs the other way, which is
-occasionally what you want.
-
-=== Axis
-
-These take an xref:foundation/point.adoc[`axis`] and pick the matching
-edge or dimension, so a routine can be written once and run on either
-direction. They are the `rect` counterpart of `point::operator[]`.
-
-[cols="1,1,1"]
-|===
-| Expression                | Semantics                      | Return Type
-
-| `axis_extent(r, a)`       | `width()` for `axis::x`,
-                              `height()` for `axis::y`.      | `float`
-| `axis_min(r, a)`          | `left` for `axis::x`, `top` for
-                              `axis::y`. On a non-const
-                              `rect` this is a reference, so
-                              it assigns.                    | `float&`
-| `axis_max(r, a)`          | `right` for `axis::x`, `bottom`
-                              for `axis::y`. Also has a
-                              reference form.                | `float&`
-| `make_rect(a, this_min,
-   other_min, this_max,
-   other_max)`              | Build a rect from
-                              along-the-axis and
-                              across-the-axis edges. For
-                              `axis::x` the arguments are
-                              already `left, top, right,
-                              bottom`; for `axis::y` the
-                              pairs are swapped.             | `rect`
-|===
+The `axis` functions pick the edge or dimension that matches an
+xref:foundation/point.adoc[`axis`], so a routine can be written once and
+run in either direction. They are the `rect` counterpart of
+`point::operator[]`.
 
 NOTE: The four `axis` helpers are defined in `rect.hpp` but do not appear
 in its Free Functions declaration block, so they are easy to miss when
 skimming the header.
 
-== Example
+=== Factory
 
-Laying a fixed size badge into the top right of a bounds rect, with a
-margin, and taking the part of it that is actually on screen:
+[cols="1,1,1"]
+|===
+| Expression                          | Semantics            | Return Type
+
+| `make_rect(ax, amin, omin,
+   amax, omax)`                       | Make a `rect` given
+                                        `amin`, `amax` (the
+                                        edges along `ax`)
+                                        and `omin`, `omax`
+                                        (the edges along
+                                        `other(ax)`). For
+                                        `axis::x` the
+                                        arguments are `left,
+                                        top, right, bottom`;
+                                        for `axis::y` the
+                                        pairs swap.           | `rect`
+|===
+
+=== Example
+
+Lay a fixed size badge into the top right of a card, with a margin, and
+paint only the part of it that is on screen.
 
 ```c++
 #include <artist/rect.hpp>
@@ -431,25 +413,28 @@ extern canvas cnv;                       // the canvas to draw on
    cnv.stroke_round_rect(bounds, 6);
 
    // A fixed size badge, hard right and hard top inside the margin.
-   auto slot = rect{0, 0, extent{64, 24}};
-   auto badge = align(slot, bounds.inset(10), 1.0f, 0.0f);
+   auto slot = rect{0, 0, extent{64, 24}};                    <1>
+   auto badge = align(slot, bounds.inset(10), 1.0f, 0.0f);    <2>
 
    // Only the part of it that is on screen gets painted.
-   if (intersects(badge, clip))
+   if (intersects(badge, clip))                               <3>
    {
-      auto visible = intersection(badge, clip);
+      auto visible = intersection(badge, clip);               <4>
       cnv.fill_style(colors::medium_violet_red);
       cnv.fill_round_rect(visible, 4);
    }
 ```
 
+<1> Construct a 64 by 24 slot from a size.
+<2> Inset the card by 10 for the margin, and align the slot in it, hard
+    right (1.0) and hard top (0.0), without any arithmetic on the edges.
+<3> Test whether any of the badge is on screen.
+<4> Cut the badge back to the part inside `clip`.
+
 image::foundation/rect_example.png[alt="A card with a badge in its top right corner, cut off part way by a clip edge", width=560px, align=center, title="What the code above draws. The red line marks the right edge of clip; it is not drawn by the example.", link={imagesdir}/foundation/rect_example.png]
 
-`align` places the slot without any arithmetic on the edges: 1.0 is hard
-right, 0.0 hard top, and `inset(10)` is the margin. The badge runs past
-`clip`, so `intersection` cuts it back to the part that is on screen.
-
-And the same layout step written once for either axis:
+Write a layout step once for either axis: split a rect into two at a
+fraction along `ax`.
 
 ```c++
 #include <artist/rect.hpp>
@@ -457,13 +442,18 @@ And the same layout step written once for either axis:
 ...
 using namespace cycfi::artist;
 ...
-   // Split r into two rects at a fraction along axis a.
-   constexpr auto split(rect r, axis a, float frac)
-   {
-      auto at = axis_min(r, a) + (axis_extent(r, a) * frac);
-      auto first = r, second = r;
-      axis_max(first, a) = at;
-      axis_min(second, a) = at;
-      return std::make_pair(first, second);
-   }
+constexpr auto split(rect r, axis ax, float frac)
+{
+   auto at = axis_min(r, ax) + (axis_extent(r, ax) * frac);   <1>
+   auto first = r, second = r;
+   axis_max(first, ax) = at;                                  <2>
+   axis_min(second, ax) = at;
+   return std::make_pair(first, second);
+}
 ```
+
+<1> Find the split point along `ax`, from the lower edge and the size
+    along `ax`.
+<2> Move the upper edge of the first half and the lower edge of the
+    second to the split point, through the references `axis_max` and
+    `axis_min` return.

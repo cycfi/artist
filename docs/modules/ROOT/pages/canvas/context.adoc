@@ -5,15 +5,15 @@
 A canvas is a view onto a drawing context that something else owns. It does
 not create the context and does not free it, so it has to be destroyed
 before whatever it borrowed the context from. It cannot be copied, moved or
-assigned either, so it is passed by reference and nothing else;
-`draw(canvas& cnv)` is the shape every host uses.
+assigned, so it is passed by reference; `draw(canvas& cnv)` is the shape
+every host uses.
 
 Usually you do not construct one. The host window creates a canvas for its
 drawing area and hands it to you for the duration of the draw call, and it
 is gone again when the call returns. To draw into an image instead,
 construct one yourself on the context of an
-xref:foundation/image.adoc[`offscreen_image`], which is what the examples
-throughout this reference do.
+xref:foundation/image.adoc[`offscreen_image`]. The examples throughout this
+reference are drawn that way.
 
 Underneath the canvas is the backend's own drawing context, and `impl()`
 hands it back. That is the way out of Artist for the one facility the
@@ -29,51 +29,48 @@ of its own.
 == Declaration
 
 ```c++
-   class canvas
-   {
-   public:
+class canvas
+{
+public:
 
-      explicit          canvas(canvas_impl* context);
-                        canvas(canvas const& rhs) = delete;
-                        canvas(canvas&& rhs) = delete;
-                        ~canvas();
+   explicit          canvas(canvas_impl* context);
+                     ~canvas();
 
-      canvas&           operator=(canvas const& rhs) = delete;
+   canvas_impl*      impl() const;
+   explicit          operator bool() const;
+   bool              operator!() const;
 
-      canvas_impl*      impl() const;
-      explicit          operator bool() const;
-      bool              operator!() const;
-
-      // Transforms, Current Path, Styles, Gradients, Rectangles, Text,
-      // Drawing Images and States, each on its own page.
-   };
+   // Transforms, Current Path, Styles, Gradients, Rectangles, Text,
+   // Drawing Images and States, each on its own page.
+};
 ```
 
 `canvas_impl` is the backend's drawing context type, named once per backend
-in `canvas.hpp`. See <<Backend Access>>.
+in `canvas.hpp`. See <<Accessors>>.
 
 == Expressions
+
+The context members of xref:canvas.adoc[`canvas`] allow these expressions.
 
 === Notation
 
 `cnv`    :: Object of type `canvas`.
-`ctx`    :: A backend drawing context, of type `canvas_impl*`.
+`ctx`    :: Object of type `canvas_impl*`, a backend drawing context.
 
-=== Construction and Lifetime
+=== Constructor
 
 [cols="1,1"]
 |===
 | Expression          | Semantics
 
-| `canvas(ctx)`       | Draw on the context `ctx`, which the canvas
-                        borrows and does not own. Explicit: a
-                        `canvas_impl*` does not convert to a `canvas` on
-                        its own.
-| `canvas(cnv)`       | Deleted. A canvas cannot be copied.
-| `canvas(std::move(cnv))`
-                      | Deleted. A canvas cannot be moved either, so it has
-                        no assignment operator at all.
+| `canvas(ctx)`       | Construct a `canvas` drawing on `ctx`, which it
+                        borrows and does not own.
 |===
+
+NOTE: C++ brace initialization may also be used.
+
+The constructor is explicit, so a `canvas_impl*` does not convert to a
+`canvas` on its own. `canvas` is non-copyable.
 
 The canvas holds the pointer it was given and keeps drawing through it for
 its whole life, so `ctx` has to outlive the canvas. Where the context comes
@@ -97,34 +94,30 @@ the backend's own state is still there. A host that reuses one context for
 more than one canvas saves and restores around each of them, as the Skia
 host does.
 
-=== Validity
+=== Accessors
 
 [cols="1,1,1"]
 |===
 | Expression    | Semantics                               | Return Type
 
-| `bool(cnv)`   | `true` if the canvas holds a context.
-                  Explicit, so it converts in a condition
-                  and nowhere else.                       | `bool`
-| `!cnv`        | The negation of the above.              | `bool`
+| `bool(cnv)`   | Get `true` if the canvas holds a
+                  context.                                | `bool`
+| `!cnv`        | Get `true` if the canvas holds no
+                  context.                                | `bool`
+| `cnv.impl()`  | Get the context the canvas was built
+                  with, the same pointer that was passed
+                  in.                                     | `canvas_impl*`
 |===
 
-CAUTION: There is no portable way to reach a canvas for which these report
-`false`. Only a canvas built from a null `canvas_impl*` is invalid, and the
-Cairo, Skia and Direct2D constructors dereference the pointer before the
-object exists: on Cairo a null context is a measured segmentation fault.
-Quartz 2D and the recording backend survive it and report `false`. Test the
-context before building the canvas, not the canvas after.
+The conversion to `bool` is explicit, so it converts in a condition and
+nowhere else.
 
-=== Backend Access
-
-[cols="1,1,1"]
-|===
-| Expression    | Semantics                               | Return Type
-
-| `cnv.impl()`  | The context the canvas was built with,
-                  the same pointer that was passed in.    | `canvas_impl*`
-|===
+WARNING: There is no portable way to reach a canvas for which `bool(cnv)`
+is `false`. Only a canvas built from a null `canvas_impl*` is invalid, and
+the Cairo, Skia and Direct2D constructors dereference the pointer before
+the object exists: on Cairo a null context is a measured segmentation
+fault. Quartz 2D and the recording backend survive it and report `false`.
+Test the context before building the canvas, not the canvas after.
 
 `canvas_impl` is a different type on every backend, and only one of them is
 declared in any one build. Which one follows from the backend the library
@@ -146,27 +139,27 @@ was compiled for:
                   backend appends to.
 |===
 
-Reach for `impl()` only for a facility of the backend that Artist does not
-expose. Code that does is code that only builds on that backend, which is
-the whole point of the rest of this reference.
+Use `impl()` only for a facility of the backend that Artist does not
+expose. Code that does builds only on that backend; the rest of this
+reference is portable across all of them.
 
 NOTE: The W3C canvas API has no counterpart. A browser context is the
 drawing surface, where an Artist `canvas` is a view onto a surface the host
 made, so Artist needs a way to name the surface and the W3C API does not.
 
-== Example
+=== Example
 
-The function a host calls with the canvas for its drawing area, sizing
-itself to whatever that canvas turns out to be:
+Write the function a host calls with the canvas for its drawing area, sized
+to whatever that canvas turns out to be.
 
 ```c++
 #include <artist/canvas.hpp>
 ...
 using namespace cycfi::artist;
 
-   void draw(canvas& cnv)
+   void draw(canvas& cnv)                                   <1>
    {
-      auto bounds = cnv.clip_extent();
+      auto bounds = cnv.clip_extent();                      <2>
       auto dot = circle{center_point(bounds), 40};
 
       // Set the style, build the path, then paint it.
@@ -181,19 +174,18 @@ using namespace cycfi::artist;
       // The fill above consumed the circle, so it is added again here.
       cnv.stroke_style(rgba(26, 26, 26, 255));
       cnv.line_width(5);
-      cnv.add_circle(dot);
+      cnv.add_circle(dot);                                  <3>
       cnv.stroke();
    }
 ```
 
+<1> Take the canvas by reference, as every host passes it.
+<2> Size the panel to the clip region, so the function fits whatever
+    canvas it is given. The figure below was drawn on a canvas over an
+    xref:foundation/image.adoc[`offscreen_image`], and `clip_extent()`
+    sized the panel to the image.
+<3> Add the circle again for the ring.
+    xref:canvas/current_path.adoc[`fill` consumes the path], so there is
+    nothing left to stroke after the disc is filled.
+
 image::canvas/context_example.png[alt="A blue rounded panel with a white disc at its centre, ringed in near black", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/context_example.png]
-
-Each shape is set up, built into the canvas and painted, in that order. The
-ring is a second pass over the circle the disc was filled from, because
-xref:canvas/current_path.adoc[`fill` consumes the path] and there is
-nothing left to stroke by the time it returns.
-
-Nothing in the function knows where its canvas came from. The figure above
-was drawn by handing it a canvas on an
-xref:foundation/image.adoc[`offscreen_image`] rather than a window, and
-`clip_extent()` sized the panel to the image instead.

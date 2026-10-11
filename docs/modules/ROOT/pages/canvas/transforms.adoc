@@ -33,58 +33,114 @@ back does not depend on what the host or the image set up.
 == Declaration
 
 ```c++
-      void              translate(point p);
-      void              rotate(float rad);
-      void              scale(point p);
-      void              skew(double sx, double sy);
-      point             device_to_user(point p);
-      point             user_to_device(point p);
+class canvas
+{
+public:
 
-      void              translate(float x, float y);
-      void              scale(float xy);
-      void              scale(float x, float y);
-      point             device_to_user(float x, float y);
-      point             user_to_device(float x, float y);
+   void              translate(point p);
+   void              rotate(float rad);
+   void              scale(point p);
+   void              skew(double sx, double sy);
+   point             device_to_user(point p);
+   point             user_to_device(point p);
 
-      affine_transform  transform() const;
-      void              transform(affine_transform const& mat);
-      void              transform(double a, double b, double c, double d, double tx, double ty);
+   void              translate(float x, float y);
+   void              scale(float xy);
+   void              scale(float x, float y);
+   point             device_to_user(float x, float y);
+   point             user_to_device(float x, float y);
+
+   affine_transform  transform() const;
+   void              transform(affine_transform const& mat);
+   void              transform(
+                        double a
+                      , double b
+                      , double c
+                      , double d
+                      , double tx
+                      , double ty
+                     );
+};
 ```
 
 == Expressions
 
+The transform members of xref:canvas.adoc[`canvas`] allow these
+expressions.
+
 === Notation
 
-`cnv`             :: Object of type `canvas`.
-`p`               :: Object of type `point`.
-`x`, `y`          :: `float` coordinates.
-`xy`              :: A `float` scale factor for both axes.
-`rad`             :: A `float`, an angle in radians.
-`sx`, `sy`        :: `double` angles in radians.
-`mat`             :: Object of type
-                     xref:foundation/affine_transform.adoc[affine_transform].
-`a`, `b`, `c`,
-`d`, `tx`, `ty`   :: `double` members of a transform matrix.
+`cnv`                :: Object of type `canvas`.
+`t`                  :: Object of type xref:foundation/point.adoc[point] for
+                        a translation.
+`tx`, `ty`           :: Floating point values for a translation.
+`rad`                :: Floating point value for an angle in radians.
+`k`                  :: Object of type `point` for the x and y scale
+                        factors.
+`sx`, `sy`           :: Floating point values for the x and y scale factors.
+`s`                  :: Floating point value for a scale factor on both
+                        axes.
+`ax`, `ay`           :: Floating point values for the skew angles in
+                        radians.
+`p`                  :: Object of type `point` for a position.
+`x`, `y`             :: Floating point values for a position.
+`mat`                :: Object of type
+                        xref:foundation/affine_transform.adoc[affine_transform].
+`a`, `b`, `c`, `d`   :: Floating point values for the linear part of a
+                        matrix.
 
-=== Composition
+=== Mutators
+
+[cols="1,1,1"]
+|===
+| Expression                          | Semantics                     | Return Type
+
+| `cnv.transform(mat)`                | Set the current matrix to
+                                        `mat`.                        | `void`
+| `cnv.transform(a, b, c, d, tx, ty)` | Set the current matrix to the
+                                        one with members `a`, `b`,
+                                        `c`, `d`, `tx` and `ty`.      | `void`
+|===
+
+=== Accessors
+
+[cols="1,1,1"]
+|===
+| Expression              | Semantics                     | Return Type
+
+| `cnv.transform()`       | Get the current matrix.       | `affine_transform`
+|===
+
+WARNING: The three `transform` calls work on the backend's own matrix, not
+on a matrix relative to what the canvas started with, and its value for the
+same drawing state is not the same on every backend. Replacing it throws
+away whatever the host or the image set up, such as a window offset or an
+image's scale. Use a `new_state` scope to put a transform back, and give
+`transform(mat)` only a matrix that `transform()` returned from the same
+canvas.
+
+=== Operation
 
 [cols="1,1,1"]
 |===
 | Expression              | Semantics                          | Return Type
 
-| `cnv.translate(p)`      | Move the origin of user space by
-                            `p`.                               | `void`
-| `cnv.translate(x, y)`   | As above, by `x` and `y`.          | `void`
+| `cnv.translate(t)`      | Move the origin of user space by
+                            `t`.                               | `void`
+| `cnv.translate(tx, ty)` | Move the origin of user space by
+                            `tx` and `ty`.                     | `void`
 | `cnv.rotate(rad)`       | Rotate user space about its origin
                             by `rad`.                          | `void`
-| `cnv.scale(p)`          | Scale user space by `p.x` and
-                            `p.y`.                             | `void`
-| `cnv.scale(xy)`         | Scale both axes by `xy`.           | `void`
-| `cnv.scale(x, y)`       | Scale by `x` and `y`.              | `void`
-| `cnv.skew(sx, sy)`      | Skew user space: `sx` is the angle
-                            by which y shears with x, and `sy`
-                            the angle by which x shears with
-                            y.                                 | `void`
+| `cnv.scale(k)`          | Scale user space by `k.x` and
+                            `k.y`.                             | `void`
+| `cnv.scale(s)`          | Scale both axes of user space by
+                            `s`.                               | `void`
+| `cnv.scale(sx, sy)`     | Scale user space by `sx` and
+                            `sy`.                              | `void`
+| `cnv.skew(ax, ay)`      | Skew user space by `ax` (the angle
+                            by which y shears with x) and `ay`
+                            (the angle by which x shears with
+                            y).                                | `void`
 |===
 
 Each call composes on top of the transform in effect, so the call nearest
@@ -96,56 +152,35 @@ The angles `skew` takes are the ones
 xref:foundation/affine_transform.adoc[affine_transform] `skew` and
 `make_skew` take.
 
-=== Conversion
+=== Conversions
 
 [cols="1,1,1"]
 |===
 | Expression                    | Semantics                    | Return Type
 
-| `cnv.user_to_device(p)`       | Where the user space point
-                                  `p` lands in device space.   | `point`
-| `cnv.user_to_device(x, y)`    | As above, for the point `x`,
-                                  `y`.                         | `point`
-| `cnv.device_to_user(p)`       | The user space point that the
-                                  device space point `p` came
-                                  from. This is what a mouse
-                                  position needs.              | `point`
-| `cnv.device_to_user(x, y)`    | As above, for the point `x`,
-                                  `y`.                         | `point`
+| `cnv.user_to_device(p)`       | Convert `p` from user space
+                                  to device space.             | `point`
+| `cnv.user_to_device(x, y)`    | Convert the point `x`, `y`
+                                  from user space to device
+                                  space.                       | `point`
+| `cnv.device_to_user(p)`       | Convert `p` from device space
+                                  to user space.               | `point`
+| `cnv.device_to_user(x, y)`    | Convert the point `x`, `y`
+                                  from device space to user
+                                  space.                       | `point`
 |===
 
 The two are inverses of each other, and both are relative to the transform
-the canvas already carried when it was made. On Direct2D both include the
-transform the render target carried instead; the hosts set that to identity
-at the start of each frame, and an image's scale is carried by its DPI
-rather than by a transform, so the results are the same.
+the canvas already carried when it was made. `device_to_user` is the one a
+mouse position needs. On Direct2D both include the transform the render
+target carried instead; the hosts set that to identity at the start of each
+frame, and an image's scale is carried by its DPI, so the results are the
+same.
 
-=== The Matrix
+=== Example
 
-[cols="1,1,1"]
-|===
-| Expression                         | Semantics               | Return Type
-
-| `cnv.transform()`                  | The current matrix.     | `affine_transform`
-| `cnv.transform(mat)`               | Replace the current
-                                       matrix with `mat`.      | `void`
-| `cnv.transform(a, b, c, d,
-    tx, ty)`                          | Replace it with the six
-                                       members of a matrix.    | `void`
-|===
-
-CAUTION: These three work on the backend's own matrix, not on a matrix
-relative to what the canvas started with, and its value for the same
-drawing state is not the same on every backend. Replacing it therefore
-throws away whatever the host or the image set up, such as a window offset
-or an image's scale. Prefer a `new_state` scope for putting a transform
-back, and give `transform(mat)` only a matrix that `transform()` returned
-from the same canvas.
-
-== Example
-
-Rotating a rectangle about its own centre, and putting the transform back
-afterwards:
+Rotate a rectangle about its own centre, and put the transform back
+afterwards.
 
 ```c++
 #include <artist/canvas.hpp>
@@ -159,9 +194,9 @@ extern canvas cnv;              // the canvas to draw on
    {
       auto state = cnv.new_state();
 
-      cnv.translate(center.x, center.y);
-      cnv.rotate(cycfi::pi / 6);
-      cnv.translate(-center.x, -center.y);
+      cnv.translate(center.x, center.y);                    <1>
+      cnv.rotate(cycfi::pi / 6);                            <2>
+      cnv.translate(-center.x, -center.y);                  <3>
 
       cnv.add_rect(r);
       cnv.fill_style(colors::gold);
@@ -169,15 +204,17 @@ extern canvas cnv;              // the canvas to draw on
    }
 
    // The state is back, so this outlines r where it started.
-   cnv.add_rect(r);
+   cnv.add_rect(r);                                         <4>
    cnv.stroke_style(colors::gray[60]);
    cnv.line_width(1);
    cnv.stroke();
 ```
 
-image::canvas/transforms_example.png[alt="A rectangle rotated about its centre, inside the outline of where it started", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/transforms_example.png]
+<1> Move the origin to the centre of `r`. The three calls read outward
+    from the rectangle, so this one is applied last.
+<2> Turn user space a twelfth of a turn about that origin.
+<3> Move the centre of `r` to the origin, applied first.
+<4> Outline `r` after the state ends. The transform is back, so the
+    outline lands square to the axes.
 
-The three calls read outward from the rectangle: move its centre to the
-origin, turn, then move it back. The outline is drawn after the state ends,
-so it lands square to the axes, which is what shows the transform was put
-back.
+image::canvas/transforms_example.png[alt="A rectangle rotated about its centre, inside the outline of where it started", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/transforms_example.png]

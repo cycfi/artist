@@ -7,14 +7,14 @@ carries it as a one-step call. `cnv.fill_rect(r)` paints the rectangle `r`
 then and there. The other seven calls on this page do the same for the
 rounded shape, for stroking, and for a rectangle given as loose scalars.
 
-They paint the rectangle and nothing else. The
-xref:canvas/current_path.adoc[current path] is neither painted along with
-it nor disturbed by it, so a shape half built when one of these is called
-is still half built afterwards. In every other respect they are ordinary
-paints: the ink comes from the xref:canvas/styles.adoc[fill or stroke
-style] then in effect, the geometry goes through the
-xref:canvas/transforms.adoc[current transform], and the line width, joins,
-shadow and fill rule apply as they would to any other shape.
+These calls leave the xref:canvas/current_path.adoc[current path] as it
+is: a shape half built when one of them is called is still half built
+afterwards, and is not painted with the rectangle. In every other respect
+they are ordinary paints: the ink comes from the
+xref:canvas/styles.adoc[fill or stroke style] then in effect, the geometry
+goes through the xref:canvas/transforms.adoc[current transform], and the
+line width, joins, shadow and fill rule apply as they would to any other
+shape.
 
 NOTE: These are the W3C canvas API's `fillRect` and `strokeRect`, and they
 follow its rule of leaving the current default path alone. The two `round`
@@ -30,6 +30,10 @@ the path instead.
 == Declaration
 
 ```c++
+class canvas
+{
+public:
+
    void  fill_rect(rect const& r);
    void  fill_round_rect(rect const& r, float radius);
    void  stroke_rect(rect const& r);
@@ -37,46 +41,71 @@ the path instead.
 
    void  fill_rect(float x, float y, float width, float height);
    void  fill_round_rect(
-            float x, float y,
-            float width, float height,
-            float radius
+            float x
+          , float y
+          , float width
+          , float height
+          , float radius
          );
    void  stroke_rect(float x, float y, float width, float height);
    void  stroke_round_rect(
-            float x, float y,
-            float width, float height,
-            float radius
+            float x
+          , float y
+          , float width
+          , float height
+          , float radius
          );
+};
 ```
 
 == Expressions
+
+The rectangle members of xref:canvas.adoc[`canvas`] allow these
+expressions.
 
 === Notation
 
 `cnv`                :: Object of type `canvas`.
 `r`                  :: Object of type xref:foundation/rect.adoc[rect].
-`x`, `y`             :: `float` coordinates of the rectangle's top left
-                        corner.
-`width`, `height`    :: `float` size of the rectangle.
-`radius`             :: A `float` corner radius.
+`x`, `y`             :: Floating point values for the top left corner.
+`w`, `h`             :: Floating point values for the width and height.
+`radius`             :: Floating point value for the corner radius.
 
-=== Filling
+=== Operation
 
 [cols="1,1,1"]
 |===
-| Expression                        | Semantics                | Return Type
+| Expression                                  | Semantics                       | Return Type
 
-| `cnv.fill_rect(r)`                | Fill the rectangle `r`
-                                      with the fill style.     | `void`
-| `cnv.fill_rect(x, y, width,
-    height)`                         | As above, from a
-                                      position and a size.     | `void`
-| `cnv.fill_round_rect(r, radius)`  | Fill `r` with its corners
-                                      rounded to `radius`.     | `void`
-| `cnv.fill_round_rect(x, y, width,
-    height, radius)`                 | As above, from a
-                                      position and a size.     | `void`
+| `cnv.fill_rect(r)`                          | Fill `r`.                       | `void`
+| `cnv.stroke_rect(r)`                        | Stroke the outline of `r`.      | `void`
+| `cnv.fill_round_rect(r, radius)`            | Fill `r` with its corners
+                                                rounded to `radius`.            | `void`
+| `cnv.stroke_round_rect(r, radius)`          | Stroke the outline of `r` with
+                                                its corners rounded to
+                                                `radius`.                       | `void`
+| `cnv.fill_rect(x, y, w, h)`                 | Fill the rectangle at `x`, `y`
+                                                (top left corner) of size `w`
+                                                by `h`.                         | `void`
+| `cnv.stroke_rect(x, y, w, h)`               | Stroke the outline of the
+                                                rectangle at `x`, `y` (top left
+                                                corner) of size `w` by `h`.     | `void`
+| `cnv.fill_round_rect(x, y, w, h, radius)`   | Fill the rectangle at `x`, `y`
+                                                (top left corner) of size `w`
+                                                by `h`, with its corners
+                                                rounded to `radius`.            | `void`
+| `cnv.stroke_round_rect(x, y, w, h, radius)` | Stroke the outline of the
+                                                rectangle at `x`, `y` (top left
+                                                corner) of size `w` by `h`,
+                                                with its corners rounded to
+                                                `radius`.                       | `void`
 |===
+
+NOTE: The scalar forms take a position and a **size**, not two corners.
+`cnv.fill_rect(20, 20, 40, 40)` covers x 20 to 60, where
+`rect{20, 20, 40, 40}` covers x 20 to 40. The four argument `rect`
+constructor is `left, top, right, bottom`; these calls are
+`x, y, width, height`, as the W3C API has them.
 
 image::canvas/round_rect_radius.png[alt="The same rectangle filled at four corner radii, the last one clamped", width=560px, align=center, title="What radius does, and where it stops.", link={imagesdir}/canvas/round_rect_radius.png]
 
@@ -85,57 +114,33 @@ zero, or any negative radius, gives square corners and the same shape as
 `fill_rect`. A radius past the clamp gives a stadium, the rightmost figure
 above, and never a shape larger than `r`.
 
+TIP: For a pill, give a radius no shape can reach, such as 1000, instead
+of computing one from the height. The clamp turns an oblong rectangle into
+a stadium and a square into a circle. This idiom is the reason the calls
+clamp a large radius rather than reject it.
+
 An empty rectangle, one with zero width or zero height, fills nothing.
-
-NOTE: The scalar forms take a position and a **size**, not two corners.
-`cnv.fill_rect(20, 20, 40, 40)` covers x 20 to 60, where
-`rect{20, 20, 40, 40}` is the empty rectangle at that corner. The four
-argument `rect` constructor is `left, top, right, bottom`; these calls are
-`x, y, width, height`, as the W3C API has them.
-
-=== Stroking
-
-[cols="1,1,1"]
-|===
-| Expression                          | Semantics              | Return Type
-
-| `cnv.stroke_rect(r)`                | Outline the rectangle
-                                        `r` with the stroke
-                                        style.                 | `void`
-| `cnv.stroke_rect(x, y, width,
-    height)`                           | As above, from a
-                                        position and a size.   | `void`
-| `cnv.stroke_round_rect(r, radius)`  | Outline `r` with its
-                                        corners rounded to
-                                        `radius`.              | `void`
-| `cnv.stroke_round_rect(x, y, width,
-    height, radius)`                   | As above, from a
-                                        position and a size.   | `void`
-|===
+It still strokes: a zero height rectangle draws as a line of the stroke's
+width.
 
 image::canvas/stroke_rect.png[alt="A filled rectangle beside a stroked one, the stroke straddling the rectangle's edge", width=560px, align=center, title="A fill stops at the edge; a stroke is centred on it.", link={imagesdir}/canvas/stroke_rect.png]
 
 The outline is centred on the edge, like every other stroke: half the
 xref:canvas/styles.adoc#_line_width[line width] falls inside the rectangle
-and half outside, so the ink covers a band the rectangle grown and shrunk
-by half that width. A `stroke_rect` and a `fill_rect` of the same `r` do
-not cover the same pixels, and a wide outline eats into the space inside.
-Inset the rectangle by half the line width where the outline has to stay
-within a given bound.
+and half outside, so the ink covers the band between `r` grown and `r`
+shrunk by half that width. A `stroke_rect` and a `fill_rect` of the same
+`r` do not cover the same pixels, and a wide outline eats into the space
+inside. Inset the rectangle by half the line width where the outline has to
+stay within a given bound.
 
-`radius` is clamped the same way as for a fill. A corner rounded to a
-radius above zero is an arc, so
-xref:canvas/styles.adoc#_line_join[`line_join`] has nothing left to shape
-there. At a radius of zero or below it shapes the corners as it does on any
-other square corner.
+xref:canvas/styles.adoc#_line_join[`line_join`] shapes only the square
+corners. A corner rounded to a radius above zero is an arc and has no
+join.
 
-Unlike a fill, an empty rectangle still strokes: a zero height rectangle
-draws as a line of the stroke's width.
+=== Example
 
-== Example
-
-A pill shaped toggle with its knob, and a plain outlined frame around the
-pair:
+Draw a pill shaped toggle with its knob, and a plain outlined frame around
+the pair.
 
 ```c++
 #include <artist/canvas.hpp>
@@ -146,14 +151,14 @@ extern canvas cnv;              // the canvas to draw on
    auto frame = rect{20, 20, 280, 100};
    cnv.stroke_style(rgba(93, 93, 93, 255));
    cnv.line_width(2);
-   cnv.stroke_rect(frame);
+   cnv.stroke_rect(frame);                                     <1>
 
    auto track = rect{72, 38, 192, 82};
    cnv.fill_style(rgba(21, 101, 192, 255));
-   cnv.fill_round_rect(track, 1000);      // clamped to a stadium
+   cnv.fill_round_rect(track, 1000);                           <2>
 
    cnv.fill_style(colors::white);
-   cnv.fill_round_rect(rect{152, 42, 188, 78}, 1000);
+   cnv.fill_round_rect(rect{152, 42, 188, 78}, 1000);          <3>
 
    cnv.font(font_descr{"Open Sans", 15});
    cnv.fill_style(rgba(26, 26, 26, 255));
@@ -161,10 +166,10 @@ extern canvas cnv;              // the canvas to draw on
    cnv.fill_text("On", 208, 60);
 ```
 
-image::canvas/rectangles_example.png[alt="An outlined frame around a blue pill shaped toggle with a white knob", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/rectangles_example.png]
+<1> Stroke the frame with a 2 pixel outline.
+<2> Fill the track with a radius of 1000, clamped to half its height: a
+    stadium.
+<3> Fill the knob the same way. The knob is square, so the clamp makes it
+    a circle.
 
-The track and the knob both ask for a radius of 1000, and the clamp takes
-each to half its own shorter side: a stadium for the oblong track, and a
-circle for the square knob. That is the idiom for a pill, and it is why
-these calls clamp rather than reject. Give a radius no shape can reach
-instead of computing one from the height.
+image::canvas/rectangles_example.png[alt="An outlined frame around a blue pill shaped toggle with a white knob", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/rectangles_example.png]

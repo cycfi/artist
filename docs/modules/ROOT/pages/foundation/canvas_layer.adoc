@@ -3,7 +3,7 @@
 == Overview
 
 A `canvas_layer` is an offscreen drawing surface made for one
-xref:canvas.adoc[canvas]. It lives on that canvas's device, the GPU where
+xref:canvas.adoc[canvas]. It lives on that canvas's device, the GPU when
 the canvas renders there, at that canvas's pixel density. Build a `canvas`
 on its `context()` to draw into it, then paint it onto the canvas it was
 made for with `draw`, which is covered under
@@ -41,32 +41,30 @@ wherever the canvas renders.
 == Declaration
 
 ```c++
-   class canvas_layer
-   {
-   public:
+class canvas_layer
+{
+public:
 
-                         canvas_layer(canvas& cnv, extent size);
-                         canvas_layer(canvas_layer&& rhs) noexcept;
-                         ~canvas_layer();
+                      canvas_layer(canvas& cnv, extent size);
+                      canvas_layer(canvas_layer&& rhs) noexcept;
+                      ~canvas_layer();
 
-                         canvas_layer(canvas_layer const&) = delete;
-      canvas_layer&      operator=(canvas_layer const&) = delete;
-      canvas_layer&      operator=(canvas_layer&& rhs) noexcept;
+   canvas_layer&      operator=(canvas_layer&& rhs) noexcept;
 
-      canvas_impl*       context() const;
-      extent             size() const;
-      canvas_layer_impl* impl() const;
-   };
+   canvas_impl*       context() const;
+   extent             size() const;
+   canvas_layer_impl* impl() const;
+};
 ```
 
 == Expressions
 
 === Notation
 
+`layer`, `a`, `b`  :: Objects of type `canvas_layer`.
 `cnv`              :: Object of type xref:canvas.adoc[canvas].
-`layer`, `layer2`  :: Objects of type `canvas_layer`.
-`sz`               :: Object of type xref:foundation/point.adoc[extent], a
-                      width and height in the canvas's units.
+`sz`               :: Object of type xref:foundation/point.adoc[extent] for
+                      a width and height in the canvas's units.
 
 === Constructors and Assignment
 
@@ -74,21 +72,21 @@ wherever the canvas renders.
 |===
 | Expression                     | Semantics
 
-| `canvas_layer(cnv, sz)`        | Construct a transparent layer `sz` units
-                                   in size on the device `cnv` draws to, at
-                                   the pixel density in force on `cnv`.
-                                   Throws `std::runtime_error` if the
-                                   surface cannot be created.
+| `canvas_layer(cnv, sz)`        | Construct a transparent `canvas_layer`
+                                   given `sz` (size) on the device `cnv`
+                                   draws to, at the pixel density in force
+                                   on `cnv`. Throws `std::runtime_error`
+                                   if the surface cannot be created.
 | `canvas_layer(std::move(layer))`
                                  | Move construct from `layer`, which is
                                    left holding nothing.
-| `layer = std::move(layer2)`    | Move assign `layer2` to `layer`. `layer2`
-                                   is left holding nothing.
+| `a = std::move(b)`             | Move assign `b` to `a`. `b` is left
+                                   holding nothing.
 |===
 
-A layer owns its surface, so it can be moved but not copied. Give it a
-positive width and height; a degenerate size is not handled the same way
-on every backend.
+NOTE: C++ brace initialization may also be used. A layer owns its
+surface, so it can be moved but not copied. Give it a positive width and
+height; a degenerate size is not handled the same way on every backend.
 
 WARNING: A moved from `canvas_layer` holds nothing. Destroy it or assign
 to it; calling any other member on it, or passing it to `draw`, is
@@ -100,16 +98,17 @@ undefined behaviour.
 |===
 | Expression        | Semantics                                | Return Type
 
-| `layer.context()` | The backend drawing context, from which
-                      a `canvas` is built:
+| `layer.context()` | Get the backend drawing context, from
+                      which a `canvas` is built:
                       `canvas(layer.context())`. Valid only
                       while the layer lives, so the canvas
                       must not outlive it.                     | `canvas_impl*`
-| `layer.size()`    | The size of the layer in the canvas's
-                      units, as it was constructed. `draw`
-                      puts the layer down at this size.        | `extent`
-| `layer.impl()`    | The backend's layer handle, for code
-                      that talks to the backend directly.      | `canvas_layer_impl*`
+| `layer.size()`    | Get the size of the layer in the
+                      canvas's units, as it was constructed.
+                      `draw` puts the layer down at this
+                      size.                                    | `extent`
+| `layer.impl()`    | Get the backend's layer handle, for
+                      calling the backend directly.            | `canvas_layer_impl*`
 |===
 
 `size()` is in units, not pixels, so a layer covers the same ground
@@ -121,11 +120,10 @@ WARNING: A layer is good only for the canvas it was made for. Drawing it
 onto another canvas, or drawing into it after that canvas is gone, is
 undefined behaviour. Nothing checks this.
 
-== Example
+=== Example
 
-A trace that grows a step at a time. Everything already drawn stays on the
-layer and is never drawn twice; each frame extends it by one step, puts it
-down, and paints the head on the canvas, where it does not persist:
+Draw a trace that grows a step at a time, keeping what is already drawn
+on a layer.
 
 ```c++
 #include <artist/canvas_layer.hpp>
@@ -136,9 +134,9 @@ using namespace cycfi::artist;
 extern canvas cnv;                       // the canvas to draw on
 ...
    // The grid is drawn once, into the layer, and stays there.
-   canvas_layer trace{cnv, extent{520, 120}};
+   canvas_layer trace{cnv, extent{520, 120}};                 <1>
    {
-      canvas lc{trace.context()};
+      canvas lc{trace.context()};                             <2>
       lc.stroke_style(colors::dim_gray);
       lc.line_width(1);
       for (float x = 65; x < 520; x += 65)
@@ -160,7 +158,7 @@ extern canvas cnv;                       // the canvas to draw on
    auto frame = [&](float from, float to)
    {
       {
-         canvas lc{trace.context()};
+         canvas lc{trace.context()};                          <3>
          lc.stroke_style(colors::light_sea_green);
          lc.line_width(2);
          lc.move_to({from, y_at(from)});
@@ -171,9 +169,9 @@ extern canvas cnv;                       // the canvas to draw on
 
       cnv.fill_style(colors::gray[8]);
       cnv.fill_rect(rect{20, 30, 540, 150});
-      cnv.draw(trace, point{20, 30});
+      cnv.draw(trace, point{20, 30});                         <4>
       cnv.fill_style(colors::white);
-      cnv.add_circle(20 + to, 30 + y_at(to), 4);
+      cnv.add_circle(20 + to, 30 + y_at(to), 4);              <5>
       cnv.fill();
    };
 
@@ -181,15 +179,17 @@ extern canvas cnv;                       // the canvas to draw on
       frame(x, x + 40);
 ```
 
+<1> Construct a 520 by 120 layer for `cnv`.
+<2> Stroke the grid into the layer once, through a canvas on its context.
+<3> Extend the trace by one step, through a new canvas on the same
+    context. The layer keeps everything stroked before.
+<4> Put the layer down on the canvas.
+<5> Paint the head on the canvas, where it does not persist. Painted into
+    the layer, it would leave a dot behind at every step.
+
+TIP: What accumulates goes into the layer, and what changes stays on the
+canvas. Drawing straight onto the canvas instead would mean stroking the
+whole curve and the whole grid again every frame, because the canvas is
+cleared and rebuilt each time and the layer is not.
+
 image::foundation/canvas_layer_example.png[alt="A damped sine trace on a dark panel with a grid, a white dot at the right hand end of the trace", width=560px, align=center, title="The last of twelve frames. Each frame stroked forty more units.", link={imagesdir}/foundation/canvas_layer_example.png]
-
-Twelve frames run, and each one strokes forty units of the curve. The
-grid is stroked once, in the block that opens the example. Drawing
-straight onto the canvas instead would mean re-stroking the whole curve
-and the whole grid every frame, because the canvas is cleared and rebuilt
-each time and the layer is not.
-
-The head is the part that moves, so it is painted on the canvas rather than
-into the layer; putting it into the layer would leave a dot behind at every
-step. That is the division to make: what accumulates goes into the layer,
-what changes stays on the canvas.
