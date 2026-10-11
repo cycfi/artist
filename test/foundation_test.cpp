@@ -515,6 +515,12 @@ static void test_affine_apply()
    t.apply(b, 3);
    for (int i = 0; i != 3; ++i)
       CHECK(near_(b[i], expect[i]));
+
+   // N is deduced from the array.
+   point c[3] = {{0, 0}, {1, 1}, {2, 2}};
+   t.apply(c);
+   for (int i = 0; i != 3; ++i)
+      CHECK(near_(c[i], expect[i]));
 }
 
 static void test_affine_inversion()

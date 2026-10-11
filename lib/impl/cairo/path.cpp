@@ -217,6 +217,11 @@ namespace cycfi::artist
          rule == fill_winding ? CAIRO_FILL_RULE_WINDING : CAIRO_FILL_RULE_EVEN_ODD);
    }
 
+   path::fill_rule_enum path::fill_rule() const
+   {
+      return _impl? _impl->fill_rule : fill_winding;
+   }
+
    void path::add_round_rect_impl(rect const& r, float radius)
    {
       if (!_impl) return;

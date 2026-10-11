@@ -408,7 +408,7 @@ namespace cycfi::artist
    {}
 
    font::font(font const& rhs)
-    : _ptr(new font_impl(*rhs._ptr))
+    : _ptr(rhs._ptr? new font_impl(*rhs._ptr) : new font_impl)
    {}
 
    font::font(font&& rhs) noexcept
@@ -427,7 +427,7 @@ namespace cycfi::artist
       if (this != &rhs)
       {
          delete _ptr;
-         _ptr = new font_impl(*rhs._ptr);
+         _ptr = rhs._ptr? new font_impl(*rhs._ptr) : new font_impl;
       }
       return *this;
    }

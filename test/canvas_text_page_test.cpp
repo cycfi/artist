@@ -275,6 +275,34 @@ TEST_CASE("canvas text: Font", "[text]")
    CHECK(restored.ascent == small.ascent);
 }
 
+TEST_CASE("canvas text: copying a moved-from or default font", "[text]")
+{
+   // Copying, or copy assigning, a moved-from or a default font does not
+   // crash. On Cairo and recording the copy is an empty face, as a default
+   // font is: its metrics are zero and measure_text returns zero.
+   font f{font_descr{"Open Sans", 20}};
+   font moved{std::move(f)};
+   font a{f};
+   font b{font_descr{"Open Sans", 20}};
+   b = f;
+   font d;
+   font c{d};
+   font e{font_descr{"Open Sans", 20}};
+   e = d;
+   CHECK(moved.measure_text("MMMM") > 0);
+
+#if defined(ARTIST_CAIRO) || defined(ARTIST_RECORDING)
+   for (font const* p : {&a, &b, &c, &e})
+   {
+      auto m = p->metrics();
+      CHECK(m.ascent == 0);
+      CHECK(m.descent == 0);
+      CHECK(m.leading == 0);
+      CHECK(p->measure_text("MMMM") == 0);
+   }
+#endif
+}
+
 TEST_CASE("canvas text: alignment is saved state", "[text]")
 {
    auto const center = aligned([](canvas& cnv) { cnv.text_align(canvas::center); });

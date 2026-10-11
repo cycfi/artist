@@ -347,11 +347,15 @@ namespace cycfi::artist
       // intersects the canvas's current clip (the scroller/port sets it to the
       // visible viewport; an unclipped surface reports its full bounds). This
       // makes drawing O(visible paragraphs) instead of O(document). Paragraph
-      // offsets (pa.y) are document-relative; p.y is where the document top is
-      // drawn, so the visible document-y band is [clip.top, clip.bottom) - p.y.
+      // offsets (pa.y) are document-relative, but p is the first baseline,
+      // one ascent below the document top. The ascent is not known here and
+      // is at most one line height, so the band is widened by a line height
+      // at the bottom: [clip.top, clip.bottom + line height) - p.y. No
+      // paragraph the clip reaches is skipped; at most one it misses is
+      // drawn at each end.
       rect clip = cnv.clip_extent();
       double top = double(clip.top) - p.y;
-      double bottom = double(clip.bottom) - p.y;
+      double bottom = double(clip.bottom) - p.y + _line_height;
       for (size_type i = para_at_y(top); i < _paras.size(); ++i)
       {
          auto const& pa = _paras[i];

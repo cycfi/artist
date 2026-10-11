@@ -142,4 +142,10 @@ namespace cycfi::artist
          D2D1_FILL_MODE_WINDING : D2D1_FILL_MODE_ALTERNATE
       );
    }
+
+   path::fill_rule_enum path::fill_rule() const
+   {
+      return _impl->fill_rule() == D2D1_FILL_MODE_ALTERNATE?
+         fill_odd_even : fill_winding;
+   }
 }

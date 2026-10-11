@@ -113,7 +113,7 @@ public:
                      );
 
    void              fill_rule(fill_rule_enum rule);
-   fill_rule_enum    fill_rule() const;   // Quartz-2D backend only
+   fill_rule_enum    fill_rule() const;
 
    path_impl*        impl();
    path_impl const*  impl() const;
@@ -221,9 +221,6 @@ string comes from anywhere but a literal in your own source.
                          path it returns
                          `path_impl const*`.                | `path_impl*`
 |===
-
-NOTE: `p.fill_rule()` is compiled only for the Quartz-2D backend. The
-setter is available on all five.
 
 WARNING: `impl` is an escape hatch for backend-specific work. Code that
 uses it is not portable across backends.

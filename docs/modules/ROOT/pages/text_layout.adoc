@@ -304,8 +304,9 @@ editor can call `flow` after every edit, to read the new `height()`, at no
 cost. Lines break and justify as they do in a
 xref:text_run.adoc[text_run].
 
-Only the paragraphs that intersect the canvas's clip are drawn, so drawing
-a long document in a scrolled view costs what is visible.
+Only the paragraphs that intersect the canvas's clip are drawn, and at
+most one more at each end of it, so drawing a long document in a scrolled
+view costs what is visible.
 
 === Factory
 

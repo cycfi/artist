@@ -38,4 +38,11 @@ fill_text [20.00 1011.40 809.58 1029.11] #ffffffff "_red_ rose-tree, and we put 
 fill_text [20.00 1029.11 822.66 1046.81] #ffffffff "know. So you see, Miss, we’re doing our best, afore she comes, to—” At this moment Five, who had been anxiously looking across the"
 fill_text [20.00 1046.81 804.89 1064.51] #ffffffff "garden, called out “The Queen! The Queen!” and the three gardeners instantly threw themselves flat upon their faces. There was a"
 fill_text [20.00 1064.51 469.02 1082.22] #ffffffff "sound of many footsteps, and Alice looked round, eager to see the Queen."
+fill_text [20.00 1099.92 825.75 1117.62] #ffffffff "First came ten soldiers carrying clubs; these were all shaped like the three gardeners, oblong and flat, with their hands and feet at the"
+fill_text [20.00 1117.62 804.36 1135.33] #ffffffff clipped "corners: next the ten courtiers; these were ornamented all over with diamonds, and walked two and two, as the soldiers did. After"
+fill_text [20.00 1135.33 823.56 1153.03] #ffffffff clipped "these came the royal children; there were ten of them, and the little dears came jumping merrily along hand in hand, in couples: they"
+fill_text [20.00 1153.03 834.84 1170.73] #ffffffff clipped "were all ornamented with hearts. Next came the guests, mostly Kings and Queens, and among them Alice recognised the White Rabbit:"
+fill_text [20.00 1170.73 813.38 1188.44] #ffffffff clipped "it was talking in a hurried nervous manner, smiling at everything that was said, and went by without noticing her. Then followed the"
+fill_text [20.00 1188.44 802.29 1206.14] #ffffffff clipped "Knave of Hearts, carrying the King’s crown on a crimson velvet cushion; and, last of all this grand procession, came THE KING AND"
+fill_text [20.00 1206.14 138.31 1223.85] #ffffffff clipped "QUEEN OF HEARTS."
 stroke [671.94 373.32 673.44 392.53] #00beffff width=1.50 cap=0 join=2 miter=10.00

@@ -21,11 +21,13 @@ namespace cycfi::artist
 
    path::path(path const& rhs)
     : _impl(CGPathCreateMutableCopy(rhs._impl))
+    , _fill_rule(rhs._fill_rule)
    {
    }
 
    path::path(path&& rhs)
     : _impl(rhs._impl)
+    , _fill_rule(rhs._fill_rule)
    {
       rhs._impl = nullptr;
    }
@@ -36,6 +38,7 @@ namespace cycfi::artist
       {
          CGPathRelease(_impl);
          _impl = CGPathCreateMutableCopy(rhs.impl());
+         _fill_rule = rhs._fill_rule;
       }
       return *this;
    }
@@ -44,7 +47,10 @@ namespace cycfi::artist
    {
       if (this != &rhs)
       {
+         if (_impl)
+            CGPathRelease(_impl);
          _impl = rhs._impl;
+         _fill_rule = rhs._fill_rule;
          rhs._impl = nullptr;
       }
       return *this;

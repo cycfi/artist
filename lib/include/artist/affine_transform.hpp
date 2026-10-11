@@ -25,7 +25,7 @@ namespace cycfi::artist
       constexpr point                  apply(float x, float y) const;
 
                                        template <std::size_t N>
-      constexpr void                   apply(point p[N]) const;
+      constexpr void                   apply(point (&p)[N]) const;
       constexpr void                   apply(point p[], std::size_t n) const;
 
       double a    = 1.0;
@@ -93,7 +93,7 @@ namespace cycfi::artist
    }
 
    template <std::size_t N>
-   constexpr void affine_transform::apply(point p[N]) const
+   constexpr void affine_transform::apply(point (&p)[N]) const
    {
       apply(p, N);
    }

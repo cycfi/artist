@@ -492,6 +492,11 @@ namespace cycfi::artist
          _impl->rule = rule;
    }
 
+   path::fill_rule_enum path::fill_rule() const
+   {
+      return _impl? _impl->rule : fill_winding;
+   }
+
    void path::add_round_rect_impl(rect const& r, float radius)
    {
       if (_impl)

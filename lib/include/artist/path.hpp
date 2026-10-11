@@ -108,10 +108,7 @@ namespace cycfi::artist
       };
 
       void              fill_rule(fill_rule_enum rule);
-
-#if defined(ARTIST_QUARTZ_2D)
-      fill_rule_enum    fill_rule() const { return _fill_rule; }
-#endif
+      fill_rule_enum    fill_rule() const;
 
       path_impl*        impl();
       path_impl const*  impl() const;
@@ -243,6 +240,11 @@ namespace cycfi::artist
    inline void path::fill_rule(fill_rule_enum rule)
    {
       _fill_rule = rule;
+   }
+
+   inline path::fill_rule_enum path::fill_rule() const
+   {
+      return _fill_rule;
    }
 #endif
 }

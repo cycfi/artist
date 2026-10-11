@@ -45,4 +45,5 @@ fill_text [16.00 798.96 335.85 816.10] #ffffffff "         cairo_append_path(_co
 fill_text [16.00 816.10 265.64 833.25] #ffffffff "         cairo_path_destroy(cp);"
 fill_text [16.00 833.25 70.61 850.39] #ffffffff "      }"
 fill_text [16.00 850.39 47.21 867.54] #ffffffff "   }"
+fill_text [16.00 884.68 335.85 901.83] #ffffffff "   void canvas::clear_rect(rect const& r)"
 stroke [179.08 301.00 180.58 319.65] #00beffff width=1.50 cap=0 join=2 miter=10.00

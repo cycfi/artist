@@ -318,6 +318,26 @@ TEST_CASE("canvas images: Scaling an Image", "[images]")
    }
 
    {
+      // After an empty dest, image or layer, the canvas paints as before.
+      image dst{60, 60, 1};
+      auto src = make_source();
+      render(dst, [&](canvas& cnv)
+      {
+         canvas_layer layer{cnv, extent{20, 20}};
+         cnv.draw(src, rect{10, 10, 10, 40});      // zero width
+         cnv.draw(src, rect{10, 10, 40, 10});      // zero height
+         cnv.draw(layer, rect{10, 10, 10, 40});
+         cnv.fill_style(rgba(0, 255, 0, 255));
+         cnv.fill_rect(rect{0, 0, 60, 30});
+      });
+
+#if !defined(ARTIST_RECORDING)
+      CHECK(is_green(pixel_at(dst, 30, 15)));      // the fill still lands
+      CHECK(clear(pixel_at(dst, 30, 45)));
+#endif
+   }
+
+   {
       // Scaling is smoothed, not nearest neighbour: the seam between the two
       // halves is a gradient a few pixels wide once the image is blown up.
       image dst{80, 20, 1};
@@ -465,8 +485,13 @@ TEST_CASE("canvas images: current behaviour, empty src", "[images]")
       cnv.fill_style(rgba(0, 255, 0, 255));
       cnv.fill_rect(rect{0, 0, 60, 60});
       cnv.draw(src, rect{2, 0, 2, 4}, rect{10, 10, 50, 50});
+      cnv.fill_style(rgba(0, 0, 255, 255));
+      cnv.fill_rect(rect{0, 0, 60, 5});            // paints on every backend
    });
 
+#if !defined(ARTIST_RECORDING)
+   CHECK(is_blue(pixel_at(dst, 30, 2)));
+#endif
 #if defined(ARTIST_CAIRO)
    CHECK(is_green(pixel_at(dst, 20, 30)));         // nothing was painted
    CHECK(is_green(pixel_at(dst, 40, 30)));

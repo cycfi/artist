@@ -1337,6 +1337,13 @@ namespace cycfi::artist
       if (!pic.impl() || !pic.impl()->surface)
          return;
 
+      // An empty src or dest paints nothing. Scaling by zero, or dividing by
+      // a zero src, would leave the Cairo context in an error state that
+      // stops it painting anything afterwards.
+      if (src.width() == 0 || src.height() == 0
+         || dest.width() == 0 || dest.height() == 0)
+         return;
+
       auto s = new_state();
       translate(dest.top_left());
       scale({dest.width() / src.width(), dest.height() / src.height()});
@@ -1371,6 +1378,12 @@ namespace cycfi::artist
    {
       auto* impl = layer.impl();
       if (!impl || !impl->surface)
+         return;
+
+      // An empty dest paints nothing, and leaves the context usable: see the
+      // image draw above.
+      if (impl->width == 0 || impl->height == 0
+         || dest.width() == 0 || dest.height() == 0)
          return;
       cairo_surface_flush(impl->surface);
 

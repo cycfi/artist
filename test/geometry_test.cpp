@@ -1,5 +1,9 @@
 #include "test_support.hpp"
 
+#if defined(ARTIST_QUARTZ_2D)
+#include <CoreGraphics/CoreGraphics.h>
+#endif
+
 TEST_CASE("Scale and Coordinate Conversion")
 {
    // Verify device_to_user / user_to_device are inverses of each other
@@ -143,6 +147,51 @@ TEST_CASE("Path Equality")
       CHECK(!(a == b));
    }
 }
+
+TEST_CASE("Path Fill Rule Round Trip")
+{
+   // A new path starts with the winding rule.
+   path p;
+   CHECK(p.fill_rule() == path::fill_winding);
+
+   // The getter returns what the setter set, on every backend.
+   p.fill_rule(path::fill_odd_even);
+   CHECK(p.fill_rule() == path::fill_odd_even);
+   p.fill_rule(path::fill_winding);
+   CHECK(p.fill_rule() == path::fill_winding);
+
+   // Copies carry the rule.
+   p.fill_rule(path::fill_odd_even);
+   path copied{p};
+   CHECK(copied.fill_rule() == path::fill_odd_even);
+   path assigned;
+   assigned = p;
+   CHECK(assigned.fill_rule() == path::fill_odd_even);
+
+   // So do moves.
+   path moved{std::move(copied)};
+   CHECK(moved.fill_rule() == path::fill_odd_even);
+   path move_assigned;
+   move_assigned = std::move(assigned);
+   CHECK(move_assigned.fill_rule() == path::fill_odd_even);
+}
+
+#if defined(ARTIST_QUARTZ_2D)
+TEST_CASE("Path Move Assignment Releases The Old Path")
+{
+   path a{rect{0, 0, 10, 10}};
+   path b{circle{5, 5, 5}};
+
+   // Hold the old CGPath past the assignment, then check that the
+   // assignment dropped the path's own reference to it.
+   auto old = a.impl();
+   CGPathRetain(old);
+   REQUIRE(CFGetRetainCount(old) == 2);
+   a = std::move(b);
+   CHECK(CFGetRetainCount(old) == 1);
+   CGPathRelease(old);
+}
+#endif
 
 TEST_CASE("Image Pixel Round Trip")
 {

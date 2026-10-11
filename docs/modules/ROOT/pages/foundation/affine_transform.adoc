@@ -48,7 +48,7 @@ struct affine_transform
    constexpr point                  apply(float x, float y) const;
 
                                     template <std::size_t N>
-   constexpr void                   apply(point p[N]) const;
+   constexpr void                   apply(point (&p)[N]) const;
    constexpr void                   apply(point p[], std::size_t n) const;
 
    double a    = 1.0;
@@ -162,7 +162,7 @@ A point `{x, y}` maps to `{a * x + c * y + tx, b * x + d * y + ty}`.
 | `t.apply(p)`           | Map `p` through `t`.          | `point`
 | `t.apply(x, y)`        | Map the point `{x, y}`
                            through `t`.                  | `point`
-| `t.apply<N>(pts)`      | Map the first `N` points of
+| `t.apply(pts)`         | Map every point of the array
                            `pts` in place.               | `void`
 | `t.apply(pts, n)`      | Map the first `n` points of
                            `pts` in place.               | `void`
@@ -172,9 +172,9 @@ WARNING: If the determinant, `a * d - c * b`, is zero, `t` is not
 invertible and `invert` returns `t` unchanged. No error is reported, so
 check the determinant yourself if a degenerate transform is possible.
 
-NOTE: `N` cannot be deduced from an array parameter, so `t.apply<N>(pts)`
-must be given the count as an explicit template argument. The arithmetic
-is done in `double` and narrowed to the `float` members of `point`.
+NOTE: `t.apply(pts)` deduces the count from the array type of `pts`. The
+arithmetic is done in `double` and narrowed to the `float` members of
+`point`.
 
 === Comparison
 

@@ -104,6 +104,7 @@ namespace cycfi::artist::d2d
       bool                 empty() const;
       void                 clear();
       void                 fill_rule(fill_mode mode);
+      fill_mode            fill_rule() const   { return _mode; }
 
       void                 add(rect r);
       void                 add(rect r, float radius);

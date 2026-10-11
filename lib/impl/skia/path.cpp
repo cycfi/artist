@@ -136,6 +136,12 @@ namespace cycfi::artist
       _impl->setFillType(rule == fill_winding? SkPathFillType::kWinding : SkPathFillType::kEvenOdd);
    }
 
+   path::fill_rule_enum path::fill_rule() const
+   {
+      return _impl->fillType() == SkPathFillType::kEvenOdd?
+         fill_odd_even : fill_winding;
+   }
+
    void path::add_round_rect_impl(rect const& r, float radius)
    {
       SkRRect rrect;

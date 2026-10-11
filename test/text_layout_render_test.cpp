@@ -152,3 +152,41 @@ TEST_CASE("text_layout incremental edit equals full rebuild")
       CHECK(b.y == Approx(a.y).margin(0.01));
    }
 }
+
+TEST_CASE("text_layout draws a first line the clip cuts through")
+{
+   // The draw point is the first baseline, so the first line's top is one
+   // ascent above it. A clip that ends between that top and the baseline
+   // shows the top of the line, so the paragraph is drawn.
+   auto const f = font_descr{"Open Sans", 20};
+   auto const m = font{f}.metrics();
+   auto ex = make_text_layout(f, U"MMMM");
+   ex.flow(1000);
+
+   float const baseline = 40;
+   float const clip_bottom = baseline - m.ascent / 2;
+   image img{100, 60, 1};
+   {
+      offscreen_image ctx{img};
+      canvas cnv{ctx.context()};
+      cnv.add_rect(rect{0, 0, 100, clip_bottom});
+      cnv.clip();
+      ex.draw(cnv, {10, baseline});
+   }
+
+#if defined(ARTIST_RECORDING)
+   REQUIRE(recorded(img).size() == 1);
+   CHECK(recorded(img, 0).kind == recording::op::fill_text);
+   CHECK(recorded(img, 0).visible);
+#else
+   // Ink above the clip bottom: the top half of the capitals.
+   auto p = reinterpret_cast<std::uint8_t const*>(img.pixels());
+   int const w = int(img.bitmap_size().x);
+   int ink = 0;
+   for (int y = int(baseline - m.ascent); y < int(clip_bottom); ++y)
+      for (int x = 0; x != w; ++x)
+         if (p[4 * (y * w + x) + 3] > 200)
+            ++ink;
+   CHECK(ink > 0);
+#endif
+}
