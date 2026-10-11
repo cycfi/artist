@@ -22,6 +22,8 @@ They behave as the W3C API specifies, the same on every backend, with one
 exception: `darker` takes the smaller of the two colors (W3C `darken`) on
 every backend, an approximation of the W3C plus-darker formula.
 
+NOTE: See xref:canvas.adoc[Canvas] for the drawing model and an overview of the canvas.
+
 == Include
 
 ```c++

@@ -34,6 +34,8 @@ drawing and leaves the pixels untouched. The canvas must not outlive the
 `offscreen_image`. The <<_example_2,Offscreen Image example>> shows the
 pattern.
 
+NOTE: See xref:foundation.adoc[Foundation] for an overview of the foundation classes.
+
 == Image
 
 === Include

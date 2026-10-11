@@ -17,6 +17,8 @@ want.
 The library ships a large set of named colors and a neutral gray ramp in
 the `cycfi::artist::colors` namespace. See <<Predefined Colors>>.
 
+NOTE: See xref:foundation.adoc[Foundation] for an overview of the foundation classes.
+
 == Predefined Colors
 
 The `cycfi::artist::colors` namespace holds 131 named colors and a 101

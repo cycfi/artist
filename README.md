@@ -20,22 +20,34 @@ graphics.
 
 ## Backends
 
-Artist supports three rendering backends. Only one backend is active per build.
+Artist supports five rendering backends. Only one backend is active per build.
 
 | Backend    | Platform        | CMake option          | Default |
 |------------|-----------------|-----------------------|---------|
 | Quartz-2D  | macOS           | `ARTIST_QUARTZ_2D=ON` | macOS   |
-| Skia       | macOS, Linux, Windows | `ARTIST_SKIA=ON` | Linux, Windows |
-| Cairo      | macOS, Linux, Windows | `ARTIST_CAIRO=ON` | off     |
+| Direct2D   | Windows         | `ARTIST_DIRECT2D=ON`  | Windows |
+| Skia       | macOS, Linux, Windows | `ARTIST_SKIA=ON` | off     |
+| Cairo      | macOS, Linux, Windows | `ARTIST_CAIRO=ON` | Linux and others |
+| Recording  | macOS, Linux, Windows | `ARTIST_RECORDING=ON` | off |
+
+With no backend option set, CMake uses the platform's native backend.
+Enabling one backend automatically disables the others. The recording
+backend draws nothing: it keeps a journal of the drawing calls, for tests.
+See [Setup and Installation](https://cycfi.github.io/artist/artist/v1.0-dev/setup.html)
+for Direct2D and the recording backend.
 
 ### Building with Skia
 
-Skia is the default backend on Linux and Windows. On macOS, Skia is built via
+Skia is available on macOS, Linux and Windows, and is the default on none of
+them. By default CMake downloads a prebuilt Skia bundle, so `-DARTIST_SKIA=ON`
+alone is enough. To build Skia from source instead, use
 [vcpkg](https://vcpkg.io/), which is included as a git submodule at
-`lib/external/vcpkg/`. Bootstrap it once, then configure normally:
+`lib/external/vcpkg/`. Check it out and bootstrap it once, then configure with
+its toolchain file:
 
 ```sh
-# One-time bootstrap (already done if you cloned with --recurse-submodules)
+# One-time checkout and bootstrap (--recurse-submodules does not fetch vcpkg)
+git submodule update --init --checkout lib/external/vcpkg
 lib/external/vcpkg/bootstrap-vcpkg.sh -disableMetrics   # macOS/Linux
 lib\external\vcpkg\bootstrap-vcpkg.bat -disableMetrics  # Windows
 
@@ -47,8 +59,10 @@ cmake --build build-skia
 
 ### Building with Cairo
 
-Cairo is an optional backend, disabled by default. Enabling `ARTIST_CAIRO`
-automatically disables `ARTIST_SKIA` and `ARTIST_QUARTZ_2D`.
+Cairo is the default backend on Linux, and on any platform other than macOS
+and Windows. On macOS and Windows, CMake downloads a prebuilt bundle of Cairo
+and its dependencies, so `-DARTIST_CAIRO=ON` is all it takes; configure with
+`-DARTIST_CAIRO_PREBUILT=OFF` to use your own libraries instead.
 
 #### Linux
 
@@ -60,6 +74,7 @@ sudo apt-get install -y \
   libfontconfig1-dev \
   libfreetype6-dev \
   libharfbuzz-dev \
+  libwebp-dev \
   pkg-config
 
 cmake -S . -B build-cairo -DARTIST_CAIRO=ON
@@ -69,18 +84,20 @@ cmake --build build-cairo
 #### macOS (Homebrew)
 
 ```sh
-brew install cairo fontconfig freetype harfbuzz ninja
+brew install cairo fontconfig freetype harfbuzz webp pkgconf ninja
 
-cmake -S . -B build-cairo -DARTIST_CAIRO=ON
+cmake -S . -B build-cairo -DARTIST_CAIRO=ON -DARTIST_CAIRO_PREBUILT=OFF
 cmake --build build-cairo
 ```
 
 #### Windows
 
-Dependencies are managed via the bundled vcpkg submodule — no separate
-installation needed. Bootstrap vcpkg once, then pass the toolchain file:
+The prebuilt bundle is the default. To build the dependencies from source
+instead, use the bundled vcpkg submodule (no separate installation needed).
+Check it out and bootstrap it once, then pass the toolchain file:
 
 ```sh
+git submodule update --init --checkout lib/external/vcpkg
 lib\external\vcpkg\bootstrap-vcpkg.bat -disableMetrics
 
 cmake -S . -B build-cairo -DARTIST_CAIRO=ON ^
@@ -88,16 +105,16 @@ cmake -S . -B build-cairo -DARTIST_CAIRO=ON ^
 cmake --build build-cairo
 ```
 
-vcpkg will build cairo, freetype, fontconfig, and harfbuzz from source on the
-first run (~15–20 min). Subsequent builds reuse the cached `vcpkg_installed/`
+vcpkg will build cairo, freetype, fontconfig, harfbuzz, libwebp, and pkgconf
+from source on the first run (~15–20 min). Subsequent builds reuse the cached `vcpkg_installed/`
 directory.
 
 ### Cairo: supported platforms and known limitations
 
 **Supported:**
 - Offscreen image surfaces on macOS, Linux, and Windows.
-- Live window rendering on macOS (`cairo_app.mm`), Linux/GTK (`cairo_app.cpp`),
-  and Windows/Win32 (`cairo_app.cpp`).
+- Live window rendering on macOS (`cairo_app.mm`), Linux (GTK3, Wayland and
+  X11 hosts, `cairo_app.cpp`), and Windows/Win32 (`cairo_app.cpp`).
 - Visual test suite with goldens for macOS, Linux, and Windows.
 - CI build and visual tests on Ubuntu/GCC, macOS/Clang, and Windows/MSVC.
 
@@ -108,7 +125,7 @@ directory.
   high-frequency redraws may be CPU-intensive.
 - `darker` composite op uses `CAIRO_OPERATOR_DARKEN` (channel-min) as a known
   approximation of the W3C PlusDarker formula `max(0, Cs+Cd-1)`. No exact
-  Cairo equivalent exists. Quartz-2D is exact; Skia has the same approximation.
+  Cairo equivalent exists. Every backend uses the same approximation.
 - Text rendering uses HarfBuzz for shaping (OpenType GSUB/GPOS), FreeType for
   rasterization, and Fontconfig for font selection. Standard ligatures (`liga`)
   and kerning are active. Deferred: font fallback, bidirectional text, complex

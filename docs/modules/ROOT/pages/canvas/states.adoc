@@ -14,10 +14,17 @@ everything drawn after it, and a clip in particular can only ever be
 narrowed, never widened. Saving first and restoring at the end is the only
 way to hand the canvas back as it was found.
 
-`cnv.new_state()` is the whole interface. It returns an object that pushes
-the state on construction and pops it when it goes out of scope, including
-when an exception carries you out of the block. There is no way to push or
-pop on its own.
+`cnv.new_state()` returns an object that pushes the state on construction
+and pops it when it goes out of scope, including when an exception carries
+you out of the block. There is no way to push or pop on its own.
+
+`cnv.new_group(opacity)` pushes the state in the same way and also opens a
+group. What is drawn while the group is open is composited onto the canvas
+as one when the object goes out of scope, at the group's opacity, and then
+the state is popped. Shapes that overlap inside a group do not show through
+each other: two red squares in a group at half opacity tint the canvas
+evenly, no darker where they overlap. Groups nest, and their opacities
+multiply.
 
 The bundle holds the xref:canvas/styles.adoc[fill and stroke styles],
 whether a colour or a gradient, the line width, cap, join and miter limit,
@@ -37,6 +44,8 @@ excludes the current default path and the bitmap, and a `new_state` scope
 is its `save` and `restore` pair. Artist does not expose those two
 separately.
 
+NOTE: See xref:canvas.adoc[Canvas] for the drawing model and an overview of the canvas.
+
 == Design Rationale
 
 The push and the pop are paired by the language: the object `new_state`
@@ -44,7 +53,8 @@ returns pops in its destructor, so the two halves cannot drift apart as the
 code between them grows. The underlying `save` and `restore` are private,
 and `canvas::state` is their only caller. The W3C API exposes the two
 separately and leaves an unmatched `restore` as a silent no-op; a scope
-makes that mistake unwritable.
+makes that mistake unwritable. A group's start and end are paired the same
+way, by the object `new_group` returns.
 
 == Include
 
@@ -71,6 +81,19 @@ public:
    };
 
    state       new_state();
+
+   class group
+   {
+   public:
+
+               group(canvas& cnv, float opacity);
+               group(group&& rhs) noexcept;
+               ~group();
+
+      group&   operator=(group&& rhs) noexcept;
+   };
+
+   group       new_group(float opacity);
 };
 ```
 
@@ -82,6 +105,9 @@ The state members of xref:canvas.adoc[`canvas`] allow these expressions.
 
 `cnv`             :: Object of type `canvas`.
 `s`, `a`, `b`     :: Objects of type `canvas::state`.
+`g`, `c`, `d`     :: Objects of type `canvas::group`.
+`o`               :: Floating point value for an opacity, from 0
+                     (transparent) to 1 (opaque).
 
 === Constructors and Assignment
 
@@ -95,6 +121,14 @@ The state members of xref:canvas.adoc[`canvas`] allow these expressions.
                                      its save.
 | `a = std::move(b)`               | Move assign `b` to `a`, taking over its
                                      save.
+| `canvas::group(cnv, o)`          | Construct a `canvas::group` that pushes
+                                     a copy of the drawing state of `cnv`
+                                     and opens a group at opacity `o`.
+| `canvas::group(std::move(g))`    | Move construct from `g`, taking over
+                                     its group.
+| `c = std::move(d)`               | Move assign `d` to `c`, ending the
+                                     group `c` held, then taking over the
+                                     group of `d`.
 |===
 
 NOTE: C++ brace initialization may also be used.
@@ -109,6 +143,11 @@ overwrites whatever save `a` was holding without popping it, so that entry
 stays on the stack for the rest of the drawing. Assign only over a `state`
 that has already been moved from.
 
+NOTE: `canvas::group` is non-copyable too, and a moved-from group holds
+nothing. Its move assignment differs from that of `state`: `c = std::move(d)`
+first ends the group `c` was holding, compositing it and popping its state,
+so no entry is left on the stack.
+
 === Operation
 
 [cols="1,1,1"]
@@ -119,11 +158,20 @@ that has already been moved from.
                         state and return a
                         `canvas::state` that pops it
                         when destroyed.                | `canvas::state`
+| `cnv.new_group(o)`  | Push a copy of the drawing
+                        state, open a group at opacity
+                        `o`, and return a
+                        `canvas::group` that composites
+                        the group and pops the state
+                        when destroyed.                | `canvas::group`
 |===
 
 Hold the result in a named local. A temporary is destroyed at the end of
 the full expression, so `cnv.new_state();` on its own pushes and pops the
-state and protects nothing.
+state and protects nothing. The same goes for `new_group`.
+
+NOTE: The recording backend journals what is drawn inside a group as it
+would outside one. It records no group and no opacity.
 
 image::canvas/state_stack.png[alt="Five swatches painted by the same statement, their colours following a nested pair of scopes", width=560px, align=center, title="One statement, five results: the fill style follows the stack.", link={imagesdir}/canvas/state_stack.png]
 
@@ -192,3 +240,34 @@ extern canvas cnv;              // the canvas to draw on
     hand.
 
 image::canvas/states_example.png[alt="A blue panel with a rotated white label cut off at its corner, and a dark square outside it", width=560px, align=center, title="What the code above draws.", link={imagesdir}/canvas/states_example.png]
+
+Fade two overlapping squares as one shape, and leave the canvas as it was
+found.
+
+```c++
+#include <artist/canvas.hpp>
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+...
+   cnv.fill_style(colors::navy_blue);
+
+   {
+      auto g = cnv.new_group(0.5);                          <1>
+      cnv.fill_style(colors::red);
+      cnv.fill_rect(10, 10, 50, 50);
+      cnv.fill_rect(40, 40, 50, 50);                        <2>
+   }                                                        <3>
+
+   cnv.fill_rect(100, 10, 50, 50);                          <4>
+```
+
+<1> Open a group at half opacity. It saves the drawing state, as
+    `new_state` does.
+<2> Overlap the first square. Inside the group the second square covers
+    it, opaque.
+<3> End the group. The two squares are composited onto the canvas as one
+    shape at half opacity, no darker where they overlap, and the state is
+    popped.
+<4> Fill a square after the group. The fill style is navy blue again, and
+    the square is opaque.

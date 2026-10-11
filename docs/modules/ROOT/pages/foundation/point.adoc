@@ -28,6 +28,8 @@ The width is `e.x` and the height is `e.y`. Only
 xref:foundation/rect.adoc[`rect`] spells the two out, through `width()`
 and `height()`.
 
+NOTE: See xref:foundation.adoc[Foundation] for an overview of the foundation classes.
+
 == Axis
 
 === Include

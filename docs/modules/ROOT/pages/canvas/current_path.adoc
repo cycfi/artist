@@ -23,6 +23,8 @@ here. In the W3C API `fill()` and `stroke()` leave the path in place, and
 only `beginPath()` clears it. In Artist they consume it, and
 `fill_preserve` and `stroke_preserve` are the calls that do not.
 
+NOTE: See xref:canvas.adoc[Canvas] for the drawing model and an overview of the canvas.
+
 == Backend Differences
 
 The current path depends on the backend more than any other part of the

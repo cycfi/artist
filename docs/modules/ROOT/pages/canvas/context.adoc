@@ -20,6 +20,8 @@ hands it back. That is the way out of Artist for the one facility the
 library does not wrap, and the way in for a host that already has a context
 of its own.
 
+NOTE: See xref:canvas.adoc[Canvas] for the drawing model and an overview of the canvas.
+
 == Include
 
 ```c++

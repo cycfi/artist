@@ -12,9 +12,9 @@ xref:canvas/images.adoc#_drawing_a_layer[Drawing Images].
 A layer starts fully transparent and keeps whatever is drawn into it.
 Nothing is cleared between one `draw` and the next, so a layer holds the
 drawing that accumulates, or that is put down again unchanged frame after
-frame, and the canvas itself takes only what changes. `clear_rect` on the
-layer's own canvas puts a region back to transparent. The <<Example>> is
-built that way.
+frame, and the canvas itself takes only what changes. The <<Example>> is
+built that way. `clear_rect` on the layer's own canvas puts a region back
+to transparent.
 
 A layer is not an xref:foundation/image.adoc[image]. It offers no access
 to its pixels and cannot be saved, and it is good only for the canvas it
@@ -31,6 +31,8 @@ constructed, from the canvas's device and from the scale in force in the
 current transform. Construct the layer at the density it is to be drawn
 at, before scaling the canvas for anything else, and it stays sharp
 wherever the canvas renders.
+
+NOTE: See xref:foundation.adoc[Foundation] for an overview of the foundation classes.
 
 == Include
 

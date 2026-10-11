@@ -14,6 +14,8 @@ xref:foundation/rect.adoc[Rect], where nearly everything is `constexpr`.
 NOTE: `circle.hpp` includes `artist/rect.hpp`, which in turn includes
 `artist/point.hpp`, so `rect`, `point` and `extent` come with it.
 
+NOTE: See xref:foundation.adoc[Foundation] for an overview of the foundation classes.
+
 == Include
 
 ```c++

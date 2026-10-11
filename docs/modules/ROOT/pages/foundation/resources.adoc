@@ -15,6 +15,8 @@ machinery; see xref:foundation/font.adoc[Font].
 The list is guarded by a mutex, so `add_search_path` may be called from
 any thread, including while another thread is searching.
 
+NOTE: See xref:foundation.adoc[Foundation] for an overview of the foundation classes.
+
 == Include
 
 ```c++

@@ -25,6 +25,8 @@ its scale. A 2x image covers the same ground as a 1x image of the same
 NOTE: These are the W3C canvas API's `drawImage`, in its three argument
 counts, spelled as C++ overloads.
 
+NOTE: See xref:canvas.adoc[Canvas] for the drawing model and an overview of the canvas.
+
 == Include
 
 ```c++

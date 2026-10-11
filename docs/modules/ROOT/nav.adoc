@@ -1,4 +1,4 @@
-* xref:index.adoc[Introduction]
+* xref:index.adoc[Artist 2D Canvas Library]
 * xref:setup.adoc[Setup and Installation]
 * xref:backends.adoc[Backends]
 * xref:gallery.adoc[Gallery]
@@ -26,3 +26,4 @@
 *** xref:canvas/context.adoc[Context]
 ** xref:text_run.adoc[Text Run]
 ** xref:text_layout.adoc[Text Layout]
+** xref:recording.adoc[Recording]

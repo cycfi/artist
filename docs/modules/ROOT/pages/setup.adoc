@@ -71,18 +71,6 @@ Direct2D on Windows, Quartz-2D on macOS, Cairo elsewhere. Enabling one
 backend automatically disables the others. If more than one is enabled,
 the first of recording, Direct2D, Cairo, Skia and Quartz-2D wins.
 
-Direct2D uses the Windows system libraries (Direct2D, DirectWrite, WIC),
-plus libwebp's decoder, since WIC has no WebP codec. A libwebp found on
-`CMAKE_PREFIX_PATH` is used; otherwise CMake fetches libwebp's source and
-builds only the decoder. It needs MSVC v14.44 or newer (see
-<<Windows toolchain notes>>).
-
-The recording backend draws nothing: it records the drawing calls, for
-tests and headless use. It measures and shapes text with real fonts
-through FreeType, Fontconfig and HarfBuzz, which come from the same
-places as Cairo's (see <<Building with Cairo>>). The examples have no
-recording host, so configure it with `-DARTIST_BUILD_EXAMPLES=OFF`.
-
 == Building with Skia
 
 Skia is available on macOS, Linux and Windows, and is the default on none
@@ -250,6 +238,35 @@ brew install ninja
 cmake -S . -B build-quartz2d -DARTIST_QUARTZ_2D=ON \
   -DARTIST_BUILD_EXAMPLES=ON -DARTIST_BUILD_TESTS=ON -G Ninja
 cmake --build build-quartz2d
+----
+
+== Building with Direct2D (Windows)
+
+Direct2D is the default backend on Windows. It uses the Windows system
+libraries (Direct2D, DirectWrite, WIC), plus libwebp's decoder, since WIC
+has no WebP codec. A libwebp found on `CMAKE_PREFIX_PATH` is used;
+otherwise CMake fetches libwebp's source and builds only the decoder. It
+needs MSVC v14.44 or newer (see <<Windows toolchain notes>>).
+
+[source,bat]
+----
+cmake -S . -B build-direct2d -DARTIST_DIRECT2D=ON
+cmake --build build-direct2d --config Release
+----
+
+== Building with Recording
+
+The recording backend draws nothing: it records the drawing calls, for
+tests and headless use (see xref:recording.adoc[Recording]). It measures
+and shapes text with real fonts through FreeType, Fontconfig and
+HarfBuzz, which come from the same places as Cairo's (see
+<<Building with Cairo>>). The examples have no recording host, so
+configure it with `-DARTIST_BUILD_EXAMPLES=OFF`:
+
+[source,sh]
+----
+cmake -S . -B build-recording -DARTIST_RECORDING=ON -DARTIST_BUILD_EXAMPLES=OFF
+cmake --build build-recording
 ----
 
 == Windows toolchain notes

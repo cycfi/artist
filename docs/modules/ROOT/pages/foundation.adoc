@@ -1,8 +1,11 @@
 = Foundation
 
+== Overview
+
 The Foundation classes provide support for the Artist library, especially
 for the `canvas` class. They are the geometry, color and font types that
-the drawing calls are expressed in.
+the drawing calls are expressed in, the image and layer types a canvas
+paints, and the lookup that finds images and other files on disk.
 
 * xref:foundation/point.adoc[Point and Extent] give a position and a size.
 * xref:foundation/rect.adoc[Rect] gives a rectangle.

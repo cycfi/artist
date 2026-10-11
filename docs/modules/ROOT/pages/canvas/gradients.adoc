@@ -19,6 +19,8 @@ NOTE: Artist follows the W3C canvas API, where these are
 `CanvasGradient`. Artist makes the gradient a plain value you construct
 yourself rather than one the canvas hands back.
 
+NOTE: See xref:canvas.adoc[Canvas] for the drawing model and an overview of the canvas.
+
 == Include
 
 ```c++

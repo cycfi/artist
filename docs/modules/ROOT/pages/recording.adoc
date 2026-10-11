@@ -1,0 +1,329 @@
+= Recording
+
+== Overview
+
+The recording backend rasterizes nothing. It keeps a journal of what was
+asked of the canvas, so a test can assert on the drawing itself rather
+than on pixels: which operations ran, where, and in what paint. A
+`journal` is a list of `command` entries, one per drawing operation, read
+back through `journal_of` on the `image` the drawing went into. Its text
+form is the same on every platform, so a journal also serves as a golden.
+
+Coordinates are in surface space: the space of the canvas as it was
+handed out, before any transform the drawing applies. For an image, that
+is its size in units, whatever its scale. A rectangle filled at `{0, 0, 100,
+40}` after `translate(50, 30)` is recorded at `{50, 30, 150, 70}`.
+
+Text is measured and shaped with real fonts (FreeType, Fontconfig and
+HarfBuzz), so a text layout built on the recording backend matches what a
+drawing backend would produce.
+
+NOTE: This API is available only in a build with the recording backend,
+configured with `-DARTIST_RECORDING=ON` (see
+xref:setup.adoc[Setup and Installation]). `recording.hpp` compiles in any
+build, but `journal_of` and most `journal` members are defined by the
+recording backend alone, so code that uses them links only there. The
+option defines the `ARTIST_RECORDING` macro for everything that links
+Artist; a test suite built for every backend puts its journal checks under
+`#if defined(ARTIST_RECORDING)`.
+
+== What Is Recorded
+
+Each operation is resolved to its extent in surface space, its `geometry`:
+
+[cols="1,1,2"]
+|===
+| Canvas call                          | Kind            | Geometry
+
+| `fill`, `fill_preserve`              | `fill`          | The bounds of the current path.
+| `stroke`, `stroke_preserve`          | `stroke`        | The bounds of the current path,
+                                                           widened by half the line width
+                                                           (scaled by the transform). Miter
+                                                           spikes can reach further.
+| `clear_rect`                         | `clear`         | The cleared rectangle.
+| `fill_text`, and drawing a
+  `text_run` or `text_layout`          | `fill_text`     | The box of the text, one entry
+                                                           per line.
+| `stroke_text`                        | `stroke_text`   | The box of the text, widened as
+                                                           for `stroke`.
+| `draw` of an `image` or a
+  `canvas_layer`                       | `image`         | The destination rectangle.
+|===
+
+The `bounds` of a command is where its ink can land: the geometry, widened
+by the shadow when one is set, then cut to the clip. The clip is kept as a
+rectangle, so a clip to a rotated or curved path records its bounding box.
+The composite operations that clear the destination outside what is drawn
+(`source_in`, `source_out`, `destination_in`, `destination_atop` and
+`copy`) reach the whole clip, and their `bounds` is the clip.
+
+An operation wholly outside the clip is still recorded, with `visible`
+false: work that reached the canvas and could have been culled before it.
+
+The journal records what is drawn, not how it is composited. A canvas
+group is a state, and its opacity is not recorded.
+
+The journal belongs to the image and accumulates: each `offscreen_image`
+over the same image appends to it, until `clear` empties it.
+
+== Include
+
+```c++
+#include <artist/recording.hpp>
+```
+
+== Declaration
+
+```c++
+namespace cycfi::artist::recording
+{
+   enum class op
+   {
+      fill,
+      stroke,
+      clear,
+      fill_text,
+      stroke_text,
+      image
+   };
+
+   struct command
+   {
+      op                         kind;
+      rect                       geometry;
+      rect                       bounds;
+      bool                       visible;
+      color                      paint;
+      bool                       gradient;
+      float                      line_width;
+      canvas::line_cap_enum      line_cap;
+      canvas::join_enum          line_join;
+      float                      miter_limit;
+      point                      shadow_offset;
+      float                      shadow_blur;
+      color                      shadow_color;
+      canvas::composite_op_enum  composite;
+      std::string                text;
+   };
+
+   class journal
+   {
+   public:
+
+      std::vector<command> const&   commands() const;
+      std::size_t                   size() const;
+      std::size_t                   count(op kind) const;
+      rect                          ink_extents() const;
+      std::size_t                   clipped_away() const;
+      std::string                   str() const;
+
+      void                          clear();
+      void                          add(command const& cmd);
+   };
+
+   journal&                         journal_of(image& img);
+   journal const&                   journal_of(image const& img);
+}
+```
+
+`op` names the kind of an operation, `command` holds one operation with
+the canvas state it ran in, and `journal` holds the commands of one image
+in the order they ran.
+
+== Expressions
+
+=== Notation
+
+`j`, `a`, `b`  :: Objects of type `recording::journal`.
+`cmd`          :: Object of type `recording::command`.
+`k`            :: Object of type `recording::op`.
+`img`          :: Object of type `image`.
+`ci`           :: Object of type `image const`.
+
+=== Constants
+
+[cols="1,1,1"]
+|===
+| Expression                     | Semantics                          | Return Type
+
+| `recording::op::fill`          | Get the kind of a path fill.       | `recording::op`
+| `recording::op::stroke`        | Get the kind of a path stroke.     | `recording::op`
+| `recording::op::clear`         | Get the kind of a `clear_rect`.    | `recording::op`
+| `recording::op::fill_text`     | Get the kind of a filled line of
+                                   text.                              | `recording::op`
+| `recording::op::stroke_text`   | Get the kind of a stroked line of
+                                   text.                              | `recording::op`
+| `recording::op::image`         | Get the kind of a drawn image or
+                                   canvas layer.                      | `recording::op`
+|===
+
+=== Constructors and Assignment
+
+[cols="1,1"]
+|===
+| Expression                  | Semantics
+
+| `recording::journal()`      | Construct an empty `journal`.
+| `recording::journal(j)`     | Copy construct from `journal j`.
+| `a = b`                     | Assign `b` to `a`.
+| `recording::command{}`      | Construct a `command` with every field
+                                value initialized.
+|===
+
+NOTE: C++ brace initialization may also be used. `command` is an
+aggregate, so its fields can be given in braces, in declaration order.
+
+A copy of a journal is a snapshot. It does not follow the image's journal
+as more is drawn.
+
+=== Access
+
+[cols="1,1,1"]
+|===
+| Expression              | Semantics                              | Return Type
+
+| `cmd.kind`              | Access the kind of operation.          | `recording::op`
+| `cmd.geometry`          | Access the extent of the shape itself,
+                            in surface space.                      | `rect`
+| `cmd.bounds`            | Access the extent of the ink: the
+                            geometry and shadow within the clip.   | `rect`
+| `cmd.visible`           | Access whether `bounds` is not empty.  | `bool`
+| `cmd.paint`             | Access the colour, or a gradient's
+                            first stop.                            | `color`
+| `cmd.gradient`          | Access whether the paint is a
+                            gradient.                              | `bool`
+| `cmd.line_width`        | Access the line width of a stroke.     | `float`
+| `cmd.line_cap`          | Access the line cap in effect.         | `canvas::line_cap_enum`
+| `cmd.line_join`         | Access the line join in effect.        | `canvas::join_enum`
+| `cmd.miter_limit`       | Access the miter limit in effect.      | `float`
+| `cmd.shadow_offset`     | Access the shadow offset in effect.    | `point`
+| `cmd.shadow_blur`       | Access the shadow blur in effect.      | `float`
+| `cmd.shadow_color`      | Access the shadow colour in effect.    | `color`
+| `cmd.composite`         | Access the composite operation in
+                            effect.                                | `canvas::composite_op_enum`
+| `cmd.text`              | Access the UTF-8 text of a text
+                            operation.                             | `std::string`
+|===
+
+`line_width` is `0` for the operations other than `stroke` and
+`stroke_text`. `text` is empty for them. A `clear` is recorded in
+transparent black, and an `image` in opaque black.
+
+=== Accessors
+
+[cols="1,1,1"]
+|===
+| Expression              | Semantics                              | Return Type
+
+| `j.commands()`          | Get the commands, in the order they
+                            ran.                                   | `std::vector<recording::command> const&`
+| `j.size()`              | Get the number of commands.            | `std::size_t`
+| `j.count(k)`            | Get the number of commands of kind
+                            `k`.                                   | `std::size_t`
+| `j.ink_extents()`       | Get the union of the `bounds` of every
+                            visible command, or an empty `rect`
+                            when nothing landed.                   | `rect`
+| `j.clipped_away()`      | Get the number of commands wholly
+                            outside the clip.                      | `std::size_t`
+| `j.str()`               | Get the journal as text, one line per
+                            command, for text goldens.             | `std::string`
+|===
+
+Each line of `str()` gives the kind, the geometry as `[left top right
+bottom]` and the paint as `#rrggbbaa`, then only what applies: `gradient`,
+the stroke state as `width`, `cap`, `join` and `miter` (the enums by
+value), the shadow as `shadow=[dx dy blur #rrggbbaa]`, a composite
+operation other than `source_over` as `op=` and its value, `clipped` for a
+command that is not visible, and the text in quotes. Numbers have two
+decimals.
+
+=== Operation
+
+[cols="1,1,1"]
+|===
+| Expression              | Semantics                              | Return Type
+
+| `j.clear()`             | Remove every command.                  | `void`
+| `j.add(cmd)`            | Append `cmd`. The recording canvas
+                            records each operation through it.     | `void`
+|===
+
+=== Functions
+
+[cols="1,1,1"]
+|===
+| Expression                    | Semantics                        | Return Type
+
+| `recording::journal_of(img)`  | Get the journal that an
+                                  `offscreen_image` over `img`
+                                  records into.                    | `recording::journal&`
+| `recording::journal_of(ci)`   | Get the journal of `ci`, read
+                                  only.                            | `recording::journal const&`
+|===
+
+=== Example
+
+A test that draws a button into an image and checks what was drawn: a
+rounded rectangle filled and stroked, and a label, all moved by a
+transform.
+
+```c++
+#include <artist/recording.hpp>
+#include <artist/image.hpp>           // For image and offscreen_image
+#include <infra/catch.hpp>            // For TEST_CASE, REQUIRE and CHECK
+...
+using namespace cycfi::artist;
+using recording::op;
+...
+TEST_CASE("Button")
+{
+   image img{200, 100};
+   {
+      offscreen_image ctx{img};                                  <1>
+      canvas cnv{ctx.context()};
+      cnv.translate(50, 30);                                     <2>
+      cnv.add_round_rect({0, 0, 100, 40}, 8);
+      cnv.fill_style(colors::steel_blue);
+      cnv.fill_preserve();
+      cnv.stroke_style(colors::white);
+      cnv.line_width(2);
+      cnv.stroke();
+      cnv.fill_style(colors::white);
+      cnv.font(font_descr{"Open Sans", 14});
+      cnv.text_align(cnv.center);
+      cnv.fill_text("OK", {50, 26});
+   }
+
+   auto const& j = recording::journal_of(img);                   <3>
+   REQUIRE(j.size() == 3);
+   CHECK(j.commands()[0].kind == op::fill);
+   CHECK(j.commands()[0].geometry == rect{50, 30, 150, 70});     <4>
+   CHECK(j.commands()[0].paint == colors::steel_blue);
+   CHECK(j.commands()[1].kind == op::stroke);
+   CHECK(j.commands()[1].geometry == rect{49, 29, 151, 71});     <5>
+   CHECK(j.commands()[2].kind == op::fill_text);
+   CHECK(j.commands()[2].text == "OK");
+   CHECK(j.clipped_away() == 0);                                 <6>
+}
+```
+
+<1> Draw into `img` through an `offscreen_image`. The drawing is recorded
+    into the image's journal.
+<2> Move the drawing by `{50, 30}`. The journal records where the shapes
+    land on the image.
+<3> Get the journal of `img`.
+<4> The fill covers the rounded rectangle, moved by the transform.
+<5> The stroke reaches one unit, half its line width, past the path.
+<6> Nothing was drawn wholly outside the image.
+
+For this drawing, `j.str()` gives:
+
+```
+fill [50.00 30.00 150.00 70.00] #5470aaff
+stroke [49.00 29.00 151.00 71.00] #ffffffff width=2.00 cap=0 join=2 miter=10.00
+fill_text [90.25 41.04 109.75 60.10] #ffffffff "OK"
+```
+
+The test program defines `get_user_fonts_directory()`, the directory
+the fonts come from, as any program that uses Artist fonts does; see
+xref:foundation/font.adoc#_client_interface[Font].

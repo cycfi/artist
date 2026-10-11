@@ -24,6 +24,8 @@ xref:foundation/image.adoc[image] carries that image's scale.
 `user_to_device` and `device_to_user` are relative to it, so what you get
 back does not depend on what the host or the image set up.
 
+NOTE: See xref:canvas.adoc[Canvas] for the drawing model and an overview of the canvas.
+
 == Include
 
 ```c++
@@ -61,6 +63,9 @@ public:
                       , double ty
                      );
 };
+
+point                device_to_user(point p, canvas& cnv);
+rect                 device_to_user(rect const& r, canvas& cnv);
 ```
 
 == Expressions
@@ -84,6 +89,7 @@ expressions.
                         radians.
 `p`                  :: Object of type `point` for a position.
 `x`, `y`             :: Floating point values for a position.
+`r`                  :: Object of type xref:foundation/rect.adoc[rect].
 `mat`                :: Object of type
                         xref:foundation/affine_transform.adoc[affine_transform].
 `a`, `b`, `c`, `d`   :: Floating point values for the linear part of a
@@ -168,14 +174,25 @@ xref:foundation/affine_transform.adoc[affine_transform] `skew` and
 | `cnv.device_to_user(x, y)`    | Convert the point `x`, `y`
                                   from device space to user
                                   space.                       | `point`
+| `device_to_user(p, cnv)`      | Convert `p` from device space
+                                  to the user space of `cnv`.  | `point`
+| `device_to_user(r, cnv)`      | Convert the corners of `r`
+                                  from device space to the user
+                                  space of `cnv`.              | `rect`
 |===
 
-The two are inverses of each other, and both are relative to the transform
-the canvas already carried when it was made. `device_to_user` is the one a
-mouse position needs. On Direct2D both include the transform the render
-target carried instead; the hosts set that to identity at the start of each
-frame, and an image's scale is carried by its DPI, so the results are the
-same.
+`user_to_device` and `device_to_user` are inverses of each other, and
+both are relative to the transform the canvas already carried when it was
+made. `device_to_user` is the one a mouse position needs. On Direct2D both
+include the transform the render target carried instead; the hosts set
+that to identity at the start of each frame, and an image's scale is
+carried by its DPI, so the results are the same.
+
+`device_to_user(p, cnv)` is `cnv.device_to_user(p)` as a free function.
+`device_to_user(r, cnv)` converts the top left and bottom right corners of
+`r` and makes a `rect` of the two. Under a rotation or a skew those two
+corners do not bound the converted rectangle; convert all four with
+`cnv.device_to_user(p)` for its bounds.
 
 === Example
 

@@ -22,6 +22,8 @@ moved and inset at compile time, but not intersected or aligned there.
 NOTE: `rect.hpp` includes `artist/point.hpp`, so `point`, `extent` and
 `axis` come with it.
 
+NOTE: See xref:foundation.adoc[Foundation] for an overview of the foundation classes.
+
 == Include
 
 ```c++

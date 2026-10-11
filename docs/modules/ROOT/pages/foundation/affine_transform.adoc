@@ -23,6 +23,8 @@ NOTE: Artist's y axis grows downward, so a positive rotation, which takes
 the positive x axis toward the positive y axis, appears clockwise on
 screen.
 
+NOTE: See xref:foundation.adoc[Foundation] for an overview of the foundation classes.
+
 == Include
 
 ```c++

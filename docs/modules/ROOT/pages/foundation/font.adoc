@@ -53,6 +53,8 @@ That first construction is much more expensive
 than the ones after it, so build the fonts you need up front rather than
 inside a draw call.
 
+NOTE: See xref:foundation.adoc[Foundation] for an overview of the foundation classes.
+
 == Font Descriptor
 
 === Include

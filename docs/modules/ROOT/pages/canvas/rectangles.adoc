@@ -21,6 +21,8 @@ follow its rule of leaving the current default path alone. The two `round`
 forms are Artist's own; the W3C API rounds corners through `roundRect` on
 the path instead.
 
+NOTE: See xref:canvas.adoc[Canvas] for the drawing model and an overview of the canvas.
+
 == Include
 
 ```c++

@@ -20,7 +20,8 @@ selected with a CMake option (see xref:setup.adoc[Setup and Installation]).
 * *Recording*: macOS, Linux and Windows. It rasterizes nothing and keeps a journal of
   the drawing calls, so tests can check what was drawn. Text is measured
   and shaped with real fonts through FreeType, Fontconfig and HarfBuzz, so
-  layout matches the drawing backends.
+  layout matches the drawing backends. See xref:recording.adoc[Recording]
+  for the journal.
 
 == History
 

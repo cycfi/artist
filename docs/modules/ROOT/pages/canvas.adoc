@@ -12,7 +12,7 @@ It is built on top of xref:foundation.adoc[Foundation classes] such as
 points and rectangles, and on drawable classes such as xref:path.adoc[Path]
 and xref:foundation/image.adoc[Image].
 
-== The Pages in This Section
+The canvas members are documented a family at a time:
 
 * xref:canvas/transforms.adoc[Transforms] map user space onto the surface.
 * xref:canvas/current_path.adoc[Current Path] builds geometry into the
@@ -24,7 +24,8 @@ and xref:foundation/image.adoc[Image].
 * xref:canvas/rectangles.adoc[Rectangles] build and paint in one step.
 * xref:canvas/text.adoc[Text] draws and measures strings.
 * xref:canvas/images.adoc[Drawing Images] paints an image onto the canvas.
-* xref:canvas/states.adoc[States] save and restore the canvas.
+* xref:canvas/states.adoc[States] save and restore the canvas, and group
+  what is drawn to composite it as one.
 * xref:canvas/context.adoc[Context] covers where a canvas comes from, how
   long it lives, and the backend handle underneath it.
 
@@ -34,18 +35,18 @@ Throughout, `cnv` is an instance of `canvas`.
 
 === Drawing Is Immediate
 
-A canvas paints pixels and keeps no record of what it painted. There is no
-scene graph, no display list, and no object standing for the shape once the
-call returns: a drawing is the sum of the calls made, in the order they
-were made, and the only way to change one is to draw the whole thing again.
-A later call paints over an earlier one.
+On the drawing backends, a canvas paints pixels and keeps no record of what
+it painted. There is no scene graph, no display list, and no object
+standing for the shape once the call returns: a drawing is the sum of the
+calls made, in the order they were made, and the only way to change one is
+to draw the whole thing again. A later call paints over an earlier one. The
+recording backend paints no pixels; it keeps a journal of the calls for a
+test to read back. See xref:recording.adoc[Recording].
 
-That is why a host window hands you a canvas for the duration of one draw
-call and takes it back. Interactive code redraws from scratch on every
-frame, which costs nothing to keep in sync because there is nothing to keep
-in sync. For a drawing that is expensive and does not change, render it
-once into an xref:foundation/image.adoc[image] and paint the image each
-frame instead.
+A host window hands you a canvas for the duration of one draw call, and
+interactive code redraws from scratch on every frame. For a drawing that
+is expensive and does not change, render it once into an
+xref:foundation/image.adoc[image] and paint the image each frame instead.
 
 === One Call, Five Steps
 
@@ -106,11 +107,10 @@ one. `clip_extent()` reports the area you may paint in, in those units, so
 a drawing can size itself to whatever canvas it is handed without being
 told.
 
-Edges are antialiased. A shape that does not land on a pixel boundary is
-blended into what is behind it rather than snapped, which is the right
-answer for a drawing and the wrong one for a hairline: a 1 unit line
-centred on a whole unit straddles the boundary and covers two rows at half
-strength. Centre such a line on a half unit if it has to be crisp.
+Edges are antialiased. Where a shape does not land on a pixel boundary,
+the pixels it partly covers are blended into what is behind them. A 1 unit
+line centred on a whole unit straddles the boundary and covers two rows at
+half strength. Centre such a line on a half unit if it has to be crisp.
 
 === The Canvas Carries State
 
@@ -120,12 +120,12 @@ follows until another is set, and the same is true of the stroke style, the
 line width, cap and join, the shadow, the composite operation, the font,
 the text alignment, the transform and the clip.
 
-That is what makes drawing code composable, and what makes it dangerous: a
-function that narrows the clip or turns the axes has changed the canvas for
-everything drawn after it, and a clip can only ever be narrowed. The canvas
-keeps a stack of the whole bundle for exactly this reason, and
-`cnv.new_state()` pushes a copy and pops it at the end of the enclosing
-scope. See xref:canvas/states.adoc[States].
+A function that narrows the clip or turns the axes has changed the canvas
+for everything drawn after it, and a clip can only ever be narrowed. The
+canvas keeps a stack of the whole bundle. `cnv.new_state()` pushes a copy
+and pops it at the end of the enclosing scope. `cnv.new_group(opacity)`
+does the same, and when the scope ends it composites what was drawn inside
+onto the canvas as one, at that opacity. See xref:canvas/states.adoc[States].
 
 == Compared With the W3C Canvas API
 
@@ -136,13 +136,13 @@ mean, and Artist follows it. Most of the difference is spelling:
 takes a xref:foundation/rect.adoc[`rect`] rather than four numbers, with a
 four number overload alongside it.
 
-Three differences are real and worth knowing before the reference pages
-say so one at a time:
+Three differences go beyond spelling:
 
 * **The path is consumed.** `fill` and `stroke` empty the current path,
   where the W3C API leaves it in place for the next call.
 * **There is no `globalAlpha`.** Alpha is carried by the colour, so a
-  translucent fill is a translucent `fill_style`.
+  translucent fill is a translucent `fill_style`. A group of shapes is
+  made translucent as one by `cnv.new_group(opacity)`.
 * **`save` and `restore` are not exposed.** The pair is only reachable
   through `cnv.new_state()`, whose scope makes an unbalanced stack
   unwritable.

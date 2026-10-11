@@ -25,6 +25,8 @@ The font is a xref:foundation/font.adoc[font] object rather than a CSS
 string, and `measure_text` reports the font's metrics and the advance
 width rather than the W3C `TextMetrics`.
 
+NOTE: See xref:canvas.adoc[Canvas] for the drawing model and an overview of the canvas.
+
 == Include
 
 ```c++
