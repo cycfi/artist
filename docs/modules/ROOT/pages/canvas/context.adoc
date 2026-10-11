@@ -160,6 +160,10 @@ The function a host calls with the canvas for its drawing area, sizing
 itself to whatever that canvas turns out to be:
 
 ```c++
+#include <artist/canvas.hpp>
+...
+using namespace cycfi::artist;
+
    void draw(canvas& cnv)
    {
       auto bounds = cnv.clip_extent();

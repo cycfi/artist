@@ -7,7 +7,7 @@ width and shape of a stroke, the shadow cast under what is drawn, and how
 new drawing combines with what is already on the canvas. Each is canvas
 state. Set one and it stays in effect for every paint that follows, until
 it is set again or a saved state is restored over it. Every style on this
-page is part of the state that `save` and `restore` keep, so the usual way
+page is part of the state that a `new_state` scope keeps, so the usual way
 to apply a style to one shape is inside a
 xref:canvas/states.adoc[saved state].
 
@@ -18,7 +18,9 @@ xref:canvas/current_path.adoc[current path].
 NOTE: Artist follows the W3C canvas API, and the styles map onto its
 `fillStyle`, `strokeStyle`, `lineWidth`, `lineCap`, `lineJoin`,
 `miterLimit`, the four `shadow` attributes and `globalCompositeOperation`.
-They behave as the W3C API specifies, the same on every backend.
+They behave as the W3C API specifies, the same on every backend, with one
+exception: `darker` takes the smaller of the two colors (W3C `darken`) on
+every backend, an approximation of the W3C plus-darker formula.
 
 == Include
 
@@ -261,6 +263,12 @@ TIP: There is no call to turn a shadow off. Set it inside a saved state and
 let the restore remove it:
 
 ```c++
+#include <artist/canvas.hpp>
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+rect panel;                     // the panel to draw
+...
    {
       auto s = cnv.new_state();
       cnv.shadow_style({0, 2}, 6, colors::black.opacity(0.4));
@@ -352,7 +360,8 @@ clip, since the source is transparent there. Draw with them inside a clip
 when the rest of the canvas matters.
 
 NOTE: The enum has no W3C `clear`. `destination_out` with an opaque source,
-or `clear_rect`, does the same job.
+or `clear_rect`, does the same job. Nor does it have the W3C `overlay` and
+`lighten` blend modes.
 
 == Example
 
@@ -360,6 +369,11 @@ A panel, the `rect` `panel`, with a soft drop shadow and a rounded outline.
 The shadow is scoped to the fill, so the outline casts none:
 
 ```c++
+#include <artist/canvas.hpp>
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+...
    auto panel = rect{40, 30, 260, 130};
 
    {

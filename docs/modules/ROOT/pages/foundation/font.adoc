@@ -14,16 +14,24 @@ API. Every modifier is `const` and returns a modified copy, so a
 description reads as one expression:
 
 ```c++
-   font_descr{"Open Sans", 14}.bold().italic()
+#include <artist/font.hpp>
+...
+using namespace cycfi::artist;
+...
+   auto fd = font_descr{"Open Sans", 14}.bold().italic();
 ```
 
 The `_families` member is a comma separated list, searched left to right.
-The first family the system offers wins, and within that family the
-backend picks the face closest to the requested slant, weight and stretch,
-in that order of importance. If none of the listed families is present,
-construction still succeeds: every backend falls back to a default face.
-A `font` built from a descriptor is therefore always usable, and never
-reports a failed lookup.
+The first family the system offers wins. Within that family, Cairo, Skia
+and recording pick the face closest to the requested slant, weight and
+stretch, in that order of importance; Quartz 2D and Direct2D leave the
+choice to the system's font manager. Direct2D searches the list only among
+the application's own fonts; if none is there, it asks the system for the
+first listed family alone. If none of the listed families is present,
+construction still succeeds and never reports a failed lookup, but what
+you get depends on the backend. Quartz 2D, Skia and Direct2D fall back to
+a default system face. Cairo and recording hold an empty face: its metrics
+are zero and `measure_text` returns zero.
 
 image::foundation/font_metrics.svg[alt="Font metrics", width=560px, align=center, title="The three values metrics() reports, the line height they sum to, and the advance width measure_text() returns.", link={imagesdir}/foundation/font_metrics.svg]
 
@@ -35,14 +43,19 @@ transformation matrix is applied.
 
 NOTE: Fonts bundled with an application are found through
 `get_user_fonts_directory()`. The library declares that function but does
-not define it: the host application supplies it, and the backends call it
-once to register every font file in that directory alongside the system
-fonts.
+not define it: the host application supplies it, and Cairo, Skia, Direct2D
+and recording call it once to register every font file in that directory
+alongside the system fonts. Quartz 2D never calls it: a macOS application
+registers its bundled fonts itself, as the examples do through
+`ATSApplicationFontsPath` in their `Info.plist`.
 
-TIP: On the Skia and Cairo backends the first `font` you construct scans
-the system and application font directories to build a family map. That
-first construction is much more expensive than the ones after it, so
-build the fonts you need up front rather than inside a draw call.
+TIP: On Cairo, Skia, Direct2D and recording the first `font` you construct
+scans for fonts. Cairo, recording, and Skia on Linux list every font
+fontconfig knows, the system's and the application's; Skia on macOS and
+Windows, and Direct2D, read the font files in the application's directory.
+That first construction is much more expensive
+than the ones after it, so build the fonts you need up front rather than
+inside a draw call.
 
 == Include
 
@@ -302,22 +315,27 @@ The members are public and may be read or written directly.
 |===
 | Expression              | Semantics
 
-| `font{}`                | Default construct. The result names no face
-                            and is not usable for drawing.
+| `font{}`                | Default construct, with no descriptor. What
+                            it holds depends on the backend (see the
+                            note under Font Validity and Access).
 | `font(fd)`              | Resolve the descriptor `fd` and hold the face
-                            it names, or the backend's fallback face if no
-                            listed family is present.
+                            it names, or the backend's fallback if no
+                            listed family is present (see the Overview).
 | `font(f)`               | Copy construct from `f`. The copy names the
                             same face.
 | `font(std::move(f))`    | Move construct from `f`, which is left
                             holding no face.
 | `f = f2`                | Assign `f2` to `f`.
-| `f = std::move(f2)`     | Move assign `f2` to `f`, which is left
-                            holding no face.
+| `f = std::move(f2)`     | Move assign `f2` to `f`. On Cairo, Skia and
+                            recording `f2` is left holding no face; on
+                            Quartz 2D and Direct2D the two are swapped,
+                            so `f2` holds the face `f` held before.
 |===
 
-WARNING: A moved from `font` holds no face. Calling `metrics()`,
-`line_height()` or `measure_text()` on it is undefined behaviour.
+WARNING: A `font` moved from by construction holds no face, as does one
+moved from by assignment on Cairo, Skia and recording. Calling
+`metrics()`, `line_height()` or `measure_text()` on it is undefined
+behaviour.
 
 === Font Validity and Access
 
@@ -335,10 +353,12 @@ WARNING: A moved from `font` holds no face. Calling `metrics()`,
 |===
 
 NOTE: What `bool(f)` reports for a default constructed `font` depends on
-the backend: Quartz 2D leaves the handle null, while Skia and Cairo build
-an empty one. Construction from a descriptor always yields a handle on
-every backend. Use the conversion to test a moved from `font`, not to
-check whether a family was found.
+the backend: Quartz 2D and Direct2D leave the handle null, while Cairo
+and recording build an empty one and Skia a default `SkFont`, so on those
+three `bool(f)` is `true` and the metrics calls are safe. Construction
+from a descriptor always yields a handle on every backend. Use the
+conversion to test a moved from `font`, not to check whether a family was
+found.
 
 === Font Metrics
 
@@ -388,6 +408,12 @@ Build a heading font once, then use its metrics to stack two lines and
 right align the second under the first:
 
 ```c++
+#include <artist/font.hpp>
+#include <artist/canvas.hpp>             // For canvas
+...
+using namespace cycfi::artist;
+extern canvas cnv;                       // the canvas to draw on
+...
    float x = 40, y = 50;
    auto heading = font{font_descr{"Open Sans, Helvetica", 24}.bold()};
 

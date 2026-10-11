@@ -1,14 +1,15 @@
 = Setup and Installation
 
 This guide covers building the Artist 2D Canvas Library from source on macOS,
-Windows, and Linux, across the three supported rendering backends: Skia,
-Cairo, and Quartz-2D.
+Windows, and Linux, across the five rendering backends: Quartz-2D,
+Direct2D, Skia, Cairo, and the headless recording backend.
 
 == Requirements
 
 [cols="1,3"]
 |===
-| A C++20 compiler  | Clang, GCC, or MSVC (Visual Studio 2022)
+| A C++20 compiler  | Clang, GCC, or MSVC (Visual Studio 2022; 17.14 or
+                      newer for Direct2D and the x64 Windows prebuilt bundles)
 | https://git-scm.com/[Git]    | with submodule support
 | https://cmake.org/[CMake]    | 3.21 or higher
 |===
@@ -21,11 +22,15 @@ lower floor, but the bundled `CMakePresets.json` uses preset schema
 versions will reject the presets.
 ====
 
-The build is driven by https://vcpkg.io/[vcpkg] (vendored as a git submodule
-at `lib/external/vcpkg/`) together with CMake presets. The
-https://github.com/cycfi/infra/[Cycfi infra library] is also pulled in as a
-submodule. Both are fetched automatically when you clone with
-`--recurse-submodules`.
+The Skia and Cairo backends take their libraries from prebuilt bundles
+that CMake downloads at configure time, or from https://vcpkg.io/[vcpkg]
+(vendored as a git submodule at `lib/external/vcpkg/`), driven by a vcpkg
+toolchain file or the `source` CMake preset. The
+https://github.com/cycfi/infra/[Cycfi infra library] and libunibreak are
+also submodules. Both are fetched when you clone with
+`--recurse-submodules`, and CMake fetches them itself if they are missing.
+The vcpkg submodule is marked `update = none`, so it is not fetched; check
+it out only to build with vcpkg (see <<One-time vcpkg bootstrap>>).
 
 == Getting the source
 
@@ -47,24 +52,41 @@ git submodule update --init --recursive
 
 == Backends
 
-Artist supports three rendering backends. Only one backend is active per
+Artist supports five rendering backends. Only one backend is active per
 build, selected with a CMake option.
 
 [%header,cols="1,2,2,1"]
 |===
-| Backend   | Platform               | CMake option          | Default
+| Backend   | Platform               | CMake option           | Default
 
-| Quartz-2D | macOS                  | `ARTIST_QUARTZ_2D=ON` | macOS
-| Skia      | macOS, Linux, Windows  | `ARTIST_SKIA=ON`      | Linux, Windows
-| Cairo     | macOS, Linux, Windows  | `ARTIST_CAIRO=ON`     | off
+| Quartz-2D | macOS                  | `ARTIST_QUARTZ_2D=ON`  | macOS
+| Direct2D  | Windows                | `ARTIST_DIRECT2D=ON`   | Windows
+| Skia      | macOS, Linux, Windows  | `ARTIST_SKIA=ON`       | off
+| Cairo     | macOS, Linux, Windows  | `ARTIST_CAIRO=ON`      | Linux and others
+| Recording | macOS, Linux, Windows  | `ARTIST_RECORDING=ON`  | off
 |===
 
-Enabling one backend automatically disables the others.
+With no backend option set, CMake uses the platform's native backend:
+Direct2D on Windows, Quartz-2D on macOS, Cairo elsewhere. Enabling one
+backend automatically disables the others. If more than one is enabled,
+the first of recording, Direct2D, Cairo, Skia and Quartz-2D wins.
+
+Direct2D uses the Windows system libraries (Direct2D, DirectWrite, WIC),
+plus libwebp's decoder, since WIC has no WebP codec. A libwebp found on
+`CMAKE_PREFIX_PATH` is used; otherwise CMake fetches libwebp's source and
+builds only the decoder. It needs MSVC v14.44 or newer (see
+<<Windows toolchain notes>>).
+
+The recording backend draws nothing: it records the drawing calls, for
+tests and headless use. It measures and shapes text with real fonts
+through FreeType, Fontconfig and HarfBuzz, which come from the same
+places as Cairo's (see <<Building with Cairo>>). The examples have no
+recording host, so configure it with `-DARTIST_BUILD_EXAMPLES=OFF`.
 
 == Building with Skia
 
-Skia is the default backend on Linux and Windows, and is also available on
-macOS. The Skia binaries are large and slow to compile from source, so Artist
+Skia is available on macOS, Linux and Windows, and is the default on none
+of them. The Skia binaries are large and slow to compile from source, so Artist
 ships with two CMake presets:
 
 [%header,cols="1,3"]
@@ -78,18 +100,34 @@ ships with two CMake presets:
                incompatible with your toolchain.
 |===
 
+Any Skia build configured without a vcpkg toolchain takes the prebuilt
+bundle, with or without the preset. CMake checks the bundle against the
+local toolchain and stops with an error if it does not fit: Linux needs
+glibc 2.35 or newer, Windows the MSVC v143 toolset (Visual Studio 2022
+17.14 or newer for the static x64 bundle), and macOS a deployment target
+of 11.0 or newer. To opt out, configure with the vcpkg toolchain (the
+`source` preset), or set `-DARTIST_SKIA_PREBUILT=OFF` and put your own
+Skia on `CMAKE_PREFIX_PATH`.
+
+On Linux, Skia links the system HarfBuzz and OpenGL, found through
+pkg-config and CMake: install `pkg-config`, `libharfbuzz-dev` and
+`libgl1-mesa-dev` (or your distribution's equivalents).
+
 === One-time vcpkg bootstrap
 
-Bootstrap the bundled vcpkg once (already done implicitly if you let CMake
-fetch submodules):
+Only a vcpkg build (the `source` preset, or a vcpkg toolchain file) needs
+this. `--recurse-submodules` does not fetch vcpkg, so check it out and
+bootstrap it once:
 
 [source,sh]
 ----
+git submodule update --init --checkout lib/external/vcpkg
 lib/external/vcpkg/bootstrap-vcpkg.sh -disableMetrics    # macOS / Linux
 ----
 
 [source,bat]
 ----
+git submodule update --init --checkout lib/external/vcpkg
 lib\external\vcpkg\bootstrap-vcpkg.bat -disableMetrics   :: Windows
 ----
 
@@ -107,11 +145,13 @@ cmake --build build-source
 ----
 
 The `prebuilt` preset writes to `build/`; the `source` preset writes to
-`build-source/`. Both default to a Release build with tests enabled.
+`build-source/`. Both default to a Release build with tests and examples
+enabled.
 
 === Configure manually (without presets)
 
-If you prefer to drive CMake directly, pass the vcpkg toolchain file:
+If you prefer to drive CMake directly, `-DARTIST_SKIA=ON` alone takes the
+prebuilt bundle. To build Skia from source, pass the vcpkg toolchain file:
 
 [source,sh]
 ----
@@ -123,9 +163,14 @@ cmake --build build-skia
 
 == Building with Cairo
 
-Cairo is an optional backend, disabled by default. On macOS and Linux it uses
-the system Cairo (installed via the platform package manager); on Windows its
-dependency tree is built through the bundled vcpkg.
+Cairo is the default backend on Linux, and on any platform other than macOS
+and Windows. On Linux it uses the system Cairo, installed with the platform
+package manager. On macOS and Windows, CMake downloads a prebuilt bundle of
+Cairo and its dependencies (cairo, harfbuzz, fontconfig, freetype, libwebp
+and the pkgconf tool) from the Cloudflare R2 cache, so nothing has to be
+installed and `-DARTIST_CAIRO=ON` is all it takes. To use your own
+libraries instead, configure with `-DARTIST_CAIRO_PREBUILT=OFF` and install
+them as below; a vcpkg toolchain turns the bundle off too.
 
 === Linux
 
@@ -136,6 +181,7 @@ sudo apt-get install -y \
   libfontconfig1-dev \
   libfreetype6-dev \
   libharfbuzz-dev \
+  libwebp-dev \
   pkg-config
 
 cmake -S . -B build-cairo -DARTIST_CAIRO=ON
@@ -146,19 +192,21 @@ cmake --build build-cairo
 
 [source,sh]
 ----
-brew install cairo fontconfig freetype harfbuzz ninja
+brew install cairo fontconfig freetype harfbuzz webp pkgconf ninja
 
-cmake -S . -B build-cairo -DARTIST_CAIRO=ON
+cmake -S . -B build-cairo -DARTIST_CAIRO=ON -DARTIST_CAIRO_PREBUILT=OFF
 cmake --build build-cairo
 ----
 
 === Windows
 
-Dependencies are managed through the bundled vcpkg submodule — no separate
-installation is needed. Bootstrap vcpkg once, then pass the toolchain file:
+The prebuilt bundle is the default. To build the dependencies from source
+instead, use the bundled vcpkg submodule (no separate installation is
+needed). Check it out and bootstrap it once, then pass the toolchain file:
 
 [source,bat]
 ----
+git submodule update --init --checkout lib/external/vcpkg
 lib\external\vcpkg\bootstrap-vcpkg.bat -disableMetrics
 
 cmake -S . -B build-cairo -DARTIST_CAIRO=ON ^
@@ -166,7 +214,8 @@ cmake -S . -B build-cairo -DARTIST_CAIRO=ON ^
 cmake --build build-cairo
 ----
 
-vcpkg will build cairo, freetype, fontconfig, and harfbuzz from source on the
+vcpkg will build cairo, freetype, fontconfig, harfbuzz, libwebp and pkgconf
+from source on the
 first run (~15–20 min). Subsequent builds reuse the cached `vcpkg_installed/`
 directory.
 
@@ -175,7 +224,8 @@ directory.
 *Supported:*
 
 * Offscreen image surfaces on macOS, Linux, and Windows.
-* Live window rendering on macOS, Linux/GTK, and Windows/Win32.
+* Live window rendering on macOS, Linux (GTK3, Wayland and X11 hosts), and
+  Windows/Win32.
 * Visual test suite with goldens for macOS, Linux, and Windows.
 
 *Known limitations:*
@@ -204,8 +254,12 @@ cmake --build build-quartz2d
 
 == Windows toolchain notes
 
-Artist is built and tested on Windows with *Visual Studio 2022*. To use the
-Visual Studio generator explicitly:
+Artist is built and tested on Windows with *Visual Studio 2022*. The
+Direct2D backend, the Windows default, requires the MSVC v14.44 toolset
+(Visual Studio 2022 17.14) or newer, or clang-cl: older toolsets
+miscompile it under `/O2`, and CMake stops with an error on them. The
+static x64 prebuilt Skia and Cairo bundles need the same toolset. To use
+the Visual Studio generator explicitly:
 
 [source,bat]
 ----
@@ -216,7 +270,7 @@ cmake --build build --config Release
 
 [NOTE]
 ====
-Visual Studio 2019 is *not* supported — it produces linker errors against the
+Visual Studio 2019 is *not* supported: it produces linker errors against the
 current dependencies. Use Visual Studio 2022 (generator `Visual Studio 17
 2022`).
 ====
@@ -234,12 +288,29 @@ ctest --verbose --test-dir build-quartz2d   # Quartz-2D
 
 == Building and running the examples
 
-Pass `-DARTIST_BUILD_EXAMPLES=ON` when configuring (the presets build tests
-but not examples by default). After building, the example applications are
-produced under the build tree's `examples/` directory.
+The examples are built by default (`ARTIST_BUILD_EXAMPLES` is `ON`, in the
+presets too); pass `-DARTIST_BUILD_EXAMPLES=OFF` to skip them. After
+building, the example applications are produced under the build tree's
+`examples/` directory.
+
+On Linux, `ARTIST_LINUX_HOST` picks the window host: `gtk3` (the default),
+`wayland` or `x11`. Each needs its system libraries, found with
+pkg-config. On Debian and Ubuntu:
+
+[%header,cols="1,3"]
+|===
+| Host      | Packages
+
+| `gtk3`    | `libgtk-3-dev`, plus `libx11-dev`, `libegl-dev` and
+              `libgl1-mesa-dev` for Skia
+| `wayland` | `libwayland-dev`, `wayland-protocols`, `libdecor-0-dev`, plus
+              `libegl-dev` and `libgl1-mesa-dev` for Skia
+| `x11`     | `libx11-dev`, plus `libegl-dev` and `libgl1-mesa-dev` for
+              Skia
+|===
 
 Each example is contained in a single source file, plus a platform-specific
 driver that sets up the application and a window for viewing the graphics.
 The examples are provided as starting points for learning how to use the
-library — feel free to inspect and modify them. Each one demonstrates a
+library: feel free to inspect and modify them. Each one demonstrates a
 different aspect of Artist.

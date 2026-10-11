@@ -14,7 +14,7 @@ order is *valid*, which `is_valid` tests. Nothing enforces it. `rect` is a
 value type with no invariant, and several operations can hand back a rect
 that fails `is_valid`; each is flagged below.
 
-Everything declared in the header is `constexpr` except the seven
+Everything declared in the header is `constexpr` except the nine
 functions defined in `rect.cpp`: `intersects`, `union_`, `intersection`,
 and the `center` and `align` families. A rect can be built, measured,
 moved and inset at compile time, but not intersected or aligned there.
@@ -156,7 +156,8 @@ site and different meanings: `rect{point(10, 10), 100, 100}` is 90 by 90,
 NOTE: `rect` has user declared constructors, so it is not an aggregate.
 All four members are set by whichever constructor runs. As with
 xref:foundation/point.adoc[`point`], brace initialization forbids
-narrowing, so `rect(n, 0, w, h)` with an `int` `n` needs parentheses.
+narrowing, so `rect{n, top, right, bottom}` with an `int` `n` does not
+compile; write `rect(n, top, right, bottom)` with parentheses.
 
 === Comparison
 
@@ -413,6 +414,12 @@ Laying a fixed size badge into the top right of a bounds rect, with a
 margin, and taking the part of it that is actually on screen:
 
 ```c++
+#include <artist/rect.hpp>
+#include <artist/canvas.hpp>             // For canvas
+...
+using namespace cycfi::artist;
+extern canvas cnv;                       // the canvas to draw on
+...
    auto bounds = rect{20, 20, 320, 140};
    auto clip = rect{0, 0, 282, 160};
 
@@ -439,12 +446,17 @@ margin, and taking the part of it that is actually on screen:
 image::foundation/rect_example.png[alt="A card with a badge in its top right corner, cut off part way by a clip edge", width=560px, align=center, title="What the code above draws. The red line marks the right edge of clip; it is not drawn by the example.", link={imagesdir}/foundation/rect_example.png]
 
 `align` places the slot without any arithmetic on the edges: 1.0 is hard
-right, 0.0 hard top, and `inset(8)` is the margin. The badge runs past
+right, 0.0 hard top, and `inset(10)` is the margin. The badge runs past
 `clip`, so `intersection` cuts it back to the part that is on screen.
 
 And the same layout step written once for either axis:
 
 ```c++
+#include <artist/rect.hpp>
+#include <utility>                       // For std::make_pair
+...
+using namespace cycfi::artist;
+...
    // Split r into two rects at a fraction along axis a.
    constexpr auto split(rect r, axis a, float frac)
    {

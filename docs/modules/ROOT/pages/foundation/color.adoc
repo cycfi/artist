@@ -201,7 +201,9 @@ entry gray ramp, all of them `constexpr`. The usual way to reach them is to
 alias the namespace:
 
 ```c++
-   namespace colors = cycfi::artist::colors;
+#include <artist/color.hpp>
+...
+namespace colors = cycfi::artist::colors;
 ```
 
 image::foundation/named_colors.svg[alt="The named colors", width=560px, align=center, title="The 131 named colors in cycfi::artist::colors, in declaration order.", link={imagesdir}/foundation/named_colors.svg]
@@ -243,6 +245,12 @@ A panel fill and the brighter shade it takes when hovered, laid over a
 neutral backdrop at 60 percent opacity:
 
 ```c++
+#include <artist/color.hpp>
+#include <artist/canvas.hpp>             // For canvas
+...
+using namespace cycfi::artist;
+extern canvas cnv;                       // the canvas to draw on
+...
    constexpr auto panel = colors::dark_slate_blue;
    constexpr auto hover = panel.level(1.8f);
 

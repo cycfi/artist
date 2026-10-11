@@ -221,9 +221,11 @@ the figure above:
 Past the second circle the last stop's color is held, as for a linear
 gradient. Two identical circles paint nothing, as the W3C API specifies.
 
-CAUTION: On Direct2D the first circle's radius is ignored. The backend's
-radial brush has one radius and a focal offset, so `c1_radius` has nowhere
-to go; a Windows build renders the middle case above as the first.
+CAUTION: On Direct2D the backend's radial brush has one radius and a focal
+offset, so `c1_radius` is carried by starting the stops at `c1_radius` over
+`c2_radius` along the ramp. That is exact when the circles are concentric
+or `c1_radius` is zero, as in the first two cases above, and an
+approximation when the first circle is both offset and wider than a point.
 
 === Radial Gradient Members
 
@@ -253,8 +255,8 @@ to go; a Windows build renders the middle case above as the first.
 Fill and stroke are separate styles, so one path can be filled in one
 gradient and outlined in another. Setting a color replaces a gradient and
 setting a gradient replaces a color; there is one paint in each style at a
-time. Both are part of the state that
-xref:canvas/states.adoc[save and restore] keep.
+time. Both are part of the state that a
+xref:canvas/states.adoc[`new_state` scope] keeps.
 
 The gradient is copied when the style is set. Adding a stop to the object
 afterwards changes the object, not the style, so build the gradient first
@@ -269,14 +271,18 @@ CAUTION: On Quartz 2D a gradient's stop colors do not match a flat fill of
 the same color. Stops go through `kCGColorSpaceGenericRGB` while a flat
 fill goes through the device space, so `rgba(255, 0, 0, 255)` as a stop
 renders as 255, 38, 0 and a mid grey comes out about 14 percent light.
-Black and white are unaffected. The Skia backend carries a matching
-correction factor for the same reason. Cairo renders stops exactly.
+Black and white are unaffected. Cairo and Skia render stops exactly.
 
 == Example
 
 A bar with a glassy sheen down it, and a round knob lit from the top left:
 
 ```c++
+#include <artist/canvas.hpp>
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+...
    auto box = rect{40, 40, 240, 92};
    canvas::linear_gradient sheen{box.left, box.top, box.left, box.bottom};
    sheen.add_color_stop(0, rgba(88, 152, 232, 255));

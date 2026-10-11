@@ -21,14 +21,16 @@ scale 1.
 A file name that is not absolute is looked up through the
 xref:foundation/resources.adoc[Resources] search list. PNG, JPEG and WebP
 are read on every backend; which other formats load depends on the
-backend's decoder.
+backend's decoder. The recording backend reads only the image's size from
+the file, and its pixels start transparent.
 
 An `image` owns its storage, so it can be moved but not copied. Share one
 through `image_ptr`, which is a `std::shared_ptr<image>`.
 
 To draw into an image, construct an `offscreen_image` on it and build a
 `canvas` on its `context()`. The drawing lands in the image as it is drawn,
-over whatever the image already holds. The canvas must not outlive the
+over whatever the image already holds. The recording backend records the
+drawing and leaves the pixels untouched. The canvas must not outlive the
 `offscreen_image`. The <<Example>> shows the pattern.
 
 == Include
@@ -85,12 +87,13 @@ over whatever the image already holds. The canvas must not outlive the
    public:
 
       explicit          offscreen_image(image& img);
-                        offscreen_image(offscreen_image const&) = delete;
                         ~offscreen_image();
-
       offscreen_image&  operator=(offscreen_image const& rhs) = delete;
 
       canvas_impl*      context() const;
+
+   private:
+                        offscreen_image(offscreen_image const&) = delete;
    };
 ```
 
@@ -140,15 +143,16 @@ over whatever the image already holds. The canvas must not outlive the
                                 missing or cannot be decoded.
 | `image(std::move(img))`     | Move construct from `img`, which is left
                                 holding nothing.
-| `img = std::move(img2)`     | Move assign `img2` to `img`. `img2` is
-                                left holding nothing.
+| `img = std::move(img2)`     | Move assign `img2` to `img`. The two
+                                swap bitmaps, so `img2` is left holding
+                                the one `img` held before.
 |===
 
 The constructors are `explicit`, so an `extent` or a path does not convert
 to an `image` implicitly.
 
-WARNING: A moved from `image` holds nothing. Destroy it or assign to it;
-calling any other member on it is undefined behaviour.
+WARNING: An `image` moved from by construction holds nothing. Destroy it
+or assign to it; calling any other member on it is undefined behaviour.
 
 === Construction from Pixels
 
@@ -267,6 +271,12 @@ At scale 2 the badge stays sharp on a high density display, and the
 drawing code still works in its 64 unit size:
 
 ```c++
+#include <artist/image.hpp>
+#include <artist/canvas.hpp>             // For canvas
+...
+using namespace cycfi::artist;
+extern canvas cnv;                       // the canvas to draw on
+...
    // Render the badge once, at twice the display resolution.
    image badge{64, 64, 2};
    {

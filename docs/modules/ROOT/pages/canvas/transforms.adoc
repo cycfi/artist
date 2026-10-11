@@ -14,8 +14,9 @@ angle turns clockwise on screen. Rotation, scaling and skewing are about
 the origin of user space, not the centre of what you are drawing: translate
 first to work about another point, as the <<Example>> does.
 
-The transform is part of the canvas state, so `save` and `restore`, under
-xref:canvas/states.adoc[States], put back the one that was in effect.
+The transform is part of the canvas state, so the end of a `new_state`
+scope, under xref:canvas/states.adoc[States], puts back the one that was in
+effect.
 
 A canvas may already carry a transform when you get it: a host window can
 set one for its drawing area, and a canvas over an
@@ -114,7 +115,10 @@ xref:foundation/affine_transform.adoc[affine_transform] `skew` and
 |===
 
 The two are inverses of each other, and both are relative to the transform
-the canvas already carried when it was made.
+the canvas already carried when it was made. On Direct2D both include the
+transform the render target carried instead; the hosts set that to identity
+at the start of each frame, and an image's scale is carried by its DPI
+rather than by a transform, so the results are the same.
 
 === The Matrix
 
@@ -134,7 +138,7 @@ CAUTION: These three work on the backend's own matrix, not on a matrix
 relative to what the canvas started with, and its value for the same
 drawing state is not the same on every backend. Replacing it therefore
 throws away whatever the host or the image set up, such as a window offset
-or an image's scale. Prefer `save` and `restore` for putting a transform
+or an image's scale. Prefer a `new_state` scope for putting a transform
 back, and give `transform(mat)` only a matrix that `transform()` returned
 from the same canvas.
 
@@ -144,6 +148,11 @@ Rotating a rectangle about its own centre, and putting the transform back
 afterwards:
 
 ```c++
+#include <artist/canvas.hpp>
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+...
    auto r = rect{40, 30, 200, 110};
    auto center = center_point(r);
 
@@ -151,7 +160,7 @@ afterwards:
       auto state = cnv.new_state();
 
       cnv.translate(center.x, center.y);
-      cnv.rotate(pi / 6);
+      cnv.rotate(cycfi::pi / 6);
       cnv.translate(-center.x, -center.y);
 
       cnv.add_rect(r);

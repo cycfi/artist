@@ -20,16 +20,18 @@ https://opensource.org/licenses/MIT[MIT License].
 
 == Backends
 
-Artist supports three rendering backends. Only one backend is active per
+Artist supports five rendering backends. Only one backend is active per
 build.
 
 [%header,cols="1,2,2,1"]
 |===
-| Backend   | Platform               | CMake option          | Default
+| Backend   | Platform               | CMake option           | Default
 
-| Quartz-2D | macOS                  | `ARTIST_QUARTZ_2D=ON` | macOS
-| Skia      | macOS, Linux, Windows  | `ARTIST_SKIA=ON`      | Linux, Windows
-| Cairo     | macOS, Linux, Windows  | `ARTIST_CAIRO=ON`     | off
+| Quartz-2D | macOS                  | `ARTIST_QUARTZ_2D=ON`  | macOS
+| Direct2D  | Windows                | `ARTIST_DIRECT2D=ON`   | Windows
+| Skia      | macOS, Linux, Windows  | `ARTIST_SKIA=ON`       | off
+| Cairo     | macOS, Linux, Windows  | `ARTIST_CAIRO=ON`      | Linux and others
+| Recording | macOS, Linux, Windows  | `ARTIST_RECORDING=ON`  | off
 |===
 
 See xref:setup.adoc[Setup and Installation] for build instructions covering

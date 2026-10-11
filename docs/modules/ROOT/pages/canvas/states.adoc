@@ -99,6 +99,13 @@ A push and a pop have to balance, so the block's shape and the stack's
 depth are the same thing.
 
 ```c++
+#include <artist/canvas.hpp>
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+path p;                         // the shape to clip to
+point offset;                   // where to move the origin
+...
    {
       auto st = cnv.new_state();
       cnv.clip(p);
@@ -140,6 +147,11 @@ A label drawn inside a panel, rotated and clipped to it, leaving the canvas
 as it was found:
 
 ```c++
+#include <artist/canvas.hpp>
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+...
    auto panel = rect{20, 20, 260, 120};
 
    cnv.fill_style(rgba(21, 101, 192, 255));

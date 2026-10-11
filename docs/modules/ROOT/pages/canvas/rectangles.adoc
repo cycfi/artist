@@ -138,6 +138,11 @@ A pill shaped toggle with its knob, and a plain outlined frame around the
 pair:
 
 ```c++
+#include <artist/canvas.hpp>
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+...
    auto frame = rect{20, 20, 280, 100};
    cnv.stroke_style(rgba(93, 93, 93, 255));
    cnv.line_width(2);

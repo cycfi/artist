@@ -23,9 +23,9 @@ font, fill style and text alignment play no part; the canvas transform
 does apply.
 
 NOTE: Lines are wrapped at the opportunities `line_break` reports, except
-on Quartz 2D, where Core Text both shapes and wraps the text. There a wrap
-can fall somewhere `line_break` does not mark, and the same text can wrap
-differently from other backends.
+on Quartz 2D and Direct2D, where Core Text and DirectWrite both shape and
+wrap the text. There a wrap can fall somewhere `line_break` does not mark,
+and the same text can wrap differently from other backends.
 
 == Include
 
@@ -164,7 +164,8 @@ apart, except that the last line's baseline is moved down by
 
 A justified line has its spaces widened so that it fills its width
 exactly. The last line is left ragged, as is any line that ends in a hard
-break and any line whose natural width is 90% of its width or less.
+break and any line whose natural width is less than 90% of its width.
+Quartz 2D and Skia also leave a line of exactly 90% ragged.
 
 === Flow Parameters
 
@@ -279,6 +280,15 @@ A justified paragraph with its first line indented, and a caret drawn where
 the mouse position `mp` falls in it:
 
 ```c++
+#include <artist/text_run.hpp>
+#include <artist/canvas.hpp>    // For canvas
+#include <string_view>
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+std::string_view text;          // the paragraph's text, UTF-8
+point mp;                       // the mouse position
+...
    auto fd = font_descr{"Open Sans", 20};
    auto fm = font{fd}.metrics();
    auto lh = font{fd}.line_height();

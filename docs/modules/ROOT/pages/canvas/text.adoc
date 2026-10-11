@@ -8,8 +8,9 @@ point is decided by the alignment. `measure_text` reports how much room a
 string takes without drawing it, which is what laying text out needs.
 
 The font and the alignment are canvas state. Set one and it stays in effect
-for all the text that follows, until it is set again or a restore under
-xref:canvas/states.adoc[States] puts back an earlier one.
+for all the text that follows, until it is set again or the end of a
+`new_state` scope under xref:canvas/states.adoc[States] puts back an
+earlier one.
 
 Text is drawn in user space, so it follows the transforms under
 xref:canvas/transforms.adoc[Transforms], and it takes the styles under
@@ -212,6 +213,11 @@ A button sized to its label, with the label centred in it. `pos` is a
 `point`:
 
 ```c++
+#include <artist/canvas.hpp>
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+...
    auto pos = point{40, 40};
 
    cnv.font(font_descr{"Open Sans", 16}.bold());

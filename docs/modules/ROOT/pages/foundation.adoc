@@ -15,4 +15,5 @@ the drawing calls are expressed in.
   built from pixels, or drawn offscreen.
 * xref:foundation/canvas_layer.adoc[Canvas Layer] gives a canvas an
   offscreen surface on its own device.
-* xref:foundation/resources.adoc[Resources] finds fonts and images on disk.
+* xref:foundation/resources.adoc[Resources] finds images and other files on
+  disk.

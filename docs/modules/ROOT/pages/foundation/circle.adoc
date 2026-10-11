@@ -160,6 +160,12 @@ corner.
 Drawing a dial face as a filled circle with a ring inside it:
 
 ```c++
+#include <artist/circle.hpp>
+#include <artist/canvas.hpp>             // For canvas
+...
+using namespace cycfi::artist;
+extern canvas cnv;                       // the canvas to draw on
+...
    auto bounds = rect{0, 0, 200, 140};
    auto dial = circle{center_point(bounds), 40};
 

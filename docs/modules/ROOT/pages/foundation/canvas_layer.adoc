@@ -128,6 +128,13 @@ layer and is never drawn twice; each frame extends it by one step, puts it
 down, and paints the head on the canvas, where it does not persist:
 
 ```c++
+#include <artist/canvas_layer.hpp>
+#include <artist/canvas.hpp>             // For canvas
+#include <cmath>                         // For std::exp, std::sin
+...
+using namespace cycfi::artist;
+extern canvas cnv;                       // the canvas to draw on
+...
    // The grid is drawn once, into the layer, and stays there.
    canvas_layer trace{cnv, extent{520, 120}};
    {
@@ -177,10 +184,10 @@ down, and paints the head on the canvas, where it does not persist:
 image::foundation/canvas_layer_example.png[alt="A damped sine trace on a dark panel with a grid, a white dot at the right hand end of the trace", width=560px, align=center, title="The last of twelve frames. Each frame stroked forty more units.", link={imagesdir}/foundation/canvas_layer_example.png]
 
 Twelve frames run, and each one strokes forty units of the curve. The
-grid is stroked once, in the first four lines. Drawing straight onto the
-canvas instead would mean re-stroking the whole curve and the whole grid
-every frame, because the canvas is cleared and rebuilt each time and the
-layer is not.
+grid is stroked once, in the block that opens the example. Drawing
+straight onto the canvas instead would mean re-stroking the whole curve
+and the whole grid every frame, because the canvas is cleared and rebuilt
+each time and the layer is not.
 
 The head is the part that moves, so it is painted on the canvas rather than
 into the layer; putting it into the layer would leave a dot behind at every

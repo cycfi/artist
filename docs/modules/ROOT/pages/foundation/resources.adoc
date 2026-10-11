@@ -110,6 +110,13 @@ recorded here as current behaviour and is not something to rely on.
 == Example
 
 ```c++
+#include <artist/resources.hpp>
+#include <artist/image.hpp>              // For image
+...
+using namespace cycfi::artist;
+extern cycfi::fs::path user_override_dir;   // set by the user, or empty
+void use(cycfi::fs::path const& p);         // the application's own
+...
    // The host has already seeded the list from init_paths(). Add the
    // application's own asset directory, then an optional override that
    // must win over everything else.

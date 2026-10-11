@@ -276,6 +276,11 @@ are under xref:canvas/styles.adoc[Styles]. The `_preserve` pair is how a
 shape is given both a fill and an outline:
 
 ```c++
+#include <artist/canvas.hpp>
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+...
    cnv.fill_preserve();    // fill, keeping the path
    cnv.stroke();           // then outline the same path, and clear it
 ```
@@ -296,8 +301,9 @@ shape is given both a fill and an outline:
 |===
 
 Clipping intersects with whatever clip is already in effect, so it only
-ever narrows the drawable area. There is no call to widen it again: save
-the state first and restore it, as under xref:canvas/states.adoc[States].
+ever narrows the drawable area. There is no call to widen it again: clip
+inside a `new_state` scope, which puts the earlier clip back when it ends,
+as under xref:canvas/states.adoc[States].
 
 === Queries
 
@@ -315,13 +321,14 @@ the state first and restore it, as under xref:canvas/states.adoc[States].
                                 cover.                         | `rect`
 |===
 
-`fill_extent` reports what a fill would cover, not what geometry is in the
-path, so a path with no enclosed area, a bare `move_to` and `line_to` for
-instance, reports `rect(0, 0, 0, 0)`. So does an empty path.
+On Cairo, `fill_extent` reports what a fill would cover, not what geometry
+is in the path, so a path with no enclosed area, a bare `move_to` and
+`line_to` for instance, reports `rect(0, 0, 0, 0)`. An empty path reports
+`rect(0, 0, 0, 0)` on every backend.
 
-CAUTION: `fill_extent` is declared by `canvas.hpp` but defined only by the
-Cairo backend. Calling it in a Quartz 2D or Skia build is a link error, not
-a compile error.
+CAUTION: The other four backends report the bounds of the path's geometry
+instead, so there a bare `move_to` and `line_to` reports the line's
+bounding box. See <<Backend Differences>>.
 
 === Fill Rule
 
@@ -365,15 +372,17 @@ with a background color.
 == Backend Differences
 
 The current path is the part of the canvas that leans hardest on the
-backend, and these are the places where the three do not agree. None of
+backend, and these are the places where the five do not agree. None of
 them is affected by a difference in the geometry itself; they are all about
 what a call does to the path around it.
 
-[cols="1,1,1,1"]
+[cols="1,1,1,1,1,1"]
 |===
-| Expression | Quartz 2D | Skia | Cairo
+| Expression | Quartz 2D | Skia | Cairo | Direct2D | Recording
 
 | `cnv.add_circle(c)`
+| An arc, joined to the current point by a straight line.
+| A closed sub-path of its own, with no joining line.
 | An arc, joined to the current point by a straight line.
 | A closed sub-path of its own, with no joining line.
 | An arc, joined to the current point by a straight line.
@@ -382,22 +391,30 @@ what a call does to the path around it.
 | Appends `pth` to the current path.
 | Replaces the current path with `pth`.
 | Appends `pth` to the current path.
+| Appends `pth` to the current path.
+| Appends `pth` to the current path.
 
 | `cnv.clip(pth)`
 | Clips to `pth` alone; the current path is left as it was.
 | Clips to `pth` alone; the current path is left as it was.
 | Appends `pth` to the current path, clips to the pair, then discards the
   path.
+| Clips to `pth` alone; the current path is left as it was.
+| Clips to the bounding box of `pth`; the current path is left as it was.
 
 | `cnv.clear_rect(r)`
 | Erases `r`; the current path is left as it was.
 | Erases `r`; the current path is left as it was.
 | Erases `r` **and** whatever is already in the current path, then discards
   the path.
+| Erases `r`; the current path is left as it was.
+| Erases `r`; the current path is left as it was.
 
 | `cnv.point_in_path(p)`
 | True inside the fill **or** on the stroke, because the query is made in
   fill-and-stroke mode.
+| True inside the fill only.
+| True inside the fill only.
 | True inside the fill only.
 | True inside the fill only.
 
@@ -406,22 +423,30 @@ what a call does to the path around it.
 | Passed through to the backend.
 | Clamped to zero.
 | Clamped to zero.
+| Clamped to zero, except for a full turn, which is passed through.
+| Clamped to zero.
 
 | `cnv.fill_extent()`
-| Not defined. Link error.
-| Not defined. Link error.
-| Defined.
+| The bounding box of the path, curve control points included.
+| The bounding box of the path, curve control points included.
+| What a fill would cover: `rect(0, 0, 0, 0)` for a path with no enclosed
+  area.
+| The bounds of the path's geometry.
+| The bounds of the path's points, with curves flattened.
 
-| `cnv.save()` and
-  `cnv.restore()`
-| Do not save the current path.
-| Save and restore the current path with the rest of the state.
-| Do not save the current path.
+| `auto s = cnv.new_state();`
+| Does not save the current path.
+| Does not save the current path.
+| Does not save the current path.
+| Does not save the current path.
+| Does not save the current path.
 |===
 
+
 Verified by running on Cairo and by reading `lib/impl/skia/canvas.cpp`,
-`lib/impl/macos/quartz2d/canvas.mm` and
-`lib/include/artist/detail/canvas_impl.hpp`.
+`lib/impl/macos/quartz2d/canvas.mm`,
+`lib/impl/windows/direct2d/canvas.cpp`, `lib/impl/recording/canvas.cpp`
+and `lib/include/artist/detail/canvas_impl.hpp`.
 
 == Example
 
@@ -429,6 +454,11 @@ A rounded panel given both a fill and an outline, and the same shape rebuilt
 to hit test a mouse position:
 
 ```c++
+#include <artist/canvas.hpp>
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+...
    auto panel = rect{40, 30, 260, 130};
    auto mouse = point{150, 80};
 

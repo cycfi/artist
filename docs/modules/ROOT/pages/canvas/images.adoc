@@ -109,7 +109,9 @@ figure above shows. Compute `dest` from the image's own aspect ratio where
 that matters.
 
 Nothing is painted outside `dest`, and an empty `dest`, one with zero
-width or zero height, paints nothing at all.
+width or zero height, paints nothing at all. On Cairo it also stops the
+canvas painting anything afterwards: the zero scale leaves the Cairo
+context in an error state that nothing clears.
 
 Enlarging is smoothed rather than blocky: a pixel of the image spread over
 several pixels of the canvas is interpolated, so a small image blown up
@@ -169,7 +171,7 @@ that canvas's device at that canvas's pixel density. It is the buffer to
 reach for when the same drawing is put down every frame, an animation for
 instance: draw into it once through its `context()`, then paint it with
 `draw` as often as needed. It keeps what was drawn into it between frames,
-and unlike an `offscreen_image` it offers no access to its pixels.
+and unlike an `image` it offers no access to its pixels.
 
 Its `size()` is in user space units, like an image's, so drawing it at
 `pos` covers `layer.size()` units from there however dense the canvas
@@ -182,6 +184,11 @@ sheet, and a reading is then put together by painting one frame of that
 sheet per digit, which is what a sprite sheet is for:
 
 ```c++
+#include <artist/canvas.hpp>
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+
    // One seven segment digit in a 32 by 32 cell, at the corner `at`.
    void draw_digit(canvas& cnv, int n, point at)
    {
@@ -225,7 +232,7 @@ sheet per digit, which is what a sprite sheet is for:
          cnv.fill();
       }
    }
-
+...
    // The ten digits, rendered once into one 320 by 32 sheet.
    auto sheet = image{320, 32};
    {

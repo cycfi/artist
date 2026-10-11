@@ -203,8 +203,9 @@ is `p2.reflect(p)`.
 | `e = e2`         | Assign `e2` to `e`.
 |===
 
-Both coordinates are required. `+extent{10}+` does not compile: there is no
-one argument constructor, and the inherited `point` constructor takes two.
+Both coordinates are required. `+extent{10}+` does not compile: the one
+argument constructor takes a `point`, which a single number does not
+convert to, and the inherited `point` constructor takes two.
 
 === Extent and Point
 
@@ -242,6 +243,13 @@ An axis agnostic helper that grows a `point` along one axis only, and the
 `extent` returned by a `rect`:
 
 ```c++
+#include <artist/point.hpp>
+#include <artist/rect.hpp>               // For rect
+#include <algorithm>                     // For std::min
+...
+using namespace cycfi::artist;
+extern rect bounds;                      // a rect laid out elsewhere
+...
    constexpr point advance(point p, axis a, float d)
    {
       p[a] += d;

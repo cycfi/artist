@@ -53,6 +53,12 @@ Drawing follows the pattern of the HTML5 canvas: set the styles you want,
 build a path, then fill or stroke it.
 
 ```c++
+#include <artist/canvas.hpp>
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+rect bounds;                    // where the shape goes
+...
    cnv.fill_style(colors::navy_blue);
    cnv.add_round_rect(bounds, 5);
    cnv.fill();
@@ -83,7 +89,9 @@ image::canvas/drawing_model.png[alt="One rounded rectangle shown five times, gai
 
 `fill` and `stroke` consume the path. After either returns the canvas is
 building nothing, so a shape that is to be both filled and outlined is
-added twice, or kept as a xref:path.adoc[`path`] object and added again.
+filled with `fill_preserve`, which leaves the path in place, and then
+stroked, or else added twice, or kept as a xref:path.adoc[`path`] object
+and added again.
 
 === Coordinates and Units
 

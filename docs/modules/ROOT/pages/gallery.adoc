@@ -12,7 +12,7 @@ image:https://cycfi.github.io/assets/img/artist/composite_ops.jpg[Composite ops,
 
 == Video clips
 
-* https://vimeo.com/413657459[Rain] —
+* https://vimeo.com/413657459[Rain]:
   image:https://cycfi.github.io/assets/img/artist/rain_video_thumb.jpg[Rain,150,link=https://vimeo.com/413657459]
-* https://vimeo.com/413797835[Space] —
+* https://vimeo.com/413797835[Space]:
   image:https://cycfi.github.io/assets/img/artist/space_video_thumb.jpg[Space,150,link=https://vimeo.com/413797835]

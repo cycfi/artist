@@ -53,7 +53,7 @@ primitives; the difference is whether the geometry outlives the draw.
       void              add_round_rect(rect const& r, float radius);
       void              add_circle(circle const& c);
 
-      void              add_rect(float x, float y, float w, float h);
+      void              add_rect(float x, float y, float width, float height);
       void              add_round_rect(
                            float x, float y,
                            float width, float height,
@@ -269,7 +269,9 @@ image::canvas/bezier.svg[alt="curve control points", width=480px, align=center, 
 |===
 
 Both `arc` overloads take `ccw` as a defaulted parameter, so it may be
-omitted. Angles are in radians and `radius` is clamped to be non-negative.
+omitted. Angles are in radians. The Cairo and Skia backends clamp a
+negative `radius` to zero; Quartz-2D, Direct2D and the recording backend
+pass it on as given.
 
 NOTE: `ccw` defaults to `false`, which sweeps in the direction of
 increasing angle. Because Artist's y axis grows downward, that appears
@@ -278,7 +280,9 @@ increasing angle. Because Artist's y axis grows downward, that appears
 === Fill Rule
 
 The fill rule decides which regions of a self-intersecting path count as
-inside, and it governs both filling and `includes`.
+inside. A path's fill rule governs `includes` and `canvas::clip(p)`.
+Filling uses the canvas's own fill rule, set with `cnv.fill_rule(fr)`
+(see xref:canvas/current_path.adoc[Current Path]).
 
 image::canvas/fill_rule.svg[alt="fill rules", width=480px, align=center, title="The same star under the two fill rules.", link={imagesdir}/canvas/fill_rule.svg]
 
@@ -294,7 +298,7 @@ image::canvas/fill_rule.svg[alt="fill rules", width=480px, align=center, title="
 |===
 
 NOTE: The getter is compiled only for the Quartz-2D backend. The setter is
-available on all three.
+available on all five.
 
 === Backend Access
 
@@ -305,7 +309,10 @@ available on all three.
 | `p.impl()`    | The underlying backend object: a
                   `CGPath` on Quartz-2D, an
                   `SkPathBuilder` on Skia, a
-                  `cairo_artist_path_t` on Cairo.           | `path_impl*`
+                  `cairo_artist_path_t` on Cairo, a
+                  `d2d::path_impl` on Direct2D, a
+                  `recording::path_impl` on the
+                  recording backend.                        | `path_impl*`
 |===
 
 WARNING: `impl` is an escape hatch for backend-specific work. Code that
@@ -317,6 +324,12 @@ returning `path_impl const*`.
 Building a shape once and drawing it many times:
 
 ```c++
+#include <artist/path.hpp>
+#include <artist/canvas.hpp>    // For canvas
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+...
    // Built once, outside the draw function
    auto arrow = path{"M 0 0 L 40 20 L 0 40 L 10 20 Z"};
 

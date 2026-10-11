@@ -1,17 +1,34 @@
 = Backends
 
-Artist supports three rendering backends: https://skia.org/[Skia],
-https://apple.co/2SljYHw[Quartz-2D], and
-https://www.cairographics.org/[Cairo]. Only one backend is active per build,
+Artist supports five rendering backends: https://skia.org/[Skia],
+https://apple.co/2SljYHw[Quartz-2D],
+https://www.cairographics.org/[Cairo],
+https://docs.microsoft.com/en-us/windows/win32/direct2d/direct2d-portal[Direct2D],
+and a headless recording backend. Only one backend is active per build,
 selected with a CMake option (see xref:setup.adoc[Setup and Installation]).
+
+* *Quartz-2D*: macOS, the default there. Core Text shapes and wraps the
+  text.
+* *Direct2D*: Windows, the default there. DirectWrite shapes and wraps the
+  text, and WIC decodes images, with libwebp for WebP.
+* *Skia*: macOS, Linux and Windows, from a prebuilt bundle or built through
+  vcpkg. HarfBuzz is used for text layout.
+* *Cairo*: Linux, where it is the default, and macOS and Windows. HarfBuzz
+  shapes the text, FreeType rasterizes it, and Fontconfig selects the fonts.
+  Cairo has no path effects of its own; Artist's Cairo backend blurs
+  shadows on the CPU, as the canvas API requires.
+* *Recording*: macOS, Linux and Windows. It rasterizes nothing and keeps a journal of
+  the drawing calls, so tests can check what was drawn. Text is measured
+  and shaped with real fonts through FreeType, Fontconfig and HarfBuzz, so
+  layout matches the drawing backends.
 
 == History
 
 Historically, the Artist library was the 2D vector graphics component for the
 https://cycfi.github.io/elements/[Elements Library], implemented using the
 https://www.cairographics.org/[Cairo 2D graphics library] as the sole backend.
-For a long time, Cairo's lack of support for path effects — needed for modern
-GUI applications — combined with a stalled development cadence (see the
+For a long time, Cairo's lack of support for path effects (needed for modern
+GUI applications), combined with a stalled development cadence (see the
 https://www.cairographics.org/roadmap/[Cairo Roadmap]) made it look likely
 that Cairo support would be dropped.
 
@@ -38,15 +55,16 @@ directly, it would have been locked to that specific library. Abstraction is
 the key. Libraries come and go: the king of the hill now may be superseded by
 a "better" library in the future. Case in point: Cairo.
 
-There is also a half-baked
+There was also a half-baked
 https://docs.microsoft.com/en-us/windows/win32/direct2d/direct2d-portal[Direct-2D]
-port on Windows, currently shelved. It works, except for the text layout
-part, which has its own text-layout engine. Direct-2D is painful to work with
-compared to other graphics libraries, and for lack of time it is, for now,
-indefinitely shelved (contributions welcome if anyone wants to continue where
-it stopped).
+port on Windows, shelved for a long time. It worked, except for the text
+layout part, which has its own text-layout engine. Direct-2D is painful to
+work with compared to other graphics libraries, and for lack of time it was
+indefinitely shelved (contributions were welcome if anyone wanted to
+continue where it stopped). The port has since been completed: Direct2D is
+now the default backend on Windows, with DirectWrite for text.
 
-A few graphics libraries have splendid support for text layout; some don't —
+A few graphics libraries have splendid support for text layout; some don't:
 in particular, Skia. For Skia, Artist uses the
 https://www.freedesktop.org/wiki/Software/HarfBuzz/[HarfBuzz] library for text
 layout.

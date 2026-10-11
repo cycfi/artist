@@ -282,6 +282,9 @@ For a `text_layout`, `break_enum` is `text_run::break_enum`.
 | Expression               | Semantics
 
 | `TextRun::break_enum`    | The type the break queries return.
+| `TextRun::must_break`    | The `break_enum` value for a required
+                             break, needed only if the layout's
+                             `line_break` is used.
 | `r.flow(w, j)`           | Lay the paragraph out.
 | `r.num_lines()`          | The paragraph's line count; 0 is taken as
                              one line.
@@ -302,6 +305,15 @@ A document of two paragraphs, a third added after the flow, and a caret
 drawn where the mouse position `mp` falls:
 
 ```c++
+#include <artist/text_layout.hpp>
+#include <artist/canvas.hpp>    // For canvas
+#include <string_view>
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+std::u32string_view text;       // the document's text, UTF-32
+point mp;                       // the mouse position
+...
    auto fd = font_descr{"Open Sans", 20};
    auto fm = font{fd}.metrics();
    auto lh = font{fd}.line_height();

@@ -15,8 +15,9 @@ rotation and skew. The `tx` and `ty` members carry the translation. A
 default constructed `affine_transform` is the identity.
 
 The type is a plain aggregate of six `double` members, so it is cheap to
-copy and usable in constant expressions. Everything except `rotate` and
-`skew`, which need `std::sin`, `std::cos` and `std::tan`, is `constexpr`.
+copy and usable in constant expressions. Everything except `rotate`,
+`skew`, `make_rotation` and `make_skew`, which need `std::sin`, `std::cos`
+and `std::tan`, is `constexpr`.
 
 NOTE: Artist's y axis grows downward, so a positive rotation, which takes
 the positive x axis toward the positive y axis, appears clockwise on
@@ -57,6 +58,10 @@ screen.
    };
 
    constexpr affine_transform affine_identity;
+
+   constexpr bool             operator==(affine_transform const& lhs, affine_transform const& rhs);
+   constexpr bool             operator!=(affine_transform const& lhs, affine_transform const& rhs);
+   constexpr affine_transform operator*(affine_transform t1, affine_transform t2);
 ```
 
 ```c++
@@ -219,6 +224,12 @@ drawing. Translate first to work about some other point.
 Rotating about an arbitrary point rather than the origin:
 
 ```c++
+#include <artist/affine_transform.hpp>
+...
+using namespace cycfi::artist;
+float cx, cy;                            // the point to rotate about
+float x, y;                              // the point to map
+...
    auto t = affine_identity
       .translate(cx, cy)
       .rotate(M_PI / 4)
