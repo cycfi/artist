@@ -61,7 +61,7 @@
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="../index.html">Introduction</a>
+    <a class="nav-link" href="../index.html">Artist 2D Canvas Library</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../setup.html">Setup and Installation</a>
@@ -151,6 +151,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../text_layout.html">Text Layout</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../recording.html">Recording</a>
+  </li>
 </ul>
   </li>
 </ul>
@@ -206,10 +209,10 @@ and drawing into one. The eight calls here differ only in how much of the
 image is painted, where it lands, and at what size.</p>
 </div>
 <div class="paragraph">
-<p>The ink is the image&#8217;s own. Unlike every other paint on the canvas, the
-<a href="styles.html" class="xref page">fill and stroke styles</a> do not colour it, and the
-<a href="current_path.html" class="xref page">current path</a> is neither painted with it nor
-disturbed by it. Everything else about the drawing state applies as it
+<p>The ink is the image&#8217;s own: unlike every other paint on the canvas, the
+<a href="styles.html" class="xref page">fill and stroke styles</a> do not colour it. The
+<code>draw</code> calls leave the <a href="current_path.html" class="xref page">current path</a> as it
+is. Everything else about the drawing state applies as it
 would to any other paint: the geometry goes through the
 <a href="transforms.html" class="xref page">current transform</a>, the clip cuts it, the
 image is composited over what is already there, and the
@@ -231,6 +234,18 @@ its scale. A 2x image covers the same ground as a 1x image of the same
 <td class="content">
 These are the W3C canvas API&#8217;s <code>drawImage</code>, in its three argument
 counts, spelled as C++ overloads.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+See <a href="../canvas.html" class="xref page">Canvas</a> for the drawing model and an overview of the canvas.
 </td>
 </tr>
 </table>
@@ -260,7 +275,11 @@ counts, spelled as C++ overloads.
 <div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   void  draw(image const&amp; pic, rect const&amp; src, rect const&amp; dest);
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">class canvas
+{
+public:
+
+   void  draw(image const&amp; pic, rect const&amp; src, rect const&amp; dest);
    void  draw(image const&amp; pic, rect const&amp; dest);
    void  draw(image const&amp; pic, point pos = {0, 0});
    void  draw(image const&amp; pic, point pos, float scale);
@@ -268,7 +287,8 @@ counts, spelled as C++ overloads.
    void  draw(image const&amp; pic, float posx, float posy, float scale);
 
    void  draw(canvas_layer const&amp; layer, rect const&amp; dest);
-   void  draw(canvas_layer const&amp; layer, point pos = {0, 0});</code></pre>
+   void  draw(canvas_layer const&amp; layer, point pos = {0, 0});
+};</code></pre>
 </div>
 </div>
 </div>
@@ -276,6 +296,10 @@ counts, spelled as C++ overloads.
 <div class="sect1">
 <h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
 <div class="sectionbody">
+<div class="paragraph">
+<p>The image drawing members of <a href="../canvas.html" class="xref page"><code>canvas</code></a> allow these
+expressions.</p>
+</div>
 <div class="sect2">
 <h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
 <div class="dlist">
@@ -290,7 +314,8 @@ counts, spelled as C++ overloads.
 </dd>
 <dt class="hdlist1"><code>layer</code>              </dt>
 <dd>
-<p>Object of type <code>canvas_layer</code>.</p>
+<p>Object of type
+<a href="../foundation/canvas_layer.html" class="xref page">canvas_layer</a>.</p>
 </dd>
 <dt class="hdlist1"><code>src</code>, <code>dest</code>        </dt>
 <dd>
@@ -298,21 +323,23 @@ counts, spelled as C++ overloads.
 </dd>
 <dt class="hdlist1"><code>pos</code>                </dt>
 <dd>
-<p>Object of type <a href="../foundation/point.html" class="xref page">point</a>.</p>
+<p>Object of type <a href="../foundation/point.html" class="xref page">point</a>
+for the top left corner.</p>
 </dd>
 <dt class="hdlist1"><code>posx</code>, <code>posy</code>       </dt>
 <dd>
-<p><code>float</code> coordinates of the image&#8217;s top left corner.</p>
+<p>Floating point values for the top left corner.</p>
 </dd>
 <dt class="hdlist1"><code>scale</code>              </dt>
 <dd>
-<p>A <code>float</code> multiplier on the image&#8217;s own size.</p>
+<p>Floating point value for a multiplier on the
+image&#8217;s own size.</p>
 </dd>
 </dl>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_placing_an_image"><a class="anchor" href="#_placing_an_image"></a>Placing an Image</h3>
+<h3 id="_operation"><a class="anchor" href="#_operation"></a>Operation</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 33.3333%;">
@@ -329,71 +356,86 @@ counts, spelled as C++ overloads.
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(pic)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole image
-                                      with its top left corner
-                                      at the origin.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole of <code>pic</code> with
+                                        its top left corner at the
+                                        origin.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(pic, pos)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, with the corner
-                                      at <code>pos</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole of <code>pic</code> with
+                                        its top left corner at
+                                        <code>pos</code>.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(pic, posx, posy)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, from loose
-                                      coordinates.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole of <code>pic</code> with
+                                        its top left corner at
+                                        <code>posx</code>, <code>posy</code>.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
 </tr>
-</tbody>
-</table>
-<div class="paragraph">
-<p>The image is painted at <code>pic.size()</code>, its own units, not at its pixel
-count. An image loaded at 2x has twice the pixels of a 1x one of the same
-<code>size()</code> and covers exactly the same ground; the extra pixels go into the
-detail. That is what makes one drawing work on displays of different
-densities.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_scaling_an_image"><a class="anchor" href="#_scaling_an_image"></a>Scaling an Image</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(pic, pos, scale)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole image
-                                        at <code>pos</code>, its size
-                                        multiplied by <code>scale</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole of <code>pic</code> at
+                                        <code>pos</code>, its size multiplied by
+                                        <code>scale</code>.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(pic, posx, posy, scale)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, from loose
-                                        coordinates.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole of <code>pic</code> at
+                                        <code>posx</code>, <code>posy</code>, its size
+                                        multiplied by <code>scale</code>.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(pic, dest)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole image
-                                        stretched to fill
+<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole of <code>pic</code>
+                                        stretched to fill <code>dest</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(pic, src, dest)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the region <code>src</code> of
+                                        <code>pic</code>, stretched to fill
                                         <code>dest</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(layer)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole of <code>layer</code>
+                                        with its top left corner at
+                                        the origin.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(layer, pos)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole of <code>layer</code>
+                                        with its top left corner at
+                                        <code>pos</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(layer, dest)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole of <code>layer</code>
+                                        stretched to fill <code>dest</code>.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
 </tr>
 </tbody>
 </table>
+</div>
+<div class="sect2">
+<h3 id="_placing_an_image"><a class="anchor" href="#_placing_an_image"></a>Placing an Image</h3>
+<div class="paragraph">
+<p>The image is painted at <code>pic.size()</code>, its own units, not at its pixel
+count. An image loaded at 2x has twice the pixels of a 1x one of the same
+<code>size()</code> and covers exactly the same ground; the extra pixels go into the
+detail. One drawing therefore works on displays of different densities.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_scaling_an_image"><a class="anchor" href="#_scaling_an_image"></a>Scaling an Image</h3>
 <div class="imageblock text-center">
 <div class="content">
 <a class="image" href="../_images/canvas/draw_placement.png"><img src="../_images/canvas/draw_placement.png" alt="A four digit seven segment display drawn at its own size, at one and a half times, and stretched into a rectangle twice as tall" width="560px"></a>
@@ -419,29 +461,6 @@ comes out soft. There is no control over that.</p>
 </div>
 <div class="sect2">
 <h3 id="_drawing_part_of_an_image"><a class="anchor" href="#_drawing_part_of_an_image"></a>Drawing Part of an Image</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(pic, src, dest)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the region <code>src</code> of
-                                    the image, stretched to
-                                    fill <code>dest</code>.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-</tbody>
-</table>
 <div class="imageblock text-center">
 <div class="content">
 <a class="image" href="../_images/canvas/draw_src_dest.png"><img src="../_images/canvas/draw_src_dest.png" alt="The third cell outlined in a four digit seven segment display, and the same cell drawn larger beside it" width="560px"></a>
@@ -455,24 +474,23 @@ covering the whole image.</p>
 </div>
 <div class="paragraph">
 <p><code>src</code> is in the image&#8217;s own units, the same units as <code>size()</code>, so it names
-the same region of a 2x image as of a 1x one. That is the point of the
-choice: a sheet can be swapped for a denser one without touching the
-arithmetic that picks the frames out of it. In the figure above the cells
-are 32 units wide, so the third of them starts 64 units in, which is the
-<code>64</code> in <code>src</code>.</p>
+the same region of a 2x image as of a 1x one. A sheet can therefore be
+swapped for a denser one without touching the arithmetic that picks the
+frames out of it. In the figure above the cells are 32 units wide, so the
+third of them starts 64 units in, which is the <code>64</code> in <code>src</code>.</p>
 </div>
-<div class="admonitionblock caution">
+<div class="admonitionblock warning">
 <table>
 <tr>
 <td class="icon">
-<i class="fa icon-caution" title="Caution"></i>
+<i class="fa icon-warning" title="⚠️  WARNING"></i>
 </td>
 <td class="content">
 Keep <code>src</code> inside the image and give both rectangles a positive
-width and height. Outside that the backends disagree, and none of the
-three cases is settled. A <code>src</code> that runs past the image&#8217;s edge is clipped
-to it and the result stretched over the whole of <code>dest</code> on Quartz 2D,
-while Cairo shrinks what it paints in proportion, as the W3C API says to.
+width and height. Outside that the backends disagree. A <code>src</code> that runs
+past the image&#8217;s edge is clipped to it and the result stretched over the
+whole of <code>dest</code> on Quartz 2D, while Cairo shrinks what it paints in
+proportion, as the W3C API says to.
 A <code>src</code> of zero width or height paints nothing on Cairo, again as the W3C
 API says, and the whole image stretched across <code>dest</code> on Quartz 2D. A
 <code>dest</code> whose <code>right</code> is left of its <code>left</code> mirrors the image on Cairo and
@@ -484,48 +502,13 @@ does not on Quartz 2D.
 </div>
 <div class="sect2">
 <h3 id="_drawing_a_layer"><a class="anchor" href="#_drawing_a_layer"></a>Drawing a Layer</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(layer)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole layer with
-                                    its top left corner at the
-                                    origin.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(layer, pos)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, with the corner
-                                    at <code>pos</code>.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(layer, dest)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole layer
-                                    stretched to fill <code>dest</code>.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-</tbody>
-</table>
 <div class="paragraph">
 <p>A <code>canvas_layer</code> is an offscreen surface made for one canvas, living on
 that canvas&#8217;s device at that canvas&#8217;s pixel density. It is the buffer to
 reach for when the same drawing is put down every frame, an animation for
 instance: draw into it once through its <code>context()</code>, then paint it with
 <code>draw</code> as often as needed. It keeps what was drawn into it between frames,
-and unlike an <code>offscreen_image</code> it offers no access to its pixels.</p>
+and unlike an <code>image</code> it offers no access to its pixels.</p>
 </div>
 <div class="paragraph">
 <p>Its <code>size()</code> is in user space units, like an image&#8217;s, so drawing it at
@@ -533,19 +516,20 @@ and unlike an <code>offscreen_image</code> it offers no access to its pixels.</p
 underneath is. A layer is valid only for the canvas it was made for.</p>
 </div>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="_example"><a class="anchor" href="#_example"></a>Example</h3>
 <div class="paragraph">
-<p>A seven segment display. The ten digits are rendered once into a single
-sheet, and a reading is then put together by painting one frame of that
-sheet per digit, which is what a sprite sheet is for:</p>
+<p>Render the ten digits of a seven segment display once into a single sheet,
+then put a reading together by painting one frame of the sheet per digit.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   // One seven segment digit in a 32 by 32 cell, at the corner `at`.
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+
+   // One seven segment digit in a 32 by 32 cell, at the corner `at`.
    void draw_digit(canvas&amp; cnv, int n, point at)
    {
       // Three segment shapes in a 16 by 26 digit: the horizontal bar across
@@ -588,30 +572,56 @@ sheet per digit, which is what a sprite sheet is for:</p>
          cnv.fill();
       }
    }
-
+...
    // The ten digits, rendered once into one 320 by 32 sheet.
    auto sheet = image{320, 32};
    {
       offscreen_image ctx{sheet};
       canvas scnv{ctx.context()};
       for (int d = 0; d != 10; ++d)
-         draw_digit(scnv, d, point{d * 32.0f, 0});
+         draw_digit(scnv, d, point{d * 32.0f, 0});           <i class="conum" data-value="1"></i><b>(1)</b>
    }
 
    // A reading, blitted from the sheet one digit at a time. The 2 is drawn
    // twice, from the one cell that holds it.
-   cnv.draw(sheet, point{20, 20});
+   cnv.draw(sheet, point{20, 20});                           <i class="conum" data-value="2"></i><b>(2)</b>
    char const* reading = "2026";
    for (int i = 0; reading[i]; ++i)
    {
       float x = (reading[i] - '0') * 32.0f;
-      cnv.draw(
+      cnv.draw(                                              <i class="conum" data-value="3"></i><b>(3)</b>
          sheet,
          rect{x, 0, x + 32, 32},
-         rect{60 + i * 64.0f, 70, 108 + i * 64.0f, 118}
+         rect{60 + i * 64.0f, 70, 108 + i * 64.0f, 118}   <i class="conum" data-value="4"></i><b>(4)</b>
       );
    }</code></pre>
 </div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Render the ten digits into <code>sheet</code>. The segment drawing runs ten
+times, whatever the reading is and however often it changes after
+that.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Paint the whole sheet at its own size, with its top left corner at
+20, 20.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Paint the cell that holds each digit, picked out by <code>src</code>. Every later
+frame is four <code>draw</code> calls against a sheet that is already rasterised.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>Enlarge each cell from 32 units to 48. The reading is softer than the
+sheet above it as a result; a sheet is usually authored at the largest
+size it will be drawn.</td>
+</tr>
+</table>
 </div>
 <div class="imageblock text-center">
 <div class="content">
@@ -619,14 +629,6 @@ sheet per digit, which is what a sprite sheet is for:</p>
 </div>
 <div class="title">Figure 3. What the code above draws.</div>
 </div>
-<div class="paragraph">
-<p>The segment drawing runs ten times, once, whatever the reading is and
-however often it changes after that. Every later frame is four <code>draw</code>
-calls against a sheet that is already rasterised, and the digit <code>2</code> is
-painted twice from the one cell that holds it. Each cell is enlarged from
-32 units to 48 on the way out, which is why the reading is softer than the
-sheet above it; a sheet is usually authored at the largest size it will be
-drawn.</p>
 </div>
 </div>
 </div>

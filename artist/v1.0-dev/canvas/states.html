@@ -61,7 +61,7 @@
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="../index.html">Introduction</a>
+    <a class="nav-link" href="../index.html">Artist 2D Canvas Library</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../setup.html">Setup and Installation</a>
@@ -151,6 +151,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../text_layout.html">Text Layout</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../recording.html">Recording</a>
+  </li>
 </ul>
   </li>
 </ul>
@@ -201,10 +204,10 @@
 <div class="sectionbody">
 <div class="paragraph">
 <p>The canvas draws with whatever styles, transform and clip are in effect at
-the moment of the call. Those settings are not separate knobs but one
-bundle, the drawing state, and the canvas keeps a stack of them.
-<code>cnv.new_state()</code> pushes a copy of the bundle and pops it again at the end
-of the enclosing scope. Everything set in between is undone in one step.</p>
+the moment of the call. Those settings form one bundle, the drawing state,
+and the canvas keeps a stack of them. <code>cnv.new_state()</code> pushes a copy of
+the bundle and pops it again at the end of the enclosing scope. Everything
+set in between is undone in one step.</p>
 </div>
 <div class="paragraph">
 <p>This is how drawing code stays composable. A function that translates the
@@ -214,13 +217,18 @@ narrowed, never widened. Saving first and restoring at the end is the only
 way to hand the canvas back as it was found.</p>
 </div>
 <div class="paragraph">
-<p><code>cnv.new_state()</code> is the whole interface. It returns an object that pushes
-the state on construction and pops it when it goes out of scope, including
-when an exception carries you out of the block, so the two halves are made
-by the language rather than by the caller and cannot drift apart as the
-code between them grows. There is no way to push or pop on its own: the
-underlying <code>save</code> and <code>restore</code> are private, and <code>canvas::state</code> is their
-only caller.</p>
+<p><code>cnv.new_state()</code> returns an object that pushes the state on construction
+and pops it when it goes out of scope, including when an exception carries
+you out of the block. There is no way to push or pop on its own.</p>
+</div>
+<div class="paragraph">
+<p><code>cnv.new_group(opacity)</code> pushes the state in the same way and also opens a
+group. What is drawn while the group is open is composited onto the canvas
+as one when the object goes out of scope, at the group&#8217;s opacity, and then
+the state is popped. Shapes that overlap inside a group do not show through
+each other: two red squares in a group at half opacity tint the canvas
+evenly, no darker where they overlap. Groups nest, and their opacities
+multiply.</p>
 </div>
 <div class="paragraph">
 <p>The bundle holds the <a href="styles.html" class="xref page">fill and stroke styles</a>,
@@ -247,11 +255,36 @@ stays where it landed.</p>
 The bundle is the W3C canvas API&#8217;s drawing state, which likewise
 excludes the current default path and the bitmap, and a <code>new_state</code> scope
 is its <code>save</code> and <code>restore</code> pair. Artist does not expose those two
-separately. The W3C API does, and leaves an unmatched <code>restore</code> as a
-silent no-op; a scope makes the mistake unwritable instead.
+separately.
 </td>
 </tr>
 </table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+See <a href="../canvas.html" class="xref page">Canvas</a> for the drawing model and an overview of the canvas.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_design_rationale"><a class="anchor" href="#_design_rationale"></a>Design Rationale</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The push and the pop are paired by the language: the object <code>new_state</code>
+returns pops in its destructor, so the two halves cannot drift apart as the
+code between them grows. The underlying <code>save</code> and <code>restore</code> are private,
+and <code>canvas::state</code> is their only caller. The W3C API exposes the two
+separately and leaves an unmatched <code>restore</code> as a silent no-op; a scope
+makes that mistake unwritable. A group&#8217;s start and end are paired the same
+way, by the object <code>new_group</code> returns.</p>
 </div>
 </div>
 </div>
@@ -270,20 +303,36 @@ silent no-op; a scope makes the mistake unwritable instead.
 <div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   class state
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">class canvas
+{
+public:
+
+   class state
    {
    public:
 
-      state(canvas&amp; cnv);
-      state(state&amp;&amp; rhs) noexcept;
-      state(state const&amp;) = delete;
-      ~state();
+               state(canvas&amp; cnv);
+               state(state&amp;&amp; rhs) noexcept;
+               ~state();
 
-      state&amp;   operator=(state const&amp;) = delete;
       state&amp;   operator=(state&amp;&amp; rhs) noexcept;
    };
 
-   state    new_state();</code></pre>
+   state       new_state();
+
+   class group
+   {
+   public:
+
+               group(canvas&amp; cnv, float opacity);
+               group(group&amp;&amp; rhs) noexcept;
+               ~group();
+
+      group&amp;   operator=(group&amp;&amp; rhs) noexcept;
+   };
+
+   group       new_group(float opacity);
+};</code></pre>
 </div>
 </div>
 </div>
@@ -291,23 +340,132 @@ silent no-op; a scope makes the mistake unwritable instead.
 <div class="sect1">
 <h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
 <div class="sectionbody">
+<div class="paragraph">
+<p>The state members of <a href="../canvas.html" class="xref page"><code>canvas</code></a> allow these expressions.</p>
+</div>
 <div class="sect2">
 <h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
 <div class="dlist">
 <dl>
-<dt class="hdlist1"><code>cnv</code>          </dt>
+<dt class="hdlist1"><code>cnv</code>             </dt>
 <dd>
 <p>Object of type <code>canvas</code>.</p>
 </dd>
-<dt class="hdlist1"><code>s</code>, <code>s2</code>      </dt>
+<dt class="hdlist1"><code>s</code>, <code>a</code>, <code>b</code>     </dt>
 <dd>
 <p>Objects of type <code>canvas::state</code>.</p>
+</dd>
+<dt class="hdlist1"><code>g</code>, <code>c</code>, <code>d</code>     </dt>
+<dd>
+<p>Objects of type <code>canvas::group</code>.</p>
+</dd>
+<dt class="hdlist1"><code>o</code>               </dt>
+<dd>
+<p>Floating point value for an opacity, from 0
+(transparent) to 1 (opaque).</p>
 </dd>
 </dl>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_saving_and_restoring"><a class="anchor" href="#_saving_and_restoring"></a>Saving and Restoring</h3>
+<h3 id="_constructors_and_assignment"><a class="anchor" href="#_constructors_and_assignment"></a>Constructors and Assignment</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::state(cnv)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct a <code>canvas::state</code> that pushes
+                                     a copy of the drawing state of <code>cnv</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::state(std::move(s))</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Move construct from <code>s</code>, taking over
+                                     its save.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>a = std::move(b)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Move assign <code>b</code> to <code>a</code>, taking over its
+                                     save.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::group(cnv, o)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct a <code>canvas::group</code> that pushes
+                                     a copy of the drawing state of <code>cnv</code>
+                                     and opens a group at opacity <code>o</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::group(std::move(g))</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Move construct from <code>g</code>, taking over
+                                     its group.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c = std::move(d)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Move assign <code>d</code> to <code>c</code>, ending the
+                                     group <code>c</code> held, then taking over the
+                                     group of <code>d</code>.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+C++ brace initialization may also be used.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p><code>canvas::state</code> is non-copyable: two objects popping one save would
+unbalance the stack. A move hands the save over, and the moved-from object
+holds nothing and pops nothing. The object is a token for one entry on the
+stack and holds no copy of the state itself.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="⚠️  WARNING"></i>
+</td>
+<td class="content">
+Move assignment does not restore first. <code>a = std::move(b)</code>
+overwrites whatever save <code>a</code> was holding without popping it, so that entry
+stays on the stack for the rest of the drawing. Assign only over a <code>state</code>
+that has already been moved from.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+<code>canvas::group</code> is non-copyable too, and a moved-from group holds
+nothing. Its move assignment differs from that of <code>state</code>: <code>c = std::move(d)</code>
+first ends the group <code>c</code> was holding, compositing it and popping its state,
+so no entry is left on the stack.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_operation"><a class="anchor" href="#_operation"></a>Operation</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 33.3333%;">
@@ -325,16 +483,40 @@ silent no-op; a scope makes the mistake unwritable instead.
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.new_state()</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Push a copy of the drawing
-                        state and return an object
-                        that pops it when destroyed.</p></td>
+                        state and return a
+                        <code>canvas::state</code> that pops it
+                        when destroyed.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::state</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.new_group(o)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Push a copy of the drawing
+                        state, open a group at opacity
+                        <code>o</code>, and return a
+                        <code>canvas::group</code> that composites
+                        the group and pops the state
+                        when destroyed.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::group</code></p></td>
 </tr>
 </tbody>
 </table>
 <div class="paragraph">
 <p>Hold the result in a named local. A temporary is destroyed at the end of
 the full expression, so <code>cnv.new_state();</code> on its own pushes and pops the
-state and protects nothing.</p>
+state and protects nothing. The same goes for <code>new_group</code>.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+The recording backend journals what is drawn inside a group as it
+would outside one. It records no group and no opacity.
+</td>
+</tr>
+</table>
 </div>
 <div class="imageblock text-center">
 <div class="content">
@@ -354,7 +536,14 @@ depth are the same thing.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   {
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+path p;                         // the shape to clip to
+point offset;                   // where to move the origin
+...
+   {
       auto st = cnv.new_state();
       cnv.clip(p);
       cnv.translate(offset);
@@ -364,80 +553,27 @@ depth are the same thing.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_constructors_and_assignment"><a class="anchor" href="#_constructors_and_assignment"></a>Constructors and Assignment</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::state(cnv)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Push a copy of the drawing state of <code>cnv</code>.
-                              What <code>cnv.new_state()</code> returns; there is no
-                              default constructor.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::state(std::move(s))</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Take over the save held by <code>s</code>, which is
-                              left holding nothing and pops nothing.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>s = std::move(s2)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Take over the save held by <code>s2</code>, which is
-                              left holding nothing.</p></td>
-</tr>
-</tbody>
-</table>
+<h3 id="_example"><a class="anchor" href="#_example"></a>Example</h3>
 <div class="paragraph">
-<p>A <code>state</code> cannot be copied. Two objects popping one save would unbalance
-the stack, so the copy constructor and the copy assignment operator are
-deleted, and the move operations hand the save over rather than duplicate
-it. The object is only a token for one entry on the stack; it holds no
-copy of the state itself.</p>
-</div>
-<div class="admonitionblock caution">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-caution" title="Caution"></i>
-</td>
-<td class="content">
-Move assignment does not restore first. <code>s = std::move(s2)</code>
-overwrites whatever save the target was holding without popping it, so that
-entry stays on the stack for the rest of the drawing. Assign only over a
-<code>state</code> that has already been moved from.
-</td>
-</tr>
-</table>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>A label drawn inside a panel, rotated and clipped to it, leaving the canvas
-as it was found:</p>
+<p>Draw a label inside a panel, rotated and clipped to it, and leave the
+canvas as it was found.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   auto panel = rect{20, 20, 260, 120};
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+...
+   auto panel = rect{20, 20, 260, 120};
 
    cnv.fill_style(rgba(21, 101, 192, 255));
    cnv.fill_round_rect(panel, 8);
 
    {
-      auto st = cnv.new_state();
+      auto st = cnv.new_state();                            <i class="conum" data-value="1"></i><b>(1)</b>
       cnv.add_round_rect(panel, 8);
-      cnv.clip();
+      cnv.clip();                                           <i class="conum" data-value="2"></i><b>(2)</b>
       cnv.translate(panel.left + 20, panel.bottom - 26);
       cnv.rotate(-0.35);
       cnv.font(font_descr{"Open Sans", 34});
@@ -448,8 +584,27 @@ as it was found:</p>
    // The clip, the transform, the font and the fill style are all back:
    // this lands outside the panel, unclipped and unrotated.
    cnv.fill_style(rgba(26, 26, 26, 255));
-   cnv.fill_rect(280, 60, 40, 40);</code></pre>
+   cnv.fill_rect(280, 60, 40, 40);                          <i class="conum" data-value="3"></i><b>(3)</b></code></pre>
 </div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Save the drawing state for the label.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Clip to the panel. The label is longer than the panel and runs off its
+corner, where the clip cuts it.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Fill a square after the scope ends. It is dark, square to the axes and
+outside the panel: none of the four settings had to be put back by
+hand.</td>
+</tr>
+</table>
 </div>
 <div class="imageblock text-center">
 <div class="content">
@@ -458,11 +613,53 @@ as it was found:</p>
 <div class="title">Figure 2. What the code above draws.</div>
 </div>
 <div class="paragraph">
-<p>The label is longer than the panel and runs off its corner, where the clip
-cuts it. The square after the block is the proof that the scope closed
-cleanly: it is dark rather than white, square to the axes rather than
-rotated, and outside the panel rather than clipped away. None of the four
-settings had to be put back by hand.</p>
+<p>Fade two overlapping squares as one shape, and leave the canvas as it was
+found.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+...
+   cnv.fill_style(colors::navy_blue);
+
+   {
+      auto g = cnv.new_group(0.5);                          <i class="conum" data-value="1"></i><b>(1)</b>
+      cnv.fill_style(colors::red);
+      cnv.fill_rect(10, 10, 50, 50);
+      cnv.fill_rect(40, 40, 50, 50);                        <i class="conum" data-value="2"></i><b>(2)</b>
+   }                                                        <i class="conum" data-value="3"></i><b>(3)</b>
+
+   cnv.fill_rect(100, 10, 50, 50);                          <i class="conum" data-value="4"></i><b>(4)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Open a group at half opacity. It saves the drawing state, as
+<code>new_state</code> does.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Overlap the first square. Inside the group the second square covers
+it, opaque.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>End the group. The two squares are composited onto the canvas as one
+shape at half opacity, no darker where they overlap, and the state is
+popped.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>Fill a square after the group. The fill style is navy blue again, and
+the square is opaque.</td>
+</tr>
+</table>
+</div>
 </div>
 </div>
 </div>

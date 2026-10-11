@@ -61,7 +61,7 @@
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="../index.html">Introduction</a>
+    <a class="nav-link" href="../index.html">Artist 2D Canvas Library</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../setup.html">Setup and Installation</a>
@@ -151,6 +151,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../text_layout.html">Text Layout</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../recording.html">Recording</a>
+  </li>
 </ul>
   </li>
 </ul>
@@ -201,7 +204,7 @@
 <div class="sectionbody">
 <div class="paragraph">
 <p>A <code>canvas_layer</code> is an offscreen drawing surface made for one
-<a href="../canvas.html" class="xref page">canvas</a>. It lives on that canvas&#8217;s device, the GPU where
+<a href="../canvas.html" class="xref page">canvas</a>. It lives on that canvas&#8217;s device, the GPU when
 the canvas renders there, at that canvas&#8217;s pixel density. Build a <code>canvas</code>
 on its <code>context()</code> to draw into it, then paint it onto the canvas it was
 made for with <code>draw</code>, which is covered under
@@ -211,9 +214,9 @@ made for with <code>draw</code>, which is covered under
 <p>A layer starts fully transparent and keeps whatever is drawn into it.
 Nothing is cleared between one <code>draw</code> and the next, so a layer holds the
 drawing that accumulates, or that is put down again unchanged frame after
-frame, and the canvas itself takes only what changes. <code>clear_rect</code> on the
-layer&#8217;s own canvas puts a region back to transparent. The <a href="#_example">Example</a> is
-built that way.</p>
+frame, and the canvas itself takes only what changes. The <a href="#_example">Example</a> is
+built that way. <code>clear_rect</code> on the layer&#8217;s own canvas puts a region back
+to transparent.</p>
 </div>
 <div class="paragraph">
 <p>A layer is not an <a href="image.html" class="xref page">image</a>. It offers no access
@@ -243,6 +246,18 @@ wherever the canvas renders.
 </tr>
 </table>
 </div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+See <a href="../foundation.html" class="xref page">Foundation</a> for an overview of the foundation classes.
+</td>
+</tr>
+</table>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -260,22 +275,20 @@ wherever the canvas renders.
 <div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   class canvas_layer
-   {
-   public:
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">class canvas_layer
+{
+public:
 
-                         canvas_layer(canvas&amp; cnv, extent size);
-                         canvas_layer(canvas_layer&amp;&amp; rhs) noexcept;
-                         ~canvas_layer();
+                      canvas_layer(canvas&amp; cnv, extent size);
+                      canvas_layer(canvas_layer&amp;&amp; rhs) noexcept;
+                      ~canvas_layer();
 
-                         canvas_layer(canvas_layer const&amp;) = delete;
-      canvas_layer&amp;      operator=(canvas_layer const&amp;) = delete;
-      canvas_layer&amp;      operator=(canvas_layer&amp;&amp; rhs) noexcept;
+   canvas_layer&amp;      operator=(canvas_layer&amp;&amp; rhs) noexcept;
 
-      canvas_impl*       context() const;
-      extent             size() const;
-      canvas_layer_impl* impl() const;
-   };</code></pre>
+   canvas_impl*       context() const;
+   extent             size() const;
+   canvas_layer_impl* impl() const;
+};</code></pre>
 </div>
 </div>
 </div>
@@ -287,18 +300,18 @@ wherever the canvas renders.
 <h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
 <div class="dlist">
 <dl>
+<dt class="hdlist1"><code>layer</code>, <code>a</code>, <code>b</code>  </dt>
+<dd>
+<p>Objects of type <code>canvas_layer</code>.</p>
+</dd>
 <dt class="hdlist1"><code>cnv</code>              </dt>
 <dd>
 <p>Object of type <a href="../canvas.html" class="xref page">canvas</a>.</p>
 </dd>
-<dt class="hdlist1"><code>layer</code>, <code>layer2</code>  </dt>
-<dd>
-<p>Objects of type <code>canvas_layer</code>.</p>
-</dd>
 <dt class="hdlist1"><code>sz</code>               </dt>
 <dd>
-<p>Object of type <a href="point.html" class="xref page">extent</a>, a
-width and height in the canvas&#8217;s units.</p>
+<p>Object of type <a href="point.html" class="xref page">extent</a> for
+a width and height in the canvas&#8217;s units.</p>
 </dd>
 </dl>
 </div>
@@ -319,11 +332,11 @@ width and height in the canvas&#8217;s units.</p>
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas_layer(cnv, sz)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Construct a transparent layer <code>sz</code> units
-                                   in size on the device <code>cnv</code> draws to, at
-                                   the pixel density in force on <code>cnv</code>.
-                                   Throws <code>std::runtime_error</code> if the
-                                   surface cannot be created.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct a transparent <code>canvas_layer</code>
+                                   given <code>sz</code> (size) on the device <code>cnv</code>
+                                   draws to, at the pixel density in force
+                                   on <code>cnv</code>. Throws <code>std::runtime_error</code>
+                                   if the surface cannot be created.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas_layer(std::move(layer))</code></p></td>
@@ -331,16 +344,25 @@ width and height in the canvas&#8217;s units.</p>
                                    left holding nothing.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>layer = std::move(layer2)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Move assign <code>layer2</code> to <code>layer</code>. <code>layer2</code>
-                                   is left holding nothing.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>a = std::move(b)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Move assign <code>b</code> to <code>a</code>. <code>b</code> is left
+                                   holding nothing.</p></td>
 </tr>
 </tbody>
 </table>
-<div class="paragraph">
-<p>A layer owns its surface, so it can be moved but not copied. Give it a
-positive width and height; a degenerate size is not handled the same way
-on every backend.</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+C++ brace initialization may also be used. A layer owns its
+surface, so it can be moved but not copied. Give it a positive width and
+height; a degenerate size is not handled the same way on every backend.
+</td>
+</tr>
+</table>
 </div>
 <div class="admonitionblock warning">
 <table>
@@ -375,8 +397,8 @@ undefined behaviour.
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>layer.context()</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The backend drawing context, from which
-                      a <code>canvas</code> is built:
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the backend drawing context, from
+                      which a <code>canvas</code> is built:
                       <code>canvas(layer.context())</code>. Valid only
                       while the layer lives, so the canvas
                       must not outlive it.</p></td>
@@ -384,15 +406,16 @@ undefined behaviour.
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>layer.size()</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The size of the layer in the canvas&#8217;s
-                      units, as it was constructed. <code>draw</code>
-                      puts the layer down at this size.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the size of the layer in the
+                      canvas&#8217;s units, as it was constructed.
+                      <code>draw</code> puts the layer down at this
+                      size.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>extent</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>layer.impl()</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The backend&#8217;s layer handle, for code
-                      that talks to the backend directly.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the backend&#8217;s layer handle, for
+                      calling the backend directly.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas_layer_impl*</code></p></td>
 </tr>
 </tbody>
@@ -418,22 +441,25 @@ undefined behaviour. Nothing checks this.
 </table>
 </div>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="_example"><a class="anchor" href="#_example"></a>Example</h3>
 <div class="paragraph">
-<p>A trace that grows a step at a time. Everything already drawn stays on the
-layer and is never drawn twice; each frame extends it by one step, puts it
-down, and paints the head on the canvas, where it does not persist:</p>
+<p>Draw a trace that grows a step at a time, keeping what is already drawn
+on a layer.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   // The grid is drawn once, into the layer, and stays there.
-   canvas_layer trace{cnv, extent{520, 120}};
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas_layer.hpp&gt;
+#include &lt;artist/canvas.hpp&gt;             // For canvas
+#include &lt;cmath&gt;                         // For std::exp, std::sin
+...
+using namespace cycfi::artist;
+extern canvas cnv;                       // the canvas to draw on
+...
+   // The grid is drawn once, into the layer, and stays there.
+   canvas_layer trace{cnv, extent{520, 120}};                 <i class="conum" data-value="1"></i><b>(1)</b>
    {
-      canvas lc{trace.context()};
+      canvas lc{trace.context()};                             <i class="conum" data-value="2"></i><b>(2)</b>
       lc.stroke_style(colors::dim_gray);
       lc.line_width(1);
       for (float x = 65; x &lt; 520; x += 65)
@@ -455,7 +481,7 @@ down, and paints the head on the canvas, where it does not persist:</p>
    auto frame = [&amp;](float from, float to)
    {
       {
-         canvas lc{trace.context()};
+         canvas lc{trace.context()};                          <i class="conum" data-value="3"></i><b>(3)</b>
          lc.stroke_style(colors::light_sea_green);
          lc.line_width(2);
          lc.move_to({from, y_at(from)});
@@ -466,9 +492,9 @@ down, and paints the head on the canvas, where it does not persist:</p>
 
       cnv.fill_style(colors::gray[8]);
       cnv.fill_rect(rect{20, 30, 540, 150});
-      cnv.draw(trace, point{20, 30});
+      cnv.draw(trace, point{20, 30});                         <i class="conum" data-value="4"></i><b>(4)</b>
       cnv.fill_style(colors::white);
-      cnv.add_circle(20 + to, 30 + y_at(to), 4);
+      cnv.add_circle(20 + to, 30 + y_at(to), 4);              <i class="conum" data-value="5"></i><b>(5)</b>
       cnv.fill();
    };
 
@@ -476,24 +502,53 @@ down, and paints the head on the canvas, where it does not persist:</p>
       frame(x, x + 40);</code></pre>
 </div>
 </div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Construct a 520 by 120 layer for <code>cnv</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Stroke the grid into the layer once, through a canvas on its context.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Extend the trace by one step, through a new canvas on the same
+context. The layer keeps everything stroked before.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>Put the layer down on the canvas.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>Paint the head on the canvas, where it does not persist. Painted into
+the layer, it would leave a dot behind at every step.</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="💡  TIP"></i>
+</td>
+<td class="content">
+What accumulates goes into the layer, and what changes stays on the
+canvas. Drawing straight onto the canvas instead would mean stroking the
+whole curve and the whole grid again every frame, because the canvas is
+cleared and rebuilt each time and the layer is not.
+</td>
+</tr>
+</table>
+</div>
 <div class="imageblock text-center">
 <div class="content">
 <a class="image" href="../_images/foundation/canvas_layer_example.png"><img src="../_images/foundation/canvas_layer_example.png" alt="A damped sine trace on a dark panel with a grid, a white dot at the right hand end of the trace" width="560px"></a>
 </div>
 <div class="title">Figure 1. The last of twelve frames. Each frame stroked forty more units.</div>
 </div>
-<div class="paragraph">
-<p>Twelve frames run, and each one strokes forty units of the curve. The
-grid is stroked once, in the first four lines. Drawing straight onto the
-canvas instead would mean re-stroking the whole curve and the whole grid
-every frame, because the canvas is cleared and rebuilt each time and the
-layer is not.</p>
-</div>
-<div class="paragraph">
-<p>The head is the part that moves, so it is painted on the canvas rather than
-into the layer; putting it into the layer would leave a dot behind at every
-step. That is the division to make: what accumulates goes into the layer,
-what changes stays on the canvas.</p>
 </div>
 </div>
 </div>

@@ -61,7 +61,7 @@
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
   <li class="nav-item is-current-page" data-depth="1">
-    <a class="nav-link" href="index.html">Introduction</a>
+    <a class="nav-link" href="index.html">Artist 2D Canvas Library</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="setup.html">Setup and Installation</a>
@@ -151,6 +151,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="text_layout.html">Text Layout</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="recording.html">Recording</a>
+  </li>
 </ul>
   </li>
 </ul>
@@ -184,7 +187,6 @@
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="index.html">Artist 2D Canvas Library</a></li>
-    <li><a href="index.html">Introduction</a></li>
   </ul>
 </nav>
 </div>
@@ -222,7 +224,7 @@ graphics.</p>
 <h2 id="_backends"><a class="anchor" href="#_backends"></a>Backends</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Artist supports three rendering backends. Only one backend is active per
+<p>Artist supports five rendering backends. Only one backend is active per
 build.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
@@ -248,15 +250,27 @@ build.</p>
 <td class="tableblock halign-left valign-top"><p class="tableblock">macOS</p></td>
 </tr>
 <tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Direct2D</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Windows</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ARTIST_DIRECT2D=ON</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Windows</p></td>
+</tr>
+<tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Skia</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">macOS, Linux, Windows</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>ARTIST_SKIA=ON</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Linux, Windows</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">off</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Cairo</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">macOS, Linux, Windows</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>ARTIST_CAIRO=ON</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Linux and others</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Recording</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">macOS, Linux, Windows</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ARTIST_RECORDING=ON</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">off</p></td>
 </tr>
 </tbody>
@@ -276,7 +290,7 @@ each backend and platform.</p>
 <div class="ulist">
 <ul>
 <li>
-<p><a href="#">Introduction</a></p>
+<p><a href="#">Artist 2D Canvas Library</a></p>
 </li>
 <li>
 <p><a href="setup.html" class="xref page">Setup and Installation</a></p>
@@ -367,6 +381,9 @@ each backend and platform.</p>
 </li>
 <li>
 <p><a href="text_layout.html" class="xref page">Text Layout</a></p>
+</li>
+<li>
+<p><a href="recording.html" class="xref page">Recording</a></p>
 </li>
 </ul>
 </div>

@@ -61,7 +61,7 @@
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="index.html">Introduction</a>
+    <a class="nav-link" href="index.html">Artist 2D Canvas Library</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="setup.html">Setup and Installation</a>
@@ -151,6 +151,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="text_layout.html">Text Layout</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="recording.html">Recording</a>
+  </li>
 </ul>
   </li>
 </ul>
@@ -234,9 +237,9 @@ does apply.</p>
 </td>
 <td class="content">
 Lines are wrapped at the opportunities <code>line_break</code> reports, except
-on Quartz 2D, where Core Text both shapes and wraps the text. There a wrap
-can fall somewhere <code>line_break</code> does not mark, and the same text can wrap
-differently from other backends.
+on Quartz 2D and Direct2D, where Core Text and DirectWrite both shape and
+wrap the text. There a wrap can fall somewhere <code>line_break</code> does not mark,
+and the same text can wrap differently from other backends.
 </td>
 </tr>
 </table>
@@ -258,48 +261,49 @@ differently from other backends.
 <div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   class text_run : non_copyable
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">class text_run : non_copyable
+{
+public:
+
+   struct line_info
    {
-   public:
+      float    offset;
+      float    width;
+   };
+
+   struct flow_info
+   {
+      bool     justify;
+      float    line_height;
+      float    last_line_height;
+   };
+
+   enum break_enum { indeterminate, must_break, allow_break, no_break };
+
+   using get_line_info = std::function&lt;line_info(float y)&gt;;
+   static constexpr auto npos = std::size_t(-1);
+
                            text_run(font_descr font_, std::string_view utf8);
                            text_run(font_descr font_, std::u32string_view utf32);
                            text_run(text_run&amp;&amp; rhs) noexcept;
                            ~text_run();
 
-      struct line_info
-      {
-         float    offset;
-         float    width;
-      };
+   void                    text(std::string_view utf8);
+   void                    text(std::u32string_view utf32);
+   std::u32string_view     text() const;
 
-      struct flow_info
-      {
-         bool     justify;
-         float    line_height;
-         float    last_line_height;
-      };
+   void                    flow(float width, bool justify = false);
+   void                    flow(get_line_info const&amp; glf, flow_info finfo);
+   void                    draw(canvas&amp; cnv, point p, color c = colors::black) const;
+   void                    draw(canvas&amp; cnv, float x, float y, color c = colors::black) const;
 
-      enum break_enum { indeterminate, must_break, allow_break, no_break };
-
-      using get_line_info = std::function&lt;line_info(float y)&gt;;
-      static constexpr auto npos = std::size_t(-1);
-
-      void                    text(std::string_view utf8);
-      void                    text(std::u32string_view utf32);
-      std::u32string_view     text() const;
-
-      void                    flow(float width, bool justify = false);
-      void                    flow(get_line_info const&amp; glf, flow_info finfo);
-      void                    draw(canvas&amp; cnv, point p, color c = colors::black) const;
-      void                    draw(canvas&amp; cnv, float x, float y, color c = colors::black) const;
-
-      std::size_t             num_lines() const;
-      point                   caret_point(std::size_t index) const;
-      std::size_t             caret_index(float x, float y) const;
-      std::size_t             caret_index(point p) const;
-      break_enum              line_break(std::size_t index) const;
-      break_enum              word_break(std::size_t index) const;
-   };</code></pre>
+   std::size_t             num_lines() const;
+   point                   caret_point(std::size_t index) const;
+   std::size_t             caret_index(float x, float y) const;
+   std::size_t             caret_index(point p) const;
+   break_enum              line_break(std::size_t index) const;
+   break_enum              word_break(std::size_t index) const;
+};</code></pre>
 </div>
 </div>
 </div>
@@ -311,9 +315,9 @@ differently from other backends.
 <h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
 <div class="dlist">
 <dl>
-<dt class="hdlist1"><code>r</code>, <code>r2</code>   </dt>
+<dt class="hdlist1"><code>r</code>         </dt>
 <dd>
-<p>Objects of type <code>text_run</code>.</p>
+<p>Object of type <code>text_run</code>.</p>
 </dd>
 <dt class="hdlist1"><code>fd</code>        </dt>
 <dd>
@@ -321,23 +325,23 @@ differently from other backends.
 </dd>
 <dt class="hdlist1"><code>s8</code>        </dt>
 <dd>
-<p>A <code>std::string_view</code>, UTF-8 text.</p>
+<p>Object of type <code>std::string_view</code>, UTF-8 text.</p>
 </dd>
 <dt class="hdlist1"><code>s32</code>       </dt>
 <dd>
-<p>A <code>std::u32string_view</code>, UTF-32 text.</p>
+<p>Object of type <code>std::u32string_view</code>, UTF-32 text.</p>
 </dd>
 <dt class="hdlist1"><code>w</code>         </dt>
 <dd>
-<p>A <code>float</code>, a line width.</p>
+<p>Floating point value for the line width.</p>
 </dd>
 <dt class="hdlist1"><code>j</code>         </dt>
 <dd>
-<p>A <code>bool</code>, whether to justify.</p>
+<p><code>bool</code> value, whether to justify.</p>
 </dd>
 <dt class="hdlist1"><code>glf</code>       </dt>
 <dd>
-<p>A <code>text_run::get_line_info</code>, called for each line.</p>
+<p>Object of type <code>text_run::get_line_info</code>.</p>
 </dd>
 <dt class="hdlist1"><code>fi</code>        </dt>
 <dd>
@@ -357,7 +361,7 @@ differently from other backends.
 </dd>
 <dt class="hdlist1"><code>x</code>, <code>y</code>    </dt>
 <dd>
-<p><code>float</code> coordinates.</p>
+<p>Floating point values for the coordinates of a point.</p>
 </dd>
 <dt class="hdlist1"><code>c</code>         </dt>
 <dd>
@@ -365,10 +369,60 @@ differently from other backends.
 </dd>
 <dt class="hdlist1"><code>i</code>         </dt>
 <dd>
-<p>A <code>std::size_t</code>, a code point index into <code>r.text()</code>.</p>
+<p><code>std::size_t</code> value, a code point index into <code>r.text()</code>.</p>
 </dd>
 </dl>
 </div>
+</div>
+<div class="sect2">
+<h3 id="_type_definitions"><a class="anchor" href="#_type_definitions"></a>Type Definitions</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>text_run::line_info</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the type that places one
+                                line, with the members <code>offset</code>
+                                and <code>width</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>struct</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>text_run::flow_info</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the type of the flow
+                                parameters, with the members
+                                <code>justify</code>, <code>line_height</code> and
+                                <code>last_line_height</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>struct</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>text_run::break_enum</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the break type, an
+                                enumeration of
+                                <code>text_run::indeterminate</code>,
+                                <code>text_run::must_break</code>,
+                                <code>text_run::allow_break</code> and
+                                <code>text_run::no_break</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>enum</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>text_run::get_line_info</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the type of the function
+                                that places each line.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>std::function&lt;text_run::line_info(float)&gt;</code></p></td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="sect2">
 <h3 id="_constructors"><a class="anchor" href="#_constructors"></a>Constructors</h3>
@@ -386,22 +440,36 @@ differently from other backends.
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>text_run(fd, s8)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Construct from the UTF-8 text <code>s8</code>,
-                                converted to UTF-32, in the font <code>fd</code>
-                                describes. The run has no lines until it
-                                is flowed.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct a <code>text_run</code> from <code>s8</code> (UTF-8
+                                text, converted to UTF-32) in the font
+                                <code>fd</code>. The run has no lines until it is
+                                flowed.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>text_run(fd, s32)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, from UTF-32 text.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct a <code>text_run</code> from <code>s32</code> (UTF-32
+                                text) in the font <code>fd</code>. The run has no
+                                lines until it is flowed.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>text_run(std::move(r))</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Move construct from <code>r</code>, which is left
-                                holding nothing.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Move construct from <code>text_run r</code>, leaving
+                                <code>r</code> holding nothing.</p></td>
 </tr>
 </tbody>
 </table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+C++ brace initialization may also be used.
+</td>
+</tr>
+</table>
+</div>
 <div class="paragraph">
 <p>A <code>text_run</code> can be neither copied nor assigned, not even by move.</p>
 </div>
@@ -420,106 +488,7 @@ other than the destructor is undefined behaviour.
 </div>
 </div>
 <div class="sect2">
-<h3 id="_text"><a class="anchor" href="#_text"></a>Text</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.text()</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The text, as UTF-32. The view is valid
-                    until the text is next replaced.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>std::u32string_view</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.text(s8)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Replace the text with <code>s8</code>, converted
-                    from UTF-8. Discards the lines: the
-                    run has none until it is flowed
-                    again.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.text(s32)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, from UTF-32 text.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect2">
-<h3 id="_layout"><a class="anchor" href="#_layout"></a>Layout</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.flow(w)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Break the text into lines no wider
-                        than <code>w</code>, each starting at x 0 and
-                        spaced by the font&#8217;s
-                        <code>line_height()</code>.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.flow(w, j)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, and justify if <code>j</code> is
-                        true.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.flow(glf, fi)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Break the text into lines, asking
-                        <code>glf</code> where each line starts and
-                        how wide it may be.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.num_lines()</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The number of lines the last flow
-                        produced, 0 before the first. A
-                        text that ends in a hard break has
-                        an empty last line.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>std::size_t</code></p></td>
-</tr>
-</tbody>
-</table>
-<div class="paragraph">
-<p><code>flow(glf, fi)</code> calls <code>glf(y)</code> for each line, with <code>y</code> the baseline of that
-line measured from the first line&#8217;s baseline, and lays the line out at the
-returned <code>li.offset</code> in at most <code>li.width</code>. Varying the two with <code>y</code> flows
-text around a shape, or indents the first line. Lines are <code>fi.line_height</code>
-apart, except that the last line&#8217;s baseline is moved down by
-<code>fi.last_line_height - fi.line_height</code>.</p>
-</div>
-<div class="paragraph">
-<p>A justified line has its spaces widened so that it fills its width
-exactly. The last line is left ragged, as is any line that ends in a hard
-break and any line whose natural width is 90% of its width or less.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_flow_parameters"><a class="anchor" href="#_flow_parameters"></a>Flow Parameters</h3>
+<h3 id="_access"><a class="anchor" href="#_access"></a>Access</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 33.3333%;">
@@ -536,37 +505,46 @@ break and any line whose natural width is 90% of its width or less.</p>
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>li.offset</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Where the line starts, in x
-                            from the run&#8217;s origin.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access the x position where the
+                            line starts, from the run&#8217;s
+                            origin.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>li.width</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The width the line may take.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access the width the line may
+                            take.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>fi.justify</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Whether to justify.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access whether to justify.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>fi.line_height</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The distance between one
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access the distance between one
                             baseline and the next.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>fi.last_line_height</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The distance between the last
-                            two baselines.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access the distance between the
+                            last two baselines.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
 </tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>text_run::npos</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access <code>std::size_t(-1)</code>, what
+                            <code>caret_index</code> returns for a point
+                            below the last line.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>std::size_t</code></p></td>
+</tr>
 </tbody>
 </table>
 </div>
 <div class="sect2">
-<h3 id="_drawing"><a class="anchor" href="#_drawing"></a>Drawing</h3>
+<h3 id="_accessors"><a class="anchor" href="#_accessors"></a>Accessors</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 33.3333%;">
@@ -582,72 +560,60 @@ break and any line whose natural width is 90% of its width or less.</p>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.draw(cnv, p)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Draw the lines in black, with
-                              the run&#8217;s origin at <code>p</code>.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.text()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the text, as UTF-32. The view
+                            is valid until the text is next
+                            replaced.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>std::u32string_view</code></p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.draw(cnv, p, c)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, in the colour <code>c</code>.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.num_lines()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the number of lines the last
+                            flow produced, 0 before the first.
+                            A text that ends in a hard break
+                            has an empty last line.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>std::size_t</code></p></td>
 </tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.draw(cnv, x, y)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, with the origin at
-                              <code>x</code>, <code>y</code>.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.draw(cnv, x, y, c)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, in the colour <code>c</code>.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect2">
-<h3 id="_hit_testing"><a class="anchor" href="#_hit_testing"></a>Hit Testing</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.caret_point(i)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Where the caret before code
-                            point <code>i</code> goes: the left edge
-                            of its glyph, on its line&#8217;s
-                            baseline. An <code>i</code> at or past
-                            the end gives the end of the
-                            last line. <code>{0, 0}</code> before the
-                            first flow.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the caret position before code
+                            point <code>i</code>: the left edge of its
+                            glyph, on its line&#8217;s baseline. An
+                            <code>i</code> at or past the end gives the
+                            end of the last line. <code>{0, 0}</code>
+                            before the first flow.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.caret_index(p)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The index of the caret
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the index of the caret
                             position nearest <code>p</code>, or
-                            <code>text_run::npos</code> if <code>p</code> is
-                            below the last line&#8217;s
-                            baseline. 0 before the first
-                            flow.</p></td>
+                            <code>text_run::npos</code> if <code>p</code> is below
+                            the last line&#8217;s baseline. 0 before
+                            the first flow.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>std::size_t</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.caret_index(x, y)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, for the point <code>x</code>,
-                            <code>y</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the index of the caret
+                            position nearest the point at <code>x</code>,
+                            <code>y</code>, as <code>r.caret_index(p)</code>.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>std::size_t</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.line_break(i)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get whether a line may break after
+                            code point <code>i</code>, by the Unicode line
+                            breaking rules (UAX #14).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>text_run::break_enum</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.word_break(i)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get whether a word boundary
+                            follows code point <code>i</code>, by the
+                            Unicode word boundary rules
+                            (UAX #29).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>text_run::break_enum</code></p></td>
 </tr>
 </tbody>
 </table>
@@ -675,79 +641,39 @@ the caret positions inside it depend on the backend.
 </tr>
 </table>
 </div>
+<div class="paragraph">
+<p>The break queries return one of these values:</p>
 </div>
-<div class="sect2">
-<h3 id="_break_queries"><a class="anchor" href="#_break_queries"></a>Break Queries</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.line_break(i)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Whether a line may break after code
-                        point <code>i</code>, by the Unicode line
-                        breaking rules (UAX #14).</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>text_run::break_enum</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.word_break(i)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Whether a word boundary follows
-                        code point <code>i</code>, by the Unicode word
-                        boundary rules (UAX #29).</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>text_run::break_enum</code></p></td>
-</tr>
-</tbody>
-</table>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Value</th>
-<th class="tableblock halign-left valign-top">Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>text_run::must_break</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A break is required after <code>i</code>, which
-                                  is a hard line break such as <code>'\n'</code>.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>text_run::allow_break</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A break is allowed after <code>i</code>.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>text_run::no_break</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">No break is allowed after <code>i</code>.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>text_run::indeterminate</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>i</code> is out of range, or, for
-                                  <code>line_break</code>, the last code point of a
-                                  text that does not end in a hard break.</p></td>
-</tr>
-</tbody>
-</table>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>text_run::must_break</code>     </dt>
+<dd>
+<p>A break is required after <code>i</code>, which is a
+hard line break such as <code>'\n'</code>.</p>
+</dd>
+<dt class="hdlist1"><code>text_run::allow_break</code>    </dt>
+<dd>
+<p>A break is allowed after <code>i</code>.</p>
+</dd>
+<dt class="hdlist1"><code>text_run::no_break</code>       </dt>
+<dd>
+<p>No break is allowed after <code>i</code>.</p>
+</dd>
+<dt class="hdlist1"><code>text_run::indeterminate</code>  </dt>
+<dd>
+<p><code>i</code> is out of range, or, for <code>line_break</code>,
+the last code point of a text that does not
+end in a hard break.</p>
+</dd>
+</dl>
+</div>
 <div class="paragraph">
 <p><code>word_break</code> never reports <code>must_break</code>, and it reports <code>allow_break</code> for
 the last code point.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_constants"><a class="anchor" href="#_constants"></a>Constants</h3>
+<h3 id="_mutators"><a class="anchor" href="#_mutators"></a>Mutators</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 33.3333%;">
@@ -763,32 +689,108 @@ the last code point.</p>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>text_run::npos</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>std::size_t(-1)</code>, what
-                       <code>caret_index</code> returns for a point
-                       below the last line.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>std::size_t</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.text(s8)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the text to <code>s8</code>, converted from
+                    UTF-8, and discard the lines: the run
+                    has none until it is flowed again.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.text(s32)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the text to <code>s32</code> (UTF-32), and
+                    discard the lines.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
 </tr>
 </tbody>
 </table>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="_operation"><a class="anchor" href="#_operation"></a>Operation</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.flow(w [, j])</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Break the text into lines no wider
+                            than <code>w</code>, each starting at x 0 and
+                            spaced by the font&#8217;s
+                            <code>line_height()</code>, and justify them
+                            if <code>j</code> is <code>true</code>. Default:
+                            <code>j=false</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.flow(glf, fi)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Break the text into lines, calling
+                            <code>glf</code> for where each line starts
+                            and how wide it may be.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.draw(cnv, p [, c])</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Draw the lines in the colour <code>c</code>,
+                            with the run&#8217;s origin at <code>p</code>.
+                            Default: <code>c=colors::black</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.draw(cnv, x, y
+    [, c])</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Draw the lines in the colour <code>c</code>,
+                            with the run&#8217;s origin at <code>x</code>, <code>y</code>.
+                            Default: <code>c=colors::black</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+</tbody>
+</table>
 <div class="paragraph">
-<p>A justified paragraph with its first line indented, and a caret drawn where
-the mouse position <code>mp</code> falls in it:</p>
+<p><code>flow(glf, fi)</code> calls <code>glf(y)</code> for each line, with <code>y</code> the baseline of that
+line measured from the first line&#8217;s baseline, and lays the line out at the
+returned <code>li.offset</code> in at most <code>li.width</code>. Varying the two with <code>y</code> flows
+text around a shape, or indents the first line. Lines are <code>fi.line_height</code>
+apart, except that the last line&#8217;s baseline is moved down by
+<code>fi.last_line_height - fi.line_height</code>.</p>
+</div>
+<div class="paragraph">
+<p>A justified line has its spaces widened so that it fills its width
+exactly. The last line is left ragged, as is any line that ends in a hard
+break and any line whose natural width is less than 90% of its width.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_example"><a class="anchor" href="#_example"></a>Example</h3>
+<div class="paragraph">
+<p>Draw a justified paragraph with its first line indented, and a caret where
+the mouse position <code>mp</code> falls in it.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   auto fd = font_descr{"Open Sans", 20};
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/text_run.hpp&gt;
+#include &lt;artist/canvas.hpp&gt;    // For canvas
+#include &lt;string_view&gt;
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+std::string_view text;          // the paragraph's text, UTF-8
+point mp;                       // the mouse position
+...
+   auto fd = font_descr{"Open Sans", 20};
    auto fm = font{fd}.metrics();
    auto lh = font{fd}.line_height();
 
-   auto para = text_run{fd, text};
-   para.flow(
+   auto para = text_run{fd, text};                                   <i class="conum" data-value="1"></i><b>(1)</b>
+   para.flow(                                                        <i class="conum" data-value="2"></i><b>(2)</b>
       [](float y)
       {
          return y == 0
@@ -799,12 +801,12 @@ the mouse position <code>mp</code> falls in it:</p>
    );
 
    auto origin = point{60, 80};
-   para.draw(cnv, origin);
+   para.draw(cnv, origin);                                           <i class="conum" data-value="3"></i><b>(3)</b>
 
-   auto i = para.caret_index(mp.x - origin.x, mp.y - origin.y);
+   auto i = para.caret_index(mp.x - origin.x, mp.y - origin.y);      <i class="conum" data-value="4"></i><b>(4)</b>
    if (i != text_run::npos)
    {
-      auto cp = para.caret_point(i);
+      auto cp = para.caret_point(i);                                 <i class="conum" data-value="5"></i><b>(5)</b>
       cnv.stroke_style(colors::navy);
       cnv.move_to(origin.x + cp.x, origin.y + cp.y - fm.ascent);
       cnv.line_to(origin.x + cp.x, origin.y + cp.y + fm.descent);
@@ -812,8 +814,35 @@ the mouse position <code>mp</code> falls in it:</p>
    }</code></pre>
 </div>
 </div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Construct a run over the UTF-8 text in a 20 point Open Sans.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Flow it justified, at the font&#8217;s line height, with the first line
+indented by 30 and every line ending at x 340.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Draw the run with its origin, the first line&#8217;s baseline, at <code>origin</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>Find the caret index nearest the mouse, in the run&#8217;s own coordinates.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>Get the caret&#8217;s baseline position, and stroke a caret from the
+ascent above it to the descent below.</td>
+</tr>
+</table>
+</div>
 <div class="paragraph">
 <p>Its output is the figure in the <a href="#_overview">Overview</a>.</p>
+</div>
 </div>
 </div>
 </div>

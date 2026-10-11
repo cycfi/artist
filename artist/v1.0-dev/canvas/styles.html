@@ -61,7 +61,7 @@
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="../index.html">Introduction</a>
+    <a class="nav-link" href="../index.html">Artist 2D Canvas Library</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../setup.html">Setup and Installation</a>
@@ -151,6 +151,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../text_layout.html">Text Layout</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../recording.html">Recording</a>
+  </li>
 </ul>
   </li>
 </ul>
@@ -205,7 +208,7 @@ width and shape of a stroke, the shadow cast under what is drawn, and how
 new drawing combines with what is already on the canvas. Each is canvas
 state. Set one and it stays in effect for every paint that follows, until
 it is set again or a saved state is restored over it. Every style on this
-page is part of the state that <code>save</code> and <code>restore</code> keep, so the usual way
+page is part of the state that a <code>new_state</code> scope keeps, so the usual way
 to apply a style to one shape is inside a
 <a href="states.html" class="xref page">saved state</a>.</p>
 </div>
@@ -224,7 +227,21 @@ before <code>fill</code> or <code>stroke</code>. The geometry it paints is the
 Artist follows the W3C canvas API, and the styles map onto its
 <code>fillStyle</code>, <code>strokeStyle</code>, <code>lineWidth</code>, <code>lineCap</code>, <code>lineJoin</code>,
 <code>miterLimit</code>, the four <code>shadow</code> attributes and <code>globalCompositeOperation</code>.
-They behave as the W3C API specifies, the same on every backend.
+They behave as the W3C API specifies, the same on every backend, with one
+exception: <code>darker</code> takes the smaller of the two colors (W3C <code>darken</code>) on
+every backend, an approximation of the W3C plus-darker formula.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+See <a href="../canvas.html" class="xref page">Canvas</a> for the drawing model and an overview of the canvas.
 </td>
 </tr>
 </table>
@@ -246,7 +263,11 @@ They behave as the W3C API specifies, the same on every backend.
 <div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   enum line_cap_enum
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">class canvas
+{
+public:
+
+   enum line_cap_enum
    {
       butt,
       round,
@@ -312,19 +333,22 @@ They behave as the W3C API specifies, the same on every backend.
    void     shadow_style(float blur, color c);
 
    void     global_composite_operation(composite_op_enum mode);
-   void     composite_op(composite_op_enum mode);</code></pre>
+   void     composite_op(composite_op_enum mode);
+};</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>All of these are members of <code>canvas</code>, and the enums are nested in it, so
-the values are spelled <code>canvas::round</code>, <code>canvas::miter_join</code>,
-<code>canvas::copy</code> and so on.</p>
+<p>The enums are nested in <code>canvas</code>, so the values are spelled
+<code>canvas::round</code>, <code>canvas::miter_join</code>, <code>canvas::copy</code> and so on.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
 <div class="sectionbody">
+<div class="paragraph">
+<p>The style members of <a href="../canvas.html" class="xref page"><code>canvas</code></a> allow these expressions.</p>
+</div>
 <div class="sect2">
 <h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
 <div class="dlist">
@@ -337,41 +361,48 @@ the values are spelled <code>canvas::round</code>, <code>canvas::miter_join</cod
 <dd>
 <p>Object of type <a href="../foundation/color.html" class="xref page">color</a>.</p>
 </dd>
-<dt class="hdlist1"><code>gr</code>                 </dt>
+<dt class="hdlist1"><code>lg</code>                 </dt>
 <dd>
-<p>Object of type <code>canvas::linear_gradient</code> or
-<code>canvas::radial_gradient</code>.</p>
+<p>Object of type
+<a href="gradients.html" class="xref page"><code>canvas::linear_gradient</code></a>.</p>
+</dd>
+<dt class="hdlist1"><code>rg</code>                 </dt>
+<dd>
+<p>Object of type
+<a href="gradients.html" class="xref page"><code>canvas::radial_gradient</code></a>.</p>
 </dd>
 <dt class="hdlist1"><code>w</code>                  </dt>
 <dd>
-<p>A <code>float</code> line width.</p>
+<p>Floating point value for a line width.</p>
 </dd>
 <dt class="hdlist1"><code>limit</code>              </dt>
 <dd>
-<p>A <code>float</code> miter limit, a multiple of the line width.</p>
+<p>Floating point value for a miter limit, in line
+widths.</p>
 </dd>
 <dt class="hdlist1"><code>offset</code>             </dt>
 <dd>
-<p>Object of type <a href="../foundation/point.html" class="xref page">point</a>,
+<p>Object of type <a href="../foundation/point.html" class="xref page">point</a> for
 the displacement of a shadow.</p>
 </dd>
 <dt class="hdlist1"><code>offsetx</code>, <code>offsety</code> </dt>
 <dd>
-<p><code>float</code> components of the displacement.</p>
+<p>Floating point values for the displacement of a
+shadow.</p>
 </dd>
 <dt class="hdlist1"><code>blur</code>               </dt>
 <dd>
-<p>A <code>float</code>, the softness of a shadow.</p>
+<p>Floating point value for the softness of a shadow.</p>
 </dd>
 <dt class="hdlist1"><code>mode</code>               </dt>
 <dd>
-<p>A <code>canvas::composite_op_enum</code>.</p>
+<p>Object of type <code>canvas::composite_op_enum</code>.</p>
 </dd>
 </dl>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_paint"><a class="anchor" href="#_paint"></a>Paint</h3>
+<h3 id="_mutators"><a class="anchor" href="#_mutators"></a>Mutators</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 33.3333%;">
@@ -388,36 +419,158 @@ the displacement of a shadow.</p>
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_style(c)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Fill with the flat color <code>c</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the fill style to the flat
+                                            color <code>c</code>.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_style(gr)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Fill with the gradient <code>gr</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_style(lg)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the fill style to the
+                                            gradient <code>lg</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_style(rg)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the fill style to the
+                                            gradient <code>rg</code>.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.stroke_style(c)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Stroke with the flat color <code>c</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the stroke style to the
+                                            flat color <code>c</code>.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.stroke_style(gr)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Stroke with the gradient <code>gr</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.stroke_style(lg)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the stroke style to the
+                                            gradient <code>lg</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.stroke_style(rg)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the stroke style to the
+                                            gradient <code>rg</code>.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_color(c)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The same as <code>cnv.fill_style(c)</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the fill style to the flat
+                                            color <code>c</code>, the same as
+                                            <code>cnv.fill_style(c)</code>.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.stroke_color(c)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The same as <code>cnv.stroke_style(c)</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the stroke style to the
+                                            flat color <code>c</code>, the same as
+                                            <code>cnv.stroke_style(c)</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_width(w)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the line width to <code>w</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_cap(canvas::butt)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the line cap to end a
+                                            stroke exactly at the end of
+                                            the path (the default).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_cap(canvas::round)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the line cap to extend a
+                                            stroke past the end by a half
+                                            circle whose radius is half the
+                                            line width.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_cap(canvas::square)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the line cap to extend a
+                                            stroke past the end by half the
+                                            line width, squared off.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_join(canvas::bevel_join)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the line join to cut a
+                                            corner flat, across the outer
+                                            edges of the two segments.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_join(canvas::round_join)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the line join to round a
+                                            corner with an arc whose radius
+                                            is half the line width.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_join(canvas::miter_join)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the line join to extend the
+                                            outer edges of both segments
+                                            until they meet in a point (the
+                                            default).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.miter_limit(limit)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the miter limit to <code>limit</code>
+                                            line widths, past which a miter
+                                            is cut back to a bevel.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.miter_limit()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the miter limit to 10, the
+                                            default.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.shadow_style(offset, blur, c)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the shadow to the color
+                                            <code>c</code>, displaced by <code>offset</code> and
+                                            softened by <code>blur</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.shadow_style(offsetx, offsety,
+  blur, c)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the shadow to the color
+                                            <code>c</code>, displaced by <code>offsetx</code> and
+                                            <code>offsety</code> and softened by
+                                            <code>blur</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.shadow_style(blur, c)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the shadow to the color <code>c</code>
+                                            with no offset, softened by
+                                            <code>blur</code>: a glow.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.composite_op(mode)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the composite operation to
+                                            <code>mode</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.global_composite_operation(mode)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the composite operation to
+                                            <code>mode</code>, the same as
+                                            <code>cnv.composite_op(mode)</code>, under
+                                            its W3C name.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
 </tr>
 </tbody>
 </table>
+</div>
+<div class="sect2">
+<h3 id="_paint"><a class="anchor" href="#_paint"></a>Paint</h3>
 <div class="imageblock text-center">
 <div class="content">
 <a class="image" href="../_images/canvas/paint.png"><img src="../_images/canvas/paint.png" alt="A color and a gradient, each as a fill and as a stroke" width="560px"></a>
@@ -438,28 +591,6 @@ coordinates are in, is under <a href="gradients.html" class="xref page">Gradient
 </div>
 <div class="sect2">
 <h3 id="_line_width"><a class="anchor" href="#_line_width"></a>Line Width</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_width(w)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Stroke <code>w</code> units wide, centred on
-                            the path, half on each side.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-</tbody>
-</table>
 <div class="imageblock text-center">
 <div class="content">
 <a class="image" href="../_images/canvas/line_width.png"><img src="../_images/canvas/line_width.png" alt="Three widths on the same path" width="560px"></a>
@@ -467,8 +598,9 @@ coordinates are in, is under <a href="gradients.html" class="xref page">Gradient
 <div class="title">Figure 2. Three widths. The white line is the path.</div>
 </div>
 <div class="paragraph">
-<p>The default width is 1. A width that is zero, negative, infinite or NaN is
-ignored, and the width stays what it was.</p>
+<p>The stroke is centred on the path, half on each side. The default width is
+1. A width that is zero, negative, infinite or NaN is ignored, and the
+width stays what it was.</p>
 </div>
 <div class="paragraph">
 <p>The width is in user space, under the transform in effect when the path is
@@ -478,43 +610,6 @@ strokes 20 device units wide, whichever call came first.</p>
 </div>
 <div class="sect2">
 <h3 id="_line_cap"><a class="anchor" href="#_line_cap"></a>Line Cap</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_cap(canvas::butt)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">End a stroke exactly at
-                                     the end of the path. The
-                                     default.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_cap(canvas::round)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Extend it past the end by
-                                     a half circle whose radius
-                                     is half the line width.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_cap(canvas::square)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Extend it past the end by
-                                     half the line width,
-                                     squared off.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-</tbody>
-</table>
 <div class="imageblock text-center">
 <div class="content">
 <a class="image" href="../_images/canvas/line_cap.png"><img src="../_images/canvas/line_cap.png" alt="A line under each cap" width="560px"></a>
@@ -528,58 +623,6 @@ strokes 20 device units wide, whichever call came first.</p>
 </div>
 <div class="sect2">
 <h3 id="_line_join"><a class="anchor" href="#_line_join"></a>Line Join</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_join(canvas::bevel_join)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Cut the corner flat,
-                                        across the outer edges
-                                        of the two segments.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_join(canvas::round_join)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Round the corner with
-                                        an arc whose radius is
-                                        half the line width.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_join(canvas::miter_join)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Extend the outer edges
-                                        of both segments until
-                                        they meet in a point.
-                                        The default.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.miter_limit(limit)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Cut a miter back to a
-                                        bevel when it would be
-                                        longer than <code>limit</code>
-                                        line widths.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.miter_limit()</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Set the limit to 10,
-                                        the default.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-</tbody>
-</table>
 <div class="imageblock text-center">
 <div class="content">
 <a class="image" href="../_images/canvas/line_join.png"><img src="../_images/canvas/line_join.png" alt="A corner under each join" width="560px"></a>
@@ -602,47 +645,6 @@ A limit that is zero, negative, infinite or NaN is ignored.</p>
 </div>
 <div class="sect2">
 <h3 id="_shadow"><a class="anchor" href="#_shadow"></a>Shadow</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.shadow_style(offset,
-    blur, c)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Cast a shadow of color <code>c</code>
-                                    under everything drawn
-                                    afterwards, displaced by
-                                    <code>offset</code> and softened by
-                                    <code>blur</code>.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.shadow_style(offsetx,
-    offsety, blur, c)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, with the offset
-                                    as two scalars.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.shadow_style(blur, c)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, with no offset,
-                                    so the shadow spreads
-                                    evenly around the shape: a
-                                    glow.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-</tbody>
-</table>
 <div class="imageblock text-center">
 <div class="content">
 <a class="image" href="../_images/canvas/shadow.png"><img src="../_images/canvas/shadow.png" alt="Four shadows" width="560px"></a>
@@ -683,7 +685,13 @@ let the restore remove it:
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   {
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+rect panel;                     // the panel to draw
+...
+   {
       auto s = cnv.new_state();
       cnv.shadow_style({0, 2}, 6, colors::black.opacity(0.4));
       cnv.fill_round_rect(panel, 8);
@@ -697,38 +705,6 @@ off too.</p>
 </div>
 <div class="sect2">
 <h3 id="_compositing"><a class="anchor" href="#_compositing"></a>Compositing</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.composite_op(mode)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Combine what is
-                                              drawn afterwards
-                                              with what is
-                                              already on the
-                                              canvas by
-                                              <code>mode</code>.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.global_composite_operation(mode)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The same, under
-                                              its W3C name.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-</tbody>
-</table>
 <div class="paragraph">
 <p>In the table below the <em>source</em> is what is being drawn and the
 <em>destination</em> is what is already on the canvas. The first twelve modes are
@@ -891,37 +867,57 @@ when the rest of the canvas matters.</p>
 </td>
 <td class="content">
 The enum has no W3C <code>clear</code>. <code>destination_out</code> with an opaque source,
-or <code>clear_rect</code>, does the same job.
+or <code>clear_rect</code>, does the same job. Nor does it have the W3C <code>overlay</code> and
+<code>lighten</code> blend modes.
 </td>
 </tr>
 </table>
 </div>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="_example"><a class="anchor" href="#_example"></a>Example</h3>
 <div class="paragraph">
-<p>A panel, the <code>rect</code> <code>panel</code>, with a soft drop shadow and a rounded outline.
-The shadow is scoped to the fill, so the outline casts none:</p>
+<p>Draw a panel with a soft drop shadow and a rounded outline, with the shadow
+scoped to the fill so the outline casts none.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   auto panel = rect{40, 30, 260, 130};
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+...
+   auto panel = rect{40, 30, 260, 130};
 
    {
-      auto s = cnv.new_state();
-      cnv.shadow_style({0, 4}, 16, colors::black.opacity(0.45));
+      auto s = cnv.new_state();                             <i class="conum" data-value="1"></i><b>(1)</b>
+      cnv.shadow_style({0, 4}, 16, colors::black.opacity(0.45));   <i class="conum" data-value="2"></i><b>(2)</b>
       cnv.fill_style(colors::white);
       cnv.fill_round_rect(panel, 8);
    }
 
-   cnv.stroke_style(colors::gray[40]);
+   cnv.stroke_style(colors::gray[40]);                      <i class="conum" data-value="3"></i><b>(3)</b>
    cnv.line_width(1);
    cnv.line_join(canvas::round_join);
    cnv.stroke_round_rect(panel, 8);</code></pre>
 </div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Save the drawing state for the fill.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Cast a soft shadow 4 units down, under the fill only.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Set the stroke style after the state ends. The shadow is gone, so the
+outline casts none of its own.</td>
+</tr>
+</table>
 </div>
 <div class="imageblock text-center">
 <div class="content">
@@ -929,9 +925,6 @@ The shadow is scoped to the fill, so the outline casts none:</p>
 </div>
 <div class="title">Figure 9. What the code above draws, on a light neutral ground so the white panel reads.</div>
 </div>
-<div class="paragraph">
-<p>The shadow is set inside the saved state, so it is gone by the time the
-outline is stroked and the outline casts none of its own.</p>
 </div>
 </div>
 </div>

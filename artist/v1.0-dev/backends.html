@@ -61,7 +61,7 @@
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="index.html">Introduction</a>
+    <a class="nav-link" href="index.html">Artist 2D Canvas Library</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="setup.html">Setup and Installation</a>
@@ -151,6 +151,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="text_layout.html">Text Layout</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="recording.html">Recording</a>
+  </li>
 </ul>
   </li>
 </ul>
@@ -197,10 +200,41 @@
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>Artist supports three rendering backends: <a href="https://skia.org/">Skia</a>,
-<a href="https://apple.co/2SljYHw">Quartz-2D</a>, and
-<a href="https://www.cairographics.org/">Cairo</a>. Only one backend is active per build,
+<p>Artist supports five rendering backends: <a href="https://skia.org/">Skia</a>,
+<a href="https://apple.co/2SljYHw">Quartz-2D</a>,
+<a href="https://www.cairographics.org/">Cairo</a>,
+<a href="https://docs.microsoft.com/en-us/windows/win32/direct2d/direct2d-portal">Direct2D</a>,
+and a headless recording backend. Only one backend is active per build,
 selected with a CMake option (see <a href="setup.html" class="xref page">Setup and Installation</a>).</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Quartz-2D</strong>: macOS, the default there. Core Text shapes and wraps the
+text.</p>
+</li>
+<li>
+<p><strong>Direct2D</strong>: Windows, the default there. DirectWrite shapes and wraps the
+text, and WIC decodes images, with libwebp for WebP.</p>
+</li>
+<li>
+<p><strong>Skia</strong>: macOS, Linux and Windows, from a prebuilt bundle or built through
+vcpkg. HarfBuzz is used for text layout.</p>
+</li>
+<li>
+<p><strong>Cairo</strong>: Linux, where it is the default, and macOS and Windows. HarfBuzz
+shapes the text, FreeType rasterizes it, and Fontconfig selects the fonts.
+Cairo has no path effects of its own; Artist&#8217;s Cairo backend blurs
+shadows on the CPU, as the canvas API requires.</p>
+</li>
+<li>
+<p><strong>Recording</strong>: macOS, Linux and Windows. It rasterizes nothing and keeps a journal of
+the drawing calls, so tests can check what was drawn. Text is measured
+and shaped with real fonts through FreeType, Fontconfig and HarfBuzz, so
+layout matches the drawing backends. See <a href="recording.html" class="xref page">Recording</a>
+for the journal.</p>
+</li>
+</ul>
 </div>
 </div>
 </div>
@@ -211,8 +245,8 @@ selected with a CMake option (see <a href="setup.html" class="xref page">Setup a
 <p>Historically, the Artist library was the 2D vector graphics component for the
 <a href="https://cycfi.github.io/elements/">Elements Library</a>, implemented using the
 <a href="https://www.cairographics.org/">Cairo 2D graphics library</a> as the sole backend.
-For a long time, Cairo&#8217;s lack of support for path effects — needed for modern
-GUI applications — combined with a stalled development cadence (see the
+For a long time, Cairo&#8217;s lack of support for path effects (needed for modern
+GUI applications), combined with a stalled development cadence (see the
 <a href="https://www.cairographics.org/roadmap/">Cairo Roadmap</a>) made it look likely
 that Cairo support would be dropped.</p>
 </div>
@@ -243,16 +277,17 @@ the key. Libraries come and go: the king of the hill now may be superseded by
 a "better" library in the future. Case in point: Cairo.</p>
 </div>
 <div class="paragraph">
-<p>There is also a half-baked
+<p>There was also a half-baked
 <a href="https://docs.microsoft.com/en-us/windows/win32/direct2d/direct2d-portal">Direct-2D</a>
-port on Windows, currently shelved. It works, except for the text layout
-part, which has its own text-layout engine. Direct-2D is painful to work with
-compared to other graphics libraries, and for lack of time it is, for now,
-indefinitely shelved (contributions welcome if anyone wants to continue where
-it stopped).</p>
+port on Windows, shelved for a long time. It worked, except for the text
+layout part, which has its own text-layout engine. Direct-2D is painful to
+work with compared to other graphics libraries, and for lack of time it was
+indefinitely shelved (contributions were welcome if anyone wanted to
+continue where it stopped). The port has since been completed: Direct2D is
+now the default backend on Windows, with DirectWrite for text.</p>
 </div>
 <div class="paragraph">
-<p>A few graphics libraries have splendid support for text layout; some don&#8217;t —
+<p>A few graphics libraries have splendid support for text layout; some don&#8217;t:
 in particular, Skia. For Skia, Artist uses the
 <a href="https://www.freedesktop.org/wiki/Software/HarfBuzz/">HarfBuzz</a> library for text
 layout.</p>

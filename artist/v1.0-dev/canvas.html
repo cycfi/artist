@@ -61,7 +61,7 @@
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="index.html">Introduction</a>
+    <a class="nav-link" href="index.html">Artist 2D Canvas Library</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="setup.html">Setup and Installation</a>
@@ -151,6 +151,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="text_layout.html">Text Layout</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="recording.html">Recording</a>
+  </li>
 </ul>
   </li>
 </ul>
@@ -210,11 +213,9 @@ underscores as word separators instead of camelCase).</p>
 points and rectangles, and on drawable classes such as <a href="path.html" class="xref page">Path</a>
 and <a href="foundation/image.html" class="xref page">Image</a>.</p>
 </div>
+<div class="paragraph">
+<p>The canvas members are documented a family at a time:</p>
 </div>
-</div>
-<div class="sect1">
-<h2 id="_the_pages_in_this_section"><a class="anchor" href="#_the_pages_in_this_section"></a>The Pages in This Section</h2>
-<div class="sectionbody">
 <div class="ulist">
 <ul>
 <li>
@@ -242,7 +243,8 @@ color.</p>
 <p><a href="canvas/images.html" class="xref page">Drawing Images</a> paints an image onto the canvas.</p>
 </li>
 <li>
-<p><a href="canvas/states.html" class="xref page">States</a> save and restore the canvas.</p>
+<p><a href="canvas/states.html" class="xref page">States</a> save and restore the canvas, and group
+what is drawn to composite it as one.</p>
 </li>
 <li>
 <p><a href="canvas/context.html" class="xref page">Context</a> covers where a canvas comes from, how
@@ -261,19 +263,19 @@ long it lives, and the backend handle underneath it.</p>
 <div class="sect2">
 <h3 id="_drawing_is_immediate"><a class="anchor" href="#_drawing_is_immediate"></a>Drawing Is Immediate</h3>
 <div class="paragraph">
-<p>A canvas paints pixels and keeps no record of what it painted. There is no
-scene graph, no display list, and no object standing for the shape once the
-call returns: a drawing is the sum of the calls made, in the order they
-were made, and the only way to change one is to draw the whole thing again.
-A later call paints over an earlier one.</p>
+<p>On the drawing backends, a canvas paints pixels and keeps no record of what
+it painted. There is no scene graph, no display list, and no object
+standing for the shape once the call returns: a drawing is the sum of the
+calls made, in the order they were made, and the only way to change one is
+to draw the whole thing again. A later call paints over an earlier one. The
+recording backend paints no pixels; it keeps a journal of the calls for a
+test to read back. See <a href="recording.html" class="xref page">Recording</a>.</p>
 </div>
 <div class="paragraph">
-<p>That is why a host window hands you a canvas for the duration of one draw
-call and takes it back. Interactive code redraws from scratch on every
-frame, which costs nothing to keep in sync because there is nothing to keep
-in sync. For a drawing that is expensive and does not change, render it
-once into an <a href="foundation/image.html" class="xref page">image</a> and paint the image each
-frame instead.</p>
+<p>A host window hands you a canvas for the duration of one draw call, and
+interactive code redraws from scratch on every frame. For a drawing that
+is expensive and does not change, render it once into an
+<a href="foundation/image.html" class="xref page">image</a> and paint the image each frame instead.</p>
 </div>
 </div>
 <div class="sect2">
@@ -284,7 +286,13 @@ build a path, then fill or stroke it.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   cnv.fill_style(colors::navy_blue);
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+rect bounds;                    // where the shape goes
+...
+   cnv.fill_style(colors::navy_blue);
    cnv.add_round_rect(bounds, 5);
    cnv.fill();</code></pre>
 </div>
@@ -333,7 +341,9 @@ Outside the clip nothing changes.</p>
 <div class="paragraph">
 <p><code>fill</code> and <code>stroke</code> consume the path. After either returns the canvas is
 building nothing, so a shape that is to be both filled and outlined is
-added twice, or kept as a <a href="path.html" class="xref page"><code>path</code></a> object and added again.</p>
+filled with <code>fill_preserve</code>, which leaves the path in place, and then
+stroked, or else added twice, or kept as a <a href="path.html" class="xref page"><code>path</code></a> object
+and added again.</p>
 </div>
 </div>
 <div class="sect2">
@@ -352,11 +362,10 @@ a drawing can size itself to whatever canvas it is handed without being
 told.</p>
 </div>
 <div class="paragraph">
-<p>Edges are antialiased. A shape that does not land on a pixel boundary is
-blended into what is behind it rather than snapped, which is the right
-answer for a drawing and the wrong one for a hairline: a 1 unit line
-centred on a whole unit straddles the boundary and covers two rows at half
-strength. Centre such a line on a half unit if it has to be crisp.</p>
+<p>Edges are antialiased. Where a shape does not land on a pixel boundary,
+the pixels it partly covers are blended into what is behind them. A 1 unit
+line centred on a whole unit straddles the boundary and covers two rows at
+half strength. Centre such a line on a half unit if it has to be crisp.</p>
 </div>
 </div>
 <div class="sect2">
@@ -369,12 +378,12 @@ line width, cap and join, the shadow, the composite operation, the font,
 the text alignment, the transform and the clip.</p>
 </div>
 <div class="paragraph">
-<p>That is what makes drawing code composable, and what makes it dangerous: a
-function that narrows the clip or turns the axes has changed the canvas for
-everything drawn after it, and a clip can only ever be narrowed. The canvas
-keeps a stack of the whole bundle for exactly this reason, and
-<code>cnv.new_state()</code> pushes a copy and pops it at the end of the enclosing
-scope. See <a href="canvas/states.html" class="xref page">States</a>.</p>
+<p>A function that narrows the clip or turns the axes has changed the canvas
+for everything drawn after it, and a clip can only ever be narrowed. The
+canvas keeps a stack of the whole bundle. <code>cnv.new_state()</code> pushes a copy
+and pops it at the end of the enclosing scope. <code>cnv.new_group(opacity)</code>
+does the same, and when the scope ends it composites what was drawn inside
+onto the canvas as one, at that opacity. See <a href="canvas/states.html" class="xref page">States</a>.</p>
 </div>
 </div>
 </div>
@@ -391,8 +400,7 @@ takes a <a href="foundation/rect.html" class="xref page"><code>rect</code></a> r
 four number overload alongside it.</p>
 </div>
 <div class="paragraph">
-<p>Three differences are real and worth knowing before the reference pages
-say so one at a time:</p>
+<p>Three differences go beyond spelling:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -402,7 +410,8 @@ where the W3C API leaves it in place for the next call.</p>
 </li>
 <li>
 <p><strong>There is no <code>globalAlpha</code>.</strong> Alpha is carried by the colour, so a
-translucent fill is a translucent <code>fill_style</code>.</p>
+translucent fill is a translucent <code>fill_style</code>. A group of shapes is
+made translucent as one by <code>cnv.new_group(opacity)</code>.</p>
 </li>
 <li>
 <p><strong><code>save</code> and <code>restore</code> are not exposed.</strong> The pair is only reachable

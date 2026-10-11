@@ -61,7 +61,7 @@
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="../index.html">Introduction</a>
+    <a class="nav-link" href="../index.html">Artist 2D Canvas Library</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../setup.html">Setup and Installation</a>
@@ -151,6 +151,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../text_layout.html">Text Layout</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../recording.html">Recording</a>
+  </li>
 </ul>
   </li>
 </ul>
@@ -215,6 +218,18 @@ machinery; see <a href="font.html" class="xref page">Font</a>.</p>
 <p>The list is guarded by a mutex, so <code>add_search_path</code> may be called from
 any thread, including while another thread is searching.</p>
 </div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+See <a href="../foundation.html" class="xref page">Foundation</a> for an overview of the foundation classes.
+</td>
+</tr>
+</table>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -232,24 +247,71 @@ any thread, including while another thread is searching.</p>
 <div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   void      add_search_path(
-                fs::path const&amp; path
-              , bool search_first = false
-             );
-   fs::path  find_file(fs::path const&amp; file);
-   fs::path  find_directory(fs::path const&amp; dir);</code></pre>
-</div>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   // Declared by the library, defined by the host application
-   extern void init_paths();</code></pre>
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">void      add_search_path(fs::path const&amp; path, bool search_first = false);
+fs::path  find_file(fs::path const&amp; file);
+fs::path  find_directory(fs::path const&amp; dir);
+
+// Supplied by the host application
+extern void init_paths();</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p><code>fs</code> is the alias <code>cycfi::fs</code>, which <code>&lt;infra/filesystem.hpp&gt;</code> sets to
 <code>std::filesystem</code>, or to <code>ghc::filesystem</code> on a toolchain without it. The
 header includes it, and the alias is visible inside <code>cycfi::artist</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_client_interface"><a class="anchor" href="#_client_interface"></a>Client Interface</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>init_paths</code> is declared by the library and defined by the host
+application, to seed the search list. The library calls it the first time
+<code>find_file</code> or <code>find_directory</code> runs; the application does not call it.
+Every host under <code>examples/host/</code> provides one, typically adding the
+application&#8217;s resource directory.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>void init_paths();</code> </dt>
+<dd>
+<p>Seed the search list through <code>add_search_path</code>. Example: the
+application bundle&#8217;s resources directory on macOS, or <code>resources</code>
+under the current directory.</p>
+</dd>
+</dl>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="⚠️  WARNING"></i>
+</td>
+<td class="content">
+A program that links Artist must define <code>init_paths()</code> or it
+does not link. The companion hook, <code>get_user_fonts_directory()</code>, is
+declared in <code>font.hpp</code> and is usually defined alongside it; see
+<a href="font.html#_client_interface" class="xref page">Font</a>.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+<code>find_file</code> and <code>find_directory</code> each carry their own one time
+initializer, so <code>init_paths()</code> runs once per function, up to twice in a
+process that calls both. A directory it adds then appears in the list
+twice. The comment in <code>resources.hpp</code> says it runs only once; do not rely
+on either count.
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
@@ -262,21 +324,22 @@ header includes it, and the alias is visible inside <code>cycfi::artist</code>.<
 <dl>
 <dt class="hdlist1"><code>p</code>   </dt>
 <dd>
-<p>Object of type <code>fs::path</code>, a directory to search.</p>
+<p>Object of type <code>fs::path</code> for a directory to search.</p>
 </dd>
 <dt class="hdlist1"><code>f</code>   </dt>
 <dd>
-<p>Object of type <code>fs::path</code>, a file name, relative or absolute.</p>
+<p>Object of type <code>fs::path</code> for a file name, relative or absolute.</p>
 </dd>
 <dt class="hdlist1"><code>d</code>   </dt>
 <dd>
-<p>Object of type <code>fs::path</code>, a directory name, relative or absolute.</p>
+<p>Object of type <code>fs::path</code> for a directory name, relative or
+absolute.</p>
 </dd>
 </dl>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_free_functions"><a class="anchor" href="#_free_functions"></a>Free Functions</h3>
+<h3 id="_functions"><a class="anchor" href="#_functions"></a>Functions</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 33.3333%;">
@@ -293,7 +356,7 @@ header includes it, and the alias is visible inside <code>cycfi::artist</code>.<
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>add_search_path(p)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Append <code>p</code> to the list. It is
+<td class="tableblock halign-left valign-top"><p class="tableblock">Append <code>p</code> to the list, to be
                                searched after every directory
                                already present.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
@@ -301,23 +364,24 @@ header includes it, and the alias is visible inside <code>cycfi::artist</code>.<
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>add_search_path(p, true)</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Insert <code>p</code> at the front of the
-                               list. It is searched first.</p></td>
+                               list, to be searched first.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>find_file(f)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">If <code>f</code> is absolute, <code>f</code> itself
-                               when it exists. Otherwise the
-                               first <code>p</code> in the list for which
-                               <code>p / f</code> exists, returned as
-                               <code>p / f</code>. An empty path when
-                               nothing matches.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the path of <code>f</code>: <code>f</code> itself
+                               when it is absolute and exists,
+                               otherwise <code>p / f</code> for the first
+                               <code>p</code> in the list where it exists,
+                               and an empty path when nothing
+                               matches.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>fs::path</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>find_directory(d)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As <code>find_file</code>, but a match must
-                               be a directory.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the path of <code>d</code> as
+                               <code>find_file</code> does, where a match
+                               must be a directory.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>fs::path</code></p></td>
 </tr>
 </tbody>
@@ -348,85 +412,62 @@ exists and an empty path when it does not, whatever the list holds.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_host_hook"><a class="anchor" href="#_host_hook"></a>Host Hook</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>init_paths()</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Seed the search list. The library declares
-                    this and the host application defines it;
-                    every host under <code>examples/host/</code> provides
-                    one, typically adding the application&#8217;s
-                    resource directory. The library calls it
-                    itself the first time <code>find_file</code> or
-                    <code>find_directory</code> runs. Do not call it.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-</tbody>
-</table>
-<div class="admonitionblock important">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-important" title="📢  IMPORTANT"></i>
-</td>
-<td class="content">
-A program that links Artist must define <code>init_paths()</code> or it
-does not link. The companion hook, <code>get_user_fonts_directory()</code>, is
-declared in <code>font.hpp</code> and is usually defined alongside it.
-</td>
-</tr>
-</table>
+<h3 id="_example"><a class="anchor" href="#_example"></a>Example</h3>
+<div class="paragraph">
+<p>Seed the search list in the host, then add the application&#8217;s own
+directories and resolve an image by name.</p>
 </div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="✏️  NOTE"></i>
-</td>
-<td class="content">
-<code>find_file</code> and <code>find_directory</code> each carry their own one time
-initializer, so <code>init_paths()</code> runs once per function, up to twice in a
-process that calls both. A directory it adds then appears in the list
-twice. The header describes it as called only once; the discrepancy is
-recorded here as current behaviour and is not something to rely on.
-</td>
-</tr>
-</table>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
-<div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   // The host has already seeded the list from init_paths(). Add the
-   // application's own asset directory, then an optional override that
-   // must win over everything else.
-   add_search_path("assets/textures");
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/resources.hpp&gt;
+#include &lt;artist/image.hpp&gt;              // For image
+...
+namespace cycfi::artist
+{
+   void init_paths()                                         <i class="conum" data-value="1"></i><b>(1)</b>
+   {
+      add_search_path(fs::current_path() / "resources");
+   }
+}
+...
+using namespace cycfi::artist;
+extern cycfi::fs::path user_override_dir;   // set by the user, or empty
+void use(cycfi::fs::path const&amp; p);         // the application's own
+...
+   add_search_path("assets/textures");                       <i class="conum" data-value="2"></i><b>(2)</b>
    if (!user_override_dir.empty())
-      add_search_path(user_override_dir, true);
+      add_search_path(user_override_dir, true);              <i class="conum" data-value="3"></i><b>(3)</b>
 
-   // image resolves a relative name through the same list.
-   image tex{"wood.png"};
+   image tex{"wood.png"};                                    <i class="conum" data-value="4"></i><b>(4)</b>
 
-   // Or resolve it yourself and decide what to do on a miss.
-   if (auto p = find_file("wood.png"); !p.empty())
+   if (auto p = find_file("wood.png"); !p.empty())           <i class="conum" data-value="5"></i><b>(5)</b>
       use(p);</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Define the hook in the host, seeding the list with <code>resources</code> under
+the current directory. See <a href="#_client_interface">Client Interface</a>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Add the application&#8217;s own asset directory, searched after the host&#8217;s.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Add an optional override directory, searched before everything else.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>Construct an image from a relative name, resolved through the list.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>Resolve the name directly, and decide what to do on a miss.</td>
+</tr>
+</table>
 </div>
 </div>
 </div>

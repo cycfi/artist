@@ -61,7 +61,7 @@
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="../index.html">Introduction</a>
+    <a class="nav-link" href="../index.html">Artist 2D Canvas Library</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../setup.html">Setup and Installation</a>
@@ -151,6 +151,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../text_layout.html">Text Layout</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../recording.html">Recording</a>
+  </li>
 </ul>
   </li>
 </ul>
@@ -218,147 +221,6 @@ want.</p>
 <p>The library ships a large set of named colors and a neutral gray ramp in
 the <code>cycfi::artist::colors</code> namespace. See <a href="#_predefined_colors">Predefined Colors</a>.</p>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_include"><a class="anchor" href="#_include"></a>Include</h2>
-<div class="sectionbody">
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/color.hpp&gt;</code></pre>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h2>
-<div class="sectionbody">
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   struct color
-   {
-      constexpr         color() = default;
-      constexpr         color(
-                           float red, float green
-                         , float blue, float alpha = 1.0f
-                        );
-
-      constexpr color   opacity(float alpha_) const;
-      constexpr color   level(float amount) const;
-
-      float red   = 0.0f;
-      float green = 0.0f;
-      float blue  = 0.0f;
-      float alpha = 0.0f;
-   };</code></pre>
-</div>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   // Free functions
-   constexpr bool    operator==(color const&amp; a, color const&amp; b);
-   constexpr bool    operator!=(color const&amp; a, color const&amp; b);
-
-   constexpr color   operator+(color const&amp; a, color const&amp; b);
-   constexpr color   operator-(color const&amp; a, color const&amp; b);
-   constexpr color   operator*(color const&amp; a, float b);
-   constexpr color   operator*(float a, color const&amp; b);
-
-   constexpr color   rgb(std::uint32_t rgb);
-   constexpr color   rgba(std::uint32_t rgba);
-   constexpr color   rgb(std::uint8_t r, std::uint8_t g, std::uint8_t b);
-   constexpr color   rgba(
-                        std::uint8_t r, std::uint8_t g
-                      , std::uint8_t b, std::uint8_t a
-                     );
-   constexpr color   hsl(float h, float s, float l);</code></pre>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
-<div class="sectionbody">
-<div class="sect2">
-<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>c</code>, <code>c2</code>               </dt>
-<dd>
-<p>Objects of type <code>color</code>.</p>
-</dd>
-<dt class="hdlist1"><code>r</code>, <code>g</code>, <code>b</code>, <code>a</code>      </dt>
-<dd>
-<p>Floating point component values, nominally 0.0
-to 1.0.</p>
-</dd>
-<dt class="hdlist1"><code>ur</code>, <code>ug</code>, <code>ub</code>, <code>ua</code>  </dt>
-<dd>
-<p>Objects of type <code>std::uint8_t</code>, 0 to 255.</p>
-</dd>
-<dt class="hdlist1"><code>u</code>                     </dt>
-<dd>
-<p>Object of type <code>std::uint32_t</code>, typically a hex
-literal.</p>
-</dd>
-<dt class="hdlist1"><code>h</code>                     </dt>
-<dd>
-<p>Floating point hue in degrees, 0 to 360.</p>
-</dd>
-<dt class="hdlist1"><code>s</code>, <code>l</code>                </dt>
-<dd>
-<p>Floating point saturation and lightness, 0.0 to
-1.0.</p>
-</dd>
-<dt class="hdlist1"><code>amount</code>, <code>k</code>           </dt>
-<dd>
-<p>Floating point multipliers.</p>
-</dd>
-<dt class="hdlist1"><code>i</code>                     </dt>
-<dd>
-<p>An integer index.</p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_constructors_and_assignment"><a class="anchor" href="#_constructors_and_assignment"></a>Constructors and Assignment</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color{}</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Default construct <code>{0, 0, 0, 0}</code>, transparent
-                            black.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color{r, g, b}</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Construct from the three color components.
-                            Alpha takes its default of 1.0, fully opaque.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color{r, g, b, a}</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Construct from all four components.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color(c)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Copy construct from <code>c</code>.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c = c2</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Assign <code>c2</code> to <code>c</code>.</p></td>
-</tr>
-</tbody>
-</table>
 <div class="admonitionblock note">
 <table>
 <tr>
@@ -366,263 +228,10 @@ literal.</p>
 <i class="fa icon-note" title="✏️  NOTE"></i>
 </td>
 <td class="content">
-<code>color</code> declares its own constructors, so it is not an aggregate and
-brace initialization calls a constructor rather than initializing members
-in order. That is why <code>color{r, g, b}</code> is opaque, picking up the default
-argument, while <code>color{}</code> is transparent, picking up the member
-initializers.
+See <a href="../foundation.html" class="xref page">Foundation</a> for an overview of the foundation classes.
 </td>
 </tr>
 </table>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_comparison"><a class="anchor" href="#_comparison"></a>Comparison</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c == c2</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Compare all four components. The comparison
-                 is exact, so two colors differing only by
-                 rounding are not equal.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c != c2</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The negation of the above.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect2">
-<h3 id="_members"><a class="anchor" href="#_members"></a>Members</h3>
-<div class="paragraph">
-<p>The members are public and directly assignable. There are no accessors.</p>
-</div>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c.red</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The red component.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c.green</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The green component.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c.blue</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The blue component.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c.alpha</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The alpha component, 0.0 fully transparent
-                and 1.0 fully opaque.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect2">
-<h3 id="_derivation"><a class="anchor" href="#_derivation"></a>Derivation</h3>
-<div class="paragraph">
-<p>Both are <code>const</code> and return a new color; <code>c</code> is not modified.</p>
-</div>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c.opacity(a)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A copy of <code>c</code> with the alpha replaced
-                      by <code>a</code>. The color components are
-                      untouched.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c.level(amount)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A copy of <code>c</code> with the three color
-                      components multiplied by <code>amount</code>.
-                      The alpha is untouched.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
-</tr>
-</tbody>
-</table>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="✏️  NOTE"></i>
-</td>
-<td class="content">
-<code>level</code> does not clamp. An <code>amount</code> above 1 pushes components past
-1.0, and they stay there until a backend clips them.
-</td>
-</tr>
-</table>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_arithmetic"><a class="anchor" href="#_arithmetic"></a>Arithmetic</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c + c2</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Sum the three color components. The alpha
-                is <code>c.alpha + c2.alpha * (1 - c.alpha)</code>, the
-                usual source over rule.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c - c2</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Difference of the three color components.
-                The alpha uses the same source over formula
-                as <code>+</code>, not a difference.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c * k</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Multiply the three color components by <code>k</code>,
-                leaving the alpha unchanged. Equivalent to
-                <code>c.level(k)</code>.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>k * c</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The same, with the operands reversed.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
-</tr>
-</tbody>
-</table>
-<div class="admonitionblock caution">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-caution" title="Caution"></i>
-</td>
-<td class="content">
-These are plain component arithmetic, not a compositing model.
-Nothing is clamped, so a sum can exceed 1.0 and a difference can go
-negative. The alpha of <code>c - c2</code> combining rather than subtracting is what
-the implementation does today; do not rely on it.
-</td>
-</tr>
-</table>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_free_functions"><a class="anchor" href="#_free_functions"></a>Free Functions</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rgb(u)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Unpack <code>u</code> as <code>0xRRGGBB</code> and scale
-                           each byte by 1/255. The alpha is
-                           1.0.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rgba(u)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Unpack <code>u</code> as <code>0xRRGGBBAA</code> and
-                           scale each byte by 1/255.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rgb(ur, ug, ub)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, from three separate
-                           bytes. The alpha is 1.0.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rgba(ur, ug, ub, ua)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, from four separate
-                           bytes.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>hsl(h, s, l)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Convert hue, saturation and
-                           lightness to red, green and blue.
-                           The alpha is 1.0.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
-</tr>
-</tbody>
-</table>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="✏️  NOTE"></i>
-</td>
-<td class="content">
-<code>hsl</code> clamps <code>h</code> to 359.99 before converting, so <code>hsl(360, s, l)</code> is
-close to, but not exactly, <code>hsl(0, s, l)</code>. Nothing wraps or clamps a
-negative hue, so keep <code>h</code> within 0 to 360.
-</td>
-</tr>
-</table>
-</div>
 </div>
 </div>
 </div>
@@ -636,7 +245,9 @@ alias the namespace:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   namespace colors = cycfi::artist::colors;</code></pre>
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/color.hpp&gt;
+...
+namespace colors = cycfi::artist::colors;</code></pre>
 </div>
 </div>
 <div class="imageblock text-center">
@@ -662,6 +273,179 @@ matters. Three pairs are the same color under two names: <code>tan</code> and
 </div>
 <div class="title">Figure 2. colors::gray is 101 neutrals from black to white, one per percent.</div>
 </div>
+<div class="paragraph">
+<p><code>colors::gray[i]</code> is the neutral at <code>i</code> percent, and <code>colors::grey</code> is
+another name for the same ramp. See <a href="#_constants">Constants</a>.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_include"><a class="anchor" href="#_include"></a>Include</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/color.hpp&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">struct color
+{
+   constexpr         color() = default;
+   constexpr         color(
+                        float red, float green
+                      , float blue, float alpha = 1.0f
+                     );
+
+   constexpr color   opacity(float alpha_) const;
+   constexpr color   level(float amount) const;
+
+   float red   = 0.0f;
+   float green = 0.0f;
+   float blue  = 0.0f;
+   float alpha = 0.0f;
+};
+
+constexpr bool    operator==(color const&amp; a, color const&amp; b);
+constexpr bool    operator!=(color const&amp; a, color const&amp; b);
+
+constexpr color   operator+(color const&amp; a, color const&amp; b);
+constexpr color   operator-(color const&amp; a, color const&amp; b);
+constexpr color   operator*(color const&amp; a, float b);
+constexpr color   operator*(float a, color const&amp; b);
+
+constexpr color   rgb(std::uint32_t rgb);
+constexpr color   rgba(std::uint32_t rgba);
+constexpr color   rgb(std::uint8_t r, std::uint8_t g, std::uint8_t b);
+constexpr color   rgba(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a);
+constexpr color   hsl(float h, float s, float l);
+
+namespace colors
+{
+   constexpr color alice_blue = rgb(240, 248, 255);
+   ...                                   // 131 named colors
+   constexpr color gray[] = { ... };     // 101 entries
+   constexpr auto grey = gray;
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>c</code>, <code>a</code>, <code>b</code>                   </dt>
+<dd>
+<p>Objects of type <code>color</code>.</p>
+</dd>
+<dt class="hdlist1"><code>red</code>, <code>green</code>, <code>blue</code>, <code>alpha</code> </dt>
+<dd>
+<p>Floating point values for the
+components, nominally 0.0 to 1.0.</p>
+</dd>
+<dt class="hdlist1"><code>ur</code>, <code>ug</code>, <code>ub</code>, <code>ua</code>          </dt>
+<dd>
+<p>Values of type <code>std::uint8_t</code> for the
+components, 0 to 255.</p>
+</dd>
+<dt class="hdlist1"><code>u</code>                             </dt>
+<dd>
+<p>Value of type <code>std::uint32_t</code> for packed
+components, typically a hex literal.</p>
+</dd>
+<dt class="hdlist1"><code>h</code>                             </dt>
+<dd>
+<p>Floating point value for the hue, in
+degrees, 0 to 360.</p>
+</dd>
+<dt class="hdlist1"><code>s</code>, <code>l</code>                        </dt>
+<dd>
+<p>Floating point values for the saturation
+and lightness, 0.0 to 1.0.</p>
+</dd>
+<dt class="hdlist1"><code>k</code>                             </dt>
+<dd>
+<p>Floating point value for a multiplier.</p>
+</dd>
+<dt class="hdlist1"><code>i</code>                             </dt>
+<dd>
+<p>Integer value for an index, 0 to 100.</p>
+</dd>
+<dt class="hdlist1"><code>name</code>                          </dt>
+<dd>
+<p>One of the color names in <code>colors</code>.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_constructors_and_assignment"><a class="anchor" href="#_constructors_and_assignment"></a>Constructors and Assignment</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct transparent black,
+                                      <code>{0, 0, 0, 0}</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color(red, green, blue)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct an opaque <code>color</code> given
+                                      <code>red</code>, <code>green</code> and <code>blue</code>. The alpha
+                                      takes its default of 1.0.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color(red, green, blue, alpha)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct a <code>color</code> given all four
+                                      components.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color(c)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Copy construct from <code>color c</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>a = b</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Assign <code>b</code> to <code>a</code>.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+C++ brace initialization may also be used. <code>color</code> is not an
+aggregate, so braces call the constructors above: <code>color{red, green,
+blue}</code> is opaque, picking up the default argument, while <code>color{}</code> is
+transparent, picking up the member initializers.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_access"><a class="anchor" href="#_access"></a>Access</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 33.3333%;">
@@ -677,26 +461,290 @@ matters. Three pairs are the same color under two names: <code>tan</code> and
 </thead>
 <tbody>
 <tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c.red</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access the red component.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c.green</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access the green component.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c.blue</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access the blue component.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c.alpha</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access the alpha component, 0.0 fully
+                transparent and 1.0 fully opaque.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_operation"><a class="anchor" href="#_operation"></a>Operation</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c.opacity(alpha)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get a copy of <code>c</code> with the alpha
+                        replaced by <code>alpha</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c.level(k)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get a copy of <code>c</code> with the red,
+                        green and blue multiplied by <code>k</code>,
+                        the alpha unchanged.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+<code>level</code> does not clamp. A <code>k</code> above 1 pushes components past 1.0,
+and they stay there until a backend clips them.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_comparison"><a class="anchor" href="#_comparison"></a>Comparison</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>a == b</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Equality.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>a != b</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Non-Equality.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+The comparison of the four components is exact, so two colors
+differing only by rounding are not equal.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_arithmetic"><a class="anchor" href="#_arithmetic"></a>Arithmetic</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>a + b</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add the red, green and blue components. The
+                alpha is <code>a.alpha + b.alpha * (1 - a.alpha)</code>,
+                the usual source over rule.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>a - b</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Subtract the red, green and blue components,
+                the alpha that of <code>a</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>c * k</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Multiply the red, green and blue components
+                by <code>k</code>, the alpha unchanged, as
+                <code>c.level(k)</code> does.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>k * c</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Multiply as <code>c * k</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="⚠️  WARNING"></i>
+</td>
+<td class="content">
+These are plain component arithmetic, not a compositing model.
+Nothing is clamped, so a sum can exceed 1.0 and a difference can go
+negative.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_conversions"><a class="anchor" href="#_conversions"></a>Conversions</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rgb(u)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Convert <code>u</code>, packed as <code>0xRRGGBB</code>,
+                           to a <code>color</code>, each byte scaled by
+                           1/255 and the alpha 1.0.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rgba(u)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Convert <code>u</code>, packed as
+                           <code>0xRRGGBBAA</code>, to a <code>color</code>, each
+                           byte scaled by 1/255.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rgb(ur, ug, ub)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Convert three bytes to a <code>color</code>,
+                           each scaled by 1/255 and the
+                           alpha 1.0.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rgba(ur, ug, ub, ua)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Convert four bytes to a <code>color</code>,
+                           each scaled by 1/255.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>hsl(h, s, l)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Convert <code>h</code>, <code>s</code> and <code>l</code> (hue,
+                           saturation and lightness) to a
+                           <code>color</code>, the alpha 1.0.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+<code>hsl</code> clamps <code>h</code> to 359.99 before converting, so <code>hsl(360, s, l)</code> is
+close to, but not exactly, <code>hsl(0, s, l)</code>. Nothing wraps or clamps a
+negative hue, so keep <code>h</code> within 0 to 360.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_constants"><a class="anchor" href="#_constants"></a>Constants</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>colors::name</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the named color <code>name</code>. See
+                        <a href="#_predefined_colors">Predefined Colors</a>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
+</tr>
+<tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>colors::gray</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">An array of 101 neutral colors
-                    from black to white, one per
-                    percent, so <code>gray[i]</code> is the
-                    neutral at <code>i</code> percent. Valid
-                    indices are 0 to 100.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the gray ramp: 101 neutral
+                        colors from black to white, one
+                        per percent.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>color const[101]</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>colors::grey</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A synonym for <code>colors::gray</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the gray ramp, through a
+                        pointer.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>color const*</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>colors::gray[i]</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the neutral at <code>i</code> percent,
+                        from black at 0 to white at
+                        100.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>color</code></p></td>
 </tr>
 </tbody>
 </table>
-<div class="admonitionblock important">
+<div class="admonitionblock warning">
 <table>
 <tr>
 <td class="icon">
-<i class="fa icon-important" title="📢  IMPORTANT"></i>
+<i class="fa icon-warning" title="⚠️  WARNING"></i>
 </td>
 <td class="content">
 The ramp has 101 entries, not 256. <code>gray[128]</code> and <code>gray[255]</code>
@@ -720,26 +768,29 @@ and <code>grey</code> is a pointer, not an array. Indexing works as expected, bu
 </table>
 </div>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="_example"><a class="anchor" href="#_example"></a>Example</h3>
 <div class="paragraph">
-<p>A panel fill and the brighter shade it takes when hovered, laid over a
-neutral backdrop at 60 percent opacity:</p>
+<p>Fill a panel, and the brighter shade it takes when hovered, over a neutral
+backdrop at 60 percent opacity.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   constexpr auto panel = colors::dark_slate_blue;
-   constexpr auto hover = panel.level(1.8f);
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/color.hpp&gt;
+#include &lt;artist/canvas.hpp&gt;             // For canvas
+...
+using namespace cycfi::artist;
+extern canvas cnv;                       // the canvas to draw on
+...
+   constexpr auto panel = colors::dark_slate_blue;            <i class="conum" data-value="1"></i><b>(1)</b>
+   constexpr auto hover = panel.level(1.8f);                  <i class="conum" data-value="2"></i><b>(2)</b>
 
    auto swatch = [&amp;](rect bounds, bool hovered)
    {
-      cnv.fill_style(colors::gray[20]);
+      cnv.fill_style(colors::gray[20]);                       <i class="conum" data-value="3"></i><b>(3)</b>
       cnv.fill_rect(bounds);
 
-      cnv.fill_style((hovered? hover : panel).opacity(0.6f));
+      cnv.fill_style((hovered? hover : panel).opacity(0.6f)); <i class="conum" data-value="4"></i><b>(4)</b>
       cnv.fill_rect(bounds);
    };
 
@@ -747,15 +798,33 @@ neutral backdrop at 60 percent opacity:</p>
    swatch(rect{280, 20, 480, 110}, true);</code></pre>
 </div>
 </div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Get a named color for the panel.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Get a brighter shade of it for the hover. Both are <code>constexpr</code>, so the
+shade is computed at compile time, not on every frame.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Fill the backdrop with the neutral at 20 percent.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>Fill the panel color over it at 60 percent opacity.</td>
+</tr>
+</table>
+</div>
 <div class="imageblock text-center">
 <div class="content">
 <a class="image" href="../_images/foundation/color_example.png"><img src="../_images/foundation/color_example.png" alt="Two blue grey swatches, the second lighter than the first" width="560px"></a>
 </div>
 <div class="title">Figure 3. What the code above draws: the panel color, and the brighter shade level gives it.</div>
 </div>
-<div class="paragraph">
-<p>Both <code>panel</code> and <code>hover</code> are <code>constexpr</code>, so the hover shade is computed at
-compile time rather than on every frame.</p>
 </div>
 </div>
 </div>

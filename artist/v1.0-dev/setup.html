@@ -61,7 +61,7 @@
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="index.html">Introduction</a>
+    <a class="nav-link" href="index.html">Artist 2D Canvas Library</a>
   </li>
   <li class="nav-item is-current-page" data-depth="1">
     <a class="nav-link" href="setup.html">Setup and Installation</a>
@@ -151,6 +151,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="text_layout.html">Text Layout</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="recording.html">Recording</a>
+  </li>
 </ul>
   </li>
 </ul>
@@ -198,8 +201,8 @@
 <div class="sectionbody">
 <div class="paragraph">
 <p>This guide covers building the Artist 2D Canvas Library from source on macOS,
-Windows, and Linux, across the three supported rendering backends: Skia,
-Cairo, and Quartz-2D.</p>
+Windows, and Linux, across the five rendering backends: Quartz-2D,
+Direct2D, Skia, Cairo, and the headless recording backend.</p>
 </div>
 </div>
 </div>
@@ -214,7 +217,8 @@ Cairo, and Quartz-2D.</p>
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">A C++20 compiler</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Clang, GCC, or MSVC (Visual Studio 2022)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Clang, GCC, or MSVC (Visual Studio 2022; 17.14 or
+                      newer for Direct2D and the x64 Windows prebuilt bundles)</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://git-scm.com/">Git</a></p></td>
@@ -244,11 +248,15 @@ versions will reject the presets.</p>
 </table>
 </div>
 <div class="paragraph">
-<p>The build is driven by <a href="https://vcpkg.io/">vcpkg</a> (vendored as a git submodule
-at <code>lib/external/vcpkg/</code>) together with CMake presets. The
-<a href="https://github.com/cycfi/infra/">Cycfi infra library</a> is also pulled in as a
-submodule. Both are fetched automatically when you clone with
-<code>--recurse-submodules</code>.</p>
+<p>The Skia and Cairo backends take their libraries from prebuilt bundles
+that CMake downloads at configure time, or from <a href="https://vcpkg.io/">vcpkg</a>
+(vendored as a git submodule at <code>lib/external/vcpkg/</code>), driven by a vcpkg
+toolchain file or the <code>source</code> CMake preset. The
+<a href="https://github.com/cycfi/infra/">Cycfi infra library</a> and libunibreak are
+also submodules. Both are fetched when you clone with
+<code>--recurse-submodules</code>, and CMake fetches them itself if they are missing.
+The vcpkg submodule is marked <code>update = none</code>, so it is not fetched; check
+it out only to build with vcpkg (see <a href="#_one_time_vcpkg_bootstrap">One-time vcpkg bootstrap</a>).</p>
 </div>
 </div>
 </div>
@@ -279,7 +287,7 @@ the fact:</p>
 <h2 id="_backends"><a class="anchor" href="#_backends"></a>Backends</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Artist supports three rendering backends. Only one backend is active per
+<p>Artist supports five rendering backends. Only one backend is active per
 build, selected with a CMake option.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
@@ -305,21 +313,36 @@ build, selected with a CMake option.</p>
 <td class="tableblock halign-left valign-top"><p class="tableblock">macOS</p></td>
 </tr>
 <tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Direct2D</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Windows</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ARTIST_DIRECT2D=ON</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Windows</p></td>
+</tr>
+<tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Skia</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">macOS, Linux, Windows</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>ARTIST_SKIA=ON</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Linux, Windows</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">off</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Cairo</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">macOS, Linux, Windows</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>ARTIST_CAIRO=ON</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Linux and others</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Recording</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">macOS, Linux, Windows</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ARTIST_RECORDING=ON</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">off</p></td>
 </tr>
 </tbody>
 </table>
 <div class="paragraph">
-<p>Enabling one backend automatically disables the others.</p>
+<p>With no backend option set, CMake uses the platform&#8217;s native backend:
+Direct2D on Windows, Quartz-2D on macOS, Cairo elsewhere. Enabling one
+backend automatically disables the others. If more than one is enabled,
+the first of recording, Direct2D, Cairo, Skia and Quartz-2D wins.</p>
 </div>
 </div>
 </div>
@@ -327,8 +350,8 @@ build, selected with a CMake option.</p>
 <h2 id="_building_with_skia"><a class="anchor" href="#_building_with_skia"></a>Building with Skia</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Skia is the default backend on Linux and Windows, and is also available on
-macOS. The Skia binaries are large and slow to compile from source, so Artist
+<p>Skia is available on macOS, Linux and Windows, and is the default on none
+of them. The Skia binaries are large and slow to compile from source, so Artist
 ships with two CMake presets:</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
@@ -356,20 +379,38 @@ ships with two CMake presets:</p>
 </tr>
 </tbody>
 </table>
+<div class="paragraph">
+<p>Any Skia build configured without a vcpkg toolchain takes the prebuilt
+bundle, with or without the preset. CMake checks the bundle against the
+local toolchain and stops with an error if it does not fit: Linux needs
+glibc 2.35 or newer, Windows the MSVC v143 toolset (Visual Studio 2022
+17.14 or newer for the static x64 bundle), and macOS a deployment target
+of 11.0 or newer. To opt out, configure with the vcpkg toolchain (the
+<code>source</code> preset), or set <code>-DARTIST_SKIA_PREBUILT=OFF</code> and put your own
+Skia on <code>CMAKE_PREFIX_PATH</code>.</p>
+</div>
+<div class="paragraph">
+<p>On Linux, Skia links the system HarfBuzz and OpenGL, found through
+pkg-config and CMake: install <code>pkg-config</code>, <code>libharfbuzz-dev</code> and
+<code>libgl1-mesa-dev</code> (or your distribution&#8217;s equivalents).</p>
+</div>
 <div class="sect2">
 <h3 id="_one_time_vcpkg_bootstrap"><a class="anchor" href="#_one_time_vcpkg_bootstrap"></a>One-time vcpkg bootstrap</h3>
 <div class="paragraph">
-<p>Bootstrap the bundled vcpkg once (already done implicitly if you let CMake
-fetch submodules):</p>
+<p>Only a vcpkg build (the <code>source</code> preset, or a vcpkg toolchain file) needs
+this. <code>--recurse-submodules</code> does not fetch vcpkg, so check it out and
+bootstrap it once:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">lib/external/vcpkg/bootstrap-vcpkg.sh -disableMetrics    # macOS / Linux</code></pre>
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">git submodule update --init --checkout lib/external/vcpkg
+lib/external/vcpkg/bootstrap-vcpkg.sh -disableMetrics    # macOS / Linux</code></pre>
 </div>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bat hljs" data-lang="bat">lib\external\vcpkg\bootstrap-vcpkg.bat -disableMetrics   :: Windows</code></pre>
+<pre class="highlightjs highlight"><code class="language-bat hljs" data-lang="bat">git submodule update --init --checkout lib/external/vcpkg
+lib\external\vcpkg\bootstrap-vcpkg.bat -disableMetrics   :: Windows</code></pre>
 </div>
 </div>
 </div>
@@ -388,13 +429,15 @@ cmake --build build-source</code></pre>
 </div>
 <div class="paragraph">
 <p>The <code>prebuilt</code> preset writes to <code>build/</code>; the <code>source</code> preset writes to
-<code>build-source/</code>. Both default to a Release build with tests enabled.</p>
+<code>build-source/</code>. Both default to a Release build with tests and examples
+enabled.</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_configure_manually_without_presets"><a class="anchor" href="#_configure_manually_without_presets"></a>Configure manually (without presets)</h3>
 <div class="paragraph">
-<p>If you prefer to drive CMake directly, pass the vcpkg toolchain file:</p>
+<p>If you prefer to drive CMake directly, <code>-DARTIST_SKIA=ON</code> alone takes the
+prebuilt bundle. To build Skia from source, pass the vcpkg toolchain file:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -411,9 +454,14 @@ cmake --build build-skia</code></pre>
 <h2 id="_building_with_cairo"><a class="anchor" href="#_building_with_cairo"></a>Building with Cairo</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Cairo is an optional backend, disabled by default. On macOS and Linux it uses
-the system Cairo (installed via the platform package manager); on Windows its
-dependency tree is built through the bundled vcpkg.</p>
+<p>Cairo is the default backend on Linux, and on any platform other than macOS
+and Windows. On Linux it uses the system Cairo, installed with the platform
+package manager. On macOS and Windows, CMake downloads a prebuilt bundle of
+Cairo and its dependencies (cairo, harfbuzz, fontconfig, freetype, libwebp
+and the pkgconf tool) from the Cloudflare R2 cache, so nothing has to be
+installed and <code>-DARTIST_CAIRO=ON</code> is all it takes. To use your own
+libraries instead, configure with <code>-DARTIST_CAIRO_PREBUILT=OFF</code> and install
+them as below; a vcpkg toolchain turns the bundle off too.</p>
 </div>
 <div class="sect2">
 <h3 id="_linux"><a class="anchor" href="#_linux"></a>Linux</h3>
@@ -424,6 +472,7 @@ dependency tree is built through the bundled vcpkg.</p>
   libfontconfig1-dev \
   libfreetype6-dev \
   libharfbuzz-dev \
+  libwebp-dev \
   pkg-config
 
 cmake -S . -B build-cairo -DARTIST_CAIRO=ON
@@ -435,9 +484,9 @@ cmake --build build-cairo</code></pre>
 <h3 id="_macos_homebrew"><a class="anchor" href="#_macos_homebrew"></a>macOS (Homebrew)</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">brew install cairo fontconfig freetype harfbuzz ninja
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">brew install cairo fontconfig freetype harfbuzz webp pkgconf ninja
 
-cmake -S . -B build-cairo -DARTIST_CAIRO=ON
+cmake -S . -B build-cairo -DARTIST_CAIRO=ON -DARTIST_CAIRO_PREBUILT=OFF
 cmake --build build-cairo</code></pre>
 </div>
 </div>
@@ -445,12 +494,14 @@ cmake --build build-cairo</code></pre>
 <div class="sect2">
 <h3 id="_windows"><a class="anchor" href="#_windows"></a>Windows</h3>
 <div class="paragraph">
-<p>Dependencies are managed through the bundled vcpkg submodule — no separate
-installation is needed. Bootstrap vcpkg once, then pass the toolchain file:</p>
+<p>The prebuilt bundle is the default. To build the dependencies from source
+instead, use the bundled vcpkg submodule (no separate installation is
+needed). Check it out and bootstrap it once, then pass the toolchain file:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bat hljs" data-lang="bat">lib\external\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+<pre class="highlightjs highlight"><code class="language-bat hljs" data-lang="bat">git submodule update --init --checkout lib/external/vcpkg
+lib\external\vcpkg\bootstrap-vcpkg.bat -disableMetrics
 
 cmake -S . -B build-cairo -DARTIST_CAIRO=ON ^
   -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake
@@ -458,7 +509,8 @@ cmake --build build-cairo</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>vcpkg will build cairo, freetype, fontconfig, and harfbuzz from source on the
+<p>vcpkg will build cairo, freetype, fontconfig, harfbuzz, libwebp and pkgconf
+from source on the
 first run (~15–20 min). Subsequent builds reuse the cached <code>vcpkg_installed/</code>
 directory.</p>
 </div>
@@ -474,7 +526,8 @@ directory.</p>
 <p>Offscreen image surfaces on macOS, Linux, and Windows.</p>
 </li>
 <li>
-<p>Live window rendering on macOS, Linux/GTK, and Windows/Win32.</p>
+<p>Live window rendering on macOS, Linux (GTK3, Wayland and X11 hosts), and
+Windows/Win32.</p>
 </li>
 <li>
 <p>Visual test suite with goldens for macOS, Linux, and Windows.</p>
@@ -523,11 +576,52 @@ cmake --build build-quartz2d</code></pre>
 </div>
 </div>
 <div class="sect1">
+<h2 id="_building_with_direct2d_windows"><a class="anchor" href="#_building_with_direct2d_windows"></a>Building with Direct2D (Windows)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Direct2D is the default backend on Windows. It uses the Windows system
+libraries (Direct2D, DirectWrite, WIC), plus libwebp&#8217;s decoder, since WIC
+has no WebP codec. A libwebp found on <code>CMAKE_PREFIX_PATH</code> is used;
+otherwise CMake fetches libwebp&#8217;s source and builds only the decoder. It
+needs MSVC v14.44 or newer (see <a href="#_windows_toolchain_notes">Windows toolchain notes</a>).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bat hljs" data-lang="bat">cmake -S . -B build-direct2d -DARTIST_DIRECT2D=ON
+cmake --build build-direct2d --config Release</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_building_with_recording"><a class="anchor" href="#_building_with_recording"></a>Building with Recording</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The recording backend draws nothing: it records the drawing calls, for
+tests and headless use (see <a href="recording.html" class="xref page">Recording</a>). It measures
+and shapes text with real fonts through FreeType, Fontconfig and
+HarfBuzz, which come from the same places as Cairo&#8217;s (see
+<a href="#_building_with_cairo">Building with Cairo</a>). The examples have no recording host, so
+configure it with <code>-DARTIST_BUILD_EXAMPLES=OFF</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">cmake -S . -B build-recording -DARTIST_RECORDING=ON -DARTIST_BUILD_EXAMPLES=OFF
+cmake --build build-recording</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_windows_toolchain_notes"><a class="anchor" href="#_windows_toolchain_notes"></a>Windows toolchain notes</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Artist is built and tested on Windows with <strong>Visual Studio 2022</strong>. To use the
-Visual Studio generator explicitly:</p>
+<p>Artist is built and tested on Windows with <strong>Visual Studio 2022</strong>. The
+Direct2D backend, the Windows default, requires the MSVC v14.44 toolset
+(Visual Studio 2022 17.14) or newer, or clang-cl: older toolsets
+miscompile it under <code>/O2</code>, and CMake stops with an error on them. The
+static x64 prebuilt Skia and Cairo bundles need the same toolset. To use
+the Visual Studio generator explicitly:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -544,7 +638,7 @@ cmake --build build --config Release</code></pre>
 </td>
 <td class="content">
 <div class="paragraph">
-<p>Visual Studio 2019 is <strong>not</strong> supported — it produces linker errors against the
+<p>Visual Studio 2019 is <strong>not</strong> supported: it produces linker errors against the
 current dependencies. Use Visual Studio 2022 (generator <code>Visual Studio 17
 2022</code>).</p>
 </div>
@@ -573,15 +667,50 @@ ctest --verbose --test-dir build-quartz2d   # Quartz-2D</code></pre>
 <h2 id="_building_and_running_the_examples"><a class="anchor" href="#_building_and_running_the_examples"></a>Building and running the examples</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Pass <code>-DARTIST_BUILD_EXAMPLES=ON</code> when configuring (the presets build tests
-but not examples by default). After building, the example applications are
-produced under the build tree&#8217;s <code>examples/</code> directory.</p>
+<p>The examples are built by default (<code>ARTIST_BUILD_EXAMPLES</code> is <code>ON</code>, in the
+presets too); pass <code>-DARTIST_BUILD_EXAMPLES=OFF</code> to skip them. After
+building, the example applications are produced under the build tree&#8217;s
+<code>examples/</code> directory.</p>
 </div>
+<div class="paragraph">
+<p>On Linux, <code>ARTIST_LINUX_HOST</code> picks the window host: <code>gtk3</code> (the default),
+<code>wayland</code> or <code>x11</code>. Each needs its system libraries, found with
+pkg-config. On Debian and Ubuntu:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Host</th>
+<th class="tableblock halign-left valign-top">Packages</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>gtk3</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>libgtk-3-dev</code>, plus <code>libx11-dev</code>, <code>libegl-dev</code> and
+              <code>libgl1-mesa-dev</code> for Skia</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>wayland</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>libwayland-dev</code>, <code>wayland-protocols</code>, <code>libdecor-0-dev</code>, plus
+              <code>libegl-dev</code> and <code>libgl1-mesa-dev</code> for Skia</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>x11</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>libx11-dev</code>, plus <code>libegl-dev</code> and <code>libgl1-mesa-dev</code> for
+              Skia</p></td>
+</tr>
+</tbody>
+</table>
 <div class="paragraph">
 <p>Each example is contained in a single source file, plus a platform-specific
 driver that sets up the application and a window for viewing the graphics.
 The examples are provided as starting points for learning how to use the
-library — feel free to inspect and modify them. Each one demonstrates a
+library: feel free to inspect and modify them. Each one demonstrates a
 different aspect of Artist.</p>
 </div>
 </div>

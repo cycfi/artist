@@ -61,7 +61,7 @@
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="../index.html">Introduction</a>
+    <a class="nav-link" href="../index.html">Artist 2D Canvas Library</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../setup.html">Setup and Installation</a>
@@ -151,6 +151,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../text_layout.html">Text Layout</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../recording.html">Recording</a>
+  </li>
 </ul>
   </li>
 </ul>
@@ -206,14 +209,14 @@ then and there. The other seven calls on this page do the same for the
 rounded shape, for stroking, and for a rectangle given as loose scalars.</p>
 </div>
 <div class="paragraph">
-<p>They paint the rectangle and nothing else. The
-<a href="current_path.html" class="xref page">current path</a> is neither painted along with
-it nor disturbed by it, so a shape half built when one of these is called
-is still half built afterwards. In every other respect they are ordinary
-paints: the ink comes from the <a href="styles.html" class="xref page">fill or stroke
-style</a> then in effect, the geometry goes through the
-<a href="transforms.html" class="xref page">current transform</a>, and the line width, joins,
-shadow and fill rule apply as they would to any other shape.</p>
+<p>These calls leave the <a href="current_path.html" class="xref page">current path</a> as it
+is: a shape half built when one of them is called is still half built
+afterwards, and is not painted with the rectangle. In every other respect
+they are ordinary paints: the ink comes from the
+<a href="styles.html" class="xref page">fill or stroke style</a> then in effect, the geometry
+goes through the <a href="transforms.html" class="xref page">current transform</a>, and the
+line width, joins, shadow and fill rule apply as they would to any other
+shape.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -226,6 +229,18 @@ These are the W3C canvas API&#8217;s <code>fillRect</code> and <code>strokeRect<
 follow its rule of leaving the current default path alone. The two <code>round</code>
 forms are Artist&#8217;s own; the W3C API rounds corners through <code>roundRect</code> on
 the path instead.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+See <a href="../canvas.html" class="xref page">Canvas</a> for the drawing model and an overview of the canvas.
 </td>
 </tr>
 </table>
@@ -247,23 +262,32 @@ the path instead.
 <div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   void  fill_rect(rect const&amp; r);
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">class canvas
+{
+public:
+
+   void  fill_rect(rect const&amp; r);
    void  fill_round_rect(rect const&amp; r, float radius);
    void  stroke_rect(rect const&amp; r);
    void  stroke_round_rect(rect const&amp; r, float radius);
 
    void  fill_rect(float x, float y, float width, float height);
    void  fill_round_rect(
-            float x, float y,
-            float width, float height,
-            float radius
+            float x
+          , float y
+          , float width
+          , float height
+          , float radius
          );
    void  stroke_rect(float x, float y, float width, float height);
    void  stroke_round_rect(
-            float x, float y,
-            float width, float height,
-            float radius
-         );</code></pre>
+            float x
+          , float y
+          , float width
+          , float height
+          , float radius
+         );
+};</code></pre>
 </div>
 </div>
 </div>
@@ -271,6 +295,10 @@ the path instead.
 <div class="sect1">
 <h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
 <div class="sectionbody">
+<div class="paragraph">
+<p>The rectangle members of <a href="../canvas.html" class="xref page"><code>canvas</code></a> allow these
+expressions.</p>
+</div>
 <div class="sect2">
 <h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
 <div class="dlist">
@@ -285,22 +313,21 @@ the path instead.
 </dd>
 <dt class="hdlist1"><code>x</code>, <code>y</code>             </dt>
 <dd>
-<p><code>float</code> coordinates of the rectangle&#8217;s top left
-corner.</p>
+<p>Floating point values for the top left corner.</p>
 </dd>
-<dt class="hdlist1"><code>width</code>, <code>height</code>    </dt>
+<dt class="hdlist1"><code>w</code>, <code>h</code>             </dt>
 <dd>
-<p><code>float</code> size of the rectangle.</p>
+<p>Floating point values for the width and height.</p>
 </dd>
 <dt class="hdlist1"><code>radius</code>             </dt>
 <dd>
-<p>A <code>float</code> corner radius.</p>
+<p>Floating point value for the corner radius.</p>
 </dd>
 </dl>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_filling"><a class="anchor" href="#_filling"></a>Filling</h3>
+<h3 id="_operation"><a class="anchor" href="#_operation"></a>Operation</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 33.3333%;">
@@ -317,32 +344,76 @@ corner.</p>
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_rect(r)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Fill the rectangle <code>r</code>
-                                      with the fill style.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fill <code>r</code>.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_rect(x, y, width,
-    height)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, from a
-                                      position and a size.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.stroke_rect(r)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stroke the outline of <code>r</code>.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_round_rect(r, radius)</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Fill <code>r</code> with its corners
-                                      rounded to <code>radius</code>.</p></td>
+                                                rounded to <code>radius</code>.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_round_rect(x, y, width,
-    height, radius)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, from a
-                                      position and a size.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.stroke_round_rect(r, radius)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stroke the outline of <code>r</code> with
+                                                its corners rounded to
+                                                <code>radius</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_rect(x, y, w, h)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fill the rectangle at <code>x</code>, <code>y</code>
+                                                (top left corner) of size <code>w</code>
+                                                by <code>h</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.stroke_rect(x, y, w, h)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stroke the outline of the
+                                                rectangle at <code>x</code>, <code>y</code> (top left
+                                                corner) of size <code>w</code> by <code>h</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_round_rect(x, y, w, h, radius)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fill the rectangle at <code>x</code>, <code>y</code>
+                                                (top left corner) of size <code>w</code>
+                                                by <code>h</code>, with its corners
+                                                rounded to <code>radius</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.stroke_round_rect(x, y, w, h, radius)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stroke the outline of the
+                                                rectangle at <code>x</code>, <code>y</code> (top left
+                                                corner) of size <code>w</code> by <code>h</code>,
+                                                with its corners rounded to
+                                                <code>radius</code>.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
 </tr>
 </tbody>
 </table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+The scalar forms take a position and a <strong>size</strong>, not two corners.
+<code>cnv.fill_rect(20, 20, 40, 40)</code> covers x 20 to 60, where
+<code>rect{20, 20, 40, 40}</code> covers x 20 to 40. The four argument <code>rect</code>
+constructor is <code>left, top, right, bottom</code>; these calls are
+<code>x, y, width, height</code>, as the W3C API has them.
+</td>
+</tr>
+</table>
+</div>
 <div class="imageblock text-center">
 <div class="content">
 <a class="image" href="../_images/canvas/round_rect_radius.png"><img src="../_images/canvas/round_rect_radius.png" alt="The same rectangle filled at four corner radii, the last one clamped" width="560px"></a>
@@ -355,72 +426,26 @@ zero, or any negative radius, gives square corners and the same shape as
 <code>fill_rect</code>. A radius past the clamp gives a stadium, the rightmost figure
 above, and never a shape larger than <code>r</code>.</p>
 </div>
-<div class="paragraph">
-<p>An empty rectangle, one with zero width or zero height, fills nothing.</p>
-</div>
-<div class="admonitionblock note">
+<div class="admonitionblock tip">
 <table>
 <tr>
 <td class="icon">
-<i class="fa icon-note" title="✏️  NOTE"></i>
+<i class="fa icon-tip" title="💡  TIP"></i>
 </td>
 <td class="content">
-The scalar forms take a position and a <strong>size</strong>, not two corners.
-<code>cnv.fill_rect(20, 20, 40, 40)</code> covers x 20 to 60, where
-<code>rect{20, 20, 40, 40}</code> is the empty rectangle at that corner. The four
-argument <code>rect</code> constructor is <code>left, top, right, bottom</code>; these calls are
-<code>x, y, width, height</code>, as the W3C API has them.
+For a pill, give a radius no shape can reach, such as 1000, instead
+of computing one from the height. The clamp turns an oblong rectangle into
+a stadium and a square into a circle. This idiom is the reason the calls
+clamp a large radius rather than reject it.
 </td>
 </tr>
 </table>
 </div>
+<div class="paragraph">
+<p>An empty rectangle, one with zero width or zero height, fills nothing.
+It still strokes: a zero height rectangle draws as a line of the stroke&#8217;s
+width.</p>
 </div>
-<div class="sect2">
-<h3 id="_stroking"><a class="anchor" href="#_stroking"></a>Stroking</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.stroke_rect(r)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Outline the rectangle
-                                        <code>r</code> with the stroke
-                                        style.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.stroke_rect(x, y, width,
-    height)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, from a
-                                        position and a size.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.stroke_round_rect(r, radius)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Outline <code>r</code> with its
-                                        corners rounded to
-                                        <code>radius</code>.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.stroke_round_rect(x, y, width,
-    height, radius)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, from a
-                                        position and a size.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
-</tr>
-</tbody>
-</table>
 <div class="imageblock text-center">
 <div class="content">
 <a class="image" href="../_images/canvas/stroke_rect.png"><img src="../_images/canvas/stroke_rect.png" alt="A filled rectangle beside a stroked one, the stroke straddling the rectangle&#8217;s edge" width="560px"></a>
@@ -430,46 +455,42 @@ argument <code>rect</code> constructor is <code>left, top, right, bottom</code>;
 <div class="paragraph">
 <p>The outline is centred on the edge, like every other stroke: half the
 <a href="styles.html#_line_width" class="xref page">line width</a> falls inside the rectangle
-and half outside, so the ink covers a band the rectangle grown and shrunk
-by half that width. A <code>stroke_rect</code> and a <code>fill_rect</code> of the same <code>r</code> do
-not cover the same pixels, and a wide outline eats into the space inside.
-Inset the rectangle by half the line width where the outline has to stay
-within a given bound.</p>
+and half outside, so the ink covers the band between <code>r</code> grown and <code>r</code>
+shrunk by half that width. A <code>stroke_rect</code> and a <code>fill_rect</code> of the same
+<code>r</code> do not cover the same pixels, and a wide outline eats into the space
+inside. Inset the rectangle by half the line width where the outline has to
+stay within a given bound.</p>
 </div>
 <div class="paragraph">
-<p><code>radius</code> is clamped the same way as for a fill. A corner rounded to a
-radius above zero is an arc, so
-<a href="styles.html#_line_join" class="xref page"><code>line_join</code></a> has nothing left to shape
-there. At a radius of zero or below it shapes the corners as it does on any
-other square corner.</p>
+<p><a href="styles.html#_line_join" class="xref page"><code>line_join</code></a> shapes only the square
+corners. A corner rounded to a radius above zero is an arc and has no
+join.</p>
 </div>
+</div>
+<div class="sect2">
+<h3 id="_example"><a class="anchor" href="#_example"></a>Example</h3>
 <div class="paragraph">
-<p>Unlike a fill, an empty rectangle still strokes: a zero height rectangle
-draws as a line of the stroke&#8217;s width.</p>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>A pill shaped toggle with its knob, and a plain outlined frame around the
-pair:</p>
+<p>Draw a pill shaped toggle with its knob, and a plain outlined frame around
+the pair.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   auto frame = rect{20, 20, 280, 100};
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+...
+   auto frame = rect{20, 20, 280, 100};
    cnv.stroke_style(rgba(93, 93, 93, 255));
    cnv.line_width(2);
-   cnv.stroke_rect(frame);
+   cnv.stroke_rect(frame);                                     <i class="conum" data-value="1"></i><b>(1)</b>
 
    auto track = rect{72, 38, 192, 82};
    cnv.fill_style(rgba(21, 101, 192, 255));
-   cnv.fill_round_rect(track, 1000);      // clamped to a stadium
+   cnv.fill_round_rect(track, 1000);                           <i class="conum" data-value="2"></i><b>(2)</b>
 
    cnv.fill_style(colors::white);
-   cnv.fill_round_rect(rect{152, 42, 188, 78}, 1000);
+   cnv.fill_round_rect(rect{152, 42, 188, 78}, 1000);          <i class="conum" data-value="3"></i><b>(3)</b>
 
    cnv.font(font_descr{"Open Sans", 15});
    cnv.fill_style(rgba(26, 26, 26, 255));
@@ -477,18 +498,30 @@ pair:</p>
    cnv.fill_text("On", 208, 60);</code></pre>
 </div>
 </div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Stroke the frame with a 2 pixel outline.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Fill the track with a radius of 1000, clamped to half its height: a
+stadium.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Fill the knob the same way. The knob is square, so the clamp makes it
+a circle.</td>
+</tr>
+</table>
+</div>
 <div class="imageblock text-center">
 <div class="content">
 <a class="image" href="../_images/canvas/rectangles_example.png"><img src="../_images/canvas/rectangles_example.png" alt="An outlined frame around a blue pill shaped toggle with a white knob" width="560px"></a>
 </div>
 <div class="title">Figure 3. What the code above draws.</div>
 </div>
-<div class="paragraph">
-<p>The track and the knob both ask for a radius of 1000, and the clamp takes
-each to half its own shorter side: a stadium for the oblong track, and a
-circle for the square knob. That is the idiom for a pill, and it is why
-these calls clamp rather than reject. Give a radius no shape can reach
-instead of computing one from the height.</p>
 </div>
 </div>
 </div>

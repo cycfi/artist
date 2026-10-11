@@ -61,7 +61,7 @@
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="../index.html">Introduction</a>
+    <a class="nav-link" href="../index.html">Artist 2D Canvas Library</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../setup.html">Setup and Installation</a>
@@ -151,6 +151,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../text_layout.html">Text Layout</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../recording.html">Recording</a>
+  </li>
 </ul>
   </li>
 </ul>
@@ -222,7 +225,8 @@ scale 1.</p>
 <p>A file name that is not absolute is looked up through the
 <a href="resources.html" class="xref page">Resources</a> search list. PNG, JPEG and WebP
 are read on every backend; which other formats load depends on the
-backend&#8217;s decoder.</p>
+backend&#8217;s decoder. The recording backend reads only the image&#8217;s size from
+the file, and its pixels start transparent.</p>
 </div>
 <div class="paragraph">
 <p>An <code>image</code> owns its storage, so it can be moved but not copied. Share one
@@ -231,150 +235,140 @@ through <code>image_ptr</code>, which is a <code>std::shared_ptr&lt;image&gt;</c
 <div class="paragraph">
 <p>To draw into an image, construct an <code>offscreen_image</code> on it and build a
 <code>canvas</code> on its <code>context()</code>. The drawing lands in the image as it is drawn,
-over whatever the image already holds. The canvas must not outlive the
-<code>offscreen_image</code>. The <a href="#_example">Example</a> shows the pattern.</p>
+over whatever the image already holds. The recording backend records the
+drawing and leaves the pixels untouched. The canvas must not outlive the
+<code>offscreen_image</code>. The <a href="#_example_2">Offscreen Image example</a> shows the
+pattern.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+See <a href="../foundation.html" class="xref page">Foundation</a> for an overview of the foundation classes.
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_include"><a class="anchor" href="#_include"></a>Include</h2>
+<h2 id="_image"><a class="anchor" href="#_image"></a>Image</h2>
 <div class="sectionbody">
+<div class="sect2">
+<h3 id="_include"><a class="anchor" href="#_include"></a>Include</h3>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/image.hpp&gt;</code></pre>
 </div>
 </div>
 </div>
-</div>
-<div class="sect1">
-<h2 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h2>
-<div class="sectionbody">
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   enum class pixel_format
-   {
-      invalid = -1,
-      gray8,
-      rgb16,
-      rgb32,
-      rgba32,
-   };</code></pre>
-</div>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   class image
-   {
-   public:
-
-      explicit          image(float sizex, float sizey, float scale = 1.0f);
-      explicit          image(extent size, float scale = 1.0f);
-      explicit          image(fs::path const&amp; path_);
-
-                        image(image const&amp; rhs) = delete;
-                        image(image&amp;&amp; rhs) noexcept;
-                        ~image();
-
-      image&amp;            operator=(image const&amp; rhs) = delete;
-      image&amp;            operator=(image&amp;&amp; rhs) noexcept;
-
-      image_impl_ptr    impl() const;
-      extent            size() const;
-      float             scale() const;
-      void              save_png(std::string_view path) const;
-
-      uint32_t*         pixels();
-      uint32_t const*   pixels() const;
-      extent            bitmap_size() const;
-   };
-
-   using image_ptr = std::shared_ptr&lt;image&gt;;</code></pre>
-</div>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   class offscreen_image
-   {
-   public:
-
-      explicit          offscreen_image(image&amp; img);
-                        offscreen_image(offscreen_image const&amp;) = delete;
-                        ~offscreen_image();
-
-      offscreen_image&amp;  operator=(offscreen_image const&amp; rhs) = delete;
-
-      canvas_impl*      context() const;
-   };</code></pre>
-</div>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   // Free functions
-   template &lt;pixel_format fmt&gt;      // gray8
-   image make_image(std::uint8_t const* data, extent size);
-
-   template &lt;pixel_format fmt&gt;      // rgb16
-   image make_image(std::uint16_t const* data, extent size);
-
-   template &lt;pixel_format fmt&gt;      // rgb32 or rgba32
-   image make_image(std::uint32_t const* data, extent size);</code></pre>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
-<div class="sectionbody">
 <div class="sect2">
-<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
+<h3 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">enum class pixel_format
+{
+   invalid = -1,
+   gray8,
+   rgb16,
+   rgb32,            // R, G, B in memory order, then an ignored byte
+   rgba32,
+};
+
+class image
+{
+public:
+
+   explicit          image(float sizex, float sizey, float scale = 1.0f);
+   explicit          image(extent size, float scale = 1.0f);
+   explicit          image(fs::path const&amp; path_);
+
+                     image(image&amp;&amp; rhs) noexcept;
+                     ~image();
+
+   image&amp;            operator=(image&amp;&amp; rhs) noexcept;
+
+   image_impl_ptr    impl() const;
+   extent            size() const;
+   float             scale() const;
+   void              save_png(std::string_view path) const;
+
+   uint32_t*         pixels();
+   uint32_t const*   pixels() const;
+   extent            bitmap_size() const;
+};
+
+using image_ptr = std::shared_ptr&lt;image&gt;;
+
+// Factory functions
+template &lt;pixel_format fmt&gt;      // gray8
+image make_image(std::uint8_t const* data, extent size);
+
+template &lt;pixel_format fmt&gt;      // rgb16
+image make_image(std::uint16_t const* data, extent size);
+
+template &lt;pixel_format fmt&gt;      // rgb32 or rgba32
+image make_image(std::uint32_t const* data, extent size);</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h3>
+<div class="sect3">
+<h4 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h4>
 <div class="dlist">
 <dl>
-<dt class="hdlist1"><code>img</code>, <code>img2</code>  </dt>
+<dt class="hdlist1"><code>img</code>, <code>a</code>, <code>b</code>  </dt>
 <dd>
 <p>Objects of type <code>image</code>.</p>
 </dd>
-<dt class="hdlist1"><code>sx</code>, <code>sy</code>     </dt>
+<dt class="hdlist1"><code>w</code>, <code>h</code>         </dt>
 <dd>
-<p><code>float</code> width and height, in units.</p>
+<p>Floating point values for the width and height, in
+units.</p>
 </dd>
-<dt class="hdlist1"><code>sz</code>           </dt>
+<dt class="hdlist1"><code>sz</code>             </dt>
 <dd>
-<p>Object of type <code>extent</code>, a width and height in units.</p>
+<p>Object of type <code>extent</code> for a width and height, in
+units.</p>
 </dd>
-<dt class="hdlist1"><code>s</code>            </dt>
+<dt class="hdlist1"><code>s</code>              </dt>
 <dd>
-<p>A <code>float</code>, a scale: pixels per unit.</p>
+<p>Floating point value for the scale, in pixels per
+unit.</p>
 </dd>
-<dt class="hdlist1"><code>p</code>            </dt>
+<dt class="hdlist1"><code>p</code>              </dt>
 <dd>
-<p>Object of type <code>fs::path</code>, an image file name, relative
-or absolute.</p>
+<p>Object of type <code>fs::path</code> for an image file name,
+relative or absolute.</p>
 </dd>
-<dt class="hdlist1"><code>str</code>          </dt>
+<dt class="hdlist1"><code>str</code>            </dt>
 <dd>
-<p>A <code>std::string_view</code>, a file name.</p>
+<p>Object of type <code>std::string_view</code> for a file name.</p>
 </dd>
-<dt class="hdlist1"><code>d8</code>           </dt>
+<dt class="hdlist1"><code>d8</code>             </dt>
 <dd>
-<p>A <code>std::uint8_t const*</code>, a buffer of pixels.</p>
+<p>Value of type <code>std::uint8_t const*</code> for a buffer of
+pixels.</p>
 </dd>
-<dt class="hdlist1"><code>d16</code>          </dt>
+<dt class="hdlist1"><code>d16</code>            </dt>
 <dd>
-<p>A <code>std::uint16_t const*</code>, a buffer of pixels.</p>
+<p>Value of type <code>std::uint16_t const*</code> for a buffer of
+pixels.</p>
 </dd>
-<dt class="hdlist1"><code>d32</code>          </dt>
+<dt class="hdlist1"><code>d32</code>            </dt>
 <dd>
-<p>A <code>std::uint32_t const*</code>, a buffer of pixels.</p>
-</dd>
-<dt class="hdlist1"><code>off</code>          </dt>
-<dd>
-<p>Object of type <code>offscreen_image</code>.</p>
+<p>Value of type <code>std::uint32_t const*</code> for a buffer of
+pixels.</p>
 </dd>
 </dl>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_constructors_and_assignment"><a class="anchor" href="#_constructors_and_assignment"></a>Constructors and Assignment</h3>
+<div class="sect3">
+<h4 id="_constructors_and_assignment"><a class="anchor" href="#_constructors_and_assignment"></a>Constructors and Assignment</h4>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 50%;">
@@ -388,27 +382,29 @@ or absolute.</p>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image(sx, sy)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Construct a blank, fully transparent image
-                                <code>sx</code> by <code>sy</code> units in size, at scale 1.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image(w, h)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct a blank, fully transparent
+                                <code>image</code> given <code>w</code> and <code>h</code> (size in units),
+                                at scale 1.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image(sx, sy, s)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As above, at scale <code>s</code>. The bitmap is
-                                <code>sx * s</code> by <code>sy * s</code> pixels, rounded to
-                                the nearest whole pixel.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image(w, h, s)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct as above, at scale <code>s</code>. The
+                                bitmap is <code>w * s</code> by <code>h * s</code> pixels,
+                                rounded to the nearest whole pixel.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>image(sz)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As <code>image(sz.x, sz.y)</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct as <code>image(sz.x, sz.y)</code>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>image(sz, s)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As <code>image(sz.x, sz.y, s)</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct as <code>image(sz.x, sz.y, s)</code>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>image(p)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Load the image file <code>p</code>, at scale 1. Throws
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct an <code>image</code> by loading the file
+                                <code>p</code>, at scale 1. Throws
                                 <code>std::runtime_error</code> if the file is
                                 missing or cannot be decoded.</p></td>
 </tr>
@@ -418,15 +414,26 @@ or absolute.</p>
                                 holding nothing.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>img = std::move(img2)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Move assign <code>img2</code> to <code>img</code>. <code>img2</code> is
-                                left holding nothing.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>a = std::move(b)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Move assign <code>b</code> to <code>a</code>. The two swap
+                                bitmaps, so <code>b</code> is left holding the one
+                                <code>a</code> held before.</p></td>
 </tr>
 </tbody>
 </table>
-<div class="paragraph">
-<p>The constructors are <code>explicit</code>, so an <code>extent</code> or a path does not convert
-to an <code>image</code> implicitly.</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+C++ brace initialization may also be used. The constructors are
+<code>explicit</code>, so an <code>extent</code> or a path does not convert to an <code>image</code>
+implicitly. <code>image</code> is non-copyable.
+</td>
+</tr>
+</table>
 </div>
 <div class="admonitionblock warning">
 <table>
@@ -435,70 +442,15 @@ to an <code>image</code> implicitly.</p>
 <i class="fa icon-warning" title="⚠️  WARNING"></i>
 </td>
 <td class="content">
-A moved from <code>image</code> holds nothing. Destroy it or assign to it;
-calling any other member on it is undefined behaviour.
+An <code>image</code> moved from by construction holds nothing. Destroy it
+or assign to it; calling any other member on it is undefined behaviour.
 </td>
 </tr>
 </table>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_construction_from_pixels"><a class="anchor" href="#_construction_from_pixels"></a>Construction from Pixels</h3>
-<div class="paragraph">
-<p><code>make_image</code> builds an image from a buffer of <code>sz.x</code> by <code>sz.y</code> pixels,
-stored row by row from the top with no padding between rows. The format is
-a template argument, and each overload accepts only the formats that match
-its pointer type, so <code>pixel_format::invalid</code> is rejected at compile time.</p>
-</div>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>make_image&lt;pixel_format::gray8&gt;(d8, sz)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Eight bit gray levels, one byte
-                                                  per pixel. Opaque.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>make_image&lt;pixel_format::rgb16&gt;(d16, sz)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Sixteen bit 5-6-5 pixels, red in
-                                                  the top five bits. Opaque.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>make_image&lt;pixel_format::rgb32&gt;(d32, sz)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Four bytes per pixel: R, G and B
-                                                  in memory order, then a byte
-                                                  that is ignored. Opaque.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>make_image&lt;pixel_format::rgba32&gt;(d32, sz)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Four bytes per pixel: R, G, B and
-                                                  A in memory order, with straight
-                                                  (not premultiplied) alpha.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image</code></p></td>
-</tr>
-</tbody>
-</table>
-<div class="paragraph">
-<p>The pixels are converted into the image&#8217;s own bitmap, so the buffer can be
-released as soon as <code>make_image</code> returns. The image has scale 1.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_accessors"><a class="anchor" href="#_accessors"></a>Accessors</h3>
+<div class="sect3">
+<h4 id="_accessors"><a class="anchor" href="#_accessors"></a>Accessors</h4>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 33.3333%;">
@@ -515,63 +467,45 @@ released as soon as <code>make_image</code> returns. The image has scale 1.</p>
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>img.size()</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The size of the image in units. <code>draw</code>
-                        places the image at this size in user
-                        space, and the <code>src</code> rectangle <code>draw</code>
-                        takes is in these units.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the size of the image in units.
+                        <code>draw</code> places the image at this size in
+                        user space, and the <code>src</code> rectangle
+                        <code>draw</code> takes is in these units.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>extent</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>img.scale()</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The number of pixels per unit.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the number of pixels per unit.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>img.bitmap_size()</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The width and height of the bitmap in
-                        pixels, <code>size()</code> times <code>scale()</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the width and height of the bitmap
+                        in pixels, <code>size()</code> times <code>scale()</code>.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>extent</code></p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>img.impl()</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The backend&#8217;s image handle, for code
-                        that talks to the backend directly.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image_impl_ptr</code></p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect2">
-<h3 id="_pixel_access"><a class="anchor" href="#_pixel_access"></a>Pixel Access</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Expression</th>
-<th class="tableblock halign-left valign-top">Semantics</th>
-<th class="tableblock halign-left valign-top">Return Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>img.pixels()</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The first pixel of the bitmap. Each pixel
-                    is four bytes, B, G, R and A in memory
-                    order, with the colour premultiplied by
-                    alpha. Rows run from the top,
-                    <code>bitmap_size().x</code> pixels to a row, with no
-                    padding.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get a pointer to the first pixel of
+                        the bitmap.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>uint32_t*</code>, or
                                                                  <code>uint32_t const*</code>
                                                                  if <code>img</code> is
                                                                  <code>const</code></p></td>
 </tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>img.impl()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the backend&#8217;s image handle, for
+                        calling the backend directly.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image_impl_ptr</code></p></td>
+</tr>
 </tbody>
 </table>
+<div class="paragraph">
+<p>Each pixel is four bytes, B, G, R and A in memory order, with the color
+premultiplied by alpha. Rows run from the top, <code>bitmap_size().x</code> pixels to
+a row, with no padding.</p>
+</div>
 <div class="admonitionblock note">
 <table>
 <tr>
@@ -579,16 +513,15 @@ released as soon as <code>make_image</code> returns. The image has scale 1.</p>
 <i class="fa icon-note" title="✏️  NOTE"></i>
 </td>
 <td class="content">
-Treat the buffer as read only. There is no call to tell the backend
-that the pixels have changed, and Cairo needs one before it uses the image
-again.
+Treat the buffer as read only. There is no call to mark the pixels
+as changed, and Cairo needs one before it uses the image again.
 </td>
 </tr>
 </table>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_output"><a class="anchor" href="#_output"></a>Output</h3>
+<div class="sect3">
+<h4 id="_operation"><a class="anchor" href="#_operation"></a>Operation</h4>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 33.3333%;">
@@ -607,22 +540,159 @@ again.
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>img.save_png(str)</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Write the bitmap to the file <code>str</code> as
                           a PNG, <code>bitmap_size().x</code> by
-                          <code>bitmap_size().y</code> pixels. <code>str</code> is
-                          used as given; it is not looked up
-                          through the resource search list.
-                          Throws <code>std::runtime_error</code> if the
-                          file cannot be written.</p></td>
+                          <code>bitmap_size().y</code> pixels. Throws
+                          <code>std::runtime_error</code> if the file
+                          cannot be written.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
 </tr>
 </tbody>
 </table>
 <div class="paragraph">
-<p>Loading the file back gives an image at scale 1, so its <code>size()</code> is the
-saved image&#8217;s <code>bitmap_size()</code>.</p>
+<p><code>str</code> is used as given; it is not looked up through the resource search
+list. Loading the file back gives an image at scale 1, so its <code>size()</code> is
+the saved image&#8217;s <code>bitmap_size()</code>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_factory"><a class="anchor" href="#_factory"></a>Factory</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>make_image&lt;pixel_format::gray8&gt;(d8, sz)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Make an opaque <code>image</code> from eight
+                                                  bit gray levels, one byte per
+                                                  pixel.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>make_image&lt;pixel_format::rgb16&gt;(d16, sz)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Make an opaque <code>image</code> from
+                                                  sixteen bit 5-6-5 pixels, red in
+                                                  the top five bits.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>make_image&lt;pixel_format::rgb32&gt;(d32, sz)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Make an opaque <code>image</code> from four
+                                                  bytes per pixel: R, G and B in
+                                                  memory order, then a byte that is
+                                                  ignored.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>make_image&lt;pixel_format::rgba32&gt;(d32, sz)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Make an <code>image</code> from four bytes
+                                                  per pixel: R, G, B and A in
+                                                  memory order, with straight (not
+                                                  premultiplied) alpha.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>image</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The buffer holds <code>sz.x</code> by <code>sz.y</code> pixels, stored row by row from the top
+with no padding between rows. The format is a template argument, and each
+overload accepts only the formats that match its pointer type, so
+<code>pixel_format::invalid</code> is rejected at compile time.</p>
+</div>
+<div class="paragraph">
+<p>The pixels are converted into the image&#8217;s own bitmap, so the buffer can be
+released as soon as <code>make_image</code> returns. The image has scale 1.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_example"><a class="anchor" href="#_example"></a>Example</h4>
+<div class="paragraph">
+<p>Load an image by name and paint it at half size.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/image.hpp&gt;
+#include &lt;artist/canvas.hpp&gt;             // For canvas
+...
+using namespace cycfi::artist;
+extern canvas cnv;                       // the canvas to draw on
+...
+   image photo{"photo.jpg"};                             <i class="conum" data-value="1"></i><b>(1)</b>
+   cnv.draw(photo, point{20, 20}, 0.5f);                 <i class="conum" data-value="2"></i><b>(2)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Load <code>photo.jpg</code>, found through the
+<a href="resources.html" class="xref page">Resources</a> search list.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Paint it with its top left corner at <code>{20, 20}</code>, at half of
+<code>photo.size()</code>.</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_offscreen_image"><a class="anchor" href="#_offscreen_image"></a>Offscreen Image</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_include_2"><a class="anchor" href="#_include_2"></a>Include</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/image.hpp&gt;</code></pre>
+</div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_offscreen_construction"><a class="anchor" href="#_offscreen_construction"></a>Offscreen Construction</h3>
+<h3 id="_declaration_2"><a class="anchor" href="#_declaration_2"></a>Declaration</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">class offscreen_image
+{
+public:
+
+   explicit          offscreen_image(image&amp; img);
+                     ~offscreen_image();
+
+   canvas_impl*      context() const;
+};</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions_2"><a class="anchor" href="#_expressions_2"></a>Expressions</h3>
+<div class="sect3">
+<h4 id="_notation_2"><a class="anchor" href="#_notation_2"></a>Notation</h4>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>off</code>            </dt>
+<dd>
+<p>Object of type <code>offscreen_image</code>.</p>
+</dd>
+<dt class="hdlist1"><code>img</code>            </dt>
+<dd>
+<p>Object of type <code>image</code>.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_constructor"><a class="anchor" href="#_constructor"></a>Constructor</h4>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 50%;">
@@ -637,20 +707,20 @@ saved image&#8217;s <code>bitmap_size()</code>.</p>
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>offscreen_image(img)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Begin drawing into <code>img</code>, which must
-                             outlive the <code>offscreen_image</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct an <code>offscreen_image</code> that draws
+                             into <code>img</code>, which must outlive it.</p></td>
 </tr>
 </tbody>
 </table>
 <div class="paragraph">
-<p>An <code>offscreen_image</code> is neither copyable nor movable. Its context draws
-into the image in the image&#8217;s units, scaled by <code>scale()</code> to pixels, and
-each drawing call lands in the image as it is made. The destructor ends
-the drawing.</p>
+<p><code>offscreen_image</code> is non-copyable and non-movable. Its context draws into
+the image in the image&#8217;s units, scaled by <code>scale()</code> to pixels, and each
+drawing call lands in the image as it is made. The destructor ends the
+drawing.</p>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_offscreen_context"><a class="anchor" href="#_offscreen_context"></a>Offscreen Context</h3>
+<div class="sect3">
+<h4 id="_accessors_2"><a class="anchor" href="#_accessors_2"></a>Accessors</h4>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 33.3333%;">
@@ -667,7 +737,7 @@ the drawing.</p>
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>off.context()</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The backend drawing context, from
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the backend drawing context, from
                       which a <code>canvas</code> is built:
                       <code>canvas(off.context())</code>. Valid only
                       while <code>off</code> lives, so the canvas must
@@ -677,23 +747,24 @@ the drawing.</p>
 </tbody>
 </table>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
-<div class="sectionbody">
+<div class="sect3">
+<h4 id="_example_2"><a class="anchor" href="#_example_2"></a>Example</h4>
 <div class="paragraph">
-<p>Render a badge once into an image, then paint it wherever it is needed.
-At scale 2 the badge stays sharp on a high density display, and the
-drawing code still works in its 64 unit size:</p>
+<p>Render a badge once into an image, then paint it wherever it is needed.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">   // Render the badge once, at twice the display resolution.
-   image badge{64, 64, 2};
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/image.hpp&gt;
+#include &lt;artist/canvas.hpp&gt;             // For canvas
+...
+using namespace cycfi::artist;
+extern canvas cnv;                       // the canvas to draw on
+...
+   // Render the badge once, at twice the display resolution.
+   image badge{64, 64, 2};                                     <i class="conum" data-value="1"></i><b>(1)</b>
    {
-      offscreen_image off{badge};
-      canvas bc{off.context()};
+      offscreen_image off{badge};                              <i class="conum" data-value="2"></i><b>(2)</b>
+      canvas bc{off.context()};                                <i class="conum" data-value="3"></i><b>(3)</b>
 
       canvas::radial_gradient face{{24, 22}, 2, {32, 32}, 34};
       face.add_color_stop(0, colors::gold);
@@ -711,15 +782,42 @@ drawing code still works in its 64 unit size:</p>
       bc.font(font_descr{"Open Sans", 26}.bold());
       bc.text_align(canvas::center | canvas::middle);
       bc.fill_text("A", 32, 32);
-   }
+   }                                                           <i class="conum" data-value="4"></i><b>(4)</b>
 
    // Paint it as often as you like. The drawing above ran once.
    for (int i = 0; i != 4; ++i)
    {
       auto s = 1.0f - i * 0.2f;
-      cnv.draw(badge, {20.0f + i * 80, 20 + (64 - 64 * s) / 2}, s);
+      cnv.draw(badge, {20.0f + i * 80, 20 + (64 - 64 * s) / 2}, s);   <i class="conum" data-value="5"></i><b>(5)</b>
    }</code></pre>
 </div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Construct a 64 by 64 unit image at scale 2: 128 by 128 pixels, so the
+badge stays sharp when painted larger or on a high density display.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Begin drawing into the image.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Build a canvas on the offscreen context. The drawing code works in
+the image&#8217;s own 64 unit coordinates.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>End the drawing: <code>bc</code> and <code>off</code> go out of scope, <code>bc</code> first.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>Paint the image at four sizes. The gradient, the ring and the letter
+were rasterized once, however many times the badge is painted.</td>
+</tr>
+</table>
 </div>
 <div class="imageblock text-center">
 <div class="content">
@@ -727,12 +825,7 @@ drawing code still works in its 64 unit size:</p>
 </div>
 <div class="title">Figure 1. What the code above draws: one badge, rendered once and painted four times.</div>
 </div>
-<div class="paragraph">
-<p>The gradient, the ring and the letter are rasterised once, however many
-times the badge is painted. At scale 2 that raster has four times the
-pixels of the 64 unit box it was drawn in, so it stays sharp when the badge
-is painted larger or on a high density display, and the drawing code never
-leaves its own 64 unit coordinates.</p>
+</div>
 </div>
 </div>
 </div>
