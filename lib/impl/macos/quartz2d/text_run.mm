@@ -188,7 +188,7 @@ namespace cycfi::artist
          if (finfo.justify)
          {
             // Full justify only if the line is not the end of the paragraph
-            // and the line width is greater than 90% of the desired width.
+            // and the line width is at least 90% of the desired width.
             // auto rng = CTLineGetStringRange(line);
             NSString* string = [(__bridge NSAttributedString*)attr_string string];
             auto end_pos = start + count;
@@ -196,7 +196,7 @@ namespace cycfi::artist
 
             if (ch && ch != '\n' && ch != '\r')
             {
-               if ((line_width / l_info.width) > 0.9)
+               if ((line_width / l_info.width) >= 0.9f)
                {
                   CTLineRef justified = CTLineCreateJustifiedLine(line, 1.0, l_info.width);
                   CFRelease(line);

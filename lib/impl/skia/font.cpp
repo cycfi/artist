@@ -485,6 +485,8 @@ namespace cycfi::artist
 
    font::metrics_info font::metrics() const
    {
+      if (!_ptr)
+         return {};
       SkFontMetrics sk_metrics;
       _ptr->getMetrics(&sk_metrics);
       return {-sk_metrics.fAscent, sk_metrics.fDescent, sk_metrics.fLeading};
@@ -492,6 +494,8 @@ namespace cycfi::artist
 
    float font::measure_text(std::string_view str) const
    {
+      if (!_ptr)
+         return 0;
       return _ptr->measureText(str.data(), str.size(), SkTextEncoding::kUTF8);
    }
 }

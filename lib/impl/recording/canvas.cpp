@@ -23,6 +23,19 @@ namespace cycfi::artist
 {
    using recording::op;
 
+   namespace
+   {
+      // A canvas starts with a sans-serif face at 12, the platform's own
+      // where it is installed, as the Cairo canvas does.
+      artist::font default_font()
+      {
+         return font_descr{
+            "Helvetica Neue, Segoe UI, DejaVu Sans, Liberation Sans, Arial, "
+            "Open Sans", 12
+         };
+      }
+   }
+
    ////////////////////////////////////////////////////////////////////////////
    // canvas_state
    ////////////////////////////////////////////////////////////////////////////
@@ -48,7 +61,7 @@ namespace cycfi::artist
          point                      shadow_offset = {};
          float                      shadow_blur = 0;
          color                      shadow_color = colors::black;
-         artist::font               font_;
+         artist::font               font_ = default_font();
          int                        align = canvas::baseline;
          canvas::composite_op_enum  composite = canvas::source_over;
          rect                       clip;          // surface space

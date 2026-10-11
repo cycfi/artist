@@ -13,6 +13,7 @@
 =============================================================================*/
 #include "test_support.hpp"
 #include <functional>
+#include <type_traits>
 
 namespace
 {
@@ -300,6 +301,54 @@ TEST_CASE("canvas text: copying a moved-from or default font", "[text]")
       CHECK(m.leading == 0);
       CHECK(p->measure_text("MMMM") == 0);
    }
+#endif
+}
+
+// h | v is the int text_align takes, either way round, with no warning
+// about arithmetic between two enums: the test build compiles this file
+// with -Werror=deprecated-enum-enum-conversion where the compiler has it.
+static_assert((canvas::left | canvas::baseline) == 4);
+static_assert((canvas::center | canvas::middle) == 13);
+static_assert((canvas::right | canvas::bottom) == 18);
+static_assert((canvas::top | canvas::right) == 10);
+static_assert(std::is_same_v<decltype(canvas::left | canvas::top), int>);
+
+TEST_CASE("canvas text: a canvas starts with a font", "[text]")
+{
+   // With no font set, text still measures and draws: every backend but
+   // Skia starts with a 12 point sans-serif face.
+   canvas::text_metrics m;
+   image img{100, 40, 1};
+   {
+      offscreen_image ctx{img};
+      canvas cnv{ctx.context()};
+      m = cnv.measure_text("MMMM");
+      cnv.fill_text("MMMM", 10, 30);
+   }
+
+#if !defined(ARTIST_SKIA)
+   CHECK(m.ascent > 0);
+   CHECK(m.size.x > 0);
+# if defined(ARTIST_CAIRO) || defined(ARTIST_RECORDING)
+   // The face is the first of these the font lookup finds.
+   font const f{font_descr{
+      "Helvetica Neue, Segoe UI, DejaVu Sans, Liberation Sans, Arial, "
+      "Open Sans", 12
+   }};
+   CHECK(close_to(m.ascent, f.metrics().ascent, 0.01f));
+   CHECK(close_to(m.size.x, f.measure_text("MMMM"), 0.01f));
+# endif
+# if defined(ARTIST_RECORDING)
+   REQUIRE(recorded(img).size() == 1);
+   CHECK(recorded(img, 0).geometry.width() > 0);
+# else
+   int ink = 0;
+   for (int y = 0; y != 40; ++y)
+      for (int x = 0; x != 100; ++x)
+         if (alpha_at(img, x, y) > 200)
+            ++ink;
+   CHECK(ink > 0);
+# endif
 #endif
 }
 

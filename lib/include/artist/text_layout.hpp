@@ -69,7 +69,7 @@ namespace cycfi::artist
       size_type               num_lines() const;
       double                  height() const               { return num_lines() * _line_height; }
 
-      // Diagnostics.
+      // The number of lines paragraph i takes, at least one.
       size_type               paragraph_lines(size_type i) const { return _paras[i].lines; }
 
       point                   caret_point(size_type index) const;

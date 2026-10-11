@@ -643,6 +643,29 @@ static void test_predefined_colors()
    CHECK(colors::orange == rgb(255, 135, 0));
 }
 
+static void test_color_arithmetic()
+{
+   constexpr auto a = color{0.2f, 0.4f, 0.6f, 0.5f};
+   constexpr auto b = color{0.1f, 0.1f, 0.1f, 0.25f};
+
+   // The components add and subtract componentwise, unclamped.
+   CHECK(near_((a + b).red, 0.3f));
+   CHECK(near_((a - b).red, 0.1f));
+   CHECK(near_((color{0.1f, 0, 0, 1} - color{0.5f, 0, 0, 1}).red, -0.4f));
+
+   // The alpha of a + b is the source over rule.
+   auto over = 0.5f + 0.25f * (1.0f - 0.5f);
+   CHECK(near_((a + b).alpha, over));
+
+   // a - b keeps the alpha of a, as c * k keeps the alpha of c. Both
+   // operands have an alpha below 1.0 here: the Color Maths case in
+   // geometry_test.cpp uses 1.0, where every candidate rule agrees.
+   CHECK(near_((a - b).alpha, a.alpha));
+
+   // c * k leaves the alpha alone.
+   CHECK(near_((a * 2.0f).alpha, 0.5f));
+}
+
 ///////////////////////////////////////////////////////////////////////////
 // circle
 ///////////////////////////////////////////////////////////////////////////
@@ -700,8 +723,7 @@ static void test_circle_derivation()
 // Behaviour under review. These pin down what the library does today so a
 // change is visible; each is flagged in the reference pages as suspect
 // and none is asserted to be correct. See docs foundation/point.adoc
-// (Derivation), foundation/color.adoc (Arithmetic) and
-// foundation/circle.adoc (Constructors and Assignment).
+// (Derivation) and foundation/circle.adoc (Constructors and Assignment).
 ///////////////////////////////////////////////////////////////////////////
 
 static void test_point_reflect_current_behaviour()
@@ -720,31 +742,6 @@ static void test_point_reflect_current_behaviour()
    point p{8.0f, 18.0f};
    point centre{10.0f, 20.0f};
    CHECK(centre.reflect(p) == point(12.0f, 22.0f));
-}
-
-static void test_color_arithmetic_current_behaviour()
-{
-   constexpr auto a = color{0.2f, 0.4f, 0.6f, 0.5f};
-   constexpr auto b = color{0.1f, 0.1f, 0.1f, 0.25f};
-
-   // The components add and subtract componentwise, unclamped.
-   CHECK(near_((a + b).red, 0.3f));
-   CHECK(near_((a - b).red, 0.1f));
-   CHECK(near_((color{0.1f, 0, 0, 1} - color{0.5f, 0, 0, 1}).red, -0.4f));
-
-   // The alpha of a + b is the source over rule.
-   auto over = 0.5f + 0.25f * (1.0f - 0.5f);
-   CHECK(near_((a + b).alpha, over));
-
-   // REVIEW: the alpha of a - b uses the same source over rule rather than
-   // a difference, so subtraction raises the alpha. The existing Color
-   // Maths case in geometry_test.cpp cannot see this: it builds both
-   // operands with alpha 1.0, the one value where the two agree.
-   CHECK(near_((a - b).alpha, over));
-   CHECK(near_((a - b).alpha, (a + b).alpha));
-
-   // c * k leaves the alpha alone.
-   CHECK(near_((a * 2.0f).alpha, 0.5f));
 }
 
 static void test_circle_from_rect_current_behaviour()
@@ -793,13 +790,13 @@ int main()
    test_color_derivation();
    test_color_free_functions();
    test_predefined_colors();
+   test_color_arithmetic();
 
    test_circle_construction();
    test_circle_accessors();
    test_circle_derivation();
 
    test_point_reflect_current_behaviour();
-   test_color_arithmetic_current_behaviour();
    test_circle_from_rect_current_behaviour();
 
    if (failures)

@@ -76,6 +76,9 @@ public:
    void           text_align(text_halign align);
    void           text_baseline(text_valign align);
 };
+
+constexpr int     operator|(canvas::text_halign h, canvas::text_valign v);
+constexpr int     operator|(canvas::text_valign v, canvas::text_halign h);
 ```
 
 The enums and `text_metrics` are nested in `canvas`, so they are spelled
@@ -138,6 +141,13 @@ The text members of xref:canvas.adoc[`canvas`] allow these expressions.
 A `font_descr` converts to a `font`, so a descriptor can be passed
 directly: `cnv.font(font_descr{"Open Sans", 18}.bold())`. How descriptors
 and fonts are built is under xref:foundation/font.adoc[Font].
+
+Before `font` is called, a canvas draws in a 12 point sans-serif face that
+depends on the backend: Helvetica Neue on Quartz 2D, Segoe UI on
+Direct2D, and Skia's own default font on Skia. Cairo and recording take
+the first of Helvetica Neue, Segoe UI, DejaVu Sans, Liberation Sans, Arial
+and Open Sans that is installed. Set the font for text that must look the
+same everywhere.
 
 === Alignment
 

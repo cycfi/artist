@@ -135,6 +135,8 @@ namespace cycfi::artist
 
    font::metrics_info font::metrics() const
    {
+      if (!_ptr)
+         return {};
       NSFont* font = (__bridge NSFont*) _ptr;
       return {
          float([font ascender]),
@@ -145,6 +147,8 @@ namespace cycfi::artist
 
    float font::measure_text(std::string_view str) const
    {
+      if (!_ptr)
+         return 0;
       NSFont* font = (__bridge NSFont*) _ptr;
       NSDictionary* attr = @{NSFontAttributeName : font};
       NSString* text = detail::ns_string(str);

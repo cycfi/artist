@@ -437,6 +437,19 @@ namespace cycfi::artist
          void*          _saved;
       };
    };
+
+   // Combine a horizontal and a vertical text alignment into the int that
+   // text_align(int) takes. These spare `canvas::left | canvas::middle`
+   // the C++20 deprecated arithmetic between two different enums.
+   constexpr int operator|(canvas::text_halign h, canvas::text_valign v)
+   {
+      return int(h) | int(v);
+   }
+
+   constexpr int operator|(canvas::text_valign v, canvas::text_halign h)
+   {
+      return int(v) | int(h);
+   }
 }
 
 #include <artist/detail/canvas_impl.hpp>

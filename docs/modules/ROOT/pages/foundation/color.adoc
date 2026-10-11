@@ -189,9 +189,8 @@ differing only by rounding are not equal.
 | `a + b`     | Add the red, green and blue components. The
                 alpha is `a.alpha + b.alpha * (1 - a.alpha)`,
                 the usual source over rule.                  | `color`
-| `a - b`     | Subtract the red, green and blue components.
-                The alpha uses the source over formula of
-                `+`.                                         | `color`
+| `a - b`     | Subtract the red, green and blue components,
+                the alpha that of `a`.                       | `color`
 | `c * k`     | Multiply the red, green and blue components
                 by `k`, the alpha unchanged, as
                 `c.level(k)` does.                           | `color`
@@ -200,8 +199,7 @@ differing only by rounding are not equal.
 
 WARNING: These are plain component arithmetic, not a compositing model.
 Nothing is clamped, so a sum can exceed 1.0 and a difference can go
-negative. The alpha of `a - b` combining rather than subtracting is what
-the implementation does today; do not rely on it.
+negative.
 
 === Conversions
 

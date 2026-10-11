@@ -314,13 +314,25 @@ namespace cycfi::artist
       return cnv.device_to_user(p);
    }
 
-   // Declared in context.hpp
+   // The bounds of r's four corners in user space, so the result holds
+   // all of r under a rotation or a skew too.
    inline rect device_to_user(rect const& r, canvas& cnv)
    {
-      return {
+      point const c[] = {
          cnv.device_to_user(r.top_left())
+       , cnv.device_to_user(r.top_right())
+       , cnv.device_to_user(r.bottom_left())
        , cnv.device_to_user(r.bottom_right())
       };
+      rect b{c[0], c[0]};
+      for (auto const& p : c)
+      {
+         b.left = std::min(b.left, p.x);
+         b.top = std::min(b.top, p.y);
+         b.right = std::max(b.right, p.x);
+         b.bottom = std::max(b.bottom, p.y);
+      }
+      return b;
    }
 }
 

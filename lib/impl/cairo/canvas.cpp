@@ -143,6 +143,13 @@ namespace cycfi::artist
       // The W3C defaults. Cairo's own default line width is 2.
       cairo_set_line_width(_context, 1);
       cairo_set_miter_limit(_context, 10);
+
+      // Start with a sans-serif face at 12, the platform's own where it is
+      // installed, as the Quartz 2D and Direct2D canvases do.
+      font(font_descr{
+         "Helvetica Neue, Segoe UI, DejaVu Sans, Liberation Sans, Arial, "
+         "Open Sans", 12
+      });
    }
 
    canvas::~canvas()

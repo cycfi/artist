@@ -176,8 +176,9 @@ xref:foundation/affine_transform.adoc[affine_transform] `skew` and
                                   space.                       | `point`
 | `device_to_user(p, cnv)`      | Convert `p` from device space
                                   to the user space of `cnv`.  | `point`
-| `device_to_user(r, cnv)`      | Convert the corners of `r`
-                                  from device space to the user
+| `device_to_user(r, cnv)`      | Get the bounds of `r`'s
+                                  corners, converted from
+                                  device space to the user
                                   space of `cnv`.              | `rect`
 |===
 
@@ -189,10 +190,9 @@ that to identity at the start of each frame, and an image's scale is
 carried by its DPI, so the results are the same.
 
 `device_to_user(p, cnv)` is `cnv.device_to_user(p)` as a free function.
-`device_to_user(r, cnv)` converts the top left and bottom right corners of
-`r` and makes a `rect` of the two. Under a rotation or a skew those two
-corners do not bound the converted rectangle; convert all four with
-`cnv.device_to_user(p)` for its bounds.
+`device_to_user(r, cnv)` converts all four corners of `r` and returns
+their bounds, so the result holds the whole of `r` under a rotation or a
+skew as well.
 
 === Example
 

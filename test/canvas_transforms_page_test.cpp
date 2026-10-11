@@ -100,6 +100,30 @@ TEST_CASE("canvas transforms: Conversion", "[transforms]")
       CHECK(near(cnv.device_to_user(d), {3, 4}));
       CHECK(near(cnv.device_to_user(d.x, d.y), cnv.device_to_user(d)));
    }, 2);
+
+   // device_to_user(r, cnv) is the bounds of r's corners in user space.
+   // Under a translate and a positive scale that is the converted top left
+   // and bottom right; under a rotation it takes all four corners.
+   on_canvas([](canvas& cnv)
+   {
+      cnv.translate(10, 20);
+      cnv.scale(2, 2);
+      auto u = device_to_user(rect{10, 20, 50, 60}, cnv);
+      CHECK(near(u.top_left(), cnv.device_to_user(point{10, 20})));
+      CHECK(near(u.bottom_right(), cnv.device_to_user(point{50, 60})));
+      CHECK(near(u.top_left(), {0, 0}));
+      CHECK(near(u.bottom_right(), {20, 20}));
+   });
+
+   on_canvas([](canvas& cnv)
+   {
+      cnv.rotate(cycfi::pi / 4);
+      float const s = std::sqrt(2.0f);
+      auto u = device_to_user(rect{0, 0, 2, 2}, cnv);
+      // The corners land at (0, 0), (s, -s), (s, s) and (2s, 0).
+      CHECK(near(u.top_left(), {0, -s}));
+      CHECK(near(u.bottom_right(), {2 * s, s}));
+   });
 }
 
 TEST_CASE("canvas transforms: The Matrix", "[transforms]")

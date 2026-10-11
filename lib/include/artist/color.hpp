@@ -188,7 +188,7 @@ namespace cycfi::artist
 
    constexpr color operator-(color const& a, color const& b)
    {
-     return color(a.red - b.red, a.green - b.green, a.blue - b.blue, a.alpha + b.alpha*(1.0-a.alpha));
+     return color(a.red - b.red, a.green - b.green, a.blue - b.blue, a.alpha);
    }
 
    constexpr color operator*(color const& a, float b)

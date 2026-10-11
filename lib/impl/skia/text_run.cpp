@@ -179,7 +179,7 @@ namespace cycfi::artist
             ;
             if (finfo.justify && !must_break)
             {
-               if (((line_width / linfo.width) > 0.9))
+               if ((line_width / linfo.width) >= 0.9f)
                {
                   // Full justify
                   auto nspaces = num_spaces(glyph_idx);

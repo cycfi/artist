@@ -100,6 +100,18 @@ file(
 
 target_link_libraries(artist_test artist)
 
+# `canvas::left | canvas::middle` must not warn about arithmetic between two
+# enums: canvas.hpp provides the operator. Make the warning an error in the
+# file that uses the idiom most, where the compiler knows the warning.
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag(-Werror=deprecated-enum-enum-conversion
+   ARTIST_HAS_ENUM_ENUM_WARNING)
+if (ARTIST_HAS_ENUM_ENUM_WARNING)
+   set_source_files_properties(canvas_text_page_test.cpp PROPERTIES
+      COMPILE_OPTIONS -Werror=deprecated-enum-enum-conversion
+   )
+endif()
+
 # Windows has no rpath: a DLL is found next to the executable or on PATH, so a
 # test linked against a shared dependency (libwebp, Skia) dies at startup with
 # 0xC0000135 unless its DLLs are beside it. Copy whatever the linker actually

@@ -518,3 +518,38 @@ TEST_CASE("Trailing newline opens an empty line")
    CHECK(end.y > start.y);                       // caret moved to the next line
    CHECK(end.x <= start.x + 1.0f);               // ...at the left edge
 }
+
+TEST_CASE("Font With No Handle")
+{
+   // A font holding no handle measures as zero on every backend.
+   auto check_zero = [](font const& f)
+   {
+      auto m = f.metrics();
+      CHECK(m.ascent == 0);
+      CHECK(m.descent == 0);
+      CHECK(m.leading == 0);
+      CHECK(f.line_height() == 0);
+      CHECK(f.measure_text("Hello") == 0);
+   };
+
+   // Default constructed: Quartz 2D and Direct2D leave the handle null.
+   font d;
+   if (!d)
+      check_zero(d);
+
+   // Moved from by construction.
+   font src{font_descr{"Open Sans", 20}};
+   REQUIRE(src);
+   CHECK(src.measure_text("Hello") > 0);
+   font dst{std::move(src)};
+   REQUIRE(!src);
+   check_zero(src);
+
+   // Moved from by assignment, into a default constructed font: the source
+   // ends up null whether the backend clears it or swaps the two.
+   font target;
+   font moved{font_descr{"Open Sans", 20}};
+   target = std::move(moved);
+   REQUIRE(!moved);
+   check_zero(moved);
+}

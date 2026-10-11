@@ -277,7 +277,6 @@ apart, except that the last line's baseline is moved down by
 A justified line has its spaces widened so that it fills its width
 exactly. The last line is left ragged, as is any line that ends in a hard
 break and any line whose natural width is less than 90% of its width.
-Quartz 2D and Skia also leave a line of exactly 90% ragged.
 
 === Example
 

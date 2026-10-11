@@ -382,10 +382,10 @@ public:
 
 NOTE: C++ brace initialization may also be used.
 
-WARNING: A `font` moved from by construction holds no face, as does one
-moved from by assignment on Cairo, Skia and recording. Calling
-`metrics()`, `line_height()` or `measure_text()` on it is undefined
-behaviour.
+NOTE: A `font` moved from by construction holds no face, as does one
+moved from by assignment on Cairo, Skia and recording. On every backend,
+`metrics()`, `line_height()` and `measure_text()` on a `font` that holds
+no face return zero.
 
 ==== Access
 
@@ -437,7 +437,7 @@ behaviour.
 NOTE: What `bool(f)` reports for a default constructed `font` depends on
 the backend: Quartz 2D and Direct2D leave the handle null, while Cairo
 and recording build an empty one and Skia a default `SkFont`, so on those
-three `bool(f)` is `true` and the metrics calls are safe. Construction
+three `bool(f)` is `true`. Construction
 from a descriptor always yields a handle on every backend. Use the
 conversion to test a moved from `font`, not to check whether a family was
 found.
