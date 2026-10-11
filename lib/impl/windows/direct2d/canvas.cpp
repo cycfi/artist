@@ -727,7 +727,7 @@ namespace cycfi::artist
       // Render the source primitive into a fresh, input-capable target bitmap via
       // a *separate* device context (the main one is mid-BeginDraw, so it can't be
       // retargeted). A D2D1_BITMAP_OPTIONS_TARGET bitmap can be both rendered to
-      // and used as a DrawImage source / blend-effect input — unlike the bitmap
+      // and used as a DrawImage source / blend-effect input, unlike the bitmap
       // behind a CreateCompatibleRenderTarget, which is not a valid effect input.
       auto sz = main->GetPixelSize();
 
@@ -774,7 +774,7 @@ namespace cycfi::artist
 
       // Decide what to draw and how, BEFORE installing the clip. The destination
       // snapshot (CopyFromRenderTarget) must NOT happen inside an axis-aligned
-      // clip — it returns failure there, which silently drops the blend.
+      // clip: it returns failure there, which silently drops the blend.
       ID2D1Image* draw_img = nullptr;        // what to composite (non-owning alias)
       D2D1_COMPOSITE_MODE draw_mode = D2D1_COMPOSITE_MODE_SOURCE_OVER;
       bitmap* bg = nullptr;                  // background snapshot (blend only)

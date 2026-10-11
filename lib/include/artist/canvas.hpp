@@ -145,7 +145,7 @@ namespace cycfi::artist
                            float x, float y
                         );
 
-      // Cairo canvas backward compaytibility
+      // Cairo canvas backward compatibility
 
                         [[deprecated("Use add_round_rect(r, radius) instead")]]
       void              round_rect(const rect& r, float radius)
@@ -197,8 +197,9 @@ namespace cycfi::artist
          destination_in,
          destination_out,
 
-         lighter,           // W3C Porter-Duff Plus (Cs+Cd) — all backends correct
-         darker,            // W3C PlusDarker max(0,Cs+Cd-1) — Quartz2D correct; Skia/Cairo use channel-min approximation
+         lighter,           // W3C Porter-Duff Plus (Cs+Cd), all backends
+         darker,            // W3C PlusDarker is max(0, Cs+Cd-1); every
+                            // backend maps it to Darken (channel min)
          copy,
          xor_,
 
@@ -404,10 +405,11 @@ namespace cycfi::artist
 
    private:
 
-      // Saving and restoring is only ever done in pairs, so the two halves
-      // are not reachable on their own. An unbalanced restore has no good
-      // answer: the backends variously crash, poison the drawing context, or
-      // silently do nothing. new_state is the whole interface.
+      // Saving and restoring, and beginning and ending a group, are only
+      // ever done in pairs, so the halves are not reachable on their own.
+      // An unbalanced restore has no good answer: the backends variously
+      // crash, poison the drawing context, or silently do nothing.
+      // new_state and new_group are the whole interface.
       friend class state;
       friend class group;
 

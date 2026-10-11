@@ -3,7 +3,7 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 
-   Cairo shadow blur — SIMD-accelerated alpha-channel Gaussian-approximating
+   Cairo shadow blur: SIMD-accelerated alpha-channel Gaussian-approximating
    box blur utilities. Include only from Cairo backend implementation files.
 =============================================================================*/
 #pragma once
@@ -16,7 +16,7 @@ namespace cycfi::artist
    // Number of box-blur passes used to approximate a Gaussian. The combined
    // support of N passes is ±N·radius, and the support-to-sigma ratio is
    // sqrt(3N). With 4 passes the hard cutoff lands at ~3.46σ (Gaussian ≈ 0.27%),
-   // so the box blur's finite square support is not visible as a clipped edge —
+   // so the box blur's finite square support is not visible as a clipped edge,
    // even on bright glows against dark backgrounds. (3 passes cuts off at ~2.8σ
    // ≈ 1.8%, which shows as flat top/left/bottom/right edges.)
    constexpr int blur_passes = 4;
@@ -51,7 +51,7 @@ namespace cycfi::artist
 
    // Reconstruct premultiplied ARGB32 pixels from a blurred alpha buffer and
    // a fixed shadow color (sr, sg, sb in 0–255). Each output pixel becomes
-   // (sb*a/255, sg*a/255, sr*a/255, a) — the correct premultiplied form for
+   // (sb*a/255, sg*a/255, sr*a/255, a), the correct premultiplied form for
    // any shadow color, not just black.
    void shadow_reconstruct(
       uint8_t* argb32, int stride,

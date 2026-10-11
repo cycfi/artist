@@ -11,9 +11,9 @@
 // libunibreak for wrapping decisions.  draw() renders with cairo_show_glyphs.
 //
 // Data model mirrors the Skia backend:
-//   _glyphs  — shaped glyph array (glyph IDs + advances, indexed by glyph pos)
-//   _breaks  — per UTF-32 code point break info (indexed by glyph.cluster)
-//   row_info — glyph range [glyph_start, glyph_start+glyph_count)
+//   _glyphs  : shaped glyph array (glyph IDs + advances, indexed by glyph pos)
+//   _breaks  : per UTF-32 code point break info (indexed by glyph.cluster)
+//   row_info : glyph range [glyph_start, glyph_start+glyph_count)
 //
 #include "cairo_private.hpp"
 #include "cairo_text.hpp"
@@ -351,7 +351,7 @@ namespace cycfi::artist
       std::size_t gi = glyph_index(index);
       if (gi == npos)
       {
-         // Inside a ligature cluster — advance to the next available glyph.
+         // Inside a ligature cluster: advance to the next available glyph.
          for (std::size_t g = 0; g < _glyphs.size(); ++g)
          {
             if (_glyphs[g].cluster > index)

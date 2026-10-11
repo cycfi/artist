@@ -267,7 +267,7 @@ namespace cycfi::artist
                   // (DirectWrite: legacy name-ID-1 family; CoreText: typographic
                   // name-ID-16 family) AND under the typographic family read
                   // straight from the 'name' table, so a lookup by either name
-                  // succeeds on every platform — matching fontconfig, which
+                  // succeeds on every platform, matching fontconfig, which
                   // exposes both. e.g. "Open Sans Condensed Light" (ID 1) and
                   // "Open Sans Condensed" (ID 16).
                   std::string typo = get_name_id(tf.get(), 16);

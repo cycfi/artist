@@ -42,8 +42,8 @@ namespace cycfi::artist::recording
       bool                       visible;       // bounds is not empty
       color                      paint;         // the colour, or a gradient's first stop
       bool                       gradient;
-      float                      line_width;    // the stroke state in effect
-      canvas::line_cap_enum      line_cap;
+      float                      line_width;    // stroke ops only, else 0
+      canvas::line_cap_enum      line_cap;      // the stroke state in effect
       canvas::join_enum          line_join;
       float                      miter_limit;
       point                      shadow_offset; // the shadow state in effect

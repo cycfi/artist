@@ -14,10 +14,10 @@
 namespace cycfi::artist
 {
    ////////////////////////////////////////////////////////////////////////////
-   // shaped_glyph — one HarfBuzz output glyph in user-space pixel units.
+   // shaped_glyph: one HarfBuzz output glyph in user-space pixel units.
    //
    // codepoint : HarfBuzz glyph ID (== FreeType/Cairo glyph index for the
-   //             same face — safe to pass directly to cairo_show_glyphs).
+   //             same face, safe to pass directly to cairo_show_glyphs).
    // cluster   : UTF-32 source index of the first code point that produced
    //             this glyph. Used by text_run for break-opportunity lookup
    //             and caret mapping.
@@ -37,7 +37,7 @@ namespace cycfi::artist
    };
 
    ////////////////////////////////////////////////////////////////////////////
-   // shaped_run — result of shaping one contiguous LTR UTF-8 run.
+   // shaped_run: result of shaping one contiguous LTR UTF-8 run.
    //
    // advance_x : total horizontal advance for the run (sum of x_advance),
    //             in pixels. Use this for text measurement.
@@ -49,7 +49,7 @@ namespace cycfi::artist
    };
 
    ////////////////////////////////////////////////////////////////////////////
-   // shape_text (UTF-32 overload) — shape a UTF-32 LTR run.
+   // shape_text (UTF-32 overload): shape a UTF-32 LTR run.
    //
    // Cluster values in the returned glyphs are UTF-32 code-point indices
    // (0-based into utf32), suitable for direct lookup into text_run's
@@ -99,10 +99,10 @@ namespace cycfi::artist
    }
 
    ////////////////////////////////////////////////////////////////////////////
-   // shape_text — shape a UTF-8 LTR run with HarfBuzz.
+   // shape_text: shape a UTF-8 LTR run with HarfBuzz.
    //
    // hb_fnt    : HarfBuzz font previously created via hb_ft_font_create_referenced
-   //             with scale set to (upem, upem) — see font.cpp.
+   //             with scale set to (upem, upem); see font.cpp.
    // font_size : font size in user-space pixels (font_descr._size).
    // utf8      : text to shape (need not be NUL-terminated; length is used).
    //

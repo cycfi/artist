@@ -66,7 +66,7 @@ namespace cycfi::artist::d2d
 
       // Copy only the generators/state; the realized geometries and the grouped
       // fill geometry are device-side caches (owned COM objects) and are
-      // regenerated lazily — copying the raw pointers would double-free them.
+      // regenerated lazily; copying the raw pointers would double-free them.
                            path_impl(path_impl const& rhs)
                             : _geometry_gens(rhs._geometry_gens)
                             , _mode(rhs._mode)

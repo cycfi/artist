@@ -77,7 +77,7 @@ namespace cycfi::artist
       }
 
       ///////////////////////////////////////////////////////////////////////////
-      // Font map — enumerate all fonts once at startup, then resolve
+      // Font map: enumerate all fonts once at startup, then resolve
       // font_descr via a local std::map lookup (no FcFontMatch per call).
 
       struct font_entry
@@ -185,7 +185,7 @@ namespace cycfi::artist
       }
 
       ///////////////////////////////////////////////////////////////////////////
-      // FreeType library — single process-wide instance.
+      // FreeType library: single process-wide instance.
 
       const cairo_user_data_key_t& ft_user_data_key()
       {
@@ -246,7 +246,7 @@ namespace cycfi::artist
       // We create the hb_face_t from the font file blob rather than from the
       // FT_Face. This decouples HarfBuzz from FreeType's lifecycle entirely:
       // hb_face_destroy at process exit only frees the blob (raw memory), not
-      // an FT_Face — avoiding cross-dylib teardown ordering crashes.
+      // an FT_Face, avoiding cross-dylib teardown ordering crashes.
 
       hb_face_t* make_hb_face(std::string const& file)
       {
@@ -268,7 +268,7 @@ namespace cycfi::artist
       }
 
       ///////////////////////////////////////////////////////////////////////////
-      // Face cache — keyed by FC_FULLNAME, holds ref-counted Cairo + HarfBuzz
+      // Face cache: keyed by FC_FULLNAME, holds ref-counted Cairo + HarfBuzz
       // faces. Scaled fonts are created per-size outside the cache.
 
       struct face_entry
@@ -320,7 +320,7 @@ namespace cycfi::artist
       }
 
       ///////////////////////////////////////////////////////////////////////////
-      // make_font_impl — main font construction
+      // make_font_impl: main font construction
 
       font_impl* make_font_impl(font_descr const& descr)
       {
@@ -338,7 +338,7 @@ namespace cycfi::artist
             fe.ft_face = make_ft_cairo_face(entry->file);
             if (!fe.ft_face) return nullptr;
 
-            // HarfBuzz face from the font file directly — no FT_Face reference.
+            // HarfBuzz face from the font file directly, no FT_Face reference.
             // This keeps HarfBuzz and FreeType lifecycle-independent.
             fe.hb_face = make_hb_face(entry->file);
 
@@ -365,7 +365,7 @@ namespace cycfi::artist
          face_entry const& fe = it->second;
          if (!fe.ft_face) return nullptr;
 
-         // Scaled font is per-size — cheap to create from the cached FT face.
+         // Scaled font is per-size, cheap to create from the cached FT face.
          auto* sf = make_scaled_font(fe.ft_face, descr._size);
          if (!sf || cairo_scaled_font_status(sf) != CAIRO_STATUS_SUCCESS)
          {
@@ -373,7 +373,7 @@ namespace cycfi::artist
             return nullptr;
          }
 
-         // HarfBuzz font from cached hb_face — O(1).
+         // HarfBuzz font from cached hb_face: O(1).
          font_impl::hb_font_ptr hb_fnt;
          if (fe.hb_face)
             hb_fnt = make_hb_font(fe.hb_face);

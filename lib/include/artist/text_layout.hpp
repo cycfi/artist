@@ -31,10 +31,12 @@ namespace cycfi::artist
     *    stitching can be tested with a non-graphical mock; the production
     *    instantiation is `text_layout` over `artist::text_run`.
     *
-    *    `TextRun` must provide: construction from `std::u32string_view`,
-    *    `flow(float, bool)`, `num_lines()`, `caret_point(size_t)`,
-    *    `caret_index(point)`, and (only if `draw` is used) `draw(canvas&,
-    *    point, color)`.
+    *    `TextRun` must be move constructible and provide: construction
+    *    from `std::u32string_view`, the `break_enum` type, `flow(float,
+    *    bool)`, `num_lines()`, `caret_point(size_t)`, `caret_index(point)`,
+    *    and, only where the matching `basic_text_layout` member is used,
+    *    `must_break` (for `line_break`), `word_break(size_t)`,
+    *    `line_break(size_t)` and `draw(canvas&, point, color)`.
     */
    template <typename TextRun>
    class basic_text_layout

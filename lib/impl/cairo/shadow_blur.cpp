@@ -116,7 +116,7 @@ namespace cycfi::artist
    // -------------------------------------------------------------------------
    // shadow_reconstruct
    // Writes premultiplied ARGB32: each pixel becomes (sb*a/255, sg*a/255,
-   // sr*a/255, a). Correct for any shadow color — blurring only operates on
+   // sr*a/255, a). Correct for any shadow color: blurring only operates on
    // the alpha channel, so RGB must be reconstructed from the shadow color
    // rather than left at their pre-blur values (which are 0 outside glyphs).
    // -------------------------------------------------------------------------
@@ -202,7 +202,7 @@ namespace cycfi::artist
          for (int x = 0; x < w; ++x)
             cum[x + 1] = cum[x] + row[x];
 
-         // Left border: window [0, x+radius] — shrinks at the edge.
+         // Left border: window [0, x+radius], shrinks at the edge.
          int x_mid_end = w - radius;
          for (int x = 0; x < std::min(radius, w); ++x)
          {
@@ -245,7 +245,7 @@ namespace cycfi::artist
          for (; x < x_mid_end; ++x)
             out[x] = static_cast<uint8_t>((cum[x + radius + 1] - cum[x - radius]) * inv);
 
-         // Right border: window [x-radius, w] — shrinks at the edge.
+         // Right border: window [x-radius, w], shrinks at the edge.
          for (int bx = std::max(radius, x_mid_end); bx < w; ++bx)
          {
             int lo  = bx - radius;

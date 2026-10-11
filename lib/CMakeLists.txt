@@ -57,7 +57,7 @@ if (ARTIST_SKIA)
 
    # Default (local builds): fetch a prebuilt Skia bundle from R2 and add it to
    # CMAKE_PREFIX_PATH so the find_package(unofficial-skia) calls below resolve
-   # it — no Skia compile. No-op under a vcpkg toolchain (vcpkg supplies Skia).
+   # it (no Skia compile). No-op under a vcpkg toolchain (vcpkg supplies Skia).
    include(${CMAKE_CURRENT_LIST_DIR}/../cmake/SkiaPrebuilt.cmake)
 
    if (APPLE)
@@ -176,7 +176,7 @@ if (ARTIST_SKIA)
       # Use the system harfbuzz (shared) instead of vcpkg's static harfbuzz.
       # When GTK is loaded (window host, e.g. Elements), it brings in the system
       # harfbuzz dynamically. Having both a static vcpkg harfbuzz AND the system
-      # shared harfbuzz in the same process causes symbol interposition — GTK/
+      # shared harfbuzz in the same process causes symbol interposition: GTK/
       # Pango calls get routed to the static 14.x copy and crash on widget
       # realize. Using the system harfbuzz exclusively avoids the conflict.
       # (Headless Artist tests never load GTK so they don't hit it, but Elements
@@ -433,7 +433,7 @@ if (WIN32 AND ARTIST_DIRECT2D)
    # Expose the backend's low-level header so the example host can create the
    # HWND render target + wrap it in a d2d::context (mirrors the 2020 branch).
    target_include_directories(artist PUBLIC impl/windows/direct2d)
-   # Direct2D / DirectWrite / WIC are system libs — the whole point: no Skia
+   # Direct2D / DirectWrite / WIC are system libs, the whole point: no Skia
    # blob. d2d1.lib also provides the D2D 1.1 (ID2D1DeviceContext) API, and
    # dxguid the D2D effect CLSIDs (Gaussian blur / 2D affine transform).
    target_link_libraries(artist PUBLIC

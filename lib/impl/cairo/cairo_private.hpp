@@ -3,7 +3,7 @@
 
    Distributed under the MIT License [ https://opensource.org/licenses/MIT ]
 
-   Private Cairo backend types — NOT part of the public Artist API.
+   Private Cairo backend types, NOT part of the public Artist API.
    Include only from Cairo backend implementation files.
 =============================================================================*/
 #pragma once
@@ -12,7 +12,7 @@
 #include <artist/font.hpp>
 
 ///////////////////////////////////////////////////////////////////////////////
-// cairo_artist_path_t — backing storage for the Artist path class on Cairo.
+// cairo_artist_path_t: backing storage for the Artist path class on Cairo.
 // Uses a recording surface + cairo_t so that path operations can be
 // accumulated and replayed later via cairo_append_path.
 
@@ -50,7 +50,7 @@ struct cairo_artist_path_t
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// font_impl — Cairo font face + scaled font + HarfBuzz shaping font.
+// font_impl: Cairo font face + scaled font + HarfBuzz shaping font.
 //
 // _face        : cairo_font_face_t* used by canvas::font() via
 //                cairo_set_font_face + cairo_set_font_size (Elements style).
@@ -116,7 +116,7 @@ namespace cycfi::artist
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// image_impl — opaque Cairo image backing.
+// image_impl: opaque Cairo image backing.
 // Declared as 'class image_impl' inside namespace cycfi::artist in image.hpp.
 
 namespace cycfi::artist

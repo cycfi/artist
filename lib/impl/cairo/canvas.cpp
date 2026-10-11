@@ -21,7 +21,7 @@
 namespace cycfi::artist
 {
    ////////////////////////////////////////////////////////////////////////////
-   // canvas_state — manages per-save/restore paint style and text alignment.
+   // canvas_state: manages per-save/restore paint style and text alignment.
    // Styles are stored as deferred lambdas and applied just before each draw.
    class canvas::canvas_state
    {
@@ -64,7 +64,7 @@ namespace cycfi::artist
       // origin maps to the host drawing origin (matching the legacy canvas).
       cairo_matrix_t _inv_affine;
 
-      // Reusable scratch buffers for shadow rendering — never shrink, never
+      // Reusable scratch buffers for shadow rendering: never shrink, never
       // reallocate unless the shadow surface grows larger than a previous frame.
       struct shadow_scratch_t
       {
@@ -943,7 +943,7 @@ namespace cycfi::artist
    {
       // Porter-Duff ops: directly supported by Cairo.
       // Extended blend modes (MULTIPLY … HSL_LUMINOSITY): require Cairo >= 1.10.
-      // lighter: W3C Porter-Duff Plus (additive) — CAIRO_OPERATOR_ADD is correct.
+      // lighter: W3C Porter-Duff Plus (additive); CAIRO_OPERATOR_ADD is correct.
       // darker: W3C PlusDarker = max(0, Cs+Cd-1). Cairo has no native equivalent;
       //   OPERATOR_DARKEN (channel-min) is used as a known approximation.
       cairo_operator_t op;
@@ -1071,7 +1071,7 @@ namespace cycfi::artist
    }
 
    ////////////////////////////////////////////////////////////////////////////
-   // Font / text — Stage 5: FreeType/Fontconfig-backed font support.
+   // Font / text, Stage 5: FreeType/Fontconfig-backed font support.
 
    void canvas::font(class font const& font_)
    {
@@ -1266,7 +1266,7 @@ namespace cycfi::artist
       }
       else
       {
-         // Fallback: no HarfBuzz font set — use unshaped Cairo text.
+         // Fallback: no HarfBuzz font set, use unshaped Cairo text.
          auto str = std::string{utf8.data(), utf8.size()};
          cairo_text_extents_t ext;
          cairo_text_extents(_context, str.c_str(), &ext);
