@@ -5,6 +5,7 @@
 =============================================================================*/
 #include <infra/support.hpp>
 #include <artist/path.hpp>
+#include <artist/detail/arc_sweep.hpp>
 #include <SkPathBuilder.h>
 #include <SkRRect.h>
 
@@ -110,10 +111,7 @@ namespace cycfi::artist
    {
       radius = std::max(radius, 0.0f);
       auto start = start_angle * 180 / pi;
-      auto sweep = (end_angle - start_angle) * 180 / pi;
-      if (sweep < 0)
-         sweep += 360;
-      sweep *= (ccw? -1 : 1);
+      auto sweep = detail::arc_sweep(start_angle, end_angle, ccw) * 180 / pi;
 
       _impl->arcTo(
          {p.x-radius, p.y-radius, p.x+radius, p.y+radius},

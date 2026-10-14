@@ -331,6 +331,50 @@ TEST_CASE("current path: clear_rect current behaviour", "[current_path]")
 
 #endif // ARTIST_CAIRO
 
+#if !defined(ARTIST_RECORDING)
+TEST_CASE("current path: arc direction", "[current_path]")
+{
+   // From 180 to 90 degrees, on a circle of radius 30 around (50, 50).
+   // Angles grow clockwise on the screen, so counterclockwise from 180 to
+   // 90 is the short way, through 135 (lower left), and clockwise is the
+   // long way, through 0 (right).
+   float const start_angle = std::numbers::pi_v<float>;
+   float const end_angle = std::numbers::pi_v<float> / 2;
+   std::vector<point> samples = {
+      {50 - 21.2f, 50 + 21.2f}   // 135 degrees
+    , {80, 50}                   // 0 degrees
+   };
+
+   for (bool use_path : {false, true})
+   {
+      auto arc = [&](bool ccw)
+      {
+         return stroked([&](canvas& cnv)
+         {
+            if (use_path)
+            {
+               path p;
+               p.arc({50, 50}, 30, start_angle, end_angle, ccw);
+               cnv.add_path(p);
+            }
+            else
+            {
+               cnv.arc({50, 50}, 30, start_angle, end_angle, ccw);
+            }
+         }, samples);
+      };
+
+      auto ccw = arc(true);
+      CHECK(ccw[0]);
+      CHECK(!ccw[1]);
+
+      auto cw = arc(false);
+      CHECK(!cw[0]);
+      CHECK(cw[1]);
+   }
+}
+#endif
+
 // Every backend: clip() narrows what clip_extent() reports, and a restore
 // widens it again. The hosts rely on this to repaint only the dirty area.
 TEST_CASE("current path: Clipping", "[current_path]")

@@ -9,6 +9,7 @@
 =============================================================================*/
 #include "path_impl.hpp"
 #include <infra/support.hpp>   // pi
+#include <artist/detail/arc_sweep.hpp>
 #include <algorithm>
 #include <cmath>
 
@@ -312,9 +313,8 @@ namespace cycfi::artist::d2d
       else
          line_to({startx, starty});
 
-      auto diff_angle = end_angle - start_angle;
-      if (diff_angle < 0)
-         diff_angle += 2 * pi;
+      // The extent of the arc, whichever way it goes
+      auto diff_angle = float(std::abs(artist::detail::arc_sweep(start_angle, end_angle, ccw)));
 
       arc_segment arc{};
       arc.point = {endx, endy};
