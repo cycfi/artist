@@ -827,9 +827,23 @@ namespace cycfi::artist
       a = (a & ~0x1C) | align;
    }
 
+   namespace
+   {
+      // A picture is drawn as it is, as on the other backends: the fill's
+      // color, its alpha included, and its gradient do not apply. Its
+      // blend mode and shadow do.
+      SkPaint picture_paint(SkCanvas* cnv, canvas::canvas_state& state)
+      {
+         auto paint = state.fill_paint();
+         paint.setShader(nullptr);
+         paint.setColor(SK_ColorBLACK);
+         return shadowed(cnv, state, paint);
+      }
+   }
+
    void canvas::draw(image const& pic, rect const& src, rect const& dest)
    {
-      auto paint = shadowed(_context, *_state, _state->fill_paint());
+      auto paint = picture_paint(_context, *_state);
       auto draw_picture =
          [&](auto const& that)
          {
@@ -878,7 +892,7 @@ namespace cycfi::artist
       // A snapshot of a GPU surface shares its texture; it is released before
       // the next frame draws into the layer, so no copy is made.
       auto snapshot = layer.impl()->surface->makeImageSnapshot();
-      auto paint = shadowed(_context, *_state, _state->fill_paint());
+      auto paint = picture_paint(_context, *_state);
       with_blend(_context, paint, [&](SkPaint const& q)
       {
          _context->drawImageRect(

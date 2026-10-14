@@ -787,3 +787,37 @@ TEST_CASE("canvas images: example figure", "[images]")
    });
 }
 
+
+#if !defined(ARTIST_RECORDING)
+TEST_CASE("canvas images: the fill style does not apply to an image or a layer", "[images]")
+{
+   // W3C drawImage ignores fillStyle. A translucent fill left by an earlier
+   // draw must not fade a picture drawn after it, nor a gradient tint it.
+   image dst{60, 30, 1};
+   auto src = make_source();
+   render(dst, [&](canvas& cnv)
+   {
+      cnv.fill_style(rgba(0, 255, 0, 40));         // translucent green
+      cnv.draw(src, rect{0, 0, 30, 30});
+
+      canvas_layer layer{cnv, extent{20, 20}};
+      {
+         canvas lc{layer.context()};
+         lc.fill_style(rgba(255, 0, 0, 255));
+         lc.fill_rect(rect{0, 0, 20, 20});
+      }
+      auto g = canvas::linear_gradient{point{30, 0}, point{60, 0}};
+      g.add_color_stop(0, rgba(0, 0, 255, 30));
+      g.add_color_stop(1, rgba(0, 255, 0, 30));
+      cnv.fill_style(g);
+      cnv.draw(layer, rect{30, 0, 60, 30});
+   });
+
+   auto img_px = pixel_at(dst, 5, 15);
+   CHECK(is_red(img_px));
+   CHECK(img_px.a > 240);                          // opaque, not faded
+   auto layer_px = pixel_at(dst, 45, 15);
+   CHECK(is_red(layer_px));
+   CHECK(layer_px.a > 240);
+}
+#endif
