@@ -504,7 +504,8 @@ or assign to it; calling any other member on it is undefined behaviour.
 <div class="paragraph">
 <p>Each pixel is four bytes, B, G, R and A in memory order, with the color
 premultiplied by alpha. Rows run from the top, <code>bitmap_size().x</code> pixels to
-a row, with no padding.</p>
+a row, with no padding. The pointer is good until the image is next drawn
+into.</p>
 </div>
 <div class="admonitionblock note">
 <table>
