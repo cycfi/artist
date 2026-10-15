@@ -169,7 +169,8 @@ or assign to it; calling any other member on it is undefined behaviour.
 
 Each pixel is four bytes, B, G, R and A in memory order, with the color
 premultiplied by alpha. Rows run from the top, `bitmap_size().x` pixels to
-a row, with no padding.
+a row, with no padding. The pointer is good until the image is next drawn
+into.
 
 NOTE: Treat the buffer as read only. There is no call to mark the pixels
 as changed, and Cairo needs one before it uses the image again.

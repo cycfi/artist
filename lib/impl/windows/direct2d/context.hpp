@@ -12,6 +12,7 @@
 #if !defined(ARTIST_D2D_CONTEXT_JUNE_7_2026)
 #define ARTIST_D2D_CONTEXT_JUNE_7_2026
 
+#include <functional>
 #include <windows.h>
 #include <artist/canvas.hpp>
 #include <d2d1.h>
@@ -115,6 +116,11 @@ namespace cycfi::artist::d2d
 
       context_state*    state() const             { return _state; }
       void              state(context_state* s)   { _state = s; }
+
+      // Called before each draw: an offscreen image restarts a draw that
+      // reading its pixels ended.
+      void              resume() const            { if (before_draw) before_draw(); }
+      std::function<void()> before_draw;
 
    private:
 

@@ -314,21 +314,37 @@ namespace cycfi::artist::d2d
          line_to({startx, starty});
 
       // The extent of the arc, whichever way it goes
-      auto diff_angle = float(std::abs(artist::detail::arc_sweep(start_angle, end_angle, ccw)));
+      auto const sweep = artist::detail::arc_sweep(start_angle, end_angle, ccw);
+      auto diff_angle = float(std::abs(sweep));
 
-      arc_segment arc{};
-      arc.point = {endx, endy};
-      arc.size = {radius, radius};
-      arc.rotationAngle = diff_angle * 180 / pi;
-      arc.sweepDirection = ccw? sweep_dir_ccw : sweep_dir_cw;
-      arc.arcSize = diff_angle > pi? arc_large : arc_small;
+      auto segment = [&](point to, float extent)
+      {
+         arc_segment arc{};
+         arc.point = {to.x, to.y};
+         arc.size = {radius, radius};
+         arc.rotationAngle = extent * 180 / pi;
+         arc.sweepDirection = ccw? sweep_dir_ccw : sweep_dir_cw;
+         arc.arcSize = extent > pi? arc_large : arc_small;
+         _path_gens.push_back(
+            [arc](geometry_sink* sink, render_mode /*mode*/)
+            {
+               sink->AddArc(arc);
+            }
+         );
+      };
 
-      _path_gens.push_back(
-         [arc](geometry_sink* sink, render_mode /*mode*/)
-         {
-            sink->AddArc(arc);
-         }
-      );
+      // A full circle has its end at its start, which a D2D arc segment
+      // cannot express: it goes as two halves, through the opposite point.
+      if (diff_angle >= 2 * pi - 1e-4f)
+      {
+         auto const mid_angle = start_angle + float(sweep) / 2;
+         segment({p.x + radius * std::cos(mid_angle), p.y + radius * std::sin(mid_angle)}, diff_angle / 2);
+         segment({endx, endy}, diff_angle / 2);
+      }
+      else
+      {
+         segment({endx, endy}, diff_angle);
+      }
       _cp = {endx, endy};
    }
 

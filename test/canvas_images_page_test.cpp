@@ -821,3 +821,23 @@ TEST_CASE("canvas images: the fill style does not apply to an image or a layer",
    CHECK(layer_px.a > 240);
 }
 #endif
+
+#if !defined(ARTIST_RECORDING)
+TEST_CASE("canvas images: pixels can be read between draws", "[images]")
+{
+   // Reading the pixels while an offscreen is still drawing into the image
+   // shows what has been drawn so far, and drawing goes on afterwards.
+   image dst{20, 20, 1};
+   render(dst, [&](canvas& cnv)
+   {
+      cnv.fill_style(rgba(255, 0, 0, 255));
+      cnv.fill_rect(rect{0, 0, 20, 20});
+      CHECK(is_red(pixel_at(dst, 10, 10)));
+      cnv.fill_style(rgba(0, 0, 255, 255));
+      cnv.fill_rect(rect{0, 0, 20, 20});
+      CHECK(is_blue(pixel_at(dst, 10, 10)));
+   });
+   CHECK(is_blue(pixel_at(dst, 10, 10)));
+}
+#endif
+

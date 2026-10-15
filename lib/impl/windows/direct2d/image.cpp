@@ -60,10 +60,13 @@ namespace cycfi::artist
          d2d::release(_lock);
       }
 
+      // The pixel lock goes first: the pointer pixels() gave out is void
+      // from the next draw into the image.
       void resume()
       {
-         if (rt && !drawing && !_lock)
+         if (rt && !drawing)
          {
+            d2d::release(_lock);
             rt->BeginDraw();
             drawing = true;
          }
@@ -462,6 +465,7 @@ namespace cycfi::artist
       img.impl()->rt = _state->rt;
 
       _state->ctx.target(_state->rt);
+      _state->ctx.before_draw = [p = img.impl()] { p->resume(); };
       _state->rt->BeginDraw();
       img.impl()->drawing = true;
    }

@@ -112,6 +112,16 @@ namespace cycfi::artist
       radius = std::max(radius, 0.0f);
       auto start = start_angle * 180 / pi;
       auto sweep = detail::arc_sweep(start_angle, end_angle, ccw) * 180 / pi;
+      SkRect const oval{p.x-radius, p.y-radius, p.x+radius, p.y+radius};
+
+      // Skia cannot sweep a whole turn in one arc, which comes out as a
+      // point: a full circle goes as two halves.
+      if (std::abs(sweep) >= 360 - 1e-3)
+      {
+         (*_impl).arcTo(oval, start, sweep / 2, false);
+         (*_impl).arcTo(oval, start + sweep / 2, sweep / 2, false);
+         return;
+      }
 
       _impl->arcTo(
          {p.x-radius, p.y-radius, p.x+radius, p.y+radius},

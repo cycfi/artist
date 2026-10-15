@@ -640,6 +640,7 @@ namespace cycfi::artist
       context& ctx, artist::rect /*bounds*/, render_function render
     , bool stroke)
    {
+      ctx.resume();
       auto& cur = current();
 
       // The blurred shadow must be composited onto the MAIN target, so we need
@@ -710,6 +711,7 @@ namespace cycfi::artist
    void canvas::canvas_state::composite_draw(
       context& ctx, artist::rect user_bounds, draw_fn render)
    {
+      ctx.resume();
       auto mode = current().composite;
       auto main = ctx.target();
 
@@ -1042,6 +1044,7 @@ namespace cycfi::artist
 
    void canvas::clip()
    {
+      _context->resume();
       // A single rectangle under a transform without rotation or skew clips
       // axis-aligned: no geometry, no layer.
       _state->path().fill_rule(_state->current().fill_rule);
@@ -1069,6 +1072,7 @@ namespace cycfi::artist
 
    void canvas::clip(class path const& p)
    {
+      _context->resume();
       // Copy so we can realize the geometry (build_path mutates); the copy's
       // path_impl owns the cached geometry, so AddRef to outlive it.
       path tmp{p};
@@ -1171,6 +1175,7 @@ namespace cycfi::artist
 
    void canvas::clear_rect(rect const& r)
    {
+      _context->resume();
       auto t = _context->target();
       if (!t)
          return;

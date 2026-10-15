@@ -71,7 +71,8 @@ namespace cycfi::artist
 
       // Returns a pointer to the bitmap: bitmap_size().x by bitmap_size().y
       // pixels, rows from the top with no padding. Every backend uses the
-      // same layout: premultiplied B, G, R, A in memory order.
+      // same layout: premultiplied B, G, R, A in memory order. The pointer
+      // is good until the image is next drawn into.
       // Cairo note: pixels() calls cairo_surface_flush() before returning the
       // pointer. If you write to the buffer, you must mark the surface dirty
       // before using the image again; this API does not expose that call.

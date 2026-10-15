@@ -12,6 +12,7 @@
 =============================================================================*/
 #include "test_support.hpp"
 #include <array>
+#include <cstdint>
 #include <numbers>
 #include <vector>
 
@@ -595,3 +596,39 @@ TEST_CASE("canvas current_path: example figure", "[current_path]")
    CHECK(at(200, 120)[0] > at(20, 120)[0]);
 #endif
 }
+
+#if !defined(ARTIST_RECORDING)
+TEST_CASE("current path: a full circle of arc", "[current_path]")
+{
+   // An arc through a whole turn ends where it starts. Filled, it covers
+   // its center; stroked, it is a ring.
+   image dst{60, 60, 1};
+   {
+      offscreen_image ctx{dst};
+      canvas cnv{ctx.context()};
+      cnv.fill_style(rgba(255, 0, 0, 255));
+      cnv.begin_path();
+      cnv.arc({30, 30}, 20, 0, 2 * std::numbers::pi_v<float>);
+      cnv.fill();
+   }
+   auto painted = [&](int x, int y)
+   {
+      auto p = reinterpret_cast<std::uint8_t const*>(dst.pixels());
+      return p[4 * (y * int(dst.bitmap_size().x) + x) + 3] != 0;
+   };
+   CHECK(painted(30, 30));
+   CHECK(painted(30, 12));
+   CHECK(!painted(3, 3));
+
+   auto hit = stroked([](canvas& cnv)
+   {
+      cnv.arc({50, 50}, 30, 0, 2 * std::numbers::pi_v<float>);
+   }, {{80, 50}, {50, 20}, {20, 50}, {50, 80}, {50, 50}});
+   CHECK(hit[0]);
+   CHECK(hit[1]);
+   CHECK(hit[2]);
+   CHECK(hit[3]);
+   CHECK(!hit[4]);
+}
+#endif
+
