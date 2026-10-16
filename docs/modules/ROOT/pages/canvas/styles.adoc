@@ -3,8 +3,8 @@
 == Overview
 
 The styles decide how `fill` and `stroke` render: the paint each uses, the
-width and shape of a stroke, the shadow cast under what is drawn, and how
-new drawing combines with what is already on the canvas. Each is canvas
+width and shape of a stroke, the blur that softens what is drawn, the
+shadow cast under it, and how new drawing combines with what is already on the canvas. Each is canvas
 state. Set one and it stays in effect for every paint that follows, until
 it is set again or a saved state is restored over it. Every style on this
 page is part of the state that a `new_state` scope keeps, so the usual way
@@ -17,8 +17,8 @@ xref:canvas/current_path.adoc[current path].
 
 NOTE: Artist follows the W3C canvas API, and the styles map onto its
 `fillStyle`, `strokeStyle`, `lineWidth`, `lineCap`, `lineJoin`,
-`miterLimit`, the four `shadow` attributes and `globalCompositeOperation`.
-They behave as the W3C API specifies, the same on every backend, with one
+`miterLimit`, the four `shadow` attributes, a `filter` of one `blur()`, and
+`globalCompositeOperation`. They behave as the W3C API specifies, the same on every backend, with one
 exception: `darker` takes the smaller of the two colors (W3C `darken`) on
 every backend, an approximation of the W3C plus-darker formula.
 
@@ -102,6 +102,8 @@ public:
    void     shadow_style(float offsetx, float offsety, float blur, color c);
    void     shadow_style(float blur, color c);
 
+   void     blur_style(float radius);
+
    void     global_composite_operation(composite_op_enum mode);
    void     composite_op(composite_op_enum mode);
 };
@@ -130,6 +132,7 @@ The style members of xref:canvas.adoc[`canvas`] allow these expressions.
 `offsetx`, `offsety` :: Floating point values for the displacement of a
                         shadow.
 `blur`               :: Floating point value for the softness of a shadow.
+`radius`             :: Floating point value for the softness of a blur.
 `mode`               :: Object of type `canvas::composite_op_enum`.
 
 === Mutators
@@ -193,6 +196,8 @@ The style members of xref:canvas.adoc[`canvas`] allow these expressions.
 | `cnv.shadow_style(blur, c)`             | Set the shadow to the color `c`
                                             with no offset, softened by
                                             `blur`: a glow.                 | `void`
+| `cnv.blur_style(radius)`                | Set the blur to soften what is
+                                            drawn by `radius`.              | `void`
 | `cnv.composite_op(mode)`                | Set the composite operation to
                                             `mode`.                         | `void`
 | `cnv.global_composite_operation(mode)`  | Set the composite operation to
@@ -284,6 +289,45 @@ rect panel;                     // the panel to draw
 
 Setting a fully transparent shadow color, or no offset and no blur, turns it
 off too.
+
+=== Blur
+
+image::canvas/blur.png[alt="Four blurred shapes", width=560px, align=center, title="Two blurs, a glow made of a blurred copy under the shape, and a blurred shape with a shadow.", link={imagesdir}/canvas/blur.png]
+
+The blur softens what is drawn: fills, strokes, text and images alike, in
+their own colors, as the W3C `filter: blur(radius)` does. `radius` is the
+standard deviation of the Gaussian, so an edge fades out over about two
+`radius` on either side of where it was, and the blurred shape spreads
+three `radius` past its edge before it is gone. Like a shadow's `blur`,
+`radius` is in the canvas's own units and is not changed by the transform.
+A `radius` of zero is no blur, the default. One that is negative, infinite
+or NaN is ignored.
+
+The shadow is cast from the blurred shape, so it is soft even with a shadow
+`blur` of zero. The clip and the composite operation apply to the blurred
+result.
+
+A glow is a blurred copy of the shape drawn under the shape itself:
+
+```c++
+#include <artist/canvas.hpp>
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+rect r;                         // the shape to light up
+...
+   cnv.fill_style(colors::dodger_blue);
+   {
+      auto s = cnv.new_state();
+      cnv.blur_style(10);
+      cnv.fill_round_rect(r, 8);
+   }  // no blur from here on
+   cnv.fill_round_rect(r, 8);
+```
+
+TIP: Unlike the shadow, which is drawn in one color, a blur keeps the colors
+of what is drawn, gradients included, so a glow can follow a gradient
+along its length.
 
 === Compositing
 

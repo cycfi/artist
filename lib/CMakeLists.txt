@@ -414,6 +414,8 @@ if (ARTIST_QUARTZ_2D)
       PUBLIC
          ARTIST_QUARTZ_2D
    )
+   # vImage, for the blur style.
+   target_link_libraries(artist PUBLIC "-framework Accelerate")
 endif()
 
 if (ARTIST_CAIRO)

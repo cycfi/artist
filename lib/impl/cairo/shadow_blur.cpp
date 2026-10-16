@@ -296,4 +296,46 @@ namespace cycfi::artist
          transpose_1ch(tmp, alpha, h, w);
       }
    }
+
+   // -------------------------------------------------------------------------
+   // approx_gaussian_blur_argb32
+   // Blurs each of the four premultiplied channels in turn. Premultiplied
+   // values blur correctly: color and coverage spread together.
+   // -------------------------------------------------------------------------
+   void approx_gaussian_blur_argb32(
+      uint8_t* argb32, int stride, int w, int h, float sigma
+    , uint8_t* plane, uint8_t* tmp, int32_t* cum)
+   {
+      for (int c = 0; c != 4; ++c)
+      {
+         for (int y = 0; y < h; ++y)
+         {
+            const uint8_t* src = argb32 + y * stride + c;
+            uint8_t*       dst = plane + y * w;
+            for (int x = 0; x < w; ++x)
+               dst[x] = src[x * 4];
+         }
+         approx_gaussian_blur_1ch(plane, tmp, cum, w, h, sigma);
+         for (int y = 0; y < h; ++y)
+         {
+            uint8_t*       dst = argb32 + y * stride + c;
+            const uint8_t* src = plane + y * w;
+            for (int x = 0; x < w; ++x)
+               dst[x * 4] = src[x];
+         }
+      }
+
+      // Rounding can leave a color a step above its alpha, which is not a
+      // valid premultiplied pixel.
+      for (int y = 0; y < h; ++y)
+      {
+         uint8_t* px = argb32 + y * stride;
+         for (int x = 0; x < w; ++x, px += 4)
+         {
+            px[0] = std::min(px[0], px[3]);
+            px[1] = std::min(px[1], px[3]);
+            px[2] = std::min(px[2], px[3]);
+         }
+      }
+   }
 }

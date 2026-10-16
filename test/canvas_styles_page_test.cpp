@@ -851,6 +851,241 @@ TEST_CASE("canvas styles: shadow blur spread", "[styles]")
    }
 }
 
+TEST_CASE("canvas styles: Blur", "[styles]")
+{
+   // The radius is the Gaussian standard deviation. A straight edge blurred
+   // with sigma s is at half strength on the edge, and at 16% and 84% a
+   // distance s outside and inside it. The color is kept.
+   {
+      image img{100, 100, 1};
+      render(img, [](canvas& cnv)
+      {
+         cnv.blur_style(10);
+         cnv.fill_style(red);
+         cnv.fill_rect(-100, -100, 150, 300);
+      });
+#if defined(ARTIST_RECORDING)
+      REQUIRE(recorded(img).size() == 1);
+      CHECK(recorded(img, 0).blur == 10);
+      CHECK(recorded(img, 0).geometry.right == Approx(50));
+      CHECK(recorded(img, 0).bounds.right == Approx(80));
+#else
+      auto in = pixel_at(img, 39, 50);
+      auto on = pixel_at(img, 50, 50);
+      auto out = pixel_at(img, 60, 50);
+      INFO("alpha 10.5 inside, on and 10.5 outside the edge: "
+         << in.a << ", " << on.a << ", " << out.a);
+      CHECK(in.a > 200);
+      CHECK(in.a < 235);
+      CHECK(on.a > 100);
+      CHECK(on.a < 145);
+      CHECK(out.a > 20);
+      CHECK(out.a < 55);
+      CHECK(std::abs(in.r - in.a) <= 3);
+      CHECK(in.g <= 3);
+      CHECK(in.b <= 3);
+#endif
+   }
+
+   {
+      // Strokes are blurred.
+      image img{100, 100, 1};
+      render(img, [](canvas& cnv)
+      {
+         cnv.blur_style(4);
+         cnv.line_width(10);
+         hline(cnv, 10, 90, 50);
+      });
+#if defined(ARTIST_RECORDING)
+      CHECK(recorded(img, 0).blur == 4);
+      CHECK(recorded(img, 0).bounds.top == Approx(33));
+#else
+      auto a = pixel_at(img, 50, 58).a;
+      INFO("alpha 3.5 below the stroke: " << a);
+      CHECK(a > 20);
+      CHECK(a < 90);
+#endif
+   }
+
+   {
+      // So are images.
+      image pic{20, 20, 1};
+      render(pic, [](canvas& cnv)
+      {
+         cnv.fill_style(blue);
+         cnv.fill_rect(0, 0, 20, 20);
+      });
+
+      image img{100, 100, 1};
+      render(img, [&](canvas& cnv)
+      {
+         cnv.blur_style(4);
+         cnv.draw(pic, point{40, 40});
+      });
+#if defined(ARTIST_RECORDING)
+      CHECK(recorded(img, 0).kind == recording::op::image);
+      CHECK(recorded(img, 0).blur == 4);
+      CHECK(same_rect(recorded(img, 0).bounds, {28, 28, 72, 72}));
+#else
+      auto a = pixel_at(img, 62, 50).a;
+      INFO("alpha 2.5 right of the image: " << a);
+      CHECK(pixel_at(img, 50, 50).a > 230);
+      CHECK(a > 30);
+      CHECK(a < 110);
+#endif
+   }
+
+   {
+      // And text.
+      auto soft = [](float radius)
+      {
+         image img{100, 100, 1};
+         render(img, [radius](canvas& cnv)
+         {
+            cnv.blur_style(radius);
+            cnv.font(font_descr{"Open Sans", 60});
+            cnv.fill_text("W", {20, 75});
+         });
+         return img;
+      };
+      auto blurred = soft(4);
+#if defined(ARTIST_RECORDING)
+      CHECK(recorded(blurred, 0).kind == recording::op::fill_text);
+      CHECK(recorded(blurred, 0).blur == 4);
+#else
+      // Count the pixels the edges cover in part.
+      auto partial = [](image const& img)
+      {
+         int n = 0;
+         for (int y = 0; y != 100; ++y)
+            for (int x = 0; x != 100; ++x)
+               if (auto a = pixel_at(img, x, y).a; a > 20 && a < 235)
+                  ++n;
+         return n;
+      };
+      auto sharp = soft(0);
+      INFO("partly covered pixels, sharp and blurred: "
+         << partial(sharp) << ", " << partial(blurred));
+      CHECK(partial(blurred) > 3 * partial(sharp));
+#endif
+   }
+}
+
+TEST_CASE("canvas styles: blur ignores the transform", "[styles]")
+{
+   // Like the shadow, the radius is in the canvas's initial units.
+   auto blurred = [](image& img, float scale)
+   {
+      render(img, [scale](canvas& cnv)
+      {
+         cnv.scale(scale);
+         cnv.blur_style(10);
+         cnv.fill_rect(-100 / scale, -100 / scale, 150 / scale, 300 / scale);
+      });
+   };
+
+   for (float scale : {1.0f, 2.0f})
+   {
+      image img{100, 100, 1};
+      blurred(img, scale);
+#if defined(ARTIST_RECORDING)
+      CHECK(recorded(img, 0).blur == 10);
+      CHECK(recorded(img, 0).bounds.right == Approx(80));
+#else
+      auto a = pixel_at(img, 60, 50).a;
+      INFO("scale " << scale << ", alpha 10.5 past the edge: " << a);
+      CHECK(a > 20);
+      CHECK(a < 55);
+#endif
+   }
+
+   {
+      image img{100, 100, 2};
+      blurred(img, 1);
+#if defined(ARTIST_RECORDING)
+      CHECK(recorded(img, 0).blur == 10);
+      CHECK(recorded(img, 0).bounds.right == Approx(80));
+#else
+      auto a = pixel_at(img, 121, 100).a;
+      INFO("image scale 2, alpha 10.75 past the edge: " << a);
+      CHECK(a > 20);
+      CHECK(a < 55);
+#endif
+   }
+}
+
+TEST_CASE("canvas styles: shadow of a blurred shape", "[styles]")
+{
+   // The shadow is cast from the blurred shape: a sharp shadow under a
+   // shape blurred by 10 has the shape's soft edge, 40 to the right.
+   image img{100, 100, 1};
+   render(img, [](canvas& cnv)
+   {
+      cnv.blur_style(10);
+      cnv.shadow_style({40, 0}, 0, blue);
+      cnv.fill_style(red);
+      cnv.fill_rect(-100, -100, 130, 300);
+   });
+#if defined(ARTIST_RECORDING)
+   CHECK(recorded(img, 0).blur == 10);
+   CHECK(recorded(img, 0).shadow_blur == 0);
+   CHECK(recorded(img, 0).bounds.right == Approx(100));
+#else
+   auto in = pixel_at(img, 59, 50);
+   auto out = pixel_at(img, 80, 50);
+   INFO("shadow alpha 10.5 inside and outside its edge: "
+      << in.a << ", " << out.a);
+   CHECK(in.a > 200);
+   CHECK(in.a < 235);
+   CHECK(in.b > in.r);
+   CHECK(out.a > 20);
+   CHECK(out.a < 55);
+#endif
+}
+
+TEST_CASE("canvas styles: no blur", "[styles]")
+{
+   // The blur is saved state; zero is no blur, and a negative, infinite or
+   // NaN radius is ignored.
+   image img{100, 100, 1};
+   render(img, [](canvas& cnv)
+   {
+      {
+         auto s = cnv.new_state();
+         cnv.blur_style(10);
+      }
+      cnv.fill_rect(-100, 0, 150, 50);
+      cnv.blur_style(10);
+      cnv.blur_style(-1);
+      cnv.blur_style(not_a_number);
+      cnv.blur_style(infinite_width);
+      cnv.fill_rect(-100, 50, 150, 50);
+   });
+#if defined(ARTIST_RECORDING)
+   CHECK(recorded(img, 0).blur == 0);
+   CHECK(recorded(img, 1).blur == 10);
+#else
+   CHECK(painted(img, 48, 25));
+   CHECK(empty(img, 52, 25));
+   CHECK(pixel_at(img, 52, 75).a > 30);
+#endif
+
+   image zero{100, 100, 1};
+   render(zero, [](canvas& cnv)
+   {
+      cnv.blur_style(10);
+      cnv.blur_style(0);
+      cnv.fill_rect(-100, -100, 150, 300);
+   });
+#if defined(ARTIST_RECORDING)
+   CHECK(recorded(zero, 0).blur == 0);
+   CHECK(recorded(zero, 0).bounds.right == Approx(50));
+#else
+   CHECK(painted(zero, 48, 50));
+   CHECK(empty(zero, 52, 50));
+#endif
+}
+
 TEST_CASE("canvas styles: Compositing", "[styles]")
 {
    {
@@ -1292,6 +1527,48 @@ TEST_CASE("canvas styles: shadow figure", "[styles]")
          }
          cnv.fill_style(i == 3? accent.opacity(0.5) : accent);
          cnv.fill_round_rect(r, 10);
+         cnv.shadow_style({0, 0}, 0, colors::black);
+         caption(cnv, names[i], x + 70, y + 98);
+      }
+   });
+}
+
+TEST_CASE("canvas styles: blur figure", "[styles]")
+{
+   // The page figure images/canvas/blur.png.
+   figure(260, "canvas_blur.png", [](canvas& cnv)
+   {
+      char const* names[] = {
+         "blur 2", "blur 8", "a glow: blur 10 under the shape",
+         "blur 4 with a shadow"
+      };
+
+      for (int i = 0; i != 4; ++i)
+      {
+         auto x = 70.0f + (i % 2) * 280;
+         auto y = 22.0f + (i / 2) * 125;
+         auto r = rect{x, y, extent{140, 64}};
+
+         auto s = cnv.new_state();
+         cnv.fill_style(accent);
+         switch (i)
+         {
+            case 0: cnv.blur_style(2); break;
+            case 1: cnv.blur_style(8); break;
+            case 2:
+            {
+               auto g = cnv.new_state();
+               cnv.blur_style(10);
+               cnv.fill_round_rect(r, 10);
+               break;
+            }
+            case 3:
+               cnv.blur_style(4);
+               cnv.shadow_style({8, 8}, 0, colors::black.opacity(0.45));
+               break;
+         }
+         cnv.fill_round_rect(r, 10);
+         cnv.blur_style(0);
          cnv.shadow_style({0, 0}, 0, colors::black);
          caption(cnv, names[i], x + 70, y + 98);
       }

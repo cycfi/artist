@@ -68,4 +68,11 @@ namespace cycfi::artist
    void approx_gaussian_blur_1ch(
       uint8_t* alpha, uint8_t* tmp,
       int32_t* cum, int w, int h, float sigma);
+
+   // The same blur on all four channels of a premultiplied ARGB32 surface,
+   // one channel at a time, so what is drawn keeps its own colors. plane
+   // and tmp must hold w * h bytes, cum (max(w, h) + 1) int32_t elements.
+   void approx_gaussian_blur_argb32(
+      uint8_t* argb32, int stride, int w, int h, float sigma
+    , uint8_t* plane, uint8_t* tmp, int32_t* cum);
 }

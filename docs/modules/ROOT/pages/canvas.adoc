@@ -82,6 +82,7 @@ image::canvas/drawing_model.png[alt="One rounded rectangle shown five times, gai
   which is a colour or a xref:canvas/gradients.adoc[gradient]; `stroke`
   outlines it with the stroke style, at the current width, cap and join.
   See xref:canvas/styles.adoc[Styles].
+. **The blur.** If a blur is set, the painted shape is softened.
 . **The shadow.** If a shadow is set, the shape is cast behind itself
   first, offset and blurred.
 . **The composite.** The result is combined with what is already on the

@@ -61,6 +61,7 @@ namespace cycfi::artist
          point                      shadow_offset = {};
          float                      shadow_blur = 0;
          color                      shadow_color = colors::black;
+         float                      blur = 0;
          artist::font               font_ = default_font();
          int                        align = canvas::baseline;
          canvas::composite_op_enum  composite = canvas::source_over;
@@ -133,6 +134,11 @@ namespace cycfi::artist
          ink = union_(geometry, shadow);
       }
 
+      // A blur spreads the ink by three standard deviations, where the
+      // Gaussian has all but faded.
+      if (c.blur > 0)
+         ink = ink.inset(-3 * c.blur, -3 * c.blur);
+
       recording::command cmd;
       cmd.kind = kind;
       cmd.geometry = geometry;
@@ -154,6 +160,7 @@ namespace cycfi::artist
       cmd.shadow_offset = c.shadow_offset;
       cmd.shadow_blur = c.shadow_blur;
       cmd.shadow_color = c.shadow_color;
+      cmd.blur = c.blur;
       cmd.composite = c.composite;
       cmd.text = std::move(text);
 
@@ -490,6 +497,14 @@ namespace cycfi::artist
       s.shadow_offset = offset;
       s.shadow_blur = blur;
       s.shadow_color = c;
+   }
+
+   void canvas::blur_style(float radius)
+   {
+      // Negative, infinite and NaN radii are ignored; zero is no blur.
+      if (!(radius >= 0) || !std::isfinite(radius))
+         return;
+      _state->cur().blur = radius;
    }
 
    void canvas::global_composite_operation(composite_op_enum mode)

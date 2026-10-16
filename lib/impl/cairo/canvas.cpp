@@ -44,6 +44,7 @@ namespace cycfi::artist
          int                    align       = 0;
          pattern_state          pattern_set = none_set;
          shadow_info            shadow;
+         float                  blur        = 0;
          class font             font;       // current font, for HarfBuzz shaping
       };
 
@@ -366,12 +367,11 @@ namespace cycfi::artist
          int      w, h;
       };
 
-      bool make_shadow_frame(
+      bool make_frame(
          cairo_t* cr, canvas::canvas_state const& state
        , double x1, double y1, double x2, double y2
-       , shadow_frame& f)
+       , point offset, double sigma0, shadow_frame& f)
       {
-         auto const& sh = state._info.shadow;
          cairo_matrix_t ctm;
          cairo_get_matrix(cr, &ctm);
          device_box(ctm, x1, y1, x2, y2);
@@ -380,8 +380,8 @@ namespace cycfi::artist
          cairo_matrix_invert(&base);
          double base_scale =
             std::sqrt(std::abs(base.xx * base.yy - base.xy * base.yx));
-         f.off_x = base.xx * sh.offset.x + base.xy * sh.offset.y;
-         f.off_y = base.yx * sh.offset.x + base.yy * sh.offset.y;
+         f.off_x = base.xx * offset.x + base.xy * offset.y;
+         f.off_y = base.yx * offset.x + base.yy * offset.y;
 
          double dev_x = 1, dev_y = 1;
          cairo_surface_get_device_scale(cairo_get_target(cr), &dev_x, &dev_y);
@@ -389,9 +389,8 @@ namespace cycfi::artist
          if (f.scale < 0.01)
             f.scale = 1;
 
-         // The blur is twice the Gaussian standard deviation.
-         f.sigma = float(sh.blur * 0.5 * base_scale * f.scale);
-         f.margin = sh.blur > 0? blur_margin(f.sigma) : 1;
+         f.sigma = float(sigma0 * base_scale * f.scale);
+         f.margin = sigma0 > 0? blur_margin(f.sigma) : 1;
 
          // Only the part whose shadow can land inside the clip is needed.
          double cx1, cy1, cx2, cy2;
@@ -411,6 +410,21 @@ namespace cycfi::artist
          f.w = int(std::ceil((x2 - f.x1) * f.scale)) + 2 * f.margin;
          f.h = int(std::ceil((y2 - f.y1) * f.scale)) + 2 * f.margin;
          return true;
+      }
+
+      // A shadow's frame. The shadow's blur is twice the Gaussian standard
+      // deviation. With a blur style as well, the shadow is cast from what
+      // the blur leaves: the Gaussian of a Gaussian, whose deviations add
+      // in squares.
+      bool make_shadow_frame(
+         cairo_t* cr, canvas::canvas_state const& state
+       , double x1, double y1, double x2, double y2
+       , shadow_frame& f)
+      {
+         auto const& sh = state._info.shadow;
+         double const s = sh.blur * 0.5, b = state._info.blur;
+         return make_frame(
+            cr, state, x1, y1, x2, y2, sh.offset, std::sqrt(s * s + b * b), f);
       }
 
       // Render what is drawn into the frame's bitmap, then turn it into the
@@ -614,6 +628,91 @@ namespace cycfi::artist
          cairo_path_destroy(path);
       }
 
+      // Draw what render draws inside the user-space box, blurred in its
+      // own colors, with the current operator and clip.
+      void draw_blurred(
+         cairo_t* cr, canvas::canvas_state& state
+       , double x1, double y1, double x2, double y2
+       , shadow_render const& render)
+      {
+         shadow_frame f;
+         if (!make_frame(
+               cr, state, x1, y1, x2, y2, {0, 0}, state._info.blur, f))
+            return;
+
+         auto& scratch = state.shadow_scratch;
+         int stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, f.w);
+         auto surf_size = std::size_t(stride) * f.h;
+         auto px_count = std::size_t(f.w) * f.h;
+         auto cum_count = std::size_t(std::max(f.w, f.h) + 1);
+         std::vector<uint8_t> pixels(surf_size, 0);
+         if (scratch.alpha.size() < px_count)
+            scratch.alpha.resize(px_count);
+         if (scratch.tmp.size() < px_count)
+            scratch.tmp.resize(px_count);
+         if (scratch.cum.size() < cum_count)
+            scratch.cum.resize(cum_count);
+
+         cairo_matrix_t ctm;
+         cairo_get_matrix(cr, &ctm);
+         auto* surf = cairo_image_surface_create_for_data(
+            pixels.data(), CAIRO_FORMAT_ARGB32, f.w, f.h, stride);
+         auto* sc = cairo_create(surf);
+         cairo_translate(sc, f.margin, f.margin);
+         cairo_scale(sc, f.scale, f.scale);
+         cairo_translate(sc, -f.x1, -f.y1);
+         cairo_transform(sc, &ctm);
+         render(sc);
+         cairo_destroy(sc);
+         cairo_surface_flush(surf);
+         cairo_surface_destroy(surf);
+
+         if (f.sigma >= 0.5f)
+         {
+            approx_gaussian_blur_argb32(
+               pixels.data(), stride, f.w, f.h, f.sigma
+             , scratch.alpha.data(), scratch.tmp.data(), scratch.cum.data());
+         }
+         paint_shadow(cr, pixels.data(), stride, f);
+      }
+
+      // The current path, filled or stroked with the current source,
+      // blurred. The path is left as it is.
+      void path_blurred(cairo_t* cr, canvas::canvas_state& state, bool is_fill)
+      {
+         cairo_path_t* path = cairo_copy_path(cr);
+         if (!path || path->status != CAIRO_STATUS_SUCCESS)
+         {
+            if (path)
+               cairo_path_destroy(path);
+            return;
+         }
+
+         double x1, y1, x2, y2;
+         if (is_fill)
+            cairo_fill_extents(cr, &x1, &y1, &x2, &y2);
+         else
+            cairo_stroke_extents(cr, &x1, &y1, &x2, &y2);
+
+         auto render = [cr, path, is_fill](cairo_t* sc)
+         {
+            cairo_append_path(sc, path);
+            cairo_set_source(sc, cairo_get_source(cr));
+            if (is_fill)
+            {
+               cairo_set_fill_rule(sc, cairo_get_fill_rule(cr));
+               cairo_fill(sc);
+            }
+            else
+            {
+               copy_stroke_style(cr, sc);
+               cairo_stroke(sc);
+            }
+         };
+         draw_blurred(cr, state, x1, y1, x2, y2, render);
+         cairo_path_destroy(path);
+      }
+
       bool is_unbounded(cairo_operator_t op)
       {
          return op == CAIRO_OPERATOR_IN || op == CAIRO_OPERATOR_OUT
@@ -648,7 +747,15 @@ namespace cycfi::artist
       {
          if (_state->_info.shadow.active)
             path_shadow(_context, *_state, true);
-         cairo_fill(_context);
+         if (_state->_info.blur > 0)
+         {
+            path_blurred(_context, *_state, true);
+            cairo_new_path(_context);
+         }
+         else
+         {
+            cairo_fill(_context);
+         }
       });
    }
 
@@ -659,7 +766,14 @@ namespace cycfi::artist
       {
          if (_state->_info.shadow.active)
             path_shadow(_context, *_state, true);
-         cairo_fill_preserve(_context);
+         if (_state->_info.blur > 0)
+         {
+            path_blurred(_context, *_state, true);
+         }
+         else
+         {
+            cairo_fill_preserve(_context);
+         }
       });
    }
 
@@ -670,7 +784,15 @@ namespace cycfi::artist
       {
          if (_state->_info.shadow.active)
             path_shadow(_context, *_state, false);
-         cairo_stroke(_context);
+         if (_state->_info.blur > 0)
+         {
+            path_blurred(_context, *_state, false);
+            cairo_new_path(_context);
+         }
+         else
+         {
+            cairo_stroke(_context);
+         }
       });
    }
 
@@ -681,7 +803,14 @@ namespace cycfi::artist
       {
          if (_state->_info.shadow.active)
             path_shadow(_context, *_state, false);
-         cairo_stroke_preserve(_context);
+         if (_state->_info.blur > 0)
+         {
+            path_blurred(_context, *_state, false);
+         }
+         else
+         {
+            cairo_stroke_preserve(_context);
+         }
       });
    }
 
@@ -937,6 +1066,14 @@ namespace cycfi::artist
       bool const visible =
          c.alpha > 0 && (blur > 0 || offset.x != 0 || offset.y != 0);
       _state->_info.shadow = {offset, blur, c, visible};
+   }
+
+   void canvas::blur_style(float radius)
+   {
+      // Negative, infinite and NaN radii are ignored; zero is no blur.
+      if (!(radius >= 0) || !std::isfinite(radius))
+         return;
+      _state->_info.blur = radius;
    }
 
    void canvas::global_composite_operation(composite_op_enum mode)
@@ -1207,11 +1344,20 @@ namespace cycfi::artist
          _state->apply_fill_style();
          with_operator(_context, *_state, [&]
          {
-            if (_state->_info.shadow.active)
+            if (_state->_info.shadow.active || _state->_info.blur > 0)
             {
                cairo_glyph_path(_context, glyphs.data(), int(glyphs.size()));
-               path_shadow(_context, *_state, true);
-               cairo_fill(_context);
+               if (_state->_info.shadow.active)
+                  path_shadow(_context, *_state, true);
+               if (_state->_info.blur > 0)
+               {
+                  path_blurred(_context, *_state, true);
+                  cairo_new_path(_context);
+               }
+               else
+               {
+                  cairo_fill(_context);
+               }
             }
             else
             {
@@ -1236,11 +1382,20 @@ namespace cycfi::artist
          with_operator(_context, *_state, [&]
          {
             cairo_move_to(_context, p.x, p.y);
-            if (_state->_info.shadow.active)
+            if (_state->_info.shadow.active || _state->_info.blur > 0)
             {
                cairo_text_path(_context, str.c_str());
-               path_shadow(_context, *_state, true);
-               cairo_fill(_context);
+               if (_state->_info.shadow.active)
+                  path_shadow(_context, *_state, true);
+               if (_state->_info.blur > 0)
+               {
+                  path_blurred(_context, *_state, true);
+                  cairo_new_path(_context);
+               }
+               else
+               {
+                  cairo_fill(_context);
+               }
             }
             else
             {
@@ -1377,7 +1532,10 @@ namespace cycfi::artist
       {
          if (_state->_info.shadow.active)
             draw_shadow(_context, *_state, 0, 0, w, h, paint, nullptr);
-         paint(_context);
+         if (_state->_info.blur > 0)
+            draw_blurred(_context, *_state, 0, 0, w, h, paint);
+         else
+            paint(_context);
       });
    }
 
@@ -1421,7 +1579,10 @@ namespace cycfi::artist
       {
          if (_state->_info.shadow.active)
             draw_shadow(_context, *_state, 0, 0, w, h, paint, nullptr);
-         paint(_context);
+         if (_state->_info.blur > 0)
+            draw_blurred(_context, *_state, 0, 0, w, h, paint);
+         else
+            paint(_context);
       });
    }
 }

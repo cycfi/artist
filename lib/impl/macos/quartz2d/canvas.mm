@@ -7,6 +7,8 @@
 #include <artist/canvas_layer.hpp>
 #include <artist/detail/font_cache.hpp>
 #include <Quartz/Quartz.h>
+#include <Accelerate/Accelerate.h>
+#include <cmath>
 #include <stack>
 #include <variant>
 #include "osx_utils.hpp"
@@ -53,6 +55,22 @@ namespace cycfi::artist
       mode_enum         mode() const;
       void              mode(mode_enum mode_);
 
+      float             blur() const         { return current()->_blur; }
+      void              blur(float radius)   { current()->_blur = radius; }
+
+      // Quartz keeps the line style only in the context, with no getters,
+      // so it is kept here as well, for the blur's offscreen context.
+      struct line_info
+      {
+         CGFloat        width             = 1;
+         CGLineCap      cap               = kCGLineCapButt;
+         CGLineJoin     join              = kCGLineJoinMiter;
+         CGFloat        miter_limit       = 10;
+      };
+
+      line_info const&  line() const         { return current()->_line; }
+      line_info&        line()               { return current()->_line; }
+
       using fill_rule_enum = path::fill_rule_enum;
 
       fill_rule_enum    fill_rule() const              { return current()->_fill_rule; }
@@ -68,6 +86,12 @@ namespace cycfi::artist
       void              get_inv_affine(CGContextRef context);
       cg_affine const&  get_inv_affine() const;
 
+      // The scale of the initial transform: device pixels per unit.
+      double            base_scale() const
+                        { return 1 / std::sqrt(std::abs(
+                              _inv_affine.a * _inv_affine.d
+                            - _inv_affine.b * _inv_affine.c)); }
+
    private:
 
       struct state_info
@@ -81,6 +105,8 @@ namespace cycfi::artist
          mode_enum      _mode             = source_over;
          bool           _shadow           = false;
          fill_rule_enum _fill_rule        = fill_rule_enum::fill_winding;
+         float          _blur             = 0;
+         line_info      _line;
       };
 
       using state_info_ptr = std::unique_ptr<state_info>;
@@ -154,6 +180,132 @@ namespace cycfi::artist
          draw();
          if (shadow)
             CGContextEndTransparencyLayer(ctx);
+      }
+
+      // Box blurs repeated this many times approximate a Gaussian. The box
+      // radius solves passes * (r^2 + r) / 3 = sigma^2.
+      constexpr int blur_passes = 4;
+
+      int blur_box_radius(double sigma)
+      {
+         double r = (-1 + std::sqrt(1 + 12 * sigma * sigma / blur_passes)) / 2;
+         return std::max(1, int(std::lround(r)));
+      }
+
+      // Draw what draw draws, blurred, with the canvas's context swapped for
+      // an offscreen bitmap over the device box of bounds (user space) for
+      // the duration. The blurred bitmap is then drawn with the context's
+      // own state (blend mode, alpha, clip and shadow), so a shadow is cast
+      // from the blurred shape. The current path goes with it, and is left
+      // empty.
+      template <typename F>
+      void with_blur(
+         canvas_impl*& context, canvas::canvas_state const& state
+       , CGRect bounds, F&& draw)
+      {
+         auto ctx = CGContextRef(context);
+         double const sigma = state.blur() * state.base_scale();
+         int const r = blur_box_radius(sigma);
+         CGFloat const margin = blur_passes * r + 2;
+
+         auto ctm = CGContextGetCTM(ctx);
+         auto clip = CGRectApplyAffineTransform(CGContextGetClipBoundingBox(ctx), ctm);
+         auto box = CGRectApplyAffineTransform(bounds, ctm);
+         box = CGRectIntegral(CGRectIntersection(
+            CGRectInset(box, -margin, -margin), CGRectInset(clip, -margin, -margin)));
+         if (CGRectIsNull(box) || CGRectIsEmpty(box))
+         {
+            CGContextBeginPath(ctx);
+            return;
+         }
+
+         auto w = std::size_t(box.size.width);
+         auto h = std::size_t(box.size.height);
+         auto space = CGBitmapContextGetColorSpace(ctx);
+         if (space)
+            CGColorSpaceRetain(space);
+         else
+            space = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+         auto off = CGBitmapContextCreate(
+            nullptr, w, h, 8, 0, space, kCGImageAlphaPremultipliedLast);
+         CGColorSpaceRelease(space);
+         if (!off)
+         {
+            CGContextBeginPath(ctx);
+            return;
+         }
+
+         CGContextTranslateCTM(off, -box.origin.x, -box.origin.y);
+         CGContextConcatCTM(off, ctm);
+         CGContextSetTextMatrix(off, CGContextGetTextMatrix(ctx));
+         auto const& line = state.line();
+         CGContextSetLineWidth(off, line.width);
+         CGContextSetLineCap(off, line.cap);
+         CGContextSetLineJoin(off, line.join);
+         CGContextSetMiterLimit(off, line.miter_limit);
+         if (!CGContextIsPathEmpty(ctx))
+         {
+            auto path = CGContextCopyPath(ctx);
+            CGContextAddPath(off, path);
+            CGPathRelease(path);
+            CGContextBeginPath(ctx);
+         }
+
+         auto const saved = context;
+         context = reinterpret_cast<canvas_impl*>(off);
+         draw();
+         context = saved;
+
+         // Premultiplied pixels blur correctly: color and coverage spread
+         // together. Box convolution treats the four channels alike.
+         std::size_t const row_bytes = CGBitmapContextGetBytesPerRow(off);
+         std::vector<std::uint8_t> tmp(row_bytes * h);
+         vImage_Buffer a{CGBitmapContextGetData(off), h, w, row_bytes};
+         vImage_Buffer b{tmp.data(), h, w, row_bytes};
+         Pixel_8888 const none = {0, 0, 0, 0};
+         auto const k = std::uint32_t(2 * r + 1);
+         for (int i = 0; i != blur_passes; ++i)
+         {
+            vImageBoxConvolve_ARGB8888(
+               &a, &b, nullptr, 0, 0, k, k, none, kvImageBackgroundColorFill);
+            std::swap(a, b);
+         }
+
+         auto img = CGBitmapContextCreateImage(off);
+         CGContextRelease(off);
+         if (!img)
+            return;
+         CGContextSaveGState(ctx);
+         CGContextConcatCTM(ctx, CGAffineTransformInvert(ctm));
+         CGContextDrawImage(ctx, box, img);
+         CGContextRestoreGState(ctx);
+         CGImageRelease(img);
+      }
+
+      // The user-space box a stroke of the current path covers.
+      CGRect stroke_bounds(CGContextRef ctx, canvas::canvas_state const& state)
+      {
+         if (CGContextIsPathEmpty(ctx))
+            return CGRectNull;
+         auto const& line = state.line();
+         auto path = CGContextCopyPath(ctx);
+         auto stroked = CGPathCreateCopyByStrokingPath(
+            path, nullptr, line.width, line.cap, line.join, line.miter_limit);
+         auto r = CGPathGetBoundingBox(stroked);
+         CGPathRelease(stroked);
+         CGPathRelease(path);
+         return r;
+      }
+
+      // The user-space box of a line of text set at p, grown by pad.
+      CGRect text_bounds(CTLineRef line, point p, CGFloat pad)
+      {
+         // The text matrix flips y, so the glyph box is mirrored in y.
+         auto b = CTLineGetBoundsWithOptions(line, kCTLineBoundsUseGlyphPathBounds);
+         auto r = CGRectMake(
+            p.x + b.origin.x, p.y - (b.origin.y + b.size.height)
+          , b.size.width, b.size.height);
+         return CGRectInset(r, -pad, -pad);
       }
    }
 
@@ -441,7 +593,18 @@ namespace cycfi::artist
 
       with_mode(CGContextRef(_context), _state->mode(), [&]
       {
-         std::visit(apply_fill, _state->fill_style());
+         if (_state->blur() > 0)
+         {
+            auto bounds = CGContextGetPathBoundingBox(CGContextRef(_context));
+            with_blur(_context, *_state, bounds, [&]
+            {
+               std::visit(apply_fill, _state->fill_style());
+            });
+         }
+         else
+         {
+            std::visit(apply_fill, _state->fill_style());
+         }
       });
    }
 
@@ -504,7 +667,18 @@ namespace cycfi::artist
 
       with_mode(CGContextRef(_context), _state->mode(), [&]
       {
-         std::visit(apply_stroke, _state->stroke_style());
+         if (_state->blur() > 0)
+         {
+            auto bounds = stroke_bounds(CGContextRef(_context), *_state);
+            with_blur(_context, *_state, bounds, [&]
+            {
+               std::visit(apply_stroke, _state->stroke_style());
+            });
+         }
+         else
+         {
+            std::visit(apply_stroke, _state->stroke_style());
+         }
       });
    }
 
@@ -671,6 +845,7 @@ namespace cycfi::artist
       // Zero, negative, infinite and NaN widths are ignored.
       if (!(w > 0) || !std::isfinite(w))
          return;
+      _state->line().width = w;
       CGContextSetLineWidth(CGContextRef(_context), w);
    }
 
@@ -683,6 +858,7 @@ namespace cycfi::artist
          case round:    cap = kCGLineCapRound; break;
          case square:   cap = kCGLineCapSquare; break;
       }
+      _state->line().cap = cap;
       CGContextSetLineCap(CGContextRef(_context), cap);
    }
 
@@ -695,6 +871,7 @@ namespace cycfi::artist
          case round_join:  join = kCGLineJoinRound; break;
          case miter_join:  join = kCGLineJoinMiter; break;
       }
+      _state->line().join = join;
       CGContextSetLineJoin(CGContextRef(_context), join);
    }
 
@@ -703,6 +880,7 @@ namespace cycfi::artist
       // Zero, negative, infinite and NaN limits are ignored.
       if (!(limit > 0) || !std::isfinite(limit))
          return;
+      _state->line().miter_limit = limit;
       CGContextSetMiterLimit(CGContextRef(_context), limit);
    }
 
@@ -735,6 +913,14 @@ namespace cycfi::artist
             CGColor
          ]
       );
+   }
+
+   void canvas::blur_style(float radius)
+   {
+      // Negative, infinite and NaN radii are ignored; zero is no blur.
+      if (!(radius >= 0) || !std::isfinite(radius))
+         return;
+      _state->blur(radius);
    }
 
    void canvas::global_composite_operation(composite_op_enum mode)
@@ -977,7 +1163,22 @@ namespace cycfi::artist
 
       with_mode(ctx, _state->mode(), [&]
       {
-         std::visit(apply_fill, _state->fill_style());
+         if (_state->blur() > 0)
+         {
+            auto const saved = ctx;
+            auto bounds = text_bounds(line, p, 2);
+            with_blur(_context, *_state, bounds, [&]
+            {
+               ctx = CGContextRef(_context);
+               CGContextSetTextPosition(ctx, p.x, p.y);
+               std::visit(apply_fill, _state->fill_style());
+            });
+            ctx = saved;
+         }
+         else
+         {
+            std::visit(apply_fill, _state->fill_style());
+         }
       });
       CFRelease(line);
    }
@@ -1053,7 +1254,22 @@ namespace cycfi::artist
 
       with_mode(ctx, _state->mode(), [&]
       {
-         std::visit(apply_stroke, _state->stroke_style());
+         if (_state->blur() > 0)
+         {
+            auto const saved = ctx;
+            auto bounds = text_bounds(line, p, _state->line().width + 2);
+            with_blur(_context, *_state, bounds, [&]
+            {
+               ctx = CGContextRef(_context);
+               CGContextSetTextPosition(ctx, p.x, p.y);
+               std::visit(apply_stroke, _state->stroke_style());
+            });
+            ctx = saved;
+         }
+         else
+         {
+            std::visit(apply_stroke, _state->stroke_style());
+         }
       });
       CFRelease(line);
    }
@@ -1148,17 +1364,43 @@ namespace cycfi::artist
          default:                   mode = kCGBlendModeNormal; break;
       };
 
+      // The context has Artist's flipped (top-left, y-down) CTM; flip locally so
+      // the top-row-first CGImage draws upright at dest.
+      auto draw_image = [&](CGContextRef ctx)
+      {
+         CGContextSaveGState(ctx);
+         CGContextTranslateCTM(ctx, dest.left, dest.top + dest.height());
+         CGContextScaleCTM(ctx, 1, -1);
+         auto r = CGRectMake(0, 0, dest.width(), dest.height());
+         CGContextDrawImage(ctx, r, sub? sub : full);
+         CGContextRestoreGState(ctx);
+      };
+
       auto ctx = CGContextRef(_context);
       CGContextSaveGState(ctx);
       CGContextSetBlendMode(ctx, mode);
-      // The context has Artist's flipped (top-left, y-down) CTM; flip locally so
-      // the top-row-first CGImage draws upright at dest.
-      CGContextTranslateCTM(ctx, dest.left, dest.top + dest.height());
-      CGContextScaleCTM(ctx, 1, -1);
       with_mode(ctx, _state->mode(), [&]
       {
-         auto r = CGRectMake(0, 0, dest.width(), dest.height());
-         CGContextDrawImage(ctx, r, sub? sub : full);
+         if (_state->blur() > 0)
+         {
+            // The image is drawn alone: the current path is not its business.
+            auto saved = CGContextIsPathEmpty(ctx)? nullptr : CGContextCopyPath(ctx);
+            CGContextBeginPath(ctx);
+            auto bounds = CGRectMake(dest.left, dest.top, dest.width(), dest.height());
+            with_blur(_context, *_state, bounds, [&]
+            {
+               draw_image(CGContextRef(_context));
+            });
+            if (saved)
+            {
+               CGContextAddPath(ctx, saved);
+               CGPathRelease(saved);
+            }
+         }
+         else
+         {
+            draw_image(ctx);
+         }
       });
       CGContextRestoreGState(ctx);
 

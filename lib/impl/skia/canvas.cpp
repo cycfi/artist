@@ -53,6 +53,7 @@ namespace cycfi::artist
       SkPaint&          clear_paint();
       blur_info&        shadow();
       bool&             shadow_visible();
+      float&            blur();
 
       void              save();
       void              restore();
@@ -85,6 +86,7 @@ namespace cycfi::artist
                         _fill_rule = artist::path::fill_winding;
          blur_info      _shadow = {{0, 0}, 0, colors::black};
          bool           _shadow_visible = false;
+         float          _blur = 0;
       };
 
       using state_info_ptr = std::unique_ptr<state_info>;
@@ -155,6 +157,11 @@ namespace cycfi::artist
       return current()->_shadow_visible;
    }
 
+   float& canvas::canvas_state::blur()
+   {
+      return current()->_blur;
+   }
+
    void canvas::canvas_state::save()
    {
       _stack.push(std::make_unique<state_info>(*current()));
@@ -183,39 +190,56 @@ namespace cycfi::artist
 
    namespace
    {
-      // The paint with the current shadow, if one is to be drawn. The offset
-      // and blur are in the canvas's initial user space, so the transform in
-      // effect does not change them, as in the W3C canvas API. Skia applies
-      // an image filter's parameters in local space, so map them there.
+      // The paint with the current blur and shadow, if any. Both are in the
+      // canvas's initial user space, so the transform in effect does not
+      // change them, as in the W3C canvas API. Skia applies an image
+      // filter's parameters in local space, so map them there. The blur
+      // comes first and the shadow is cast from what it leaves, the W3C
+      // order of a filter and a shadow.
       SkPaint shadowed(
          SkCanvas* cnv, canvas::canvas_state& state, SkPaint paint)
       {
-         if (!state.shadow_visible())
+         bool const blurred = state.blur() > 0;
+         if (!state.shadow_visible() && !blurred)
             return paint;
 
-         auto const& sh = state.shadow();
          auto base = state.get_inv_affine().invert();
-         double dx = base.a * sh._offset.x + base.c * sh._offset.y;
-         double dy = base.b * sh._offset.x + base.d * sh._offset.y;
-         double sigma = sh._blur / 2
-            * std::sqrt(std::abs(base.a * base.d - base.c * base.b));
+         double const base_scale =
+            std::sqrt(std::abs(base.a * base.d - base.c * base.b));
 
          SkScalar m[6];
          (void) cnv->getTotalMatrix().asAffine(m);
          double det = m[0] * m[3] - m[2] * m[1];
          if (det == 0)
             return paint;
-         double lx = (m[3] * dx - m[2] * dy) / det;
-         double ly = (m[0] * dy - m[1] * dx) / det;
          double sx = std::hypot(m[0], m[1]);
          double sy = std::hypot(m[2], m[3]);
 
-         auto c = sh._color;
-         paint.setImageFilter(SkImageFilters::DropShadow(
-            lx, ly, sigma / sx, sigma / sy
-          , SkColor4f{c.red, c.green, c.blue, c.alpha}.toSkColor()
-          , nullptr
-         ));
+         sk_sp<SkImageFilter> filter;
+         if (blurred)
+         {
+            double const sigma = state.blur() * base_scale;
+            filter = SkImageFilters::Blur(sigma / sx, sigma / sy, nullptr);
+         }
+
+         if (state.shadow_visible())
+         {
+            auto const& sh = state.shadow();
+            double dx = base.a * sh._offset.x + base.c * sh._offset.y;
+            double dy = base.b * sh._offset.x + base.d * sh._offset.y;
+            double sigma = sh._blur / 2 * base_scale;
+            double lx = (m[3] * dx - m[2] * dy) / det;
+            double ly = (m[0] * dy - m[1] * dx) / det;
+
+            auto c = sh._color;
+            filter = SkImageFilters::DropShadow(
+               lx, ly, sigma / sx, sigma / sy
+             , SkColor4f{c.red, c.green, c.blue, c.alpha}.toSkColor()
+             , filter
+            );
+         }
+
+         paint.setImageFilter(filter);
          return paint;
       }
 
@@ -580,6 +604,15 @@ namespace cycfi::artist
       _state->shadow() = {offset, blur, c};
       _state->shadow_visible() =
          c.alpha > 0 && (blur > 0 || offset.x != 0 || offset.y != 0);
+   }
+
+   void canvas::blur_style(float radius)
+   {
+      // Kept in the state and applied at each draw (see shadowed). Negative,
+      // infinite and NaN radii are ignored; zero is no blur.
+      if (!(radius >= 0) || !std::isfinite(radius))
+         return;
+      _state->blur() = radius;
    }
 
    void canvas::global_composite_operation(composite_op_enum mode)

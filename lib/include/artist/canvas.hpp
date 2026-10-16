@@ -181,6 +181,7 @@ namespace cycfi::artist
       void              shadow_style(point offset, float blur, color c);
       void              shadow_style(float offsetx, float offsety, float blur, color c);
       void              shadow_style(float blur, color c);
+      void              blur_style(float radius);
 
       void              stroke_color(color c);
       void              fill_color(color c);

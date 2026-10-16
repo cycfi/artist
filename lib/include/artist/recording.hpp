@@ -38,7 +38,7 @@ namespace cycfi::artist::recording
    {
       op                         kind;
       rect                       geometry;      // the extent of the shape itself
-      rect                       bounds;        // geometry and shadow within the clip: the ink
+      rect                       bounds;        // geometry, shadow and blur within the clip: the ink
       bool                       visible;       // bounds is not empty
       color                      paint;         // the colour, or a gradient's first stop
       bool                       gradient;
@@ -49,6 +49,7 @@ namespace cycfi::artist::recording
       point                      shadow_offset; // the shadow state in effect
       float                      shadow_blur;
       color                      shadow_color;
+      float                      blur;          // the blur in effect, 0 for none
       canvas::composite_op_enum  composite;
       std::string                text;          // text operations only
    };

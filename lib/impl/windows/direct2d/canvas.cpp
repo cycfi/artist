@@ -142,6 +142,7 @@ namespace cycfi::artist
          point          shadow_offset  = {0, 0};
          float          shadow_blur    = 0;
          color          shadow_color   = colors::black;
+         float          blur           = 0;
          class font     font           = font_descr{"Segoe UI", 12};
          int            text_align     = canvas::baseline;
          composite_op_enum composite   = canvas::source_over;
@@ -174,8 +175,10 @@ namespace cycfi::artist
       void              stroke(context& ctx, bool preserve);
 
       // Draw `render` (which paints the primitive onto the given target at the
-      // current matrix) honoring the current global composite op. `user_bounds`
-      // is the primitive's bounding rect in user space (the affected region).
+      // current matrix) honoring the current global composite op and blur.
+      // `user_bounds` is the primitive's bounding rect in user space (the
+      // affected region); it is needed unless the op is source-over with no
+      // blur.
       using draw_fn = std::function<void(render_target*)>;
       void              composite_draw(context& ctx, artist::rect user_bounds, draw_fn render);
 
@@ -198,6 +201,14 @@ namespace cycfi::artist
                            return c.shadow_color.alpha > 0 &&
                               (c.shadow_blur > 0 || c.shadow_offset.x != 0
                                  || c.shadow_offset.y != 0);
+                        }
+
+      // Bounds are only for the composite intermediate; plain source-over
+      // draws straight to the target.
+      bool              needs_bounds() const
+                        {
+                           return current().composite != canvas::source_over
+                              || current().blur > 0;
                         }
 
    public:
@@ -672,11 +683,14 @@ namespace cycfi::artist
           SUCCEEDED(dc->CreateEffect(CLSID_D2D12DAffineTransform, &xform)) && xform)
       {
          // The blur is twice the Gaussian standard deviation, as in the W3C
-         // canvas API, and the transform in effect does not change it.
+         // canvas API, and the transform in effect does not change it. With
+         // a blur style as well, the shadow is cast from what the blur
+         // leaves: the Gaussian of a Gaussian, whose deviations add in
+         // squares.
          auto const& c = cur.shadow_color;
+         auto const sigma = std::hypot(cur.shadow_blur / 2, cur.blur);
          shadow->SetInput(0, offscreen.bitmap());
-         shadow->SetValue(
-            D2D1_SHADOW_PROP_BLUR_STANDARD_DEVIATION, cur.shadow_blur / 2);
+         shadow->SetValue(D2D1_SHADOW_PROP_BLUR_STANDARD_DEVIATION, sigma);
          shadow->SetValue(
             D2D1_SHADOW_PROP_COLOR
           , D2D1::Vector4F(c.red, c.green, c.blue, c.alpha));
@@ -716,8 +730,9 @@ namespace cycfi::artist
       auto main = ctx.target();
 
       // Fast path: plain source-over draws straight to the target.
+      float const blur = current().blur;
       device_context* dc = nullptr;
-      if (mode == canvas::source_over ||
+      if ((mode == canvas::source_over && blur == 0) ||
           FAILED(main->QueryInterface(&dc)) || !dc)
       {
          main->SetTransform(current().matrix);
@@ -774,6 +789,23 @@ namespace cycfi::artist
       sdc->EndDraw();
       sdc->SetTarget(nullptr);   // unbind so src_bm can be used as an input
 
+      // The source, blurred if there is a blur. The radius is the Gaussian
+      // standard deviation, in the canvas's initial units.
+      ID2D1Image* src_img = src_bm;          // non-owning alias
+      effect* gauss = nullptr;
+      ID2D1Image* gauss_out = nullptr;       // owned
+      if (blur > 0 &&
+          SUCCEEDED(dc->CreateEffect(CLSID_D2D1GaussianBlur, &gauss)) && gauss)
+      {
+         gauss->SetInput(0, src_bm);
+         gauss->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, blur);
+         gauss->SetValue(
+            D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_SOFT);
+         gauss->GetOutput(&gauss_out);
+         if (gauss_out)
+            src_img = gauss_out;
+      }
+
       // Decide what to draw and how, BEFORE installing the clip. The destination
       // snapshot (CopyFromRenderTarget) must NOT happen inside an axis-aligned
       // clip: it returns failure there, which silently drops the blend.
@@ -802,7 +834,7 @@ namespace cycfi::artist
          if (copied && SUCCEEDED(dc->CreateEffect(CLSID_D2D1Blend, &blend)) && blend)
          {
             blend->SetInput(0, bg);       // background (destination)
-            blend->SetInput(1, src_bm);   // foreground (source)
+            blend->SetInput(1, src_img);  // foreground (source)
             blend->SetValue(D2D1_BLEND_PROP_MODE, to_blend_mode(mode));
             blend->GetOutput(&blend_out); // an effect is not an ID2D1Image; its output is
             draw_img = blend_out;
@@ -813,7 +845,7 @@ namespace cycfi::artist
       {
          // Porter-Duff: DrawImage composites the source onto the live target
          // (the destination) directly, in the requested mode.
-         draw_img = src_bm;
+         draw_img = src_img;
          draw_mode = to_composite_mode(mode);
       }
 
@@ -826,7 +858,9 @@ namespace cycfi::artist
          dc->SetTransform(D2D1::Matrix3x2F::Identity());
          if (confine)
          {
+            // A Gaussian has all but faded three deviations out.
             auto db = device_bounds(current().matrix, user_bounds);
+            db = db.inset(-3 * blur, -3 * blur);
             dc->PushAxisAlignedClip(
                D2D1::RectF(db.left, db.top, db.right, db.bottom),
                D2D1_ANTIALIAS_MODE_ALIASED);
@@ -839,6 +873,8 @@ namespace cycfi::artist
       release(blend_out);
       release(blend);
       release(bg);
+      release(gauss_out);
+      release(gauss);
       release(src_bm);
       release(sdc);
       release(device);
@@ -857,11 +893,10 @@ namespace cycfi::artist
          // Leaves the transform at identity.
          apply_blur(ctx, bounds, render, false);
       }
-      // Bounds are only for the composite intermediate; source-over draws
-      // straight to the target, and computing them realizes the geometry,
-      // which for a plain shape costs more than drawing it.
+      // Computing the bounds realizes the geometry, which for a plain shape
+      // costs more than drawing it.
       artist::rect bounds;
-      if (current().composite != canvas::source_over)
+      if (needs_bounds())
          bounds = _path.impl()->fill_bounds();
       composite_draw(ctx, bounds,
          [this, preserve](render_target* t)
@@ -883,7 +918,7 @@ namespace cycfi::artist
          apply_blur(ctx, bounds, render, true);
       }
       artist::rect bounds;
-      if (current().composite != canvas::source_over)
+      if (needs_bounds())
          bounds = _path.impl()->stroke_bounds(lw, ss);
       composite_draw(ctx, bounds,
          [this, lw, ss, preserve](render_target* t)
@@ -1243,6 +1278,14 @@ namespace cycfi::artist
       cur.shadow_color = c;
    }
 
+   void canvas::blur_style(float radius)
+   {
+      // Negative, infinite and NaN radii are ignored; zero is no blur.
+      if (!(radius >= 0) || !std::isfinite(radius))
+         return;
+      _state->current().blur = radius;
+   }
+
    void canvas::global_composite_operation(composite_op_enum mode)
    {
       _state->current().composite = mode;
@@ -1315,9 +1358,27 @@ namespace cycfi::artist
                target->DrawTextLayout(org, layout, b, D2D1_DRAW_TEXT_OPTIONS_NONE);
             }, false);
 
-      t->SetTransform(_state->current().matrix);
-      auto brush = _state->fill_paint(*t);
-      t->DrawTextLayout(org, layout, brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+      auto paint = [&](render_target* target)
+      {
+         auto brush = _state->fill_paint(*target);
+         target->DrawTextLayout(org, layout, brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+      };
+      if (_state->needs_bounds())
+      {
+         // The layout box, grown by a quarter of the font size for glyphs
+         // that overhang it, such as italics.
+         auto pad = fi->size / 4;
+         artist::rect bounds{
+            org.x - pad, org.y - pad
+          , org.x + tm.widthIncludingTrailingWhitespace + pad
+          , org.y + tm.height + pad};
+         _state->composite_draw(*_context, bounds, paint);
+      }
+      else
+      {
+         t->SetTransform(_state->current().matrix);
+         paint(t);
+      }
       d2d::release(layout);
    }
 
@@ -1386,8 +1447,21 @@ namespace cycfi::artist
                target->DrawGeometry(placed, b, lw, ss);
             }, true);
 
-      t->SetTransform(_state->current().matrix);
-      t->DrawGeometry(placed, _state->stroke_paint(*t), lw, ss);
+      auto paint = [&](render_target* target)
+      {
+         target->DrawGeometry(placed, _state->stroke_paint(*target), lw, ss);
+      };
+      if (_state->needs_bounds())
+      {
+         D2D1_RECT_F b{};
+         placed->GetWidenedBounds(lw, ss, nullptr, &b);
+         _state->composite_draw(*_context, {b.left, b.top, b.right, b.bottom}, paint);
+      }
+      else
+      {
+         t->SetTransform(_state->current().matrix);
+         paint(t);
+      }
       d2d::release(placed);
    }
 
