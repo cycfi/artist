@@ -204,8 +204,8 @@
 <div class="sectionbody">
 <div class="paragraph">
 <p>The styles decide how <code>fill</code> and <code>stroke</code> render: the paint each uses, the
-width and shape of a stroke, the shadow cast under what is drawn, and how
-new drawing combines with what is already on the canvas. Each is canvas
+width and shape of a stroke, the blur that softens what is drawn, the
+shadow cast under it, and how new drawing combines with what is already on the canvas. Each is canvas
 state. Set one and it stays in effect for every paint that follows, until
 it is set again or a saved state is restored over it. Every style on this
 page is part of the state that a <code>new_state</code> scope keeps, so the usual way
@@ -226,8 +226,8 @@ before <code>fill</code> or <code>stroke</code>. The geometry it paints is the
 <td class="content">
 Artist follows the W3C canvas API, and the styles map onto its
 <code>fillStyle</code>, <code>strokeStyle</code>, <code>lineWidth</code>, <code>lineCap</code>, <code>lineJoin</code>,
-<code>miterLimit</code>, the four <code>shadow</code> attributes and <code>globalCompositeOperation</code>.
-They behave as the W3C API specifies, the same on every backend, with one
+<code>miterLimit</code>, the four <code>shadow</code> attributes, a <code>filter</code> of one <code>blur()</code>, and
+<code>globalCompositeOperation</code>. They behave as the W3C API specifies, the same on every backend, with one
 exception: <code>darker</code> takes the smaller of the two colors (W3C <code>darken</code>) on
 every backend, an approximation of the W3C plus-darker formula.
 </td>
@@ -332,6 +332,8 @@ public:
    void     shadow_style(float offsetx, float offsety, float blur, color c);
    void     shadow_style(float blur, color c);
 
+   void     blur_style(float radius);
+
    void     global_composite_operation(composite_op_enum mode);
    void     composite_op(composite_op_enum mode);
 };</code></pre>
@@ -393,6 +395,10 @@ shadow.</p>
 <dt class="hdlist1"><code>blur</code>               </dt>
 <dd>
 <p>Floating point value for the softness of a shadow.</p>
+</dd>
+<dt class="hdlist1"><code>radius</code>             </dt>
+<dd>
+<p>Floating point value for the softness of a blur.</p>
 </dd>
 <dt class="hdlist1"><code>mode</code>               </dt>
 <dd>
@@ -553,6 +559,12 @@ shadow.</p>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
 </tr>
 <tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.blur_style(radius)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the blur to soften what is
+                                            drawn by <code>radius</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.composite_op(mode)</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Set the composite operation to
                                             <code>mode</code>.</p></td>
@@ -704,6 +716,64 @@ off too.</p>
 </div>
 </div>
 <div class="sect2">
+<h3 id="_blur"><a class="anchor" href="#_blur"></a>Blur</h3>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/blur.png"><img src="../_images/canvas/blur.png" alt="Four blurred shapes" width="560px"></a>
+</div>
+<div class="title">Figure 7. Two blurs, a glow made of a blurred copy under the shape, and a blurred shape with a shadow.</div>
+</div>
+<div class="paragraph">
+<p>The blur softens what is drawn: fills, strokes, text and images alike, in
+their own colors, as the W3C <code>filter: blur(radius)</code> does. <code>radius</code> is the
+standard deviation of the Gaussian, so an edge fades out over about two
+<code>radius</code> on either side of where it was, and the blurred shape spreads
+three <code>radius</code> past its edge before it is gone. Like a shadow&#8217;s <code>blur</code>,
+<code>radius</code> is in the canvas&#8217;s own units and is not changed by the transform.
+A <code>radius</code> of zero is no blur, the default. One that is negative, infinite
+or NaN is ignored.</p>
+</div>
+<div class="paragraph">
+<p>The shadow is cast from the blurred shape, so it is soft even with a shadow
+<code>blur</code> of zero. The clip and the composite operation apply to the blurred
+result.</p>
+</div>
+<div class="paragraph">
+<p>A glow is a blurred copy of the shape drawn under the shape itself:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+rect r;                         // the shape to light up
+...
+   cnv.fill_style(colors::dodger_blue);
+   {
+      auto s = cnv.new_state();
+      cnv.blur_style(10);
+      cnv.fill_round_rect(r, 8);
+   }  // no blur from here on
+   cnv.fill_round_rect(r, 8);</code></pre>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="💡  TIP"></i>
+</td>
+<td class="content">
+Unlike the shadow, which is drawn in one color, a blur keeps the colors
+of what is drawn, gradients included, so a glow can follow a gradient
+along its length.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
 <h3 id="_compositing"><a class="anchor" href="#_compositing"></a>Compositing</h3>
 <div class="paragraph">
 <p>In the table below the <em>source</em> is what is being drawn and the
@@ -845,13 +915,13 @@ they overlap and then draw the result over the destination.</p>
 <div class="content">
 <a class="image" href="../_images/canvas/composite_ops.png"><img src="../_images/canvas/composite_ops.png" alt="The first twelve modes" width="560px"></a>
 </div>
-<div class="title">Figure 7. The first twelve modes: a circle drawn over a square. The checkerboard shows where nothing is left.</div>
+<div class="title">Figure 8. The first twelve modes: a circle drawn over a square. The checkerboard shows where nothing is left.</div>
 </div>
 <div class="imageblock text-center">
 <div class="content">
 <a class="image" href="../_images/canvas/blend_modes.png"><img src="../_images/canvas/blend_modes.png" alt="The twelve blend modes" width="560px"></a>
 </div>
-<div class="title">Figure 8. The twelve blend modes, with gradients so the mix varies across the overlap.</div>
+<div class="title">Figure 9. The twelve blend modes, with gradients so the mix varies across the overlap.</div>
 </div>
 <div class="paragraph">
 <p><code>source_in</code>, <code>source_out</code>, <code>destination_in</code>, <code>destination_atop</code> and <code>copy</code>
@@ -923,7 +993,7 @@ outline casts none of its own.</td>
 <div class="content">
 <a class="image" href="../_images/canvas/styles_example.png"><img src="../_images/canvas/styles_example.png" alt="A white rounded panel with a soft shadow and a thin outline" width="560px"></a>
 </div>
-<div class="title">Figure 9. What the code above draws, on a light neutral ground so the white panel reads.</div>
+<div class="title">Figure 10. What the code above draws, on a light neutral ground so the white panel reads.</div>
 </div>
 </div>
 </div>
