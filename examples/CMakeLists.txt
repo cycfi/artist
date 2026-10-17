@@ -24,9 +24,15 @@ if (UNIX AND NOT APPLE AND ARTIST_LINUX_HOST STREQUAL "gtk3")
    # gtk3 search to fail with a version-mismatch error.
    # Fix: override PKG_CONFIG_LIBDIR to the standard system paths, which takes
    # precedence over PKG_CONFIG_PATH and hides vcpkg's pkgconfig entries.
+   # The multiarch directory is the compiler's (x86_64-linux-gnu,
+   # aarch64-linux-gnu, ...); it is empty where there is none.
    set(_saved_pkg_config_libdir "$ENV{PKG_CONFIG_LIBDIR}")
-   set(ENV{PKG_CONFIG_LIBDIR}
-      "/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig")
+   set(_system_pkgconfig "/usr/lib/pkgconfig:/usr/share/pkgconfig")
+   if (CMAKE_LIBRARY_ARCHITECTURE)
+      set(_system_pkgconfig
+         "/usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/pkgconfig:${_system_pkgconfig}")
+   endif()
+   set(ENV{PKG_CONFIG_LIBDIR} "${_system_pkgconfig}")
    pkg_check_modules(gtk3 REQUIRED IMPORTED_TARGET gtk+-3.0)
    if (NOT ARTIST_CAIRO)
       # X11 and EGL for the ARTIST_PERF path, found from the same system paths.
