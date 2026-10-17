@@ -152,7 +152,8 @@ add_subdirectory(lib)
 option(ARTIST_BUILD_EXAMPLES "build Artist library examples" ON)
 option(ARTIST_BUILD_TESTS "build Artist library tests" ON)
 
-if (ARTIST_BUILD_EXAMPLES)
+# The examples open windows and draw; the recording backend draws nothing.
+if (ARTIST_BUILD_EXAMPLES AND NOT ARTIST_RECORDING)
    add_subdirectory(examples)
 endif()
 
