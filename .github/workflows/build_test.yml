@@ -439,6 +439,8 @@ jobs:
         # with a toolset at least as new as the one that built them.
         - os: windows-2022
           triplet: x64-windows-static
+        - os: windows-11-arm
+          triplet: arm64-windows
         - os: ubuntu-22.04
           triplet: x64-linux
           pkg_config_path: "/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig"
@@ -463,9 +465,13 @@ jobs:
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
+        # The arm runner builds with the arm64 tools.
+        $arm = $env:RUNNER_ARCH -eq 'ARM64'
+        $tools = if ($arm) { 'ARM64' } else { 'x86.x64' }
+        $bat = if ($arm) { 'vcvarsarm64.bat' } else { 'vcvars64.bat' }
         $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-        $vsPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
-        $vcvars = Join-Path $vsPath "VC\Auxiliary\Build\vcvars64.bat"
+        $vsPath = & $vswhere -latest -products * -requires "Microsoft.VisualStudio.Component.VC.Tools.$tools" -property installationPath
+        $vcvars = Join-Path $vsPath "VC\Auxiliary\Build\$bat"
         echo "VCVARS64=$vcvars" >> $env:GITHUB_ENV
 
     - name: Install dependencies (Ubuntu)
@@ -625,6 +631,8 @@ jobs:
         # with a toolset at least as new as the one that built them.
         - os: windows-2022
           triplet: x64-windows-static
+        - os: windows-11-arm
+          triplet: arm64-windows
         - os: macos-latest
           triplet: arm64-osx
         # Cross-built on the arm runner, for Intel Macs and for Rosetta
@@ -641,9 +649,13 @@ jobs:
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
+        # The arm runner builds with the arm64 tools.
+        $arm = $env:RUNNER_ARCH -eq 'ARM64'
+        $tools = if ($arm) { 'ARM64' } else { 'x86.x64' }
+        $bat = if ($arm) { 'vcvarsarm64.bat' } else { 'vcvars64.bat' }
         $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-        $vsPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
-        $vcvars = Join-Path $vsPath "VC\Auxiliary\Build\vcvars64.bat"
+        $vsPath = & $vswhere -latest -products * -requires "Microsoft.VisualStudio.Component.VC.Tools.$tools" -property installationPath
+        $vcvars = Join-Path $vsPath "VC\Auxiliary\Build\$bat"
         echo "VCVARS64=$vcvars" >> $env:GITHUB_ENV
 
     - name: Install dependencies (macOS)
