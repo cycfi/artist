@@ -5,6 +5,21 @@ would otherwise have lived in commit bodies (commit messages are kept to a
 single subject line). Hashes are the post-rewrite short hashes on the branch
 named in the heading.
 
+## 2026-10-17 -- Skia image downscale (develop)
+
+**TL;DR:** Skia now filters a large image downscale through mipmaps instead
+of aliasing (elements#389).
+
+- `836d7d9` Skia drew images with linear sampling under the strict source
+  rect constraint, and Skia drops mipmaps under that constraint, so each
+  output pixel read only the 2x2 source pixels nearest it. Drawing the
+  whole image now uses the fast constraint with linear mipmaps; a partial
+  source keeps the strict constraint, so it never samples past src. Skia
+  builds the mipmaps itself, raster and GPU. Measured with a 640x640 noise
+  image scaled to 1/16: output standard deviation 37.3 before, 4.5 after,
+  against about 4.6 for an ideal box filter. Artist's Skia suite passes on
+  macOS. Quartz 2D was not measured.
+
 ## 2026-06-14 -- master hotfixes
 
 **TL;DR:** Small master-only fixes on top of the develop features README pass:
