@@ -908,20 +908,31 @@ namespace cycfi::artist
             {
                // src is in logical units; map it to the bitmap's pixels.
                float s = pic.scale();
+               auto const src_px = SkRect{
+                  src.left * s, src.top * s
+                , src.right * s, src.bottom * s
+               };
+
+               // Mipmaps keep a large downscale from aliasing: plain linear
+               // reads only the 2x2 source pixels nearest each sample. Skia
+               // drops them under the strict constraint, which keeps the
+               // sampling inside src, so that is used only when src is a
+               // part of the bitmap.
+               auto const whole = src_px.contains(
+                  SkRect::MakeIWH(that.width(), that.height()));
                with_blend(_context, paint, [&](SkPaint const& q)
                {
                   _context->drawImageRect(
                      that.asImage(),
-                     SkRect{
-                        src.left * s, src.top * s
-                      , src.right * s, src.bottom * s
-                     },
+                     src_px,
                      SkRect{dest.left, dest.top, dest.right, dest.bottom},
                      // Smoothed, as Cairo and Quartz 2D scale; Skia's
                      // default samples the nearest pixel.
-                     SkSamplingOptions(SkFilterMode::kLinear),
+                     SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear),
                      &q,
-                     SkCanvas::kStrict_SrcRectConstraint
+                     whole?
+                        SkCanvas::kFast_SrcRectConstraint :
+                        SkCanvas::kStrict_SrcRectConstraint
                   );
                });
             }
