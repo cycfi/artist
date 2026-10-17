@@ -5,6 +5,29 @@ would otherwise have lived in commit bodies (commit messages are kept to a
 single subject line). Hashes are the post-rewrite short hashes on the branch
 named in the heading.
 
+## 2026-10-18 -- clean-room build fixes (develop)
+
+**TL;DR:** Clean-room builds of develop `cb048b3` from a fresh clone found two
+CMake bugs, and Windows on arm64 had no prebuilt bundles; all three are
+addressed.
+
+- `a689533` The examples looked for GTK3 in `/usr/lib/x86_64-linux-gnu`
+  alone, so every backend failed to configure on arm64 Linux. They now use
+  the compiler's multiarch directory (`CMAKE_LIBRARY_ARCHITECTURE`).
+- `180bdf0` With the recording backend, the Linux and Windows examples took
+  the Skia host and failed to compile. The examples are skipped with the
+  recording backend, which draws nothing.
+- `e6bdbae` The Skia and Cairo bundle jobs build `arm64-windows` on a
+  `windows-11-arm` runner, choosing the MSVC tools by runner architecture.
+
+Results (6 test suites each): macOS arm64 Quartz 2D, Skia, Cairo and
+recording pass; Windows x64 Direct2D, Skia and Cairo pass, recording with
+`180bdf0`; Linux x64 Cairo and Skia pass, recording with `180bdf0`; Linux
+arm64 configures with `a689533`, and Cairo and Skia fail only the Tauri
+golden, by at most 3/255 along blurred edges (the goldens are x64);
+Windows arm64 Direct2D passes, and Skia, Cairo and recording wait on the
+new bundles. Intel macOS not yet run.
+
 ## 2026-10-17 -- Skia image downscale (develop)
 
 **TL;DR:** Skia now filters a large image downscale through mipmaps instead
