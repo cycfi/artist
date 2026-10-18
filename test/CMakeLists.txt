@@ -10,6 +10,7 @@ project(artist_test)
 set(artist_test_sources
    test_main.cpp
    golden.cpp
+   golden_test.cpp
    shapes_test.cpp
    composite_test.cpp
    typography_test.cpp

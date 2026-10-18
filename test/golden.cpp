@@ -1,5 +1,6 @@
 #include "test_support.hpp"
 
+#include <algorithm>
 #include <iostream>
 #include <infra/filesystem.hpp>
 
@@ -10,229 +11,140 @@ void background(canvas& cnv)
    cnv.fill();
 }
 
-static float srgb_to_linear(uint8_t v)
+// The golden comparison is pixelmatch's: a pixel differs when the YIQ
+// difference of its colour passes a threshold and it is not an anti-aliased
+// edge in either image. Both images are composited over white and over
+// black, so a change in alpha shows as a change in colour. No differing
+// pixel is allowed: rounding across platforms stays under the threshold,
+// and edges that move by a fraction of a pixel are anti-aliased.
+namespace
 {
-   float c = v / 255.0f;
-   return c <= 0.04045f ? c / 12.92f
-                        : std::pow((c + 0.055f) / 1.055f, 2.4f);
-}
+   // Half pixelmatch's default of 0.1: the tightest that passes text and
+   // blur rendered on other platforms (a flat grey may move about 13 of
+   // 255 levels).
+   constexpr double match_threshold = 0.05;
+   constexpr double max_delta = 35215 * match_threshold * match_threshold;
 
-// Premultiplied ARGB32 pixel → CIELAB (L*, a*, b*)
-static void pixel_to_lab(uint32_t px, float& L, float& a, float& b)
-{
-   // Unpack — Cairo ARGB32: A=bits31-24, R=bits23-16, G=bits15-8, B=bits7-0
-   uint8_t A = (px >> 24) & 0xFF;
-   uint8_t R = (px >> 16) & 0xFF;
-   uint8_t G = (px >>  8) & 0xFF;
-   uint8_t B =  px        & 0xFF;
-   (void)A; // composited over black: premultiplied RGB = visible result
-
-   float r = srgb_to_linear(R);
-   float g = srgb_to_linear(G);
-   float bv = srgb_to_linear(B);
-
-   // Linear sRGB → CIE XYZ D65 (IEC 61966-2-1 matrix)
-   float X = 0.4124564f * r + 0.3575761f * g + 0.1804375f * bv;
-   float Y = 0.2126729f * r + 0.7151522f * g + 0.0721750f * bv;
-   float Z = 0.0193339f * r + 0.1191920f * g + 0.9503041f * bv;
-
-   // XYZ → CIELAB (D65 reference white)
-   auto f = [](float t) -> float {
-      return t > 0.008856f ? std::cbrt(t) : 7.787f * t + 16.0f / 116.0f;
+   struct rgba
+   {
+      double r, g, b, a;
    };
-   float fx = f(X / 0.95047f);
-   float fy = f(Y / 1.00000f);
-   float fz = f(Z / 1.08883f);
 
-   L = 116.0f * fy - 16.0f;
-   a = 500.0f * (fx - fy);
-   b = 200.0f * (fy - fz);
-}
+   // pixels() is premultiplied ARGB32 on every backend.
+   rgba unpack(uint32_t px)
+   {
+      return {
+         double((px >> 16) & 0xFF), double((px >> 8) & 0xFF)
+       , double(px & 0xFF), double((px >> 24) & 0xFF)
+      };
+   }
 
-// CIEDE2000 perceptual colour difference between two CIELAB values.
-// Returns ΔE₀₀ ∈ [0, ∞): < 1 imperceptible, 1–2 just noticeable, > 3 clearly visible.
-static float delta_e_00(float L1, float a1, float b1,
-                        float L2, float a2, float b2)
-{
-   using std::sqrt; using std::pow; using std::atan2;
-   using std::cos;  using std::sin; using std::exp; using std::abs;
-   constexpr float pi = 3.14159265358979f;
-   auto to_rad = [&](float d) { return d * pi / 180.0f; };
-   auto to_deg = [&](float r) { return r * 180.0f / pi; };
+   // Premultiplied, so over a background bg the colour is c + bg * (1 - a).
+   rgba over(rgba c, double bg)
+   {
+      double k = bg * (1 - c.a / 255);
+      return {c.r + k, c.g + k, c.b + k, 255};
+   }
 
-   float C1 = sqrt(a1*a1 + b1*b1);
-   float C2 = sqrt(a2*a2 + b2*b2);
-   float Cavg = (C1 + C2) * 0.5f;
-   float Cavg7 = pow(Cavg, 7.0f);
-   float G = 0.5f * (1.0f - sqrt(Cavg7 / (Cavg7 + 6103515625.0f))); // 25^7
+   double luma(rgba c)
+   {
+      return c.r * 0.29889531 + c.g * 0.58662247 + c.b * 0.11448223;
+   }
 
-   float a1p = a1 * (1.0f + G),  a2p = a2 * (1.0f + G);
-   float C1p = sqrt(a1p*a1p + b1*b1);
-   float C2p = sqrt(a2p*a2p + b2*b2);
+   // The squared YIQ distance, weighted as in pixelmatch.
+   double delta(rgba c1, rgba c2)
+   {
+      double dr = c1.r - c2.r, dg = c1.g - c2.g, db = c1.b - c2.b;
+      double y = dr * 0.29889531 + dg * 0.58662247 + db * 0.11448223;
+      double i = dr * 0.59597799 - dg * 0.27417610 - db * 0.32180189;
+      double q = dr * 0.21147017 - dg * 0.52261711 + db * 0.31114694;
+      return 0.5053 * y * y + 0.299 * i * i + 0.1957 * q * q;
+   }
 
-   auto hprime = [&](float bp, float ap) -> float {
-      if (bp == 0.0f && ap == 0.0f) return 0.0f;
-      float h = to_deg(atan2(bp, ap));
-      return h < 0.0f ? h + 360.0f : h;
+   struct pixels_view
+   {
+      uint32_t at(int x, int y) const { return px[y * w + x]; }
+
+      uint32_t const*   px;
+      int               w, h;
    };
-   float h1p = hprime(b1, a1p);
-   float h2p = hprime(b2, a2p);
 
-   float dLp = L2 - L1;
-   float dCp = C2p - C1p;
-
-   float dhp;
-   if (C1p * C2p == 0.0f)         dhp = 0.0f;
-   else if (abs(h2p-h1p) <= 180.0f) dhp = h2p - h1p;
-   else if (h2p - h1p  >  180.0f) dhp = h2p - h1p - 360.0f;
-   else                             dhp = h2p - h1p + 360.0f;
-
-   float dHp = 2.0f * sqrt(C1p * C2p) * sin(to_rad(dhp * 0.5f));
-
-   float Lbarp  = (L1  + L2 ) * 0.5f;
-   float Cbarp  = (C1p + C2p) * 0.5f;
-
-   float hbarp;
-   if (C1p * C2p == 0.0f)           hbarp = h1p + h2p;
-   else if (abs(h1p-h2p) <= 180.0f) hbarp = (h1p + h2p) * 0.5f;
-   else if (h1p + h2p  <  360.0f)   hbarp = (h1p + h2p + 360.0f) * 0.5f;
-   else                               hbarp = (h1p + h2p - 360.0f) * 0.5f;
-
-   float T = 1.0f
-      - 0.17f * cos(to_rad(      hbarp - 30.0f))
-      + 0.24f * cos(to_rad(2.0f * hbarp        ))
-      + 0.32f * cos(to_rad(3.0f * hbarp +  6.0f))
-      - 0.20f * cos(to_rad(4.0f * hbarp - 63.0f));
-
-   float SL = 1.0f + 0.015f * (Lbarp - 50.0f) * (Lbarp - 50.0f)
-                             / sqrt(20.0f + (Lbarp - 50.0f) * (Lbarp - 50.0f));
-   float SC = 1.0f + 0.045f * Cbarp;
-   float SH = 1.0f + 0.015f * Cbarp * T;
-
-   float Cbarp7 = pow(Cbarp, 7.0f);
-   float RC = 2.0f * sqrt(Cbarp7 / (Cbarp7 + 6103515625.0f));
-   float dTheta = 30.0f * exp(-((hbarp - 275.0f) / 25.0f) * ((hbarp - 275.0f) / 25.0f));
-   float RT = -sin(to_rad(2.0f * dTheta)) * RC;
-
-   float tL = dLp / SL;
-   float tC = dCp / SC;
-   float tH = dHp / SH;
-   return sqrt(tL*tL + tC*tC + tH*tH + RT * tC * tH);
-}
-
-// Per-image ΔE₀₀ statistics returned by compare_images.
-struct image_diff
-{
-   double mean;  // mean ΔE across all pixels
-   double p95;   // 95th-percentile ΔE  (5% of pixels may exceed this)
-   double p99;   // 99th-percentile ΔE  (1% of pixels may exceed this)
-};
-
-// Compute per-pixel CIEDE2000 error and return summary statistics.
-image_diff compare_images(uint32_t const* img1, uint32_t const* img2,
-                          int width, int height)
-{
-   int n = width * height;
-   std::vector<float> errors(n);
-   for (int i = 0; i < n; ++i)
+   // More than two of the 3x3 neighbours (an image edge counts as one)
+   // have the same pixel as (x1, y1).
+   bool has_many_siblings(pixels_view img, int x1, int y1)
    {
-      float L1, a1, b1, L2, a2, b2;
-      pixel_to_lab(img1[i], L1, a1, b1);
-      pixel_to_lab(img2[i], L2, a2, b2);
-      errors[i] = delta_e_00(L1, a1, b1, L2, a2, b2);
+      int x0 = std::max(x1 - 1, 0), x2 = std::min(x1 + 1, img.w - 1);
+      int y0 = std::max(y1 - 1, 0), y2 = std::min(y1 + 1, img.h - 1);
+      int zeroes = (x1 == x0 || x1 == x2 || y1 == y0 || y1 == y2)? 1 : 0;
+      auto c = img.at(x1, y1);
+      for (int y = y0; y <= y2; ++y)
+         for (int x = x0; x <= x2; ++x)
+            if ((x != x1 || y != y1) && img.at(x, y) == c && ++zeroes > 2)
+               return true;
+      return false;
    }
-   std::sort(errors.begin(), errors.end());
-   double sum = 0;
-   for (float e : errors) sum += e;
-   return {
-      sum / n,
-      errors[std::size_t(n * 0.95)],
-      errors[std::size_t(n * 0.99)]
-   };
-}
 
-// Luminance variance of a tile in img (measures local complexity).
-// High variance → many edges/details; low variance → near-uniform region.
-static float tile_variance(uint32_t const* img, int width,
-                           int x0, int y0, int tw, int th)
-{
-   double sum = 0, sum_sq = 0;
-   int n = tw * th;
-   for (int y = 0; y < th; ++y)
+   // (x1, y1) is an anti-aliased edge pixel of img: it lies between a
+   // darker and a brighter neighbour, either of which sits in a flat area
+   // in both images.
+   bool antialiased(pixels_view img, int x1, int y1, pixels_view other)
    {
-      uint32_t const* row = img + (y0 + y) * width + x0;
-      for (int x = 0; x < tw; ++x)
+      int x0 = std::max(x1 - 1, 0), x2 = std::min(x1 + 1, img.w - 1);
+      int y0 = std::max(y1 - 1, 0), y2 = std::min(y1 + 1, img.h - 1);
+      int zeroes = (x1 == x0 || x1 == x2 || y1 == y0 || y1 == y2)? 1 : 0;
+      double c = luma(over(unpack(img.at(x1, y1)), 255));
+      double min = 0, max = 0;
+      int min_x = 0, min_y = 0, max_x = 0, max_y = 0;
+      for (int y = y0; y <= y2; ++y)
       {
-         uint32_t px = row[x];
-         float R = (px >> 16) & 0xFF;
-         float G = (px >>  8) & 0xFF;
-         float B =  px        & 0xFF;
-         float lum = 0.2126f * R + 0.7152f * G + 0.0722f * B;
-         sum    += lum;
-         sum_sq += lum * lum;
+         for (int x = x0; x <= x2; ++x)
+         {
+            if (x == x1 && y == y1)
+               continue;
+            double d = c - luma(over(unpack(img.at(x, y)), 255));
+            if (d == 0)
+            {
+               if (++zeroes > 2)
+                  return false;
+            }
+            else if (d < min)
+            {
+               min = d; min_x = x; min_y = y;
+            }
+            else if (d > max)
+            {
+               max = d; max_x = x; max_y = y;
+            }
+         }
       }
+      if (min == 0 || max == 0)
+         return false;
+      return (has_many_siblings(img, min_x, min_y) && has_many_siblings(other, min_x, min_y))
+         || (has_many_siblings(img, max_x, max_y) && has_many_siblings(other, max_x, max_y));
    }
-   double mean = sum / n;
-   return float(sum_sq / n - mean * mean);
-}
 
-// Mean ΔE₀₀ for one tile.
-static float tile_mean_de(uint32_t const* img1, uint32_t const* img2,
-                          int width, int x0, int y0, int tw, int th)
-{
-   double sum = 0;
-   for (int y = 0; y < th; ++y)
+   int count_differences(uint32_t const* a, uint32_t const* b, int w, int h)
    {
-      uint32_t const* r1 = img1 + (y0 + y) * width + x0;
-      uint32_t const* r2 = img2 + (y0 + y) * width + x0;
-      for (int x = 0; x < tw; ++x)
+      pixels_view va{a, w, h}, vb{b, w, h};
+      int n = 0;
+      for (int y = 0; y < h; ++y)
       {
-         float L1, a1, b1, L2, a2, b2;
-         pixel_to_lab(r1[x], L1, a1, b1);
-         pixel_to_lab(r2[x], L2, a2, b2);
-         sum += delta_e_00(L1, a1, b1, L2, a2, b2);
+         for (int x = 0; x < w; ++x)
+         {
+            auto i = y * w + x;
+            if (a[i] == b[i])
+               continue;
+            auto pa = unpack(a[i]), pb = unpack(b[i]);
+            if (delta(over(pa, 255), over(pb, 255)) <= max_delta
+               && delta(over(pa, 0), over(pb, 0)) <= max_delta)
+               continue;
+            if (antialiased(va, x, y, vb) || antialiased(vb, x, y, va))
+               continue;
+            ++n;
+         }
       }
+      return n;
    }
-   return float(sum / (tw * th));
-}
-
-// Complexity-adaptive tiled ΔE check.
-//
-// Tiles are 32×32. Complexity is the luminance variance of the golden tile:
-//   simple   (var <   50) → uniform areas, solid fills       → tight threshold
-//   moderate (var <  500) → gradients, anti-aliased edges    → medium threshold
-//   complex  (var >= 500) → detailed shapes, text, gradients → relaxed threshold
-//
-// Returns the worst (tile_de - threshold) margin across all tiles.
-// Negative = all tiles pass; positive = at least one tile failed.
-static float check_tiles(uint32_t const* golden, uint32_t const* result,
-                         int width, int height,
-                         int tile_size = 32)
-{
-   constexpr float k_simple   = 0.5f;   // ΔE tolerance for uniform tiles
-   constexpr float k_moderate = 2.0f;   // ΔE tolerance for edge/gradient tiles
-   constexpr float k_complex  = 5.0f;   // ΔE tolerance for detailed tiles
-
-   float worst_margin = std::numeric_limits<float>::lowest();
-
-   for (int ty = 0; ty < height; ty += tile_size)
-   {
-      for (int tx = 0; tx < width; tx += tile_size)
-      {
-         int tw = std::min(tile_size, width  - tx);
-         int th = std::min(tile_size, height - ty);
-
-         float var = tile_variance(golden, width, tx, ty, tw, th);
-         float threshold = var < 50.0f  ? k_simple
-                         : var < 500.0f ? k_moderate
-                                        : k_complex;
-
-         float de = tile_mean_de(golden, result, width, tx, ty, tw, th);
-         float margin = de - threshold;
-         if (margin > worst_margin) worst_margin = margin;
-      }
-   }
-   return worst_margin;
 }
 
 #if defined(ARTIST_RECORDING)
@@ -292,6 +204,12 @@ void snapshot_golden(image const& pm, std::string name)
 
 #else
 
+int golden_differences(image const& a, image const& b)
+{
+   auto size = a.bitmap_size();
+   return count_differences(a.pixels(), b.pixels(), size.x, size.y);
+}
+
 void compare_golden(image const& pm, std::string name)
 {
    pm.save_png(get_results_path() + name + ".png");
@@ -315,19 +233,9 @@ void compare_golden(image const& pm, std::string name)
    REQUIRE(a != nullptr);
    REQUIRE(b != nullptr);
 
-   auto diff   = compare_images(a, b, bm_size.x, bm_size.y);
-   float margin = check_tiles(a, b, bm_size.x, bm_size.y);
-
-   std::cout << std::fixed << std::setprecision(4)
-      << "ΔE  mean=" << diff.mean
-      << "  p95="    << diff.p95
-      << "  p99="    << diff.p99
-      << "  tile_margin=" << margin
-      << "  (" << name << ")\n";
-
-   CHECK(diff.mean  < 1.0);
-   CHECK(diff.p95   < 3.0);
-   CHECK(margin     < 0.0f);
+   int diff = count_differences(a, b, bm_size.x, bm_size.y);
+   std::cout << "differing pixels=" << diff << "  (" << name << ")\n";
+   CHECK(diff == 0);
 }
 
 void snapshot_golden(image const& pm, std::string name)
@@ -359,14 +267,9 @@ void snapshot_golden(image const& pm, std::string name)
    REQUIRE(a != nullptr);
    REQUIRE(b != nullptr);
 
-   auto diff = compare_images(a, b, rs.x, rs.y);
-   float margin = check_tiles(a, b, rs.x, rs.y);
-   std::cout << std::fixed << std::setprecision(4)
-      << "ΔE  mean=" << diff.mean << "  p95=" << diff.p95
-      << "  tile_margin=" << margin << "  (" << name << ")\n";
-   CHECK(diff.mean < 1.0);
-   CHECK(diff.p95  < 3.0);
-   CHECK(margin    < 0.0f);
+   int diff = count_differences(a, b, rs.x, rs.y);
+   std::cout << "differing pixels=" << diff << "  (" << name << ")\n";
+   CHECK(diff == 0);
 }
 
 #endif

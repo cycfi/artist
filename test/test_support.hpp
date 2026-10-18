@@ -49,6 +49,10 @@ void compare_golden(image const& pm, std::string name);
 // runs, compare against it. Backend/platform-specific, like all goldens.
 void snapshot_golden(image const& pm, std::string name);
 
+// The number of pixels in which two images of the same size differ, as
+// compare_golden and snapshot_golden count them.
+int golden_differences(image const& a, image const& b);
+
 #if defined(ARTIST_RECORDING)
 # include <artist/recording.hpp>
 
