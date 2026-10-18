@@ -1,8 +1,7 @@
-* xref:index.adoc[Artist 2D Canvas Library]
+* xref:gallery.adoc[Gallery]
 * xref:setup.adoc[Setup and Installation]
 * xref:backends.adoc[Backends]
-* xref:gallery.adoc[Gallery]
-* Reference
+* xref:reference.adoc[Reference]
 ** xref:foundation.adoc[Foundation]
 *** xref:foundation/point.adoc[Point and Extent]
 *** xref:foundation/rect.adoc[Rect]

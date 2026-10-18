@@ -1,0 +1,19 @@
+= Reference
+
+== Overview
+
+The reference describes every public part of Artist, a page for each.
+
+* xref:foundation.adoc[Foundation]: the geometry, color and font types the
+  drawing calls are expressed in, and images, canvas layers and resources.
+* xref:path.adoc[Path]: shapes built from lines, curves, rectangles, circles
+  and arcs, to fill, stroke or clip with.
+* xref:canvas.adoc[Canvas]: the surface you draw on, modeled after the HTML5
+  canvas API: transforms, the current path, styles, gradients, text, images
+  and states.
+* xref:text_run.adoc[Text Run]: one paragraph of text in one font, shaped,
+  broken into lines, drawn and hit tested.
+* xref:text_layout.adoc[Text Layout]: a document of paragraphs, each laid out
+  by its own text run, for multi-paragraph text and editing.
+* xref:recording.adoc[Recording]: the backend that draws nothing and keeps a
+  journal of the drawing calls, for tests.

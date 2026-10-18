@@ -153,11 +153,10 @@ The documentation is built with [Antora](https://antora.org/) (sources under
 [`docs/`](docs/)) and published at
 <https://cycfi.github.io/artist/>.
 
-1. [Setup and Installation](https://cycfi.github.io/artist/artist/v1.0/setup.html)
-2. [Backends](https://cycfi.github.io/artist/artist/v1.0/backends.html)
-3. [Gallery](https://cycfi.github.io/artist/artist/v1.0/gallery.html)
-4. [Canvas](https://cycfi.github.io/artist/artist/v1.0/canvas.html)
-5. [Foundation](https://cycfi.github.io/artist/artist/v1.0/foundation.html)
+* [Gallery](https://cycfi.github.io/artist/artist/v1.0/gallery.html)
+* [Setup and Installation](https://cycfi.github.io/artist/artist/v1.0/setup.html)
+* [Backends](https://cycfi.github.io/artist/artist/v1.0/backends.html)
+* [Reference](https://cycfi.github.io/artist/artist/v1.0/reference.html)
 
 ## <a name="jdeguzman"></a>About the Author
 
