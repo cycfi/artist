@@ -223,7 +223,10 @@ namespace cycfi::artist
                int32x4_t diff = vsubq_s32(hi_i, lo_i);
                int32x4_t ri   = vcvtq_s32_f32(vmulq_f32(vcvtq_f32_s32(diff), inv4));
                uint8x8_t r8 = vqmovn_u16(vcombine_u16(vqmovun_s32(ri), vdup_n_u16(0)));
-               vst1_lane_u32((uint32_t*)(out + x), vreinterpret_u32_u8(r8), 0);
+               // out + x is not 4-byte aligned: copy the four bytes, as
+               // the SSE2 path does, rather than store through a uint32_t*.
+               uint32_t tmp32 = vget_lane_u32(vreinterpret_u32_u8(r8), 0);
+               std::memcpy(out + x, &tmp32, 4);
             }
          }
 #elif defined(ARTIST_SSE2)
