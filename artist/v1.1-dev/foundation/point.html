@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Point and Extent :: Artist Docs</title>
+    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0/foundation/point.html">
+    <meta name="generator" content="Antora 3.1.15">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+<meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
+<link rel="icon" type="image/png" sizes="16x16" href="https://cycfi.com/assets/icons/favicon-16x16.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="https://cycfi.com/assets/icons/favicon-32x32.png"/>
+<link rel="icon" type="image/png" sizes="96x96" href="https://cycfi.com/assets/icons/favicon-96x96.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="https://cycfi.com/assets/icons/android-chrome-192x192.png"/>
+<link rel="icon" type="image/png" sizes="256x256" href="https://cycfi.com/assets/icons/android-chrome-256x256.png"/>
+<link rel="apple-touch-icon" type="image/png" href="https://cycfi.com/assets/icons/apple-touch-icon.png"/>
+
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <!--  Cycfi Logo -->
+      <a class="m-nav__logo" href="https://www.cycfi.com">
+        <svg version="1.1" x="0px" y="0px" width="200" viewBox="0 0 600 100" style="padding-top: 15;" xmlns="http://www.w3.org/2000/svg">
+          <g transform="matrix(2.55, 0, 0, 2.62, -464.010406, -1042.918213)" fill="#202020">
+            <path d="M234.37,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.7-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-3.5-0.04-4.6,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.59,0.66-0.76,1.35c-0.14,0.84-0.18,1.03-0.19,1.43l-0.14,3.91 c-0.01,0.39,0.04,0.84,0.09,1.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h33.85 c0.8,0,1.45,0.67,1.42,1.47L234.37,431.65z"/>
+            <path d="M276.06,433.02H257.9c-0.8,0-1.45-0.67-1.42-1.47l0.15-4.18c0.03-0.76,0.65-1.37,1.42-1.37h14.16 c1.91,0,3.52,0,4.61-0.12c1.23-0.13,1.75-0.25,2.17-0.71c0.36-0.39,0.4-2.52,0.4-2.52h-27.92c-11.11,0-13.26-5.13-13.1-9.44 l0.12-3.38c0.03-0.76,0.65-1.37,1.42-1.37h8.43c0.8,0,1.45,0.67,1.42,1.47l-0.05,1.36c-0.02,0.46-0.01,2.03,0.11,2.51 c0.1,0.42,0.44,0.82,0.78,1.07c0.47,0.35,0.83,0.42,1.64,0.54c0.9,0.14,2.09,0.21,3.54,0.21h24.09l0.21-5.8 c0.03-0.76,0.65-1.37,1.42-1.37h8.46c0.8,0,1.45,0.67,1.42,1.47l-0.49,13.57c-0.06,1.58-0.46,3.96-1.12,5.07 c-0.68,1.15-1.71,2.08-3.04,2.76c-1.23,0.63-2.76,1.07-4.56,1.32C280.44,432.9,278.4,433.02,276.06,433.02L276.06,433.02z"/>
+            <path d="M401.95,431.55l0.78-21.72c0.03-0.76,0.65-1.37,1.42-1.37h8.59c0.8,0,1.45,0.67,1.42,1.47l-0.78,21.72 c-0.03,0.76-0.65,1.37-1.42,1.37h-8.59C402.56,433.02,401.92,432.35,401.95,431.55z"/>
+            <path d="M346.77,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.71-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-2.47-0.04-3.58,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.58,0.66-0.76,1.35c-0.14,0.84-0.22,2.03-0.23,2.43l-0.07,1.91 c-0.01,0.39,0.01,1.84,0.06,2.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h32.83 c0.8,0,1.45,0.67,1.42,1.47L346.77,431.65z"/>
+            <path d="M386.2,425.88l-24.93-0.03l-0.21,5.8c-0.03,0.76-0.65,1.37-1.42,1.37h-8.46c-0.8,0-1.45-0.67-1.42-1.47 l0.49-13.57c0.06-1.58,0.46-3.96,1.12-5.07c0.68-1.15,1.71-2.08,3.04-2.76c1.23-0.63,2.76-1.07,4.56-1.32 c1.7-0.24,3.75-0.36,6.08-0.36l0,0h33.68c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.18c-0.03,0.76-0.65,1.37-1.42,1.37H368.9 c-1.91,0-3.52,0-4.61,0.12c-1.23,0.13-1.75,0.25-2.17,0.71c-0.36,0.39-0.4,2.52-0.4,2.52h24.63c0.8,0,1.45,0.67,1.42,1.47 l-0.15,4.22C387.59,425.28,386.96,425.88,386.2,425.88z"/>
+          </g>
+        </svg>
+      </a>
+      <a class="navbar-item" href="https://www.cycfi.com">Artist Docs</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="artist" data-version="v1.1-dev">
+  <aside class="nav">
+    <div class="panels">
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs">
+        </div>
+      </div>
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">Artist 2D Canvas Library</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Artist 2D Canvas Library</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../setup.html">Setup and Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../backends.html">Backends</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../gallery.html">Gallery</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../foundation.html">Foundation</a>
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="point.html">Point and Extent</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="rect.html">Rect</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="circle.html">Circle</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="affine_transform.html">Affine Transform</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="color.html">Color</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="font.html">Font</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="image.html">Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas_layer.html">Canvas Layer</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="resources.html">Resources</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../path.html">Path</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../canvas.html">Canvas</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/transforms.html">Transforms</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/current_path.html">Current Path</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/styles.html">Styles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/gradients.html">Gradients</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/rectangles.html">Rectangles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/text.html">Text</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/images.html">Drawing Images</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/states.html">States</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/context.html">Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../text_run.html">Text Run</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../text_layout.html">Text Layout</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../recording.html">Recording</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Artist 2D Canvas Library</span>
+    <span class="version">v1.1-dev</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../../v1.0/index.html">Artist 2D Canvas Library</a></div>
+      <ul class="versions">
+        <li class="version is-current">
+          <a href="../index.html">v1.1-dev</a>
+        </li>
+        <li class="version is-latest">
+          <a href="../../v1.0/index.html">v1.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../v1.0/index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Artist 2D Canvas Library</a></li>
+    <li>Reference</li>
+    <li><a href="../foundation.html">Foundation</a></li>
+    <li><a href="point.html">Point and Extent</a></li>
+  </ul>
+</nav>
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">v1.1-dev</button>
+  <div class="version-menu">
+    <a class="version is-current" href="point.html">v1.1-dev</a>
+    <a class="version" href="../../v1.0/foundation/point.html">v1.0</a>
+  </div>
+</div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Point and Extent</h1>
+<div class="sect1">
+<h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A <code>point</code> is a position in the 2D cartesian coordinate space: two <code>float</code>
+members, <code>x</code> and <code>y</code>. An <code>extent</code> is the same pair of numbers used to mean
+a size rather than a position. <code>extent</code> derives from <code>point</code> and leaves
+out the members that only make sense for a position, so a size cannot be
+moved or reflected by accident.</p>
+</div>
+<div class="paragraph">
+<p><code>point</code> and <code>extent</code> are the two types the rest of the library measures
+with. <a href="rect.html" class="xref page"><code>rect</code></a> is built from them,
+<a href="circle.html" class="xref page"><code>circle::center()</code></a> returns a <code>point</code>, and
+<code>affine_transform::apply</code> maps one.</p>
+</div>
+<div class="paragraph">
+<p>The header also defines <code>axis</code>, a two valued enumeration used to write
+code once and run it on either coordinate. <code>point</code> is subscriptable by it,
+and <a href="rect.html" class="xref page"><code>rect</code></a> has a family of <code>axis</code> free
+functions built on the same idea.</p>
+</div>
+<div class="paragraph">
+<p>Everything on this page is <code>constexpr</code>, construction and accessors alike,
+so points and extents can be computed at compile time. This is the
+opposite of <a href="circle.html" class="xref page"><code>circle</code></a>, where only the
+constructors are.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+An <code>extent</code> names its members <code>x</code> and <code>y</code>, not <code>width</code> and <code>height</code>.
+The width is <code>e.x</code> and the height is <code>e.y</code>. Only
+<a href="rect.html" class="xref page"><code>rect</code></a> spells the two out, through <code>width()</code>
+and <code>height()</code>.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+See <a href="../foundation.html" class="xref page">Foundation</a> for an overview of the foundation classes.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_axis"><a class="anchor" href="#_axis"></a>Axis</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_include"><a class="anchor" href="#_include"></a>Include</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/point.hpp&gt;</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">enum class axis : bool { x = false, y = true };
+
+constexpr axis other(axis a);</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h3>
+<div class="sect3">
+<h4 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h4>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>ax</code>              </dt>
+<dd>
+<p>Object of type <code>axis</code>.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_constants"><a class="anchor" href="#_constants"></a>Constants</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axis::x</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the horizontal axis, <code>false</code> as a
+                  <code>bool</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axis</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axis::y</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the vertical axis, <code>true</code> as a
+                  <code>bool</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axis</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The underlying type is <code>bool</code>, so an <code>axis</code> is one byte and
+<code>bool(axis::y)</code> is <code>true</code>. The enumeration is scoped, so the conversion
+has to be written out.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_functions"><a class="anchor" href="#_functions"></a>Functions</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>other(ax)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the axis that <code>ax</code> is not.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axis</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_example"><a class="anchor" href="#_example"></a>Example</h4>
+<div class="paragraph">
+<p>Step a point along an axis, then across it.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/point.hpp&gt;
+...
+using namespace cycfi::artist;
+...
+   auto ax = axis::y;
+   auto p = point{10, 20};
+   p[ax] += 5;                                           <i class="conum" data-value="1"></i><b>(1)</b>
+   p[other(ax)] += 5;                                    <i class="conum" data-value="2"></i><b>(2)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Step along the vertical axis, to <code>{10, 25}</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Step across it, along the other axis, to <code>{15, 25}</code>.</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_point"><a class="anchor" href="#_point"></a>Point</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_include_2"><a class="anchor" href="#_include_2"></a>Include</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/point.hpp&gt;</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_declaration_2"><a class="anchor" href="#_declaration_2"></a>Declaration</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">struct point
+{
+   constexpr         point();
+   constexpr         point(float x, float y);
+   constexpr         point(point const&amp;) = default;
+   constexpr point&amp;  operator=(point const &amp;) = default;
+
+   constexpr bool    operator==(point const&amp; other) const;
+   constexpr bool    operator!=(point const&amp; other) const;
+
+   constexpr point   move(float dx, float dy) const;
+   constexpr point   move_to(float x, float y) const;
+   constexpr point   reflect(point p) const;
+
+   constexpr float&amp;  operator[](axis a);
+   constexpr float   operator[](axis a) const;
+
+   float             x;
+   float             y;
+};</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions_2"><a class="anchor" href="#_expressions_2"></a>Expressions</h3>
+<div class="sect3">
+<h4 id="_notation_2"><a class="anchor" href="#_notation_2"></a>Notation</h4>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>p</code>, <code>a</code>, <code>b</code>     </dt>
+<dd>
+<p>Objects of type <code>point</code>.</p>
+</dd>
+<dt class="hdlist1"><code>q</code>               </dt>
+<dd>
+<p>Object of type <code>point</code> to reflect.</p>
+</dd>
+<dt class="hdlist1"><code>ax</code>              </dt>
+<dd>
+<p>Object of type <code>axis</code>.</p>
+</dd>
+<dt class="hdlist1"><code>x</code>, <code>y</code>          </dt>
+<dd>
+<p>Floating point values for the coordinates.</p>
+</dd>
+<dt class="hdlist1"><code>dx</code>, <code>dy</code>        </dt>
+<dd>
+<p>Floating point values for an offset.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_constructors_and_assignment"><a class="anchor" href="#_constructors_and_assignment"></a>Constructors and Assignment</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct a <code>point</code> at the origin, <code>{0, 0}</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point(x, y)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct a <code>point</code> given <code>x</code> and <code>y</code>
+                     (coordinates).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point(p)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Copy construct from <code>point p</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>a = b</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Assign <code>b</code> to <code>a</code>.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+C++ brace initialization may also be used. <code>point</code> is not an
+aggregate, so braces call the constructors above.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+The members are <code>float</code>, and brace initialization forbids
+narrowing. <code>point{1, 2}</code> compiles because the literals convert exactly,
+but <code>point{n, 2}</code> with an <code>int</code> variable <code>n</code> does not. Write
+<code>point(n, 2)</code> with parentheses, or convert at the call site.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_access"><a class="anchor" href="#_access"></a>Access</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>p.x</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access the x coordinate.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>p.y</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access the y coordinate.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_indexing"><a class="anchor" href="#_indexing"></a>Indexing</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>p[ax]</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access the coordinate on <code>ax</code>: <code>x</code> for
+                <code>axis::x</code>, <code>y</code> for <code>axis::y</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float&amp;</code>, or
+                                                               <code>float</code> if <code>p</code>
+                                                               is <code>const</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Subscript makes an algorithm axis agnostic. A routine that snaps along
+one axis can take an <code>axis</code> parameter, use <code>p[ax]</code> throughout, and work in
+both directions without a second copy.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_operation"><a class="anchor" href="#_operation"></a>Operation</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>p.move(dx, dy)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get a copy of <code>p</code> moved by <code>dx</code> and
+                        <code>dy</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>p.move_to(x, y)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get a copy of <code>p</code> placed at
+                        <code>{x, y}</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>p.reflect(q)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the reflection of <code>q</code> through
+                        <code>p</code>, <code>{2 * p.x - q.x,
+                        2 * p.y - q.y}</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="⚠️  WARNING"></i>
+</td>
+<td class="content">
+<code>reflect</code> reflects its <strong>argument</strong>, not the object it is called
+on. <code>p.reflect(q)</code> treats <code>p</code> as the centre of rotation and returns <code>q</code>
+rotated 180 degrees about it, so <code>point(0, 0).reflect(point(3, 4))</code> is
+<code>{-3, -4}</code>. To reflect <code>p</code> about <code>q</code>, write <code>q.reflect(p)</code>.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_comparison"><a class="anchor" href="#_comparison"></a>Comparison</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>a == b</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Equality.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>a != b</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Non-Equality.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+The comparison of <code>x</code> and <code>y</code> is exact, so two points differing only
+by rounding are not equal.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_example_2"><a class="anchor" href="#_example_2"></a>Example</h4>
+<div class="paragraph">
+<p>Write a helper that moves a point along either axis.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/point.hpp&gt;
+...
+using namespace cycfi::artist;
+...
+constexpr point advance(point p, axis ax, float d)
+{
+   p[ax] += d;                                           <i class="conum" data-value="1"></i><b>(1)</b>
+   return p;
+}
+
+constexpr auto p = advance(point(10, 20), axis::y, 5);   <i class="conum" data-value="2"></i><b>(2)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Add <code>d</code> to the coordinate on <code>ax</code>, through the reference <code>p[ax]</code>
+returns.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Construct a point and advance it by 5 along y, at compile time. <code>p</code> is
+<code>{10, 25}</code>.</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_extent"><a class="anchor" href="#_extent"></a>Extent</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_include_3"><a class="anchor" href="#_include_3"></a>Include</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/point.hpp&gt;</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_declaration_3"><a class="anchor" href="#_declaration_3"></a>Declaration</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">struct extent : point
+{
+   using point::point;
+
+   constexpr         extent(point p);
+};</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_expressions_3"><a class="anchor" href="#_expressions_3"></a>Expressions</h3>
+<div class="paragraph">
+<p><code>extent</code> is derived from <code>point</code>, and its Access, Indexing and Comparison
+expressions are those of <code>point</code>, with <code>x</code> the width and <code>y</code> the height.
+In addition, <code>extent</code> allows these expressions.</p>
+</div>
+<div class="sect3">
+<h4 id="_notation_3"><a class="anchor" href="#_notation_3"></a>Notation</h4>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>e</code>, <code>a</code>, <code>b</code>     </dt>
+<dd>
+<p>Objects of type <code>extent</code>.</p>
+</dd>
+<dt class="hdlist1"><code>p</code>               </dt>
+<dd>
+<p>Object of type <code>point</code>.</p>
+</dd>
+<dt class="hdlist1"><code>w</code>, <code>h</code>          </dt>
+<dd>
+<p>Floating point values for the width and height.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_constructors_and_assignment_2"><a class="anchor" href="#_constructors_and_assignment_2"></a>Constructors and Assignment</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>extent()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct an empty <code>extent</code>, <code>{0, 0}</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>extent(w, h)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct an <code>extent</code> given <code>w</code> and <code>h</code> (width and
+                     height), through the inherited <code>point</code>
+                     constructor.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>extent(p)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct an <code>extent</code> from <code>p</code>, with <code>p.x</code> as the
+                     width and <code>p.y</code> as the height.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>extent(e)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Copy construct from <code>extent e</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>a = b</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Assign <code>b</code> to <code>a</code>.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+C++ brace initialization may also be used.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Both coordinates are required. <code>extent{10}</code> does not compile: the one
+argument constructor takes a <code>point</code>, which a single number does not
+convert to, and the inherited <code>point</code> constructor takes two.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="⚠️  WARNING"></i>
+</td>
+<td class="content">
+The separation is a naming aid, not a type barrier. <code>extent</code> and
+<code>point</code> convert to each other implicitly: <code>extent e = p;</code> and
+<code>point p = e;</code> both compile, and so do <code>e == p</code> and <code>p == e</code>. Passing a
+position where a size is expected is not caught.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_example_3"><a class="anchor" href="#_example_3"></a>Example</h4>
+<div class="paragraph">
+<p>Get the size of a <code>rect</code>, and the side of the largest square that fits
+in it.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/point.hpp&gt;
+#include &lt;artist/rect.hpp&gt;               // For rect
+#include &lt;algorithm&gt;                     // For std::min
+...
+using namespace cycfi::artist;
+extern rect bounds;                      // a rect laid out elsewhere
+...
+   auto size = bounds.size();                            <i class="conum" data-value="1"></i><b>(1)</b>
+   auto side = std::min(size.x, size.y);                 <i class="conum" data-value="2"></i><b>(2)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Get the size of <code>bounds</code> as an <code>extent</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Read the width from <code>x</code> and the height from <code>y</code>.</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+<script src="../../../_/js/vendor/lunr.js"></script>
+<script src="../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../.." data-snippet-length="100" data-stylesheet="../../../_/css/search.css"></script>
+<script async src="../../../search-index.js"></script>
+  </body>
+</html>

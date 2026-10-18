@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Context :: Artist Docs</title>
+    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0/canvas/context.html">
+    <meta name="generator" content="Antora 3.1.15">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+<meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
+<link rel="icon" type="image/png" sizes="16x16" href="https://cycfi.com/assets/icons/favicon-16x16.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="https://cycfi.com/assets/icons/favicon-32x32.png"/>
+<link rel="icon" type="image/png" sizes="96x96" href="https://cycfi.com/assets/icons/favicon-96x96.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="https://cycfi.com/assets/icons/android-chrome-192x192.png"/>
+<link rel="icon" type="image/png" sizes="256x256" href="https://cycfi.com/assets/icons/android-chrome-256x256.png"/>
+<link rel="apple-touch-icon" type="image/png" href="https://cycfi.com/assets/icons/apple-touch-icon.png"/>
+
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <!--  Cycfi Logo -->
+      <a class="m-nav__logo" href="https://www.cycfi.com">
+        <svg version="1.1" x="0px" y="0px" width="200" viewBox="0 0 600 100" style="padding-top: 15;" xmlns="http://www.w3.org/2000/svg">
+          <g transform="matrix(2.55, 0, 0, 2.62, -464.010406, -1042.918213)" fill="#202020">
+            <path d="M234.37,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.7-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-3.5-0.04-4.6,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.59,0.66-0.76,1.35c-0.14,0.84-0.18,1.03-0.19,1.43l-0.14,3.91 c-0.01,0.39,0.04,0.84,0.09,1.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h33.85 c0.8,0,1.45,0.67,1.42,1.47L234.37,431.65z"/>
+            <path d="M276.06,433.02H257.9c-0.8,0-1.45-0.67-1.42-1.47l0.15-4.18c0.03-0.76,0.65-1.37,1.42-1.37h14.16 c1.91,0,3.52,0,4.61-0.12c1.23-0.13,1.75-0.25,2.17-0.71c0.36-0.39,0.4-2.52,0.4-2.52h-27.92c-11.11,0-13.26-5.13-13.1-9.44 l0.12-3.38c0.03-0.76,0.65-1.37,1.42-1.37h8.43c0.8,0,1.45,0.67,1.42,1.47l-0.05,1.36c-0.02,0.46-0.01,2.03,0.11,2.51 c0.1,0.42,0.44,0.82,0.78,1.07c0.47,0.35,0.83,0.42,1.64,0.54c0.9,0.14,2.09,0.21,3.54,0.21h24.09l0.21-5.8 c0.03-0.76,0.65-1.37,1.42-1.37h8.46c0.8,0,1.45,0.67,1.42,1.47l-0.49,13.57c-0.06,1.58-0.46,3.96-1.12,5.07 c-0.68,1.15-1.71,2.08-3.04,2.76c-1.23,0.63-2.76,1.07-4.56,1.32C280.44,432.9,278.4,433.02,276.06,433.02L276.06,433.02z"/>
+            <path d="M401.95,431.55l0.78-21.72c0.03-0.76,0.65-1.37,1.42-1.37h8.59c0.8,0,1.45,0.67,1.42,1.47l-0.78,21.72 c-0.03,0.76-0.65,1.37-1.42,1.37h-8.59C402.56,433.02,401.92,432.35,401.95,431.55z"/>
+            <path d="M346.77,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.71-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-2.47-0.04-3.58,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.58,0.66-0.76,1.35c-0.14,0.84-0.22,2.03-0.23,2.43l-0.07,1.91 c-0.01,0.39,0.01,1.84,0.06,2.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h32.83 c0.8,0,1.45,0.67,1.42,1.47L346.77,431.65z"/>
+            <path d="M386.2,425.88l-24.93-0.03l-0.21,5.8c-0.03,0.76-0.65,1.37-1.42,1.37h-8.46c-0.8,0-1.45-0.67-1.42-1.47 l0.49-13.57c0.06-1.58,0.46-3.96,1.12-5.07c0.68-1.15,1.71-2.08,3.04-2.76c1.23-0.63,2.76-1.07,4.56-1.32 c1.7-0.24,3.75-0.36,6.08-0.36l0,0h33.68c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.18c-0.03,0.76-0.65,1.37-1.42,1.37H368.9 c-1.91,0-3.52,0-4.61,0.12c-1.23,0.13-1.75,0.25-2.17,0.71c-0.36,0.39-0.4,2.52-0.4,2.52h24.63c0.8,0,1.45,0.67,1.42,1.47 l-0.15,4.22C387.59,425.28,386.96,425.88,386.2,425.88z"/>
+          </g>
+        </svg>
+      </a>
+      <a class="navbar-item" href="https://www.cycfi.com">Artist Docs</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="artist" data-version="v1.1-dev">
+  <aside class="nav">
+    <div class="panels">
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs">
+        </div>
+      </div>
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">Artist 2D Canvas Library</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Artist 2D Canvas Library</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../setup.html">Setup and Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../backends.html">Backends</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../gallery.html">Gallery</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../foundation.html">Foundation</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/point.html">Point and Extent</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/rect.html">Rect</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/circle.html">Circle</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/affine_transform.html">Affine Transform</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/color.html">Color</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/font.html">Font</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/image.html">Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/canvas_layer.html">Canvas Layer</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/resources.html">Resources</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../path.html">Path</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../canvas.html">Canvas</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="transforms.html">Transforms</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="current_path.html">Current Path</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="styles.html">Styles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="gradients.html">Gradients</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="rectangles.html">Rectangles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="text.html">Text</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="images.html">Drawing Images</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="states.html">States</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="context.html">Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../text_run.html">Text Run</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../text_layout.html">Text Layout</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../recording.html">Recording</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Artist 2D Canvas Library</span>
+    <span class="version">v1.1-dev</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../../v1.0/index.html">Artist 2D Canvas Library</a></div>
+      <ul class="versions">
+        <li class="version is-current">
+          <a href="../index.html">v1.1-dev</a>
+        </li>
+        <li class="version is-latest">
+          <a href="../../v1.0/index.html">v1.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../v1.0/index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Artist 2D Canvas Library</a></li>
+    <li>Reference</li>
+    <li><a href="../canvas.html">Canvas</a></li>
+    <li><a href="context.html">Context</a></li>
+  </ul>
+</nav>
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">v1.1-dev</button>
+  <div class="version-menu">
+    <a class="version is-current" href="context.html">v1.1-dev</a>
+    <a class="version" href="../../v1.0/canvas/context.html">v1.0</a>
+  </div>
+</div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Context</h1>
+<div class="sect1">
+<h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A canvas is a view onto a drawing context that something else owns. It does
+not create the context and does not free it, so it has to be destroyed
+before whatever it borrowed the context from. It cannot be copied, moved or
+assigned, so it is passed by reference; <code>draw(canvas&amp; cnv)</code> is the shape
+every host uses.</p>
+</div>
+<div class="paragraph">
+<p>Usually you do not construct one. The host window creates a canvas for its
+drawing area and hands it to you for the duration of the draw call, and it
+is gone again when the call returns. To draw into an image instead,
+construct one yourself on the context of an
+<a href="../foundation/image.html" class="xref page"><code>offscreen_image</code></a>. The examples throughout this
+reference are drawn that way.</p>
+</div>
+<div class="paragraph">
+<p>Underneath the canvas is the backend&#8217;s own drawing context, and <code>impl()</code>
+hands it back. That is the way out of Artist for the one facility the
+library does not wrap, and the way in for a host that already has a context
+of its own.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+See <a href="../canvas.html" class="xref page">Canvas</a> for the drawing model and an overview of the canvas.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_include"><a class="anchor" href="#_include"></a>Include</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">class canvas
+{
+public:
+
+   explicit          canvas(canvas_impl* context);
+                     ~canvas();
+
+   canvas_impl*      impl() const;
+   explicit          operator bool() const;
+   bool              operator!() const;
+
+   // Transforms, Current Path, Styles, Gradients, Rectangles, Text,
+   // Drawing Images and States, each on its own page.
+};</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>canvas_impl</code> is the backend&#8217;s drawing context type, named once per backend
+in <code>canvas.hpp</code>. See <a href="#_accessors">Accessors</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The context members of <a href="../canvas.html" class="xref page"><code>canvas</code></a> allow these expressions.</p>
+</div>
+<div class="sect2">
+<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>cnv</code>    </dt>
+<dd>
+<p>Object of type <code>canvas</code>.</p>
+</dd>
+<dt class="hdlist1"><code>ctx</code>    </dt>
+<dd>
+<p>Object of type <code>canvas_impl*</code>, a backend drawing context.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_constructor"><a class="anchor" href="#_constructor"></a>Constructor</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas(ctx)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct a <code>canvas</code> drawing on <code>ctx</code>, which it
+                        borrows and does not own.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+C++ brace initialization may also be used.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The constructor is explicit, so a <code>canvas_impl*</code> does not convert to a
+<code>canvas</code> on its own. <code>canvas</code> is non-copyable.</p>
+</div>
+<div class="paragraph">
+<p>The canvas holds the pointer it was given and keeps drawing through it for
+its whole life, so <code>ctx</code> has to outlive the canvas. Where the context comes
+from decides how long that is:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A host window makes one for each draw call and passes the canvas down by
+reference. The reference is good for the duration of that call only, and
+keeping it past the return leaves a canvas on a dead context.</p>
+</li>
+<li>
+<p><a href="../foundation/image.html" class="xref page"><code>offscreen_image::context()</code></a> draws into an
+image held in memory, whose pixels can be read back and saved. It is good
+while the <code>offscreen_image</code> lives, so the canvas goes out of scope first
+and the image is complete when it does.</p>
+</li>
+<li>
+<p><a href="../foundation/canvas_layer.html" class="xref page"><code>canvas_layer::context()</code></a> draws into a
+surface on the canvas&#8217;s own device, the GPU where the canvas renders
+there, at the canvas&#8217;s pixel density and with no pixel access. It is good
+while the layer lives, and only for the canvas the layer was made for.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Destroying the canvas does not destroy the context, and does not put the
+context back the way it was found. Whatever the last drawing call left in
+the backend&#8217;s own state is still there. A host that reuses one context for
+more than one canvas saves and restores around each of them, as the Skia
+host does.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_accessors"><a class="anchor" href="#_accessors"></a>Accessors</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool(cnv)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get <code>true</code> if the canvas holds a
+                  context.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>!cnv</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get <code>true</code> if the canvas holds no
+                  context.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.impl()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the context the canvas was built
+                  with, the same pointer that was passed
+                  in.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas_impl*</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The conversion to <code>bool</code> is explicit, so it converts in a condition and
+nowhere else.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="⚠️  WARNING"></i>
+</td>
+<td class="content">
+There is no portable way to reach a canvas for which <code>bool(cnv)</code>
+is <code>false</code>. Only a canvas built from a null <code>canvas_impl*</code> is invalid, and
+the Cairo, Skia and Direct2D constructors dereference the pointer before
+the object exists: on Cairo a null context is a measured segmentation
+fault. Quartz 2D and the recording backend survive it and report <code>false</code>.
+Test the context before building the canvas, not the canvas after.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p><code>canvas_impl</code> is a different type on every backend, and only one of them is
+declared in any one build. Which one follows from the backend the library
+was compiled for:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Backend</th>
+<th class="tableblock halign-left valign-top"><code>canvas_impl</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cairo</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cairo_t</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Skia</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SkCanvas</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Quartz 2D</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Incomplete. The pointer is a <code>CGContextRef</code>, so it is
+                  cast at both ends: the host hands the constructor a
+                  <code>(canvas_impl*) cg_ctx</code>, and <code>CGContextRef(cnv.impl())</code>
+                  gets it back.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Direct2D</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>d2d::context</code>, Artist&#8217;s own wrapper rather than a
+                  Direct2D interface.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Recording</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>recording::canvas_impl</code>, the journal the headless
+                  backend appends to.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Use <code>impl()</code> only for a facility of the backend that Artist does not
+expose. Code that does builds only on that backend; the rest of this
+reference is portable across all of them.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+The W3C canvas API has no counterpart. A browser context is the
+drawing surface, where an Artist <code>canvas</code> is a view onto a surface the host
+made, so Artist needs a way to name the surface and the W3C API does not.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_example"><a class="anchor" href="#_example"></a>Example</h3>
+<div class="paragraph">
+<p>Write the function a host calls with the canvas for its drawing area, sized
+to whatever that canvas turns out to be.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;
+...
+using namespace cycfi::artist;
+
+   void draw(canvas&amp; cnv)                                   <i class="conum" data-value="1"></i><b>(1)</b>
+   {
+      auto bounds = cnv.clip_extent();                      <i class="conum" data-value="2"></i><b>(2)</b>
+      auto dot = circle{center_point(bounds), 40};
+
+      // Set the style, build the path, then paint it.
+      cnv.fill_style(rgba(21, 101, 192, 255));
+      cnv.add_round_rect(bounds.inset(20), 12);
+      cnv.fill();
+
+      cnv.fill_style(colors::white);
+      cnv.add_circle(dot);
+      cnv.fill();
+
+      // The fill above consumed the circle, so it is added again here.
+      cnv.stroke_style(rgba(26, 26, 26, 255));
+      cnv.line_width(5);
+      cnv.add_circle(dot);                                  <i class="conum" data-value="3"></i><b>(3)</b>
+      cnv.stroke();
+   }</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Take the canvas by reference, as every host passes it.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Size the panel to the clip region, so the function fits whatever
+canvas it is given. The figure below was drawn on a canvas over an
+<a href="../foundation/image.html" class="xref page"><code>offscreen_image</code></a>, and <code>clip_extent()</code>
+sized the panel to the image.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Add the circle again for the ring.
+<a href="current_path.html" class="xref page"><code>fill</code> consumes the path</a>, so there is
+nothing left to stroke after the disc is filled.</td>
+</tr>
+</table>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/context_example.png"><img src="../_images/canvas/context_example.png" alt="A blue rounded panel with a white disc at its centre, ringed in near black" width="560px"></a>
+</div>
+<div class="title">Figure 1. What the code above draws.</div>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+<script src="../../../_/js/vendor/lunr.js"></script>
+<script src="../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../.." data-snippet-length="100" data-stylesheet="../../../_/css/search.css"></script>
+<script async src="../../../search-index.js"></script>
+  </body>
+</html>

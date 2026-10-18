@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Drawing Images :: Artist Docs</title>
+    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0/canvas/images.html">
+    <meta name="generator" content="Antora 3.1.15">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+<meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
+<link rel="icon" type="image/png" sizes="16x16" href="https://cycfi.com/assets/icons/favicon-16x16.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="https://cycfi.com/assets/icons/favicon-32x32.png"/>
+<link rel="icon" type="image/png" sizes="96x96" href="https://cycfi.com/assets/icons/favicon-96x96.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="https://cycfi.com/assets/icons/android-chrome-192x192.png"/>
+<link rel="icon" type="image/png" sizes="256x256" href="https://cycfi.com/assets/icons/android-chrome-256x256.png"/>
+<link rel="apple-touch-icon" type="image/png" href="https://cycfi.com/assets/icons/apple-touch-icon.png"/>
+
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <!--  Cycfi Logo -->
+      <a class="m-nav__logo" href="https://www.cycfi.com">
+        <svg version="1.1" x="0px" y="0px" width="200" viewBox="0 0 600 100" style="padding-top: 15;" xmlns="http://www.w3.org/2000/svg">
+          <g transform="matrix(2.55, 0, 0, 2.62, -464.010406, -1042.918213)" fill="#202020">
+            <path d="M234.37,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.7-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-3.5-0.04-4.6,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.59,0.66-0.76,1.35c-0.14,0.84-0.18,1.03-0.19,1.43l-0.14,3.91 c-0.01,0.39,0.04,0.84,0.09,1.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h33.85 c0.8,0,1.45,0.67,1.42,1.47L234.37,431.65z"/>
+            <path d="M276.06,433.02H257.9c-0.8,0-1.45-0.67-1.42-1.47l0.15-4.18c0.03-0.76,0.65-1.37,1.42-1.37h14.16 c1.91,0,3.52,0,4.61-0.12c1.23-0.13,1.75-0.25,2.17-0.71c0.36-0.39,0.4-2.52,0.4-2.52h-27.92c-11.11,0-13.26-5.13-13.1-9.44 l0.12-3.38c0.03-0.76,0.65-1.37,1.42-1.37h8.43c0.8,0,1.45,0.67,1.42,1.47l-0.05,1.36c-0.02,0.46-0.01,2.03,0.11,2.51 c0.1,0.42,0.44,0.82,0.78,1.07c0.47,0.35,0.83,0.42,1.64,0.54c0.9,0.14,2.09,0.21,3.54,0.21h24.09l0.21-5.8 c0.03-0.76,0.65-1.37,1.42-1.37h8.46c0.8,0,1.45,0.67,1.42,1.47l-0.49,13.57c-0.06,1.58-0.46,3.96-1.12,5.07 c-0.68,1.15-1.71,2.08-3.04,2.76c-1.23,0.63-2.76,1.07-4.56,1.32C280.44,432.9,278.4,433.02,276.06,433.02L276.06,433.02z"/>
+            <path d="M401.95,431.55l0.78-21.72c0.03-0.76,0.65-1.37,1.42-1.37h8.59c0.8,0,1.45,0.67,1.42,1.47l-0.78,21.72 c-0.03,0.76-0.65,1.37-1.42,1.37h-8.59C402.56,433.02,401.92,432.35,401.95,431.55z"/>
+            <path d="M346.77,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.71-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-2.47-0.04-3.58,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.58,0.66-0.76,1.35c-0.14,0.84-0.22,2.03-0.23,2.43l-0.07,1.91 c-0.01,0.39,0.01,1.84,0.06,2.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h32.83 c0.8,0,1.45,0.67,1.42,1.47L346.77,431.65z"/>
+            <path d="M386.2,425.88l-24.93-0.03l-0.21,5.8c-0.03,0.76-0.65,1.37-1.42,1.37h-8.46c-0.8,0-1.45-0.67-1.42-1.47 l0.49-13.57c0.06-1.58,0.46-3.96,1.12-5.07c0.68-1.15,1.71-2.08,3.04-2.76c1.23-0.63,2.76-1.07,4.56-1.32 c1.7-0.24,3.75-0.36,6.08-0.36l0,0h33.68c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.18c-0.03,0.76-0.65,1.37-1.42,1.37H368.9 c-1.91,0-3.52,0-4.61,0.12c-1.23,0.13-1.75,0.25-2.17,0.71c-0.36,0.39-0.4,2.52-0.4,2.52h24.63c0.8,0,1.45,0.67,1.42,1.47 l-0.15,4.22C387.59,425.28,386.96,425.88,386.2,425.88z"/>
+          </g>
+        </svg>
+      </a>
+      <a class="navbar-item" href="https://www.cycfi.com">Artist Docs</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="artist" data-version="v1.1-dev">
+  <aside class="nav">
+    <div class="panels">
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs">
+        </div>
+      </div>
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">Artist 2D Canvas Library</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Artist 2D Canvas Library</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../setup.html">Setup and Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../backends.html">Backends</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../gallery.html">Gallery</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../foundation.html">Foundation</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/point.html">Point and Extent</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/rect.html">Rect</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/circle.html">Circle</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/affine_transform.html">Affine Transform</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/color.html">Color</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/font.html">Font</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/image.html">Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/canvas_layer.html">Canvas Layer</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/resources.html">Resources</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../path.html">Path</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../canvas.html">Canvas</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="transforms.html">Transforms</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="current_path.html">Current Path</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="styles.html">Styles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="gradients.html">Gradients</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="rectangles.html">Rectangles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="text.html">Text</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="images.html">Drawing Images</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="states.html">States</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="context.html">Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../text_run.html">Text Run</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../text_layout.html">Text Layout</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../recording.html">Recording</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Artist 2D Canvas Library</span>
+    <span class="version">v1.1-dev</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../../v1.0/index.html">Artist 2D Canvas Library</a></div>
+      <ul class="versions">
+        <li class="version is-current">
+          <a href="../index.html">v1.1-dev</a>
+        </li>
+        <li class="version is-latest">
+          <a href="../../v1.0/index.html">v1.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../v1.0/index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Artist 2D Canvas Library</a></li>
+    <li>Reference</li>
+    <li><a href="../canvas.html">Canvas</a></li>
+    <li><a href="images.html">Drawing Images</a></li>
+  </ul>
+</nav>
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">v1.1-dev</button>
+  <div class="version-menu">
+    <a class="version is-current" href="images.html">v1.1-dev</a>
+    <a class="version" href="../../v1.0/canvas/images.html">v1.0</a>
+  </div>
+</div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Drawing Images</h1>
+<div class="sect1">
+<h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>draw</code> paints an <a href="../foundation/image.html" class="xref page">image</a> onto the canvas. The
+Image page covers the image itself: loading one, building one from pixels,
+and drawing into one. The eight calls here differ only in how much of the
+image is painted, where it lands, and at what size.</p>
+</div>
+<div class="paragraph">
+<p>The ink is the image&#8217;s own: unlike every other paint on the canvas, the
+<a href="styles.html" class="xref page">fill and stroke styles</a> do not colour it. The
+<code>draw</code> calls leave the <a href="current_path.html" class="xref page">current path</a> as it
+is. Everything else about the drawing state applies as it
+would to any other paint: the geometry goes through the
+<a href="transforms.html" class="xref page">current transform</a>, the clip cuts it, the
+image is composited over what is already there, and the
+<a href="styles.html#_shadow" class="xref page">shadow</a> and the
+<a href="styles.html#_compositing" class="xref page">compositing operator</a> take effect.</p>
+</div>
+<div class="paragraph">
+<p>Positions and rectangles passed to <code>draw</code> are in user space. The image&#8217;s
+own <code>size()</code>, and the <code>src</code> rectangle, are in the image&#8217;s units, whatever
+its scale. A 2x image covers the same ground as a 1x image of the same
+<code>size()</code>; it carries more detail into it.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+These are the W3C canvas API&#8217;s <code>drawImage</code>, in its three argument
+counts, spelled as C++ overloads.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+See <a href="../canvas.html" class="xref page">Canvas</a> for the drawing model and an overview of the canvas.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_include"><a class="anchor" href="#_include"></a>Include</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The two layer overloads need the layer&#8217;s own header as well:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas_layer.hpp&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">class canvas
+{
+public:
+
+   void  draw(image const&amp; pic, rect const&amp; src, rect const&amp; dest);
+   void  draw(image const&amp; pic, rect const&amp; dest);
+   void  draw(image const&amp; pic, point pos = {0, 0});
+   void  draw(image const&amp; pic, point pos, float scale);
+   void  draw(image const&amp; pic, float posx, float posy);
+   void  draw(image const&amp; pic, float posx, float posy, float scale);
+
+   void  draw(canvas_layer const&amp; layer, rect const&amp; dest);
+   void  draw(canvas_layer const&amp; layer, point pos = {0, 0});
+};</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The image drawing members of <a href="../canvas.html" class="xref page"><code>canvas</code></a> allow these
+expressions.</p>
+</div>
+<div class="sect2">
+<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>cnv</code>                </dt>
+<dd>
+<p>Object of type <code>canvas</code>.</p>
+</dd>
+<dt class="hdlist1"><code>pic</code>                </dt>
+<dd>
+<p>Object of type <a href="../foundation/image.html" class="xref page">image</a>.</p>
+</dd>
+<dt class="hdlist1"><code>layer</code>              </dt>
+<dd>
+<p>Object of type
+<a href="../foundation/canvas_layer.html" class="xref page">canvas_layer</a>.</p>
+</dd>
+<dt class="hdlist1"><code>src</code>, <code>dest</code>        </dt>
+<dd>
+<p>Objects of type <a href="../foundation/rect.html" class="xref page">rect</a>.</p>
+</dd>
+<dt class="hdlist1"><code>pos</code>                </dt>
+<dd>
+<p>Object of type <a href="../foundation/point.html" class="xref page">point</a>
+for the top left corner.</p>
+</dd>
+<dt class="hdlist1"><code>posx</code>, <code>posy</code>       </dt>
+<dd>
+<p>Floating point values for the top left corner.</p>
+</dd>
+<dt class="hdlist1"><code>scale</code>              </dt>
+<dd>
+<p>Floating point value for a multiplier on the
+image&#8217;s own size.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_operation"><a class="anchor" href="#_operation"></a>Operation</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(pic)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole of <code>pic</code> with
+                                        its top left corner at the
+                                        origin.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(pic, pos)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole of <code>pic</code> with
+                                        its top left corner at
+                                        <code>pos</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(pic, posx, posy)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole of <code>pic</code> with
+                                        its top left corner at
+                                        <code>posx</code>, <code>posy</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(pic, pos, scale)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole of <code>pic</code> at
+                                        <code>pos</code>, its size multiplied by
+                                        <code>scale</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(pic, posx, posy, scale)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole of <code>pic</code> at
+                                        <code>posx</code>, <code>posy</code>, its size
+                                        multiplied by <code>scale</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(pic, dest)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole of <code>pic</code>
+                                        stretched to fill <code>dest</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(pic, src, dest)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the region <code>src</code> of
+                                        <code>pic</code>, stretched to fill
+                                        <code>dest</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(layer)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole of <code>layer</code>
+                                        with its top left corner at
+                                        the origin.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(layer, pos)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole of <code>layer</code>
+                                        with its top left corner at
+                                        <code>pos</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.draw(layer, dest)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Paint the whole of <code>layer</code>
+                                        stretched to fill <code>dest</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_placing_an_image"><a class="anchor" href="#_placing_an_image"></a>Placing an Image</h3>
+<div class="paragraph">
+<p>The image is painted at <code>pic.size()</code>, its own units, not at its pixel
+count. An image loaded at 2x has twice the pixels of a 1x one of the same
+<code>size()</code> and covers exactly the same ground; the extra pixels go into the
+detail. One drawing therefore works on displays of different densities.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_scaling_an_image"><a class="anchor" href="#_scaling_an_image"></a>Scaling an Image</h3>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/draw_placement.png"><img src="../_images/canvas/draw_placement.png" alt="A four digit seven segment display drawn at its own size, at one and a half times, and stretched into a rectangle twice as tall" width="560px"></a>
+</div>
+<div class="title">Figure 1. The same image placed three ways.</div>
+</div>
+<div class="paragraph">
+<p><code>scale</code> multiplies both axes, so the shape is kept. <code>dest</code> does not: the
+two axes stretch independently to reach its edges, and an image put into a
+rectangle of another proportion comes out squashed, as the rightmost
+figure above shows. Compute <code>dest</code> from the image&#8217;s own aspect ratio where
+that matters.</p>
+</div>
+<div class="paragraph">
+<p>Nothing is painted outside <code>dest</code>, and an empty <code>dest</code>, one with zero
+width or zero height, paints nothing at all.</p>
+</div>
+<div class="paragraph">
+<p>Enlarging is smoothed rather than blocky: a pixel of the image spread over
+several pixels of the canvas is interpolated, so a small image blown up
+comes out soft. There is no control over that.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_drawing_part_of_an_image"><a class="anchor" href="#_drawing_part_of_an_image"></a>Drawing Part of an Image</h3>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/draw_src_dest.png"><img src="../_images/canvas/draw_src_dest.png" alt="The third cell outlined in a four digit seven segment display, and the same cell drawn larger beside it" width="560px"></a>
+</div>
+<div class="title">Figure 2. Lifting one frame out of a sheet.</div>
+</div>
+<div class="paragraph">
+<p>This is how a single frame is taken from a sprite sheet, and it is the
+form the other five are built from: each of them calls this one with <code>src</code>
+covering the whole image.</p>
+</div>
+<div class="paragraph">
+<p><code>src</code> is in the image&#8217;s own units, the same units as <code>size()</code>, so it names
+the same region of a 2x image as of a 1x one. A sheet can therefore be
+swapped for a denser one without touching the arithmetic that picks the
+frames out of it. In the figure above the cells are 32 units wide, so the
+third of them starts 64 units in, which is the <code>64</code> in <code>src</code>.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="⚠️  WARNING"></i>
+</td>
+<td class="content">
+Keep <code>src</code> inside the image and give both rectangles a positive
+width and height. Outside that the backends disagree. A <code>src</code> that runs
+past the image&#8217;s edge is clipped to it and the result stretched over the
+whole of <code>dest</code> on Quartz 2D, while Cairo shrinks what it paints in
+proportion, as the W3C API says to.
+A <code>src</code> of zero width or height paints nothing on Cairo, again as the W3C
+API says, and the whole image stretched across <code>dest</code> on Quartz 2D. A
+<code>dest</code> whose <code>right</code> is left of its <code>left</code> mirrors the image on Cairo and
+does not on Quartz 2D.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_drawing_a_layer"><a class="anchor" href="#_drawing_a_layer"></a>Drawing a Layer</h3>
+<div class="paragraph">
+<p>A <code>canvas_layer</code> is an offscreen surface made for one canvas, living on
+that canvas&#8217;s device at that canvas&#8217;s pixel density. It is the buffer to
+reach for when the same drawing is put down every frame, an animation for
+instance: draw into it once through its <code>context()</code>, then paint it with
+<code>draw</code> as often as needed. It keeps what was drawn into it between frames,
+and unlike an <code>image</code> it offers no access to its pixels.</p>
+</div>
+<div class="paragraph">
+<p>Its <code>size()</code> is in user space units, like an image&#8217;s, so drawing it at
+<code>pos</code> covers <code>layer.size()</code> units from there however dense the canvas
+underneath is. A layer is valid only for the canvas it was made for.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_example"><a class="anchor" href="#_example"></a>Example</h3>
+<div class="paragraph">
+<p>Render the ten digits of a seven segment display once into a single sheet,
+then put a reading together by painting one frame of the sheet per digit.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+
+   // One seven segment digit in a 32 by 32 cell, at the corner `at`.
+   void draw_digit(canvas&amp; cnv, int n, point at)
+   {
+      // Three segment shapes in a 16 by 26 digit: the horizontal bar across
+      // the top, the vertical post down one side, and the pointed middle
+      // bar. The bar is 16 long and the post 13, so they are not one shape
+      // turned; the other four segments are these two turned half a turn.
+      static path const bar{"M 0.5 0 L 15.5 0 L 13.1 2.4 L 2.9 2.4 Z"};
+      static path const post{"M 0 0.5 L 0 12.5 L 2.4 10.1 L 2.4 2.9 Z"};
+      static path const mid{
+         "M 0 13 L 1.2 11.8 L 14.8 11.8 L 16 13 L 14.8 14.2 L 1.2 14.2 Z"
+      };
+
+      // Segments a to g: the shape, where it goes, and whether it is turned.
+      struct placement { path const&amp; shape; float x, y; bool turned; };
+      static placement const seg[] =
+      {
+         {bar, 0, 0, false},   {post, 16, 13, true},  {post, 16, 26, true},
+         {bar, 16, 26, true},  {post, 0, 13, false},  {post, 0, 0, false},
+         {mid, 0, 0, false}
+      };
+      static int const lit[] =
+         {0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f};
+
+      auto st = cnv.new_state();
+      cnv.fill_style(rgba(26, 26, 26, 255));
+      cnv.fill_round_rect(rect{at.x, at.y, at.x + 32, at.y + 32}, 4);
+      cnv.translate(at.x + 8, at.y + 3);
+
+      for (int i = 0; i != 7; ++i)
+      {
+         auto seg_state = cnv.new_state();
+         cnv.translate(seg[i].x, seg[i].y);
+         if (seg[i].turned)
+            cnv.rotate(cycfi::pi);
+         cnv.fill_style(
+            ((lit[n] &gt;&gt; i) &amp; 1)?
+               rgba(255, 255, 255, 255) : rgba(255, 255, 255, 12)
+         );
+         cnv.add_path(seg[i].shape);
+         cnv.fill();
+      }
+   }
+...
+   // The ten digits, rendered once into one 320 by 32 sheet.
+   auto sheet = image{320, 32};
+   {
+      offscreen_image ctx{sheet};
+      canvas scnv{ctx.context()};
+      for (int d = 0; d != 10; ++d)
+         draw_digit(scnv, d, point{d * 32.0f, 0});           <i class="conum" data-value="1"></i><b>(1)</b>
+   }
+
+   // A reading, blitted from the sheet one digit at a time. The 2 is drawn
+   // twice, from the one cell that holds it.
+   cnv.draw(sheet, point{20, 20});                           <i class="conum" data-value="2"></i><b>(2)</b>
+   char const* reading = "2026";
+   for (int i = 0; reading[i]; ++i)
+   {
+      float x = (reading[i] - '0') * 32.0f;
+      cnv.draw(                                              <i class="conum" data-value="3"></i><b>(3)</b>
+         sheet,
+         rect{x, 0, x + 32, 32},
+         rect{60 + i * 64.0f, 70, 108 + i * 64.0f, 118}   <i class="conum" data-value="4"></i><b>(4)</b>
+      );
+   }</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Render the ten digits into <code>sheet</code>. The segment drawing runs ten
+times, whatever the reading is and however often it changes after
+that.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Paint the whole sheet at its own size, with its top left corner at
+20, 20.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Paint the cell that holds each digit, picked out by <code>src</code>. Every later
+frame is four <code>draw</code> calls against a sheet that is already rasterised.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>Enlarge each cell from 32 units to 48. The reading is softer than the
+sheet above it as a result; a sheet is usually authored at the largest
+size it will be drawn.</td>
+</tr>
+</table>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/images_example.png"><img src="../_images/canvas/images_example.png" alt="A sheet of the ten digits in a seven segment display, and below it a reading of 2026 built from four of its cells" width="560px"></a>
+</div>
+<div class="title">Figure 3. What the code above draws.</div>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+<script src="../../../_/js/vendor/lunr.js"></script>
+<script src="../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../.." data-snippet-length="100" data-stylesheet="../../../_/css/search.css"></script>
+<script async src="../../../search-index.js"></script>
+  </body>
+</html>

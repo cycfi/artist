@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 180"
+     font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'>
+  <defs>
+    <style>
+      .pic   { fill: #f3f3f3; stroke: #1a1a1a; stroke-width: 1; }
+      .src   { fill: none; stroke: #1565c0; stroke-width: 2; }
+      .dest  { fill: none; stroke: #1565c0; stroke-width: 2; }
+      .grid  { stroke: #b0b0b0; stroke-width: 1; }
+      .label { font-size: 13px; fill: #1a1a1a; }
+      .rlabel{ font-size: 13px; fill: #1565c0; }
+    </style>
+    <marker id="a" viewBox="0 0 8 8" refX="7" refY="4"
+      markerWidth="10" markerHeight="10" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 z" fill="#1565c0"/>
+    </marker>
+  </defs>
+
+  <rect class="pic" x="20" y="30" width="150" height="100"/>
+  <line class="grid" x1="70" y1="30" x2="70" y2="130"/>
+  <line class="grid" x1="120" y1="30" x2="120" y2="130"/>
+  <line class="grid" x1="20" y1="80" x2="170" y2="80"/>
+  <rect class="src" x="70" y="30" width="50" height="50"/>
+  <text class="rlabel" x="95" y="22" text-anchor="middle">src</text>
+  <text class="label" x="95" y="148" text-anchor="middle">pic</text>
+
+  <line stroke="#1565c0" stroke-width="1.5" x1="180" y1="80" x2="255" y2="80"
+    marker-end="url(#a)"/>
+
+  <rect class="dest" x="270" y="35" width="120" height="90"/>
+  <text class="rlabel" x="330" y="27" text-anchor="middle">dest</text>
+  <text class="label" x="330" y="148" text-anchor="middle">canvas</text>
+</svg>

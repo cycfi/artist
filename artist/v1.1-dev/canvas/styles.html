@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Styles :: Artist Docs</title>
+    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0/canvas/styles.html">
+    <meta name="generator" content="Antora 3.1.15">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+<meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
+<link rel="icon" type="image/png" sizes="16x16" href="https://cycfi.com/assets/icons/favicon-16x16.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="https://cycfi.com/assets/icons/favicon-32x32.png"/>
+<link rel="icon" type="image/png" sizes="96x96" href="https://cycfi.com/assets/icons/favicon-96x96.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="https://cycfi.com/assets/icons/android-chrome-192x192.png"/>
+<link rel="icon" type="image/png" sizes="256x256" href="https://cycfi.com/assets/icons/android-chrome-256x256.png"/>
+<link rel="apple-touch-icon" type="image/png" href="https://cycfi.com/assets/icons/apple-touch-icon.png"/>
+
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <!--  Cycfi Logo -->
+      <a class="m-nav__logo" href="https://www.cycfi.com">
+        <svg version="1.1" x="0px" y="0px" width="200" viewBox="0 0 600 100" style="padding-top: 15;" xmlns="http://www.w3.org/2000/svg">
+          <g transform="matrix(2.55, 0, 0, 2.62, -464.010406, -1042.918213)" fill="#202020">
+            <path d="M234.37,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.7-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-3.5-0.04-4.6,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.59,0.66-0.76,1.35c-0.14,0.84-0.18,1.03-0.19,1.43l-0.14,3.91 c-0.01,0.39,0.04,0.84,0.09,1.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h33.85 c0.8,0,1.45,0.67,1.42,1.47L234.37,431.65z"/>
+            <path d="M276.06,433.02H257.9c-0.8,0-1.45-0.67-1.42-1.47l0.15-4.18c0.03-0.76,0.65-1.37,1.42-1.37h14.16 c1.91,0,3.52,0,4.61-0.12c1.23-0.13,1.75-0.25,2.17-0.71c0.36-0.39,0.4-2.52,0.4-2.52h-27.92c-11.11,0-13.26-5.13-13.1-9.44 l0.12-3.38c0.03-0.76,0.65-1.37,1.42-1.37h8.43c0.8,0,1.45,0.67,1.42,1.47l-0.05,1.36c-0.02,0.46-0.01,2.03,0.11,2.51 c0.1,0.42,0.44,0.82,0.78,1.07c0.47,0.35,0.83,0.42,1.64,0.54c0.9,0.14,2.09,0.21,3.54,0.21h24.09l0.21-5.8 c0.03-0.76,0.65-1.37,1.42-1.37h8.46c0.8,0,1.45,0.67,1.42,1.47l-0.49,13.57c-0.06,1.58-0.46,3.96-1.12,5.07 c-0.68,1.15-1.71,2.08-3.04,2.76c-1.23,0.63-2.76,1.07-4.56,1.32C280.44,432.9,278.4,433.02,276.06,433.02L276.06,433.02z"/>
+            <path d="M401.95,431.55l0.78-21.72c0.03-0.76,0.65-1.37,1.42-1.37h8.59c0.8,0,1.45,0.67,1.42,1.47l-0.78,21.72 c-0.03,0.76-0.65,1.37-1.42,1.37h-8.59C402.56,433.02,401.92,432.35,401.95,431.55z"/>
+            <path d="M346.77,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.71-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-2.47-0.04-3.58,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.58,0.66-0.76,1.35c-0.14,0.84-0.22,2.03-0.23,2.43l-0.07,1.91 c-0.01,0.39,0.01,1.84,0.06,2.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h32.83 c0.8,0,1.45,0.67,1.42,1.47L346.77,431.65z"/>
+            <path d="M386.2,425.88l-24.93-0.03l-0.21,5.8c-0.03,0.76-0.65,1.37-1.42,1.37h-8.46c-0.8,0-1.45-0.67-1.42-1.47 l0.49-13.57c0.06-1.58,0.46-3.96,1.12-5.07c0.68-1.15,1.71-2.08,3.04-2.76c1.23-0.63,2.76-1.07,4.56-1.32 c1.7-0.24,3.75-0.36,6.08-0.36l0,0h33.68c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.18c-0.03,0.76-0.65,1.37-1.42,1.37H368.9 c-1.91,0-3.52,0-4.61,0.12c-1.23,0.13-1.75,0.25-2.17,0.71c-0.36,0.39-0.4,2.52-0.4,2.52h24.63c0.8,0,1.45,0.67,1.42,1.47 l-0.15,4.22C387.59,425.28,386.96,425.88,386.2,425.88z"/>
+          </g>
+        </svg>
+      </a>
+      <a class="navbar-item" href="https://www.cycfi.com">Artist Docs</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="artist" data-version="v1.1-dev">
+  <aside class="nav">
+    <div class="panels">
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs">
+        </div>
+      </div>
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">Artist 2D Canvas Library</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Artist 2D Canvas Library</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../setup.html">Setup and Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../backends.html">Backends</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../gallery.html">Gallery</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../foundation.html">Foundation</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/point.html">Point and Extent</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/rect.html">Rect</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/circle.html">Circle</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/affine_transform.html">Affine Transform</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/color.html">Color</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/font.html">Font</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/image.html">Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/canvas_layer.html">Canvas Layer</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/resources.html">Resources</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../path.html">Path</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../canvas.html">Canvas</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="transforms.html">Transforms</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="current_path.html">Current Path</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="styles.html">Styles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="gradients.html">Gradients</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="rectangles.html">Rectangles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="text.html">Text</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="images.html">Drawing Images</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="states.html">States</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="context.html">Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../text_run.html">Text Run</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../text_layout.html">Text Layout</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../recording.html">Recording</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Artist 2D Canvas Library</span>
+    <span class="version">v1.1-dev</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../../v1.0/index.html">Artist 2D Canvas Library</a></div>
+      <ul class="versions">
+        <li class="version is-current">
+          <a href="../index.html">v1.1-dev</a>
+        </li>
+        <li class="version is-latest">
+          <a href="../../v1.0/index.html">v1.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../v1.0/index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Artist 2D Canvas Library</a></li>
+    <li>Reference</li>
+    <li><a href="../canvas.html">Canvas</a></li>
+    <li><a href="styles.html">Styles</a></li>
+  </ul>
+</nav>
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">v1.1-dev</button>
+  <div class="version-menu">
+    <a class="version is-current" href="styles.html">v1.1-dev</a>
+    <a class="version" href="../../v1.0/canvas/styles.html">v1.0</a>
+  </div>
+</div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Styles</h1>
+<div class="sect1">
+<h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The styles decide how <code>fill</code> and <code>stroke</code> render: the paint each uses, the
+width and shape of a stroke, the blur that softens what is drawn, the
+shadow cast under it, and how new drawing combines with what is already on the canvas. Each is canvas
+state. Set one and it stays in effect for every paint that follows, until
+it is set again or a saved state is restored over it. Every style on this
+page is part of the state that a <code>new_state</code> scope keeps, so the usual way
+to apply a style to one shape is inside a
+<a href="states.html" class="xref page">saved state</a>.</p>
+</div>
+<div class="paragraph">
+<p>A style is read when the path is painted, not when it is set, so set it
+before <code>fill</code> or <code>stroke</code>. The geometry it paints is the
+<a href="current_path.html" class="xref page">current path</a>.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+Artist follows the W3C canvas API, and the styles map onto its
+<code>fillStyle</code>, <code>strokeStyle</code>, <code>lineWidth</code>, <code>lineCap</code>, <code>lineJoin</code>,
+<code>miterLimit</code>, the four <code>shadow</code> attributes, a <code>filter</code> of one <code>blur()</code>, and
+<code>globalCompositeOperation</code>. They behave as the W3C API specifies, the same on every backend, with one
+exception: <code>darker</code> takes the smaller of the two colors (W3C <code>darken</code>) on
+every backend, an approximation of the W3C plus-darker formula.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+See <a href="../canvas.html" class="xref page">Canvas</a> for the drawing model and an overview of the canvas.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_include"><a class="anchor" href="#_include"></a>Include</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">class canvas
+{
+public:
+
+   enum line_cap_enum
+   {
+      butt,
+      round,
+      square
+   };
+
+   enum join_enum
+   {
+      bevel_join,
+      round_join,
+      miter_join
+   };
+
+   enum composite_op_enum
+   {
+      source_over,
+      source_atop,
+      source_in,
+      source_out,
+
+      destination_over,
+      destination_atop,
+      destination_in,
+      destination_out,
+
+      lighter,
+      darker,
+      copy,
+      xor_,
+
+      difference,
+      exclusion,
+      multiply,
+      screen,
+
+      color_dodge,
+      color_burn,
+      soft_light,
+      hard_light,
+
+      hue,
+      saturation,
+      color_op,
+      luminosity
+   };
+
+   void     fill_style(color c);
+   void     stroke_style(color c);
+   void     fill_style(linear_gradient const&amp; gr);
+   void     fill_style(radial_gradient const&amp; gr);
+   void     stroke_style(linear_gradient const&amp; gr);
+   void     stroke_style(radial_gradient const&amp; gr);
+   void     fill_color(color c);
+   void     stroke_color(color c);
+
+   void     line_width(float w);
+   void     line_cap(line_cap_enum cap);
+   void     line_join(join_enum join);
+   void     miter_limit(float limit = 10);
+
+   void     shadow_style(point offset, float blur, color c);
+   void     shadow_style(float offsetx, float offsety, float blur, color c);
+   void     shadow_style(float blur, color c);
+
+   void     blur_style(float radius);
+
+   void     global_composite_operation(composite_op_enum mode);
+   void     composite_op(composite_op_enum mode);
+};</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The enums are nested in <code>canvas</code>, so the values are spelled
+<code>canvas::round</code>, <code>canvas::miter_join</code>, <code>canvas::copy</code> and so on.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The style members of <a href="../canvas.html" class="xref page"><code>canvas</code></a> allow these expressions.</p>
+</div>
+<div class="sect2">
+<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>cnv</code>                </dt>
+<dd>
+<p>Object of type <code>canvas</code>.</p>
+</dd>
+<dt class="hdlist1"><code>c</code>                  </dt>
+<dd>
+<p>Object of type <a href="../foundation/color.html" class="xref page">color</a>.</p>
+</dd>
+<dt class="hdlist1"><code>lg</code>                 </dt>
+<dd>
+<p>Object of type
+<a href="gradients.html" class="xref page"><code>canvas::linear_gradient</code></a>.</p>
+</dd>
+<dt class="hdlist1"><code>rg</code>                 </dt>
+<dd>
+<p>Object of type
+<a href="gradients.html" class="xref page"><code>canvas::radial_gradient</code></a>.</p>
+</dd>
+<dt class="hdlist1"><code>w</code>                  </dt>
+<dd>
+<p>Floating point value for a line width.</p>
+</dd>
+<dt class="hdlist1"><code>limit</code>              </dt>
+<dd>
+<p>Floating point value for a miter limit, in line
+widths.</p>
+</dd>
+<dt class="hdlist1"><code>offset</code>             </dt>
+<dd>
+<p>Object of type <a href="../foundation/point.html" class="xref page">point</a> for
+the displacement of a shadow.</p>
+</dd>
+<dt class="hdlist1"><code>offsetx</code>, <code>offsety</code> </dt>
+<dd>
+<p>Floating point values for the displacement of a
+shadow.</p>
+</dd>
+<dt class="hdlist1"><code>blur</code>               </dt>
+<dd>
+<p>Floating point value for the softness of a shadow.</p>
+</dd>
+<dt class="hdlist1"><code>radius</code>             </dt>
+<dd>
+<p>Floating point value for the softness of a blur.</p>
+</dd>
+<dt class="hdlist1"><code>mode</code>               </dt>
+<dd>
+<p>Object of type <code>canvas::composite_op_enum</code>.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_mutators"><a class="anchor" href="#_mutators"></a>Mutators</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_style(c)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the fill style to the flat
+                                            color <code>c</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_style(lg)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the fill style to the
+                                            gradient <code>lg</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_style(rg)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the fill style to the
+                                            gradient <code>rg</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.stroke_style(c)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the stroke style to the
+                                            flat color <code>c</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.stroke_style(lg)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the stroke style to the
+                                            gradient <code>lg</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.stroke_style(rg)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the stroke style to the
+                                            gradient <code>rg</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_color(c)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the fill style to the flat
+                                            color <code>c</code>, the same as
+                                            <code>cnv.fill_style(c)</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.stroke_color(c)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the stroke style to the
+                                            flat color <code>c</code>, the same as
+                                            <code>cnv.stroke_style(c)</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_width(w)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the line width to <code>w</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_cap(canvas::butt)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the line cap to end a
+                                            stroke exactly at the end of
+                                            the path (the default).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_cap(canvas::round)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the line cap to extend a
+                                            stroke past the end by a half
+                                            circle whose radius is half the
+                                            line width.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_cap(canvas::square)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the line cap to extend a
+                                            stroke past the end by half the
+                                            line width, squared off.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_join(canvas::bevel_join)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the line join to cut a
+                                            corner flat, across the outer
+                                            edges of the two segments.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_join(canvas::round_join)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the line join to round a
+                                            corner with an arc whose radius
+                                            is half the line width.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_join(canvas::miter_join)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the line join to extend the
+                                            outer edges of both segments
+                                            until they meet in a point (the
+                                            default).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.miter_limit(limit)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the miter limit to <code>limit</code>
+                                            line widths, past which a miter
+                                            is cut back to a bevel.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.miter_limit()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the miter limit to 10, the
+                                            default.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.shadow_style(offset, blur, c)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the shadow to the color
+                                            <code>c</code>, displaced by <code>offset</code> and
+                                            softened by <code>blur</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.shadow_style(offsetx, offsety,
+  blur, c)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the shadow to the color
+                                            <code>c</code>, displaced by <code>offsetx</code> and
+                                            <code>offsety</code> and softened by
+                                            <code>blur</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.shadow_style(blur, c)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the shadow to the color <code>c</code>
+                                            with no offset, softened by
+                                            <code>blur</code>: a glow.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.blur_style(radius)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the blur to soften what is
+                                            drawn by <code>radius</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.composite_op(mode)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the composite operation to
+                                            <code>mode</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.global_composite_operation(mode)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the composite operation to
+                                            <code>mode</code>, the same as
+                                            <code>cnv.composite_op(mode)</code>, under
+                                            its W3C name.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_paint"><a class="anchor" href="#_paint"></a>Paint</h3>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/paint.png"><img src="../_images/canvas/paint.png" alt="A color and a gradient, each as a fill and as a stroke" width="560px"></a>
+</div>
+<div class="title">Figure 1. A color and a gradient, each as a fill and as a stroke.</div>
+</div>
+<div class="paragraph">
+<p>Fill and stroke are separate styles, so one path can be filled in one paint
+and outlined in another. Each holds one paint at a time: setting a color
+replaces a gradient, and setting a gradient replaces a color. Both start as
+opaque black.</p>
+</div>
+<div class="paragraph">
+<p>The fill style also paints <code>fill_text</code> and <code>fill_rect</code>, and the stroke style
+<code>stroke_text</code> and <code>stroke_rect</code>. How a gradient is built, and the space its
+coordinates are in, is under <a href="gradients.html" class="xref page">Gradients</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_line_width"><a class="anchor" href="#_line_width"></a>Line Width</h3>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/line_width.png"><img src="../_images/canvas/line_width.png" alt="Three widths on the same path" width="560px"></a>
+</div>
+<div class="title">Figure 2. Three widths. The white line is the path.</div>
+</div>
+<div class="paragraph">
+<p>The stroke is centred on the path, half on each side. The default width is
+1. A width that is zero, negative, infinite or NaN is ignored, and the
+width stays what it was.</p>
+</div>
+<div class="paragraph">
+<p>The width is in user space, under the transform in effect when the path is
+stroked, not when the width is set. After <code>cnv.scale(2)</code>, a width of 10
+strokes 20 device units wide, whichever call came first.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_line_cap"><a class="anchor" href="#_line_cap"></a>Line Cap</h3>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/line_cap.png"><img src="../_images/canvas/line_cap.png" alt="A line under each cap" width="560px"></a>
+</div>
+<div class="title">Figure 3. The same line under each cap. The grey guides mark where the path ends.</div>
+</div>
+<div class="paragraph">
+<p>A cap is drawn at the two open ends of a sub-path. A sub-path closed with
+<code>close_path</code> has no ends, and its corners are joins instead.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_line_join"><a class="anchor" href="#_line_join"></a>Line Join</h3>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/line_join.png"><img src="../_images/canvas/line_join.png" alt="A corner under each join" width="560px"></a>
+</div>
+<div class="title">Figure 4. The same corner under each join.</div>
+</div>
+<div class="paragraph">
+<p>A miter grows as the angle between two segments closes. At an angle θ it is
+1 / sin(θ / 2) line widths long, so a limit of 10 keeps a miter at any angle
+above about 11.5 degrees and bevels anything sharper. A limit of 2 bevels
+everything below 60 degrees. The limit only applies to <code>canvas::miter_join</code>.
+A limit that is zero, negative, infinite or NaN is ignored.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/miter_limit.png"><img src="../_images/canvas/miter_limit.png" alt="A sharp corner under two miter limits" width="560px"></a>
+</div>
+<div class="title">Figure 5. A 24 degree corner: its miter is 4.8 line widths long, inside a limit of 10 and cut back to a bevel by a limit of 2.</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_shadow"><a class="anchor" href="#_shadow"></a>Shadow</h3>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/shadow.png"><img src="../_images/canvas/shadow.png" alt="Four shadows" width="560px"></a>
+</div>
+<div class="title">Figure 6. A hard shadow, a soft one, a glow, and the shadow of a half-transparent shape.</div>
+</div>
+<div class="paragraph">
+<p>The shadow is what is drawn, in <code>c</code>, blurred, moved by <code>offset</code>, and put
+down beneath it. Fills, strokes, text and images all cast one. Its strength
+is the alpha of what is drawn, point by point, times the alpha of <code>c</code>: a
+half-transparent shape casts a half-strength shadow, and the parts of a
+gradient that fade out cast less.</p>
+</div>
+<div class="paragraph">
+<p><code>offset</code> and <code>blur</code> are in the canvas&#8217;s own units and are not changed by
+the transform: after <code>cnv.scale(2)</code> or a rotation, an offset of 10 across
+is still 10 across. On an image with a scale, they are in the image&#8217;s
+units, not its pixels. <code>blur</code> is twice the standard deviation of the
+Gaussian that softens the edge, so a shadow fades out over roughly <code>blur</code>
+units on either side of it. A <code>blur</code> of zero gives a hard-edged copy.</p>
+</div>
+<div class="paragraph">
+<p>A shadow is drawn only when it can be seen: when <code>c</code> is not fully
+transparent, and <code>offset</code> or <code>blur</code> is not zero.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="💡  TIP"></i>
+</td>
+<td class="content">
+There is no call to turn a shadow off. Set it inside a saved state and
+let the restore remove it:
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+rect panel;                     // the panel to draw
+...
+   {
+      auto s = cnv.new_state();
+      cnv.shadow_style({0, 2}, 6, colors::black.opacity(0.4));
+      cnv.fill_round_rect(panel, 8);
+   }  // no shadow from here on</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Setting a fully transparent shadow color, or no offset and no blur, turns it
+off too.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_blur"><a class="anchor" href="#_blur"></a>Blur</h3>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/blur.png"><img src="../_images/canvas/blur.png" alt="Four blurred shapes" width="560px"></a>
+</div>
+<div class="title">Figure 7. Two blurs, a glow made of a blurred copy under the shape, and a blurred shape with a shadow.</div>
+</div>
+<div class="paragraph">
+<p>The blur softens what is drawn: fills, strokes, text and images alike, in
+their own colors, as the W3C <code>filter: blur(radius)</code> does. <code>radius</code> is the
+standard deviation of the Gaussian, so an edge fades out over about two
+<code>radius</code> on either side of where it was, and the blurred shape spreads
+three <code>radius</code> past its edge before it is gone. Like a shadow&#8217;s <code>blur</code>,
+<code>radius</code> is in the canvas&#8217;s own units and is not changed by the transform.
+A <code>radius</code> of zero is no blur, the default. One that is negative, infinite
+or NaN is ignored.</p>
+</div>
+<div class="paragraph">
+<p>The shadow is cast from the blurred shape, so it is soft even with a shadow
+<code>blur</code> of zero. The clip and the composite operation apply to the blurred
+result.</p>
+</div>
+<div class="paragraph">
+<p>A glow is a blurred copy of the shape drawn under the shape itself:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+rect r;                         // the shape to light up
+...
+   cnv.fill_style(colors::dodger_blue);
+   {
+      auto s = cnv.new_state();
+      cnv.blur_style(10);
+      cnv.fill_round_rect(r, 8);
+   }  // no blur from here on
+   cnv.fill_round_rect(r, 8);</code></pre>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="💡  TIP"></i>
+</td>
+<td class="content">
+Unlike the shadow, which is drawn in one color, a blur keeps the colors
+of what is drawn, gradients included, so a glow can follow a gradient
+along its length.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_compositing"><a class="anchor" href="#_compositing"></a>Compositing</h3>
+<div class="paragraph">
+<p>In the table below the <em>source</em> is what is being drawn and the
+<em>destination</em> is what is already on the canvas. The first twelve modes are
+the Porter-Duff operators and their relatives, which decide how much of each
+survives. The last twelve are blend modes, which mix the two colors where
+they overlap and then draw the result over the destination.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Mode</th>
+<th class="tableblock halign-left valign-top">Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::source_over</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The source over the destination. The
+                                 default.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::source_atop</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The source only where the destination
+                                 is, over it. The rest of the destination
+                                 is kept.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::source_in</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The source only where the destination
+                                 is. The destination is not shown.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::source_out</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The source only where the destination
+                                 is not. The destination is not shown.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::destination_over</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The source behind the destination.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::destination_atop</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The source behind the destination, and
+                                 the destination only where the source is.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::destination_in</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The destination only where the source
+                                 is. The source is not shown.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::destination_out</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The destination only where the source
+                                 is not: the source erases.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::lighter</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The sum of the two colors.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::darker</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The smaller of the two colors, channel
+                                 by channel.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::copy</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The source alone, alpha included,
+                                 replacing the destination.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::xor_</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Each only where the other is not.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::difference</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The absolute difference of the two.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::exclusion</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Like <code>difference</code>, with less contrast.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::multiply</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The product of the two: always as dark as
+                                 either.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::screen</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The inverse of the product of the
+                                 inverses: always as light as either.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::color_dodge</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The destination brightened by the
+                                 source.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::color_burn</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The destination darkened by the source.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::soft_light</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Darken or lighten by the source, gently.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::hard_light</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Multiply or screen by the source.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::hue</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The hue of the source, with the
+                                 saturation and luminosity of the
+                                 destination.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::saturation</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The saturation of the source, with the
+                                 hue and luminosity of the destination.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::color_op</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The hue and saturation of the source,
+                                 with the luminosity of the destination.
+                                 The W3C <code>color</code> mode.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::luminosity</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The luminosity of the source, with the
+                                 hue and saturation of the destination.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/composite_ops.png"><img src="../_images/canvas/composite_ops.png" alt="The first twelve modes" width="560px"></a>
+</div>
+<div class="title">Figure 8. The first twelve modes: a circle drawn over a square. The checkerboard shows where nothing is left.</div>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/blend_modes.png"><img src="../_images/canvas/blend_modes.png" alt="The twelve blend modes" width="560px"></a>
+</div>
+<div class="title">Figure 9. The twelve blend modes, with gradients so the mix varies across the overlap.</div>
+</div>
+<div class="paragraph">
+<p><code>source_in</code>, <code>source_out</code>, <code>destination_in</code>, <code>destination_atop</code> and <code>copy</code>
+also clear the destination everywhere outside what is drawn, as far as the
+clip, since the source is transparent there. Draw with them inside a clip
+when the rest of the canvas matters.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+The enum has no W3C <code>clear</code>. <code>destination_out</code> with an opaque source,
+or <code>clear_rect</code>, does the same job. Nor does it have the W3C <code>overlay</code> and
+<code>lighten</code> blend modes.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_example"><a class="anchor" href="#_example"></a>Example</h3>
+<div class="paragraph">
+<p>Draw a panel with a soft drop shadow and a rounded outline, with the shadow
+scoped to the fill so the outline casts none.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+...
+   auto panel = rect{40, 30, 260, 130};
+
+   {
+      auto s = cnv.new_state();                             <i class="conum" data-value="1"></i><b>(1)</b>
+      cnv.shadow_style({0, 4}, 16, colors::black.opacity(0.45));   <i class="conum" data-value="2"></i><b>(2)</b>
+      cnv.fill_style(colors::white);
+      cnv.fill_round_rect(panel, 8);
+   }
+
+   cnv.stroke_style(colors::gray[40]);                      <i class="conum" data-value="3"></i><b>(3)</b>
+   cnv.line_width(1);
+   cnv.line_join(canvas::round_join);
+   cnv.stroke_round_rect(panel, 8);</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Save the drawing state for the fill.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Cast a soft shadow 4 units down, under the fill only.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Set the stroke style after the state ends. The shadow is gone, so the
+outline casts none of its own.</td>
+</tr>
+</table>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/styles_example.png"><img src="../_images/canvas/styles_example.png" alt="A white rounded panel with a soft shadow and a thin outline" width="560px"></a>
+</div>
+<div class="title">Figure 10. What the code above draws, on a light neutral ground so the white panel reads.</div>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+<script src="../../../_/js/vendor/lunr.js"></script>
+<script src="../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../.." data-snippet-length="100" data-stylesheet="../../../_/css/search.css"></script>
+<script async src="../../../search-index.js"></script>
+  </body>
+</html>

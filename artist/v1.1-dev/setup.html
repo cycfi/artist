@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Setup and Installation :: Artist Docs</title>
+    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0/setup.html">
+    <meta name="generator" content="Antora 3.1.15">
+    <link rel="stylesheet" href="../../_/css/site.css">
+<meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
+<link rel="icon" type="image/png" sizes="16x16" href="https://cycfi.com/assets/icons/favicon-16x16.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="https://cycfi.com/assets/icons/favicon-32x32.png"/>
+<link rel="icon" type="image/png" sizes="96x96" href="https://cycfi.com/assets/icons/favicon-96x96.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="https://cycfi.com/assets/icons/android-chrome-192x192.png"/>
+<link rel="icon" type="image/png" sizes="256x256" href="https://cycfi.com/assets/icons/android-chrome-256x256.png"/>
+<link rel="apple-touch-icon" type="image/png" href="https://cycfi.com/assets/icons/apple-touch-icon.png"/>
+
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <!--  Cycfi Logo -->
+      <a class="m-nav__logo" href="https://www.cycfi.com">
+        <svg version="1.1" x="0px" y="0px" width="200" viewBox="0 0 600 100" style="padding-top: 15;" xmlns="http://www.w3.org/2000/svg">
+          <g transform="matrix(2.55, 0, 0, 2.62, -464.010406, -1042.918213)" fill="#202020">
+            <path d="M234.37,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.7-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-3.5-0.04-4.6,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.59,0.66-0.76,1.35c-0.14,0.84-0.18,1.03-0.19,1.43l-0.14,3.91 c-0.01,0.39,0.04,0.84,0.09,1.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h33.85 c0.8,0,1.45,0.67,1.42,1.47L234.37,431.65z"/>
+            <path d="M276.06,433.02H257.9c-0.8,0-1.45-0.67-1.42-1.47l0.15-4.18c0.03-0.76,0.65-1.37,1.42-1.37h14.16 c1.91,0,3.52,0,4.61-0.12c1.23-0.13,1.75-0.25,2.17-0.71c0.36-0.39,0.4-2.52,0.4-2.52h-27.92c-11.11,0-13.26-5.13-13.1-9.44 l0.12-3.38c0.03-0.76,0.65-1.37,1.42-1.37h8.43c0.8,0,1.45,0.67,1.42,1.47l-0.05,1.36c-0.02,0.46-0.01,2.03,0.11,2.51 c0.1,0.42,0.44,0.82,0.78,1.07c0.47,0.35,0.83,0.42,1.64,0.54c0.9,0.14,2.09,0.21,3.54,0.21h24.09l0.21-5.8 c0.03-0.76,0.65-1.37,1.42-1.37h8.46c0.8,0,1.45,0.67,1.42,1.47l-0.49,13.57c-0.06,1.58-0.46,3.96-1.12,5.07 c-0.68,1.15-1.71,2.08-3.04,2.76c-1.23,0.63-2.76,1.07-4.56,1.32C280.44,432.9,278.4,433.02,276.06,433.02L276.06,433.02z"/>
+            <path d="M401.95,431.55l0.78-21.72c0.03-0.76,0.65-1.37,1.42-1.37h8.59c0.8,0,1.45,0.67,1.42,1.47l-0.78,21.72 c-0.03,0.76-0.65,1.37-1.42,1.37h-8.59C402.56,433.02,401.92,432.35,401.95,431.55z"/>
+            <path d="M346.77,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.71-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-2.47-0.04-3.58,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.58,0.66-0.76,1.35c-0.14,0.84-0.22,2.03-0.23,2.43l-0.07,1.91 c-0.01,0.39,0.01,1.84,0.06,2.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h32.83 c0.8,0,1.45,0.67,1.42,1.47L346.77,431.65z"/>
+            <path d="M386.2,425.88l-24.93-0.03l-0.21,5.8c-0.03,0.76-0.65,1.37-1.42,1.37h-8.46c-0.8,0-1.45-0.67-1.42-1.47 l0.49-13.57c0.06-1.58,0.46-3.96,1.12-5.07c0.68-1.15,1.71-2.08,3.04-2.76c1.23-0.63,2.76-1.07,4.56-1.32 c1.7-0.24,3.75-0.36,6.08-0.36l0,0h33.68c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.18c-0.03,0.76-0.65,1.37-1.42,1.37H368.9 c-1.91,0-3.52,0-4.61,0.12c-1.23,0.13-1.75,0.25-2.17,0.71c-0.36,0.39-0.4,2.52-0.4,2.52h24.63c0.8,0,1.45,0.67,1.42,1.47 l-0.15,4.22C387.59,425.28,386.96,425.88,386.2,425.88z"/>
+          </g>
+        </svg>
+      </a>
+      <a class="navbar-item" href="https://www.cycfi.com">Artist Docs</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="artist" data-version="v1.1-dev">
+  <aside class="nav">
+    <div class="panels">
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs">
+        </div>
+      </div>
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="index.html">Artist 2D Canvas Library</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Artist 2D Canvas Library</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="setup.html">Setup and Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="backends.html">Backends</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="gallery.html">Gallery</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="foundation.html">Foundation</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="foundation/point.html">Point and Extent</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="foundation/rect.html">Rect</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="foundation/circle.html">Circle</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="foundation/affine_transform.html">Affine Transform</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="foundation/color.html">Color</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="foundation/font.html">Font</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="foundation/image.html">Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="foundation/canvas_layer.html">Canvas Layer</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="foundation/resources.html">Resources</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="path.html">Path</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="canvas.html">Canvas</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas/transforms.html">Transforms</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas/current_path.html">Current Path</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas/styles.html">Styles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas/gradients.html">Gradients</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas/rectangles.html">Rectangles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas/text.html">Text</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas/images.html">Drawing Images</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas/states.html">States</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas/context.html">Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="text_run.html">Text Run</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="text_layout.html">Text Layout</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="recording.html">Recording</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Artist 2D Canvas Library</span>
+    <span class="version">v1.1-dev</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../v1.0/index.html">Artist 2D Canvas Library</a></div>
+      <ul class="versions">
+        <li class="version is-current">
+          <a href="index.html">v1.1-dev</a>
+        </li>
+        <li class="version is-latest">
+          <a href="../v1.0/index.html">v1.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../v1.0/index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Artist 2D Canvas Library</a></li>
+    <li><a href="setup.html">Setup and Installation</a></li>
+  </ul>
+</nav>
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">v1.1-dev</button>
+  <div class="version-menu">
+    <a class="version is-current" href="setup.html">v1.1-dev</a>
+    <a class="version" href="../v1.0/setup.html">v1.0</a>
+  </div>
+</div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Setup and Installation</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This guide covers building the Artist 2D Canvas Library from source on macOS,
+Windows, and Linux, across the five rendering backends: Quartz-2D,
+Direct2D, Skia, Cairo, and the headless recording backend.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_requirements"><a class="anchor" href="#_requirements"></a>Requirements</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A C++20 compiler</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Clang, GCC, or MSVC (Visual Studio 2022; 17.14 or
+                      newer for Direct2D and the x64 Windows prebuilt bundles)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://git-scm.com/">Git</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">with submodule support</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://cmake.org/">CMake</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.21 or higher</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>CMake <strong>3.21 or higher</strong> is required. The top-level <code>CMakeLists.txt</code> declares a
+lower floor, but the bundled <code>CMakePresets.json</code> uses preset schema
+<code>"version": 3</code>, which CMake only understands from 3.21 onward. Older CMake
+versions will reject the presets.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The Skia and Cairo backends take their libraries from prebuilt bundles
+that CMake downloads at configure time, or from <a href="https://vcpkg.io/">vcpkg</a>
+(vendored as a git submodule at <code>lib/external/vcpkg/</code>), driven by a vcpkg
+toolchain file or the <code>source</code> CMake preset. The
+<a href="https://github.com/cycfi/infra/">Cycfi infra library</a> and libunibreak are
+also submodules. Both are fetched when you clone with
+<code>--recurse-submodules</code>, and CMake fetches them itself if they are missing.
+The vcpkg submodule is marked <code>update = none</code>, so it is not fetched; check
+it out only to build with vcpkg (see <a href="#_one_time_vcpkg_bootstrap">One-time vcpkg bootstrap</a>).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_getting_the_source"><a class="anchor" href="#_getting_the_source"></a>Getting the source</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Clone the repository together with its submodules:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">git clone --recurse-submodules https://github.com/cycfi/artist.git
+cd artist</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you already cloned without <code>--recurse-submodules</code>, initialize them after
+the fact:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">git submodule update --init --recursive</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_backends"><a class="anchor" href="#_backends"></a>Backends</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Artist supports five rendering backends. Only one backend is active per
+build, selected with a CMake option.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 16.6668%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Backend</th>
+<th class="tableblock halign-left valign-top">Platform</th>
+<th class="tableblock halign-left valign-top">CMake option</th>
+<th class="tableblock halign-left valign-top">Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Quartz-2D</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">macOS</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ARTIST_QUARTZ_2D=ON</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">macOS</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Direct2D</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Windows</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ARTIST_DIRECT2D=ON</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Windows</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Skia</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">macOS, Linux, Windows x64</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ARTIST_SKIA=ON</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">off</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cairo</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">macOS, Linux, Windows</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ARTIST_CAIRO=ON</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Linux and others</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Recording</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">macOS, Linux, Windows</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ARTIST_RECORDING=ON</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">off</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>With no backend option set, CMake uses the platform&#8217;s native backend:
+Direct2D on Windows, Quartz-2D on macOS, Cairo elsewhere. Enabling one
+backend automatically disables the others. If more than one is enabled,
+the first of recording, Direct2D, Cairo, Skia and Quartz-2D wins.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_building_with_skia"><a class="anchor" href="#_building_with_skia"></a>Building with Skia</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Skia is available on macOS, Linux and Windows x64, and is the default on
+none of them. Windows on arm64 has no Skia, since vcpkg&#8217;s Skia has no
+OpenGL there; use Direct2D or Cairo. The Skia binaries are large and slow
+to compile from source, so Artist ships with two CMake presets:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Preset</th>
+<th class="tableblock halign-left valign-top">What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>prebuilt</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Downloads a prebuilt Skia bundle from the Cloudflare R2 binary
+               cache (no Skia compile). This is the default and the fast path.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>source</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Builds Skia and its dependencies from source through the vcpkg
+               toolchain. Use this when the prebuilt bundle is unavailable or
+               incompatible with your toolchain.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Any Skia build configured without a vcpkg toolchain takes the prebuilt
+bundle, with or without the preset. CMake checks the bundle against the
+local toolchain and stops with an error if it does not fit: Linux needs
+glibc 2.35 or newer, Windows the MSVC v143 toolset (Visual Studio 2022
+17.14 or newer for the static x64 bundle), and macOS a deployment target
+of 11.0 or newer. To opt out, configure with the vcpkg toolchain (the
+<code>source</code> preset), or set <code>-DARTIST_SKIA_PREBUILT=OFF</code> and put your own
+Skia on <code>CMAKE_PREFIX_PATH</code>.</p>
+</div>
+<div class="paragraph">
+<p>On Linux, Skia links the system HarfBuzz and OpenGL, found through
+pkg-config and CMake: install <code>pkg-config</code>, <code>libharfbuzz-dev</code> and
+<code>libgl1-mesa-dev</code> (or your distribution&#8217;s equivalents).</p>
+</div>
+<div class="sect2">
+<h3 id="_one_time_vcpkg_bootstrap"><a class="anchor" href="#_one_time_vcpkg_bootstrap"></a>One-time vcpkg bootstrap</h3>
+<div class="paragraph">
+<p>Only a vcpkg build (the <code>source</code> preset, or a vcpkg toolchain file) needs
+this. <code>--recurse-submodules</code> does not fetch vcpkg, so check it out and
+bootstrap it once:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">git submodule update --init --checkout lib/external/vcpkg
+lib/external/vcpkg/bootstrap-vcpkg.sh -disableMetrics    # macOS / Linux</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bat hljs" data-lang="bat">git submodule update --init --checkout lib/external/vcpkg
+lib\external\vcpkg\bootstrap-vcpkg.bat -disableMetrics   :: Windows</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configure_and_build_with_presets"><a class="anchor" href="#_configure_and_build_with_presets"></a>Configure and build with presets</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh"># Fast path: download the prebuilt Skia bundle from the R2 cache
+cmake --preset prebuilt
+cmake --build build
+
+# Or build Skia from source via vcpkg
+cmake --preset source
+cmake --build build-source</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>prebuilt</code> preset writes to <code>build/</code>; the <code>source</code> preset writes to
+<code>build-source/</code>. Both default to a Release build with tests and examples
+enabled.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configure_manually_without_presets"><a class="anchor" href="#_configure_manually_without_presets"></a>Configure manually (without presets)</h3>
+<div class="paragraph">
+<p>If you prefer to drive CMake directly, <code>-DARTIST_SKIA=ON</code> alone takes the
+prebuilt bundle. To build Skia from source, pass the vcpkg toolchain file:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">cmake -S . -B build-skia -DARTIST_SKIA=ON \
+  -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake \
+  -DARTIST_BUILD_EXAMPLES=ON -DARTIST_BUILD_TESTS=ON
+cmake --build build-skia</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_building_with_cairo"><a class="anchor" href="#_building_with_cairo"></a>Building with Cairo</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Cairo is the default backend on Linux, and on any platform other than macOS
+and Windows. On Linux it uses the system Cairo, installed with the platform
+package manager. On macOS and Windows, CMake downloads a prebuilt bundle of
+Cairo and its dependencies (cairo, harfbuzz, fontconfig, freetype, libwebp
+and the pkgconf tool) from the Cloudflare R2 cache, so nothing has to be
+installed and <code>-DARTIST_CAIRO=ON</code> is all it takes. To use your own
+libraries instead, configure with <code>-DARTIST_CAIRO_PREBUILT=OFF</code> and install
+them as below; a vcpkg toolchain turns the bundle off too.</p>
+</div>
+<div class="sect2">
+<h3 id="_linux"><a class="anchor" href="#_linux"></a>Linux</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">sudo apt-get install -y \
+  libcairo2-dev \
+  libfontconfig1-dev \
+  libfreetype6-dev \
+  libharfbuzz-dev \
+  libwebp-dev \
+  pkg-config
+
+cmake -S . -B build-cairo -DARTIST_CAIRO=ON
+cmake --build build-cairo</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_macos_homebrew"><a class="anchor" href="#_macos_homebrew"></a>macOS (Homebrew)</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">brew install cairo fontconfig freetype harfbuzz webp pkgconf ninja
+
+cmake -S . -B build-cairo -DARTIST_CAIRO=ON -DARTIST_CAIRO_PREBUILT=OFF
+cmake --build build-cairo</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_windows"><a class="anchor" href="#_windows"></a>Windows</h3>
+<div class="paragraph">
+<p>The prebuilt bundle is the default. To build the dependencies from source
+instead, use the bundled vcpkg submodule (no separate installation is
+needed). Check it out and bootstrap it once, then pass the toolchain file:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bat hljs" data-lang="bat">git submodule update --init --checkout lib/external/vcpkg
+lib\external\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+
+cmake -S . -B build-cairo -DARTIST_CAIRO=ON ^
+  -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake
+cmake --build build-cairo</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>vcpkg will build cairo, freetype, fontconfig, harfbuzz, libwebp and pkgconf
+from source on the
+first run (~15–20 min). Subsequent builds reuse the cached <code>vcpkg_installed/</code>
+directory.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_cairo_supported_platforms_and_known_limitations"><a class="anchor" href="#_cairo_supported_platforms_and_known_limitations"></a>Cairo: supported platforms and known limitations</h3>
+<div class="paragraph">
+<p><strong>Supported:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Offscreen image surfaces on macOS, Linux, and Windows.</p>
+</li>
+<li>
+<p>Live window rendering on macOS, Linux (GTK3, Wayland and X11 hosts), and
+Windows/Win32.</p>
+</li>
+<li>
+<p>Visual test suite with goldens for macOS, Linux, and Windows.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Known limitations:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>shadow_style</code> is implemented via a software Gaussian blur (SIMD-accelerated
+where available); there is no GPU-accelerated path.</p>
+</li>
+<li>
+<p>The <code>darker</code> composite op approximates the W3C PlusDarker formula; no exact
+Cairo equivalent exists.</p>
+</li>
+<li>
+<p>Text rendering uses HarfBuzz for shaping, FreeType for rasterization, and
+Fontconfig for font selection. Deferred: font fallback, bidirectional text,
+and complex script segmentation.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_building_with_quartz_2d_macos"><a class="anchor" href="#_building_with_quartz_2d_macos"></a>Building with Quartz-2D (macOS)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Quartz-2D is the default backend on macOS and has no external dependencies
+beyond the system frameworks and Ninja:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">brew install ninja
+
+cmake -S . -B build-quartz2d -DARTIST_QUARTZ_2D=ON \
+  -DARTIST_BUILD_EXAMPLES=ON -DARTIST_BUILD_TESTS=ON -G Ninja
+cmake --build build-quartz2d</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_building_with_direct2d_windows"><a class="anchor" href="#_building_with_direct2d_windows"></a>Building with Direct2D (Windows)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Direct2D is the default backend on Windows. It uses the Windows system
+libraries (Direct2D, DirectWrite, WIC), plus libwebp&#8217;s decoder, since WIC
+has no WebP codec. A libwebp found on <code>CMAKE_PREFIX_PATH</code> is used;
+otherwise CMake fetches libwebp&#8217;s source and builds only the decoder. It
+needs MSVC v14.44 or newer (see <a href="#_windows_toolchain_notes">Windows toolchain notes</a>).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bat hljs" data-lang="bat">cmake -S . -B build-direct2d -DARTIST_DIRECT2D=ON
+cmake --build build-direct2d --config Release</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_building_with_recording"><a class="anchor" href="#_building_with_recording"></a>Building with Recording</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The recording backend draws nothing: it records the drawing calls, for
+tests and headless use (see <a href="recording.html" class="xref page">Recording</a>). It measures
+and shapes text with real fonts through FreeType, Fontconfig and
+HarfBuzz, which come from the same places as Cairo&#8217;s (see
+<a href="#_building_with_cairo">Building with Cairo</a>). The examples have no recording host, so
+configure it with <code>-DARTIST_BUILD_EXAMPLES=OFF</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">cmake -S . -B build-recording -DARTIST_RECORDING=ON -DARTIST_BUILD_EXAMPLES=OFF
+cmake --build build-recording</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_windows_toolchain_notes"><a class="anchor" href="#_windows_toolchain_notes"></a>Windows toolchain notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Artist is built and tested on Windows with <strong>Visual Studio 2022</strong>. The
+Direct2D backend, the Windows default, requires the MSVC v14.44 toolset
+(Visual Studio 2022 17.14) or newer, or clang-cl: older toolsets
+miscompile it under <code>/O2</code>, and CMake stops with an error on them. The
+static x64 prebuilt Skia and Cairo bundles need the same toolset. To use
+the Visual Studio generator explicitly:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bat hljs" data-lang="bat">cmake -S . -B build -G"Visual Studio 17 2022" -DARTIST_SKIA=ON ^
+  -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake
+cmake --build build --config Release</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Visual Studio 2019 is <strong>not</strong> supported: it produces linker errors against the
+current dependencies. Use Visual Studio 2022 (generator <code>Visual Studio 17
+2022</code>).</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_running_the_tests"><a class="anchor" href="#_running_the_tests"></a>Running the tests</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Each backend&#8217;s build tree contains the test suite. Run it with <code>ctest</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">ctest --verbose --test-dir build            # Skia (prebuilt preset)
+ctest --verbose --test-dir build-cairo      # Cairo
+ctest --verbose --test-dir build-quartz2d   # Quartz-2D</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_building_and_running_the_examples"><a class="anchor" href="#_building_and_running_the_examples"></a>Building and running the examples</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The examples are built by default (<code>ARTIST_BUILD_EXAMPLES</code> is <code>ON</code>, in the
+presets too); pass <code>-DARTIST_BUILD_EXAMPLES=OFF</code> to skip them. After
+building, the example applications are produced under the build tree&#8217;s
+<code>examples/</code> directory.</p>
+</div>
+<div class="paragraph">
+<p>On Linux, <code>ARTIST_LINUX_HOST</code> picks the window host: <code>gtk3</code> (the default),
+<code>wayland</code> or <code>x11</code>. Each needs its system libraries, found with
+pkg-config. On Debian and Ubuntu:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Host</th>
+<th class="tableblock halign-left valign-top">Packages</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>gtk3</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>libgtk-3-dev</code>, plus <code>libx11-dev</code>, <code>libegl-dev</code> and
+              <code>libgl1-mesa-dev</code> for Skia</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>wayland</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>libwayland-dev</code>, <code>wayland-protocols</code>, <code>libdecor-0-dev</code>, plus
+              <code>libegl-dev</code> and <code>libgl1-mesa-dev</code> for Skia</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>x11</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>libx11-dev</code>, plus <code>libegl-dev</code> and <code>libgl1-mesa-dev</code> for
+              Skia</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Each example is contained in a single source file, plus a platform-specific
+driver that sets up the application and a window for viewing the graphics.
+The examples are provided as starting points for learning how to use the
+library: feel free to inspect and modify them. Each one demonstrates a
+different aspect of Artist.</p>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script src="../../_/js/vendor/lunr.js"></script>
+<script src="../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../.." data-snippet-length="100" data-stylesheet="../../_/css/search.css"></script>
+<script async src="../../search-index.js"></script>
+  </body>
+</html>

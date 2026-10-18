@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 252"
+     font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'>
+  <defs>
+    <style>
+      .sample { font-size: 96px; fill: #1565c0; }
+      .lbl    { font-size: 15px; fill: #1a1a1a; }
+      .lbl-a  { font-size: 15px; fill: #1565c0; }
+      .guide  { stroke: #cccccc; stroke-width: 1.25; stroke-dasharray: 6 4; }
+      .base   { stroke: #5d5d5d; stroke-width: 1.75; }
+      .brk    { stroke: #1565c0; stroke-width: 1.75; fill: none; }
+      .dim    { stroke: #5d5d5d; stroke-width: 1.25;
+                marker-start: url(#a1); marker-end: url(#a2); }
+    </style>
+    <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="10" markerHeight="10" orient="auto">
+      <path d="M 10,1 L 1,5 L 10,9 z" fill="#5d5d5d"/>
+    </marker>
+    <marker id="a2" viewBox="0 0 10 10" refX="1" refY="5"
+            markerWidth="10" markerHeight="10" orient="auto">
+      <path d="M 0,1 L 9,5 L 0,9 z" fill="#5d5d5d"/>
+    </marker>
+  </defs>
+
+  <line class="guide" x1="64" y1="66"  x2="396" y2="66"/>
+  <line class="base"  x1="64" y1="140" x2="396" y2="140"/>
+  <line class="guide" x1="64" y1="176" x2="396" y2="176"/>
+  <line class="guide" x1="64" y1="212" x2="396" y2="212"/>
+
+  <text class="sample" x="128" y="140">Hxpg</text>
+
+  <line class="dim" x1="108" y1="66"  x2="108" y2="140"/>
+  <line class="dim" x1="108" y1="140" x2="108" y2="176"/>
+  <line class="dim" x1="108" y1="176" x2="108" y2="212"/>
+
+  <text class="lbl" x="98" y="105" text-anchor="end">ascent</text>
+  <text class="lbl" x="98" y="135" text-anchor="end">baseline</text>
+  <text class="lbl" x="98" y="164" text-anchor="end">descent</text>
+  <text class="lbl" x="98" y="200" text-anchor="end">leading</text>
+
+  <path class="brk" d="M 404,66 L 414,66 L 414,212 L 404,212"/>
+  <text class="lbl-a" x="422" y="144">line_height()</text>
+
+  <line class="dim" x1="128" y1="234" x2="360" y2="234"/>
+  <text class="lbl-a" x="368" y="239">measure_text("Hxpg")</text>
+</svg>

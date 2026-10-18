@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Current Path :: Artist Docs</title>
+    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0/canvas/current_path.html">
+    <meta name="generator" content="Antora 3.1.15">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+<meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
+<link rel="icon" type="image/png" sizes="16x16" href="https://cycfi.com/assets/icons/favicon-16x16.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="https://cycfi.com/assets/icons/favicon-32x32.png"/>
+<link rel="icon" type="image/png" sizes="96x96" href="https://cycfi.com/assets/icons/favicon-96x96.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="https://cycfi.com/assets/icons/android-chrome-192x192.png"/>
+<link rel="icon" type="image/png" sizes="256x256" href="https://cycfi.com/assets/icons/android-chrome-256x256.png"/>
+<link rel="apple-touch-icon" type="image/png" href="https://cycfi.com/assets/icons/apple-touch-icon.png"/>
+
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <!--  Cycfi Logo -->
+      <a class="m-nav__logo" href="https://www.cycfi.com">
+        <svg version="1.1" x="0px" y="0px" width="200" viewBox="0 0 600 100" style="padding-top: 15;" xmlns="http://www.w3.org/2000/svg">
+          <g transform="matrix(2.55, 0, 0, 2.62, -464.010406, -1042.918213)" fill="#202020">
+            <path d="M234.37,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.7-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-3.5-0.04-4.6,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.59,0.66-0.76,1.35c-0.14,0.84-0.18,1.03-0.19,1.43l-0.14,3.91 c-0.01,0.39,0.04,0.84,0.09,1.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h33.85 c0.8,0,1.45,0.67,1.42,1.47L234.37,431.65z"/>
+            <path d="M276.06,433.02H257.9c-0.8,0-1.45-0.67-1.42-1.47l0.15-4.18c0.03-0.76,0.65-1.37,1.42-1.37h14.16 c1.91,0,3.52,0,4.61-0.12c1.23-0.13,1.75-0.25,2.17-0.71c0.36-0.39,0.4-2.52,0.4-2.52h-27.92c-11.11,0-13.26-5.13-13.1-9.44 l0.12-3.38c0.03-0.76,0.65-1.37,1.42-1.37h8.43c0.8,0,1.45,0.67,1.42,1.47l-0.05,1.36c-0.02,0.46-0.01,2.03,0.11,2.51 c0.1,0.42,0.44,0.82,0.78,1.07c0.47,0.35,0.83,0.42,1.64,0.54c0.9,0.14,2.09,0.21,3.54,0.21h24.09l0.21-5.8 c0.03-0.76,0.65-1.37,1.42-1.37h8.46c0.8,0,1.45,0.67,1.42,1.47l-0.49,13.57c-0.06,1.58-0.46,3.96-1.12,5.07 c-0.68,1.15-1.71,2.08-3.04,2.76c-1.23,0.63-2.76,1.07-4.56,1.32C280.44,432.9,278.4,433.02,276.06,433.02L276.06,433.02z"/>
+            <path d="M401.95,431.55l0.78-21.72c0.03-0.76,0.65-1.37,1.42-1.37h8.59c0.8,0,1.45,0.67,1.42,1.47l-0.78,21.72 c-0.03,0.76-0.65,1.37-1.42,1.37h-8.59C402.56,433.02,401.92,432.35,401.95,431.55z"/>
+            <path d="M346.77,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.71-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-2.47-0.04-3.58,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.58,0.66-0.76,1.35c-0.14,0.84-0.22,2.03-0.23,2.43l-0.07,1.91 c-0.01,0.39,0.01,1.84,0.06,2.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h32.83 c0.8,0,1.45,0.67,1.42,1.47L346.77,431.65z"/>
+            <path d="M386.2,425.88l-24.93-0.03l-0.21,5.8c-0.03,0.76-0.65,1.37-1.42,1.37h-8.46c-0.8,0-1.45-0.67-1.42-1.47 l0.49-13.57c0.06-1.58,0.46-3.96,1.12-5.07c0.68-1.15,1.71-2.08,3.04-2.76c1.23-0.63,2.76-1.07,4.56-1.32 c1.7-0.24,3.75-0.36,6.08-0.36l0,0h33.68c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.18c-0.03,0.76-0.65,1.37-1.42,1.37H368.9 c-1.91,0-3.52,0-4.61,0.12c-1.23,0.13-1.75,0.25-2.17,0.71c-0.36,0.39-0.4,2.52-0.4,2.52h24.63c0.8,0,1.45,0.67,1.42,1.47 l-0.15,4.22C387.59,425.28,386.96,425.88,386.2,425.88z"/>
+          </g>
+        </svg>
+      </a>
+      <a class="navbar-item" href="https://www.cycfi.com">Artist Docs</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="artist" data-version="v1.1-dev">
+  <aside class="nav">
+    <div class="panels">
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs">
+        </div>
+      </div>
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">Artist 2D Canvas Library</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Artist 2D Canvas Library</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../setup.html">Setup and Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../backends.html">Backends</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../gallery.html">Gallery</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../foundation.html">Foundation</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/point.html">Point and Extent</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/rect.html">Rect</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/circle.html">Circle</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/affine_transform.html">Affine Transform</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/color.html">Color</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/font.html">Font</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/image.html">Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/canvas_layer.html">Canvas Layer</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/resources.html">Resources</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../path.html">Path</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../canvas.html">Canvas</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="transforms.html">Transforms</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="current_path.html">Current Path</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="styles.html">Styles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="gradients.html">Gradients</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="rectangles.html">Rectangles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="text.html">Text</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="images.html">Drawing Images</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="states.html">States</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="context.html">Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../text_run.html">Text Run</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../text_layout.html">Text Layout</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../recording.html">Recording</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Artist 2D Canvas Library</span>
+    <span class="version">v1.1-dev</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../../v1.0/index.html">Artist 2D Canvas Library</a></div>
+      <ul class="versions">
+        <li class="version is-current">
+          <a href="../index.html">v1.1-dev</a>
+        </li>
+        <li class="version is-latest">
+          <a href="../../v1.0/index.html">v1.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../v1.0/index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Artist 2D Canvas Library</a></li>
+    <li>Reference</li>
+    <li><a href="../canvas.html">Canvas</a></li>
+    <li><a href="current_path.html">Current Path</a></li>
+  </ul>
+</nav>
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">v1.1-dev</button>
+  <div class="version-menu">
+    <a class="version is-current" href="current_path.html">v1.1-dev</a>
+    <a class="version" href="../../v1.0/canvas/current_path.html">v1.0</a>
+  </div>
+</div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Current Path</h1>
+<div class="sect1">
+<h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A canvas holds one path at a time, its <em>current path</em>. The calls on this
+page build geometry into it; <code>fill</code> and <code>stroke</code> paint it and then start a
+fresh one. The current path is not a <code>path</code> object you can hold: it lives
+in the canvas, is emptied by every paint, and is what <code>clip</code>,
+<code>point_in_path</code> and <code>fill_extent</code> all refer to.</p>
+</div>
+<div class="paragraph">
+<p>This is the same geometry the <a href="../path.html" class="xref page"><code>path</code> class</a> describes,
+expressed as a sequence of calls rather than as an object. Build it here
+when the shape changes on every draw; build a <code>path</code> when the shape is
+fixed and worth keeping, then hand it over with <code>add_path</code>.</p>
+</div>
+<div class="paragraph">
+<p>Everything is in user space, so the transforms under
+<a href="transforms.html" class="xref page">Transforms</a> apply to the geometry as it is
+added. Coordinates come in two forms throughout: a <code>point</code> (or <code>rect</code>, or
+<code>circle</code>), and the same values as loose <code>float</code> arguments.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+Artist follows the W3C canvas API, with one deliberate difference
+here. In the W3C API <code>fill()</code> and <code>stroke()</code> leave the path in place, and
+only <code>beginPath()</code> clears it. In Artist they consume it, and
+<code>fill_preserve</code> and <code>stroke_preserve</code> are the calls that do not.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+See <a href="../canvas.html" class="xref page">Canvas</a> for the drawing model and an overview of the canvas.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_backend_differences"><a class="anchor" href="#_backend_differences"></a>Backend Differences</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The current path depends on the backend more than any other part of the
+canvas, and these are the places where the five backends differ. The
+geometry itself is the same on all of them; every difference is in what a
+call does to the path around it.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 16.667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Quartz 2D</th>
+<th class="tableblock halign-left valign-top">Skia</th>
+<th class="tableblock halign-left valign-top">Cairo</th>
+<th class="tableblock halign-left valign-top">Direct2D</th>
+<th class="tableblock halign-left valign-top">Recording</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.add_circle(c)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An arc, joined to the current point by a straight line.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A closed sub-path of its own, with no joining line.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An arc, joined to the current point by a straight line.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A closed sub-path of its own, with no joining line.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An arc, joined to the current point by a straight line.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.add_path(pth)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Appends <code>pth</code> to the current path.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Replaces the current path with <code>pth</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Appends <code>pth</code> to the current path.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Appends <code>pth</code> to the current path.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Appends <code>pth</code> to the current path.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.clip(pth)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Clips to <code>pth</code> alone; the current path is left as it was.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Clips to <code>pth</code> alone; the current path is left as it was.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Appends <code>pth</code> to the current path, clips to the pair, then discards the
+  path.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Clips to <code>pth</code> alone; the current path is left as it was.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Clips to the bounding box of <code>pth</code>; the current path is left as it was.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.clear_rect(r)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Erases <code>r</code>; the current path is left as it was.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Erases <code>r</code>; the current path is left as it was.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Erases <code>r</code> <strong>and</strong> whatever is already in the current path, then discards
+  the path.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Erases <code>r</code>; the current path is left as it was.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Erases <code>r</code>; the current path is left as it was.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.point_in_path(p)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True inside the fill <strong>or</strong> on the stroke, because the query is made in
+  fill-and-stroke mode.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True inside the fill only.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True inside the fill only.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True inside the fill only.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">True inside the fill only.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.arc</code> with a negative
+  <code>radius</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Passed through to the backend.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Clamped to zero.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Clamped to zero.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Clamped to zero, except for a full turn, which is passed through.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Clamped to zero.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_extent()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The bounding box of the path, curve control points included.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The bounding box of the path, curve control points included.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">What a fill would cover: <code>rect(0, 0, 0, 0)</code> for a path with no enclosed
+  area.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The bounds of the path&#8217;s geometry.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The bounds of the path&#8217;s points, with curves flattened.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>auto s = cnv.new_state();</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Does not save the current path.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Does not save the current path.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Does not save the current path.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Does not save the current path.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Does not save the current path.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_include"><a class="anchor" href="#_include"></a>Include</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">class canvas
+{
+public:
+
+   void     begin_path();
+   void     close_path();
+   void     fill();
+   void     fill_preserve();
+   void     stroke();
+   void     stroke_preserve();
+
+   void     clip();
+   void     clip(path const&amp; p);
+   rect     clip_extent() const;
+   bool     point_in_path(point p) const;
+   bool     point_in_path(float x, float y) const;
+   rect     fill_extent() const;
+
+   void     move_to(point p);
+   void     line_to(point p);
+   void     arc_to(point p1, point p2, float radius);
+   void     arc(
+               point p
+             , float radius
+             , float start_angle
+             , float end_angle
+             , bool ccw = false
+            );
+   void     add_rect(rect const&amp; r);
+   void     add_round_rect(rect const&amp; r, float radius);
+   void     add_circle(circle const&amp; c);
+   void     add_path(path const&amp; p);
+   void     clear_rect(rect const&amp; r);
+
+   void     quadratic_curve_to(point cp, point end);
+   void     bezier_curve_to(point cp1, point cp2, point end);
+
+   void     move_to(float x, float y);
+   void     line_to(float x, float y);
+   void     arc_to(
+               float x1
+             , float y1
+             , float x2
+             , float y2
+             , float radius
+            );
+   void     arc(
+               float x
+             , float y
+             , float radius
+             , float start_angle
+             , float end_angle
+             , bool ccw = false
+            );
+   void     add_rect(float x, float y, float width, float height);
+   void     add_round_rect(
+               float x
+             , float y
+             , float width
+             , float height
+             , float radius
+            );
+   void     add_circle(float cx, float cy, float radius);
+   void     clear_rect(float x, float y, float width, float height);
+
+   void     quadratic_curve_to(float cpx, float cpy, float x, float y);
+   void     bezier_curve_to(
+               float cp1x
+             , float cp1y
+             , float cp2x
+             , float cp2y
+             , float x
+             , float y
+            );
+
+   void     fill_rule(path::fill_rule_enum rule);
+};</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The current path members of <a href="../canvas.html" class="xref page"><code>canvas</code></a> allow these
+expressions.</p>
+</div>
+<div class="sect2">
+<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>cnv</code>                </dt>
+<dd>
+<p>Object of type <code>canvas</code>.</p>
+</dd>
+<dt class="hdlist1"><code>p</code>                  </dt>
+<dd>
+<p>Object of type <a href="../foundation/point.html" class="xref page">point</a> for
+a position.</p>
+</dd>
+<dt class="hdlist1"><code>p1</code>, <code>p2</code>           </dt>
+<dd>
+<p>Objects of type <code>point</code> for the corner <code>arc_to</code>
+rounds and the point after it.</p>
+</dd>
+<dt class="hdlist1"><code>cp</code>                 </dt>
+<dd>
+<p>Object of type <code>point</code> for a quadratic control
+point.</p>
+</dd>
+<dt class="hdlist1"><code>cp1</code>, <code>cp2</code>         </dt>
+<dd>
+<p>Objects of type <code>point</code> for the two cubic control
+points.</p>
+</dd>
+<dt class="hdlist1"><code>end</code>                </dt>
+<dd>
+<p>Object of type <code>point</code> for the end of a curve.</p>
+</dd>
+<dt class="hdlist1"><code>r</code>                  </dt>
+<dd>
+<p>Object of type <a href="../foundation/rect.html" class="xref page">rect</a>.</p>
+</dd>
+<dt class="hdlist1"><code>c</code>                  </dt>
+<dd>
+<p>Object of type <a href="../foundation/circle.html" class="xref page">circle</a>.</p>
+</dd>
+<dt class="hdlist1"><code>pth</code>                </dt>
+<dd>
+<p>Object of type <a href="../path.html" class="xref page">path</a>.</p>
+</dd>
+<dt class="hdlist1"><code>x</code>, <code>y</code>             </dt>
+<dd>
+<p>Floating point values for a position.</p>
+</dd>
+<dt class="hdlist1"><code>w</code>, <code>h</code>             </dt>
+<dd>
+<p>Floating point values for the width and height.</p>
+</dd>
+<dt class="hdlist1"><code>radius</code>             </dt>
+<dd>
+<p>Floating point value for a radius.</p>
+</dd>
+<dt class="hdlist1"><code>cx</code>, <code>cy</code>           </dt>
+<dd>
+<p>Floating point values for a centre.</p>
+</dd>
+<dt class="hdlist1"><code>x1</code>, <code>y1</code>           </dt>
+<dd>
+<p>Floating point values for the corner <code>arc_to</code>
+rounds.</p>
+</dd>
+<dt class="hdlist1"><code>x2</code>, <code>y2</code>           </dt>
+<dd>
+<p>Floating point values for the point after it.</p>
+</dd>
+<dt class="hdlist1"><code>cpx</code>, <code>cpy</code>         </dt>
+<dd>
+<p>Floating point values for a quadratic control
+point.</p>
+</dd>
+<dt class="hdlist1"><code>cp1x</code>, <code>cp1y</code>       </dt>
+<dd>
+<p>Floating point values for the first cubic control
+point.</p>
+</dd>
+<dt class="hdlist1"><code>cp2x</code>, <code>cp2y</code>       </dt>
+<dd>
+<p>Floating point values for the second cubic control
+point.</p>
+</dd>
+<dt class="hdlist1"><code>start_angle</code>        </dt>
+<dd>
+<p>Floating point value for the angle an arc starts
+at, in radians.</p>
+</dd>
+<dt class="hdlist1"><code>end_angle</code>          </dt>
+<dd>
+<p>Floating point value for the angle an arc ends at,
+in radians.</p>
+</dd>
+<dt class="hdlist1"><code>ccw</code>                </dt>
+<dd>
+<p>Boolean value for the sweep direction, <code>true</code> for
+counterclockwise.</p>
+</dd>
+<dt class="hdlist1"><code>rule</code>               </dt>
+<dd>
+<p>Object of type <code>path::fill_rule_enum</code>:
+<code>path::fill_winding</code> or <code>path::fill_odd_even</code>.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_mutators"><a class="anchor" href="#_mutators"></a>Mutators</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_rule(rule)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the fill rule, which decides
+                            what counts as inside a path that
+                            overlaps itself, to <code>rule</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_fill_rule"><a class="anchor" href="#_fill_rule"></a>Fill Rule</h3>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/fill_rule.png"><img src="../_images/canvas/fill_rule.png" alt="A star filled under each fill rule" width="560px"></a>
+</div>
+<div class="title">Figure 1. One self-intersecting five-pointed star, traced as a single path, filled under each rule.</div>
+</div>
+<div class="paragraph">
+<p><code>path::fill_winding</code>, the default, counts the direction of each crossing,
+so overlapping regions of one shape stay filled. <code>path::fill_odd_even</code>
+counts crossings alone, so every second region is left empty. The rule
+applies to <code>fill</code>, to <code>clip</code> and to <code>point_in_path</code>, and not to <code>stroke</code>.</p>
+</div>
+<div class="paragraph">
+<p>The rule is part of the <a href="states.html" class="xref page">drawing state</a>, not of the
+path being built: <code>begin_path</code> does not reset it, nor does a paint, and a
+<code>new_state</code> scope puts it back. <code>cnv.clip(pth)</code> clips by the rule carried
+by <code>pth</code> and leaves the canvas rule alone.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_accessors"><a class="anchor" href="#_accessors"></a>Accessors</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.point_in_path(p)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get <code>true</code> if <code>p</code> lies inside
+                                the current path, by the
+                                current fill rule.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.point_in_path(x, y)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get <code>true</code> if the point <code>x</code>,
+                                <code>y</code> lies inside the current
+                                path, by the current fill
+                                rule.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_extent()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the smallest rectangle
+                                that filling the current path
+                                would cover.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.clip_extent()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the smallest rectangle
+                                containing the clip region, in
+                                user space.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>An empty path reports a <code>fill_extent</code> of <code>rect(0, 0, 0, 0)</code> on every
+backend.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+On Cairo, <code>fill_extent</code> reports what a fill would cover, so a path
+with no enclosed area, a bare <code>move_to</code> and <code>line_to</code> for instance, reports
+<code>rect(0, 0, 0, 0)</code>. The other four backends report the bounds of the
+path&#8217;s geometry, so there the same path reports the line&#8217;s bounding box.
+See <a href="#_backend_differences">Backend Differences</a>.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_operation"><a class="anchor" href="#_operation"></a>Operation</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.begin_path()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Discard the current path and
+                                        start an empty one.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.move_to(p)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Start a new sub-path at <code>p</code>,
+                                        which becomes the current
+                                        point.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.move_to(x, y)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Start a new sub-path at <code>x</code>,
+                                        <code>y</code>, which becomes the current
+                                        point.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_to(p)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add a straight line from the
+                                        current point to <code>p</code>, which
+                                        becomes the current point.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.line_to(x, y)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add a straight line from the
+                                        current point to <code>x</code>, <code>y</code>,
+                                        which becomes the current
+                                        point.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.close_path()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Close the sub-path being built
+                                        with a straight line back to
+                                        where it began.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fill the current path with the
+                                        current fill style, then start
+                                        a new path.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_preserve()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fill the current path with the
+                                        current fill style, leaving the
+                                        path in place.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.stroke()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stroke the current path with
+                                        the current stroke style, then
+                                        start a new path.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.stroke_preserve()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stroke the current path with
+                                        the current stroke style,
+                                        leaving the path in place.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.add_rect(r)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add the rectangle <code>r</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.add_rect(x, y, w, h)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add the rectangle at <code>x</code>, <code>y</code>
+                                        (top left corner) of size <code>w</code>
+                                        by <code>h</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.add_round_rect(r, radius)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add <code>r</code> with its corners
+                                        rounded to <code>radius</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.add_round_rect(x, y, w, h,
+  radius)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add the rectangle at <code>x</code>, <code>y</code>
+                                        (top left corner) of size <code>w</code>
+                                        by <code>h</code>, with its corners
+                                        rounded to <code>radius</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.add_circle(c)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add the circle <code>c</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.add_circle(cx, cy, radius)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add the circle centred on <code>cx</code>,
+                                        <code>cy</code> with the given <code>radius</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.add_path(pth)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add the geometry of <code>pth</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.quadratic_curve_to(cp, end)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add a quadratic Bézier curve
+                                        from the current point to
+                                        <code>end</code>, shaped by the control
+                                        point <code>cp</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.quadratic_curve_to(cpx, cpy,
+  x, y)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add a quadratic Bézier curve
+                                        from the current point to <code>x</code>,
+                                        <code>y</code>, shaped by the control
+                                        point <code>cpx</code>, <code>cpy</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.bezier_curve_to(cp1, cp2,
+  end)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add a cubic Bézier curve from
+                                        the current point to <code>end</code>,
+                                        shaped by the control points
+                                        <code>cp1</code> and <code>cp2</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.bezier_curve_to(cp1x, cp1y,
+  cp2x, cp2y, x, y)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add a cubic Bézier curve from
+                                        the current point to <code>x</code>, <code>y</code>,
+                                        shaped by the control points
+                                        <code>cp1x</code>, <code>cp1y</code> and <code>cp2x</code>,
+                                        <code>cp2y</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.arc(p, radius, start_angle,
+  end_angle [, ccw])</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add an arc of the circle
+                                        centred on <code>p</code> with the given
+                                        <code>radius</code>, from <code>start_angle</code>
+                                        to <code>end_angle</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.arc(cx, cy, radius,
+  start_angle, end_angle [, ccw])</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add an arc of the circle
+                                        centred on <code>cx</code>, <code>cy</code> with the
+                                        given <code>radius</code>, from
+                                        <code>start_angle</code> to <code>end_angle</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.arc_to(p1, p2, radius)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add an arc of the given
+                                        <code>radius</code> tangent to the line
+                                        from the current point to <code>p1</code>
+                                        and to the line from <code>p1</code> to
+                                        <code>p2</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.arc_to(x1, y1, x2, y2,
+  radius)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add an arc of the given
+                                        <code>radius</code> tangent to the line
+                                        from the current point to <code>x1</code>,
+                                        <code>y1</code> and to the line from
+                                        there to <code>x2</code>, <code>y2</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.clip()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Restrict subsequent drawing to
+                                        the current path, then start a
+                                        new path.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.clip(pth)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Restrict subsequent drawing to
+                                        <code>pth</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.clear_rect(r)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Erase <code>r</code>, leaving it
+                                        transparent.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.clear_rect(x, y, w, h)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Erase the rectangle at <code>x</code>, <code>y</code>
+                                        (top left corner) of size <code>w</code>
+                                        by <code>h</code>, leaving it
+                                        transparent.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>A path is a list of sub-paths, each a connected run of segments. <code>move_to</code>
+begins one, <code>close_path</code> closes one, and everything else extends the one
+being built. A path may hold several closed shapes, and how they combine
+when filled is the <a href="#_fill_rule">Fill Rule</a>. <code>move_to</code> draws nothing.</p>
+</div>
+<div class="paragraph">
+<p>Both curves leave the current point in the direction of the first control
+point and arrive at their end, which becomes the new current point.</p>
+</div>
+<div class="paragraph">
+<p><code>add_round_rect</code> clamps <code>radius</code> to half the shorter side, so an over-large
+radius gives a stadium, never a larger shape. A <code>radius</code> of zero gives a
+plain rectangle.</p>
+</div>
+<div class="paragraph">
+<p>Building a <code>path</code> once and adding it with <code>add_path</code> on each draw is
+cheaper than rebuilding the geometry call by call, especially on a GPU
+backend.</p>
+</div>
+<div class="paragraph">
+<p>The styles <code>fill</code> and <code>stroke</code> use, and the line width, cap and join that
+shape a stroke, are under <a href="styles.html" class="xref page">Styles</a>. The <code>_preserve</code>
+pair is how a shape is given both a fill and an outline:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+...
+   cnv.fill_preserve();    // fill, keeping the path
+   cnv.stroke();           // then outline the same path, and clear it</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Clipping intersects with whatever clip is already in effect, so it only
+ever narrows the drawable area. There is no call to widen it again: clip
+inside a <code>new_state</code> scope, which puts the earlier clip back when it ends,
+as under <a href="states.html" class="xref page">States</a>.</p>
+</div>
+<div class="paragraph">
+<p><code>clear_rect</code> erases: the region is left transparent, not filled with a
+background color.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_arcs"><a class="anchor" href="#_arcs"></a>Arcs</h3>
+<div class="paragraph">
+<p>Angles are in radians and are measured from the positive x axis. Artist&#8217;s
+y axis grows downward, so an increasing angle turns clockwise on screen,
+and <code>ccw</code> at its default of <code>false</code> sweeps in that direction.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/arc.png"><img src="../_images/canvas/arc.png" alt="The same arc swept both ways" width="560px"></a>
+</div>
+<div class="title">Figure 2. The same start_angle and end_angle, swept each way. Angle 0 points along the positive x axis, and increasing angles turn clockwise because y grows downward.</div>
+</div>
+<div class="paragraph">
+<p><code>arc</code> joins the arc to the current point with a straight line if there is
+one, so call <code>begin_path</code> or <code>move_to</code> first when that is not wanted.</p>
+</div>
+<div class="paragraph">
+<p><code>arc_to</code> rounds a corner: <code>p1</code> is the corner, and the arc replaces it. A
+straight line is added from the current point to where the arc begins, so
+the corner point itself is not on the path. With a <code>radius</code> of zero, or
+with the three points collinear, there is no corner to round and a
+straight line to <code>p1</code> is added instead.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_example"><a class="anchor" href="#_example"></a>Example</h3>
+<div class="paragraph">
+<p>Give a rounded panel both a fill and an outline, then rebuild the same
+shape to hit test a mouse position.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+...
+   auto panel = rect{40, 30, 260, 130};
+   auto mouse = point{150, 80};
+
+   cnv.begin_path();
+   cnv.add_round_rect(panel, 8);                            <i class="conum" data-value="1"></i><b>(1)</b>
+   cnv.fill_style(colors::white.opacity(0.1));
+   cnv.stroke_style(colors::white.opacity(0.4));
+   cnv.line_width(1);
+   cnv.fill_preserve();                                     <i class="conum" data-value="2"></i><b>(2)</b>
+   cnv.stroke();                                            <i class="conum" data-value="3"></i><b>(3)</b>
+
+   cnv.begin_path();
+   cnv.add_round_rect(panel, 8);
+   bool hot = cnv.point_in_path(mouse);                     <i class="conum" data-value="4"></i><b>(4)</b>
+   cnv.begin_path();                                        <i class="conum" data-value="5"></i><b>(5)</b>
+
+   // Mark the mouse, filled when it is inside the panel.
+   cnv.add_circle(mouse.x, mouse.y, 5);
+   cnv.fill_style(hot? colors::gold : colors::gray[50]);
+   cnv.fill();</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Add the panel to an empty current path.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Fill the panel, keeping the path for the stroke.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Outline the same path. <code>stroke</code> consumes it.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>Rebuild the shape, since the stroke consumed it, and hit test the mouse
+position against it.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>Discard the path, so the next call starts with nothing pending.</td>
+</tr>
+</table>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/current_path_example.png"><img src="../_images/canvas/current_path_example.png" alt="A translucent rounded panel with a gold dot inside it" width="560px"></a>
+</div>
+<div class="title">Figure 3. What the code above draws, on a dark ground because the panel paints in translucent white.</div>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+<script src="../../../_/js/vendor/lunr.js"></script>
+<script src="../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../.." data-snippet-length="100" data-stylesheet="../../../_/css/search.css"></script>
+<script async src="../../../search-index.js"></script>
+  </body>
+</html>

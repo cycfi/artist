@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Text :: Artist Docs</title>
+    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0/canvas/text.html">
+    <meta name="generator" content="Antora 3.1.15">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+<meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
+<link rel="icon" type="image/png" sizes="16x16" href="https://cycfi.com/assets/icons/favicon-16x16.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="https://cycfi.com/assets/icons/favicon-32x32.png"/>
+<link rel="icon" type="image/png" sizes="96x96" href="https://cycfi.com/assets/icons/favicon-96x96.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="https://cycfi.com/assets/icons/android-chrome-192x192.png"/>
+<link rel="icon" type="image/png" sizes="256x256" href="https://cycfi.com/assets/icons/android-chrome-256x256.png"/>
+<link rel="apple-touch-icon" type="image/png" href="https://cycfi.com/assets/icons/apple-touch-icon.png"/>
+
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <!--  Cycfi Logo -->
+      <a class="m-nav__logo" href="https://www.cycfi.com">
+        <svg version="1.1" x="0px" y="0px" width="200" viewBox="0 0 600 100" style="padding-top: 15;" xmlns="http://www.w3.org/2000/svg">
+          <g transform="matrix(2.55, 0, 0, 2.62, -464.010406, -1042.918213)" fill="#202020">
+            <path d="M234.37,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.7-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-3.5-0.04-4.6,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.59,0.66-0.76,1.35c-0.14,0.84-0.18,1.03-0.19,1.43l-0.14,3.91 c-0.01,0.39,0.04,0.84,0.09,1.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h33.85 c0.8,0,1.45,0.67,1.42,1.47L234.37,431.65z"/>
+            <path d="M276.06,433.02H257.9c-0.8,0-1.45-0.67-1.42-1.47l0.15-4.18c0.03-0.76,0.65-1.37,1.42-1.37h14.16 c1.91,0,3.52,0,4.61-0.12c1.23-0.13,1.75-0.25,2.17-0.71c0.36-0.39,0.4-2.52,0.4-2.52h-27.92c-11.11,0-13.26-5.13-13.1-9.44 l0.12-3.38c0.03-0.76,0.65-1.37,1.42-1.37h8.43c0.8,0,1.45,0.67,1.42,1.47l-0.05,1.36c-0.02,0.46-0.01,2.03,0.11,2.51 c0.1,0.42,0.44,0.82,0.78,1.07c0.47,0.35,0.83,0.42,1.64,0.54c0.9,0.14,2.09,0.21,3.54,0.21h24.09l0.21-5.8 c0.03-0.76,0.65-1.37,1.42-1.37h8.46c0.8,0,1.45,0.67,1.42,1.47l-0.49,13.57c-0.06,1.58-0.46,3.96-1.12,5.07 c-0.68,1.15-1.71,2.08-3.04,2.76c-1.23,0.63-2.76,1.07-4.56,1.32C280.44,432.9,278.4,433.02,276.06,433.02L276.06,433.02z"/>
+            <path d="M401.95,431.55l0.78-21.72c0.03-0.76,0.65-1.37,1.42-1.37h8.59c0.8,0,1.45,0.67,1.42,1.47l-0.78,21.72 c-0.03,0.76-0.65,1.37-1.42,1.37h-8.59C402.56,433.02,401.92,432.35,401.95,431.55z"/>
+            <path d="M346.77,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.71-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-2.47-0.04-3.58,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.58,0.66-0.76,1.35c-0.14,0.84-0.22,2.03-0.23,2.43l-0.07,1.91 c-0.01,0.39,0.01,1.84,0.06,2.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h32.83 c0.8,0,1.45,0.67,1.42,1.47L346.77,431.65z"/>
+            <path d="M386.2,425.88l-24.93-0.03l-0.21,5.8c-0.03,0.76-0.65,1.37-1.42,1.37h-8.46c-0.8,0-1.45-0.67-1.42-1.47 l0.49-13.57c0.06-1.58,0.46-3.96,1.12-5.07c0.68-1.15,1.71-2.08,3.04-2.76c1.23-0.63,2.76-1.07,4.56-1.32 c1.7-0.24,3.75-0.36,6.08-0.36l0,0h33.68c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.18c-0.03,0.76-0.65,1.37-1.42,1.37H368.9 c-1.91,0-3.52,0-4.61,0.12c-1.23,0.13-1.75,0.25-2.17,0.71c-0.36,0.39-0.4,2.52-0.4,2.52h24.63c0.8,0,1.45,0.67,1.42,1.47 l-0.15,4.22C387.59,425.28,386.96,425.88,386.2,425.88z"/>
+          </g>
+        </svg>
+      </a>
+      <a class="navbar-item" href="https://www.cycfi.com">Artist Docs</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="artist" data-version="v1.1-dev">
+  <aside class="nav">
+    <div class="panels">
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs">
+        </div>
+      </div>
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">Artist 2D Canvas Library</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Artist 2D Canvas Library</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../setup.html">Setup and Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../backends.html">Backends</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../gallery.html">Gallery</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../foundation.html">Foundation</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/point.html">Point and Extent</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/rect.html">Rect</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/circle.html">Circle</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/affine_transform.html">Affine Transform</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/color.html">Color</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/font.html">Font</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/image.html">Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/canvas_layer.html">Canvas Layer</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../foundation/resources.html">Resources</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../path.html">Path</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../canvas.html">Canvas</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="transforms.html">Transforms</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="current_path.html">Current Path</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="styles.html">Styles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="gradients.html">Gradients</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="rectangles.html">Rectangles</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="text.html">Text</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="images.html">Drawing Images</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="states.html">States</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="context.html">Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../text_run.html">Text Run</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../text_layout.html">Text Layout</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../recording.html">Recording</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Artist 2D Canvas Library</span>
+    <span class="version">v1.1-dev</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../../v1.0/index.html">Artist 2D Canvas Library</a></div>
+      <ul class="versions">
+        <li class="version is-current">
+          <a href="../index.html">v1.1-dev</a>
+        </li>
+        <li class="version is-latest">
+          <a href="../../v1.0/index.html">v1.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../v1.0/index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Artist 2D Canvas Library</a></li>
+    <li>Reference</li>
+    <li><a href="../canvas.html">Canvas</a></li>
+    <li><a href="text.html">Text</a></li>
+  </ul>
+</nav>
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">v1.1-dev</button>
+  <div class="version-menu">
+    <a class="version is-current" href="text.html">v1.1-dev</a>
+    <a class="version" href="../../v1.0/canvas/text.html">v1.0</a>
+  </div>
+</div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Text</h1>
+<div class="sect1">
+<h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Text is drawn at a point, in the current font, either filled with the fill
+style or outlined with the stroke style. Where the text sits around that
+point is decided by the alignment. <code>measure_text</code> reports how much room a
+string takes without drawing it, for laying text out.</p>
+</div>
+<div class="paragraph">
+<p>The font and the alignment are canvas state. Set one and it stays in effect
+for all the text that follows, until it is set again or the end of a
+<code>new_state</code> scope under <a href="states.html" class="xref page">States</a> puts back an
+earlier one.</p>
+</div>
+<div class="paragraph">
+<p>Text is drawn in user space, so it follows the transforms under
+<a href="transforms.html" class="xref page">Transforms</a>, and it takes the styles under
+<a href="styles.html" class="xref page">Styles</a>, gradients, shadows and compositing
+included. Drawing text leaves the
+<a href="current_path.html" class="xref page">current path</a> as it was. Strings are UTF-8.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+Artist follows the W3C canvas API. <code>font</code>, <code>fill_text</code>, <code>stroke_text</code>,
+<code>measure_text</code>, <code>text_align</code> and <code>text_baseline</code> are its <code>font</code>,
+<code>fillText</code>, <code>strokeText</code>, <code>measureText</code>, <code>textAlign</code> and <code>textBaseline</code>.
+The font is a <a href="../foundation/font.html" class="xref page">font</a> object rather than a CSS
+string, and <code>measure_text</code> reports the font&#8217;s metrics and the advance
+width rather than the W3C <code>TextMetrics</code>.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+See <a href="../canvas.html" class="xref page">Canvas</a> for the drawing model and an overview of the canvas.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_include"><a class="anchor" href="#_include"></a>Include</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">class canvas
+{
+public:
+
+   enum text_halign
+   {
+      left,
+      center,
+      right
+   };
+
+   enum text_valign
+   {
+      baseline = 4,
+      top      = 8,
+      middle   = 12,
+      bottom   = 16
+   };
+
+   struct text_metrics
+   {
+      float    ascent;
+      float    descent;
+      float    leading;
+      point    size;
+   };
+
+   void           font(class font const&amp; font_);
+
+   void           fill_text(std::string_view utf8, point p);
+   void           stroke_text(std::string_view utf8, point p);
+   void           fill_text(std::string_view utf8, float x, float y);
+   void           stroke_text(std::string_view utf8, float x, float y);
+
+   text_metrics   measure_text(std::string_view utf8);
+
+   void           text_align(int align);
+   void           text_align(text_halign align);
+   void           text_baseline(text_valign align);
+};
+
+constexpr int     operator|(canvas::text_halign h, canvas::text_valign v);
+constexpr int     operator|(canvas::text_valign v, canvas::text_halign h);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The enums and <code>text_metrics</code> are nested in <code>canvas</code>, so they are spelled
+<code>canvas::center</code>, <code>canvas::middle</code>, <code>canvas::text_metrics</code> and so on.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The text members of <a href="../canvas.html" class="xref page"><code>canvas</code></a> allow these expressions.</p>
+</div>
+<div class="sect2">
+<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>cnv</code>       </dt>
+<dd>
+<p>Object of type <code>canvas</code>.</p>
+</dd>
+<dt class="hdlist1"><code>f</code>         </dt>
+<dd>
+<p>Object of type <a href="../foundation/font.html" class="xref page">font</a>.</p>
+</dd>
+<dt class="hdlist1"><code>utf8</code>      </dt>
+<dd>
+<p>Object of type <code>std::string_view</code> holding UTF-8 text.</p>
+</dd>
+<dt class="hdlist1"><code>p</code>         </dt>
+<dd>
+<p>Object of type <a href="../foundation/point.html" class="xref page">point</a> for a
+position.</p>
+</dd>
+<dt class="hdlist1"><code>x</code>, <code>y</code>    </dt>
+<dd>
+<p>Floating point values for a position.</p>
+</dd>
+<dt class="hdlist1"><code>h</code>         </dt>
+<dd>
+<p>Object of type <code>canvas::text_halign</code>: <code>canvas::left</code>,
+<code>canvas::center</code> or <code>canvas::right</code>.</p>
+</dd>
+<dt class="hdlist1"><code>v</code>         </dt>
+<dd>
+<p>Object of type <code>canvas::text_valign</code>: <code>canvas::baseline</code>,
+<code>canvas::top</code>, <code>canvas::middle</code> or <code>canvas::bottom</code>.</p>
+</dd>
+<dt class="hdlist1"><code>m</code>         </dt>
+<dd>
+<p>Object of type <code>canvas::text_metrics</code>.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_access"><a class="anchor" href="#_access"></a>Access</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>m.ascent</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access how far the font reaches above
+                   the baseline.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>m.descent</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access how far the font reaches below
+                   the baseline, as a positive distance.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>m.leading</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access the extra space, zero or more,
+                   the font adds between lines.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>m.size.x</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access the advance width of the
+                   measured text: where text drawn after
+                   it would start.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>m.size.y</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access a line height.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_mutators"><a class="anchor" href="#_mutators"></a>Mutators</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.font(f)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the font that text is
+                                  drawn and measured in to
+                                  <code>f</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.text_align(h)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the horizontal alignment
+                                  to <code>h</code>, leaving the vertical
+                                  one as it is.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.text_baseline(v)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the vertical alignment
+                                  to <code>v</code>, leaving the
+                                  horizontal one as it is.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.text_align(h | v)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set both alignments at once.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>A <code>font_descr</code> converts to a <code>font</code>, so a descriptor can be passed
+directly: <code>cnv.font(font_descr{"Open Sans", 18}.bold())</code>. How descriptors
+and fonts are built is under <a href="../foundation/font.html" class="xref page">Font</a>.</p>
+</div>
+<div class="paragraph">
+<p>Before <code>font</code> is called, a canvas draws in a 12 point sans-serif face that
+depends on the backend: Helvetica Neue on Quartz 2D, Segoe UI on
+Direct2D, and Skia&#8217;s own default font on Skia. Cairo and recording take
+the first of Helvetica Neue, Segoe UI, DejaVu Sans, Liberation Sans, Arial
+and Open Sans that is installed. Set the font for text that must look the
+same everywhere.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_alignment"><a class="anchor" href="#_alignment"></a>Alignment</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Alignment</th>
+<th class="tableblock halign-left valign-top">Where <code>p</code> sits</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::left</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">At the start of the text. The default.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::center</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Halfway along the text&#8217;s advance width.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::right</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">At the end of the text&#8217;s advance width.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::baseline</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">On the baseline. The default.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::top</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">On the ascent line, <code>ascent</code> above the
+                           baseline.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::middle</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Halfway between the ascent line and the
+                           descent line.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::bottom</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">On the descent line, <code>descent</code> below the
+                           baseline.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/text_align.png"><img src="../_images/canvas/text_align.png" alt="Each horizontal and vertical alignment" width="560px"></a>
+</div>
+<div class="title">Figure 1. Each alignment. The dot is the point given to fill_text.</div>
+</div>
+<div class="paragraph">
+<p><code>h | v</code> is an <code>int</code>, and <code>text_align</code> given an <code>int</code> replaces both
+alignments. What it leaves out goes back to its default, so
+<code>cnv.text_align(canvas::center)</code> keeps a vertical alignment set before it,
+while <code>cnv.text_align(canvas::center | canvas::baseline)</code> resets it.</p>
+</div>
+<div class="paragraph">
+<p><code>ascent</code> and <code>descent</code> here are the ones <code>measure_text</code> reports.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+The W3C canvas API places <code>top</code> and <code>bottom</code> on the font&#8217;s em square
+rather than on its ascent and descent, so text aligned that way sits a
+little differently in a browser.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_accessors"><a class="anchor" href="#_accessors"></a>Accessors</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.measure_text(utf8)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the metrics of <code>utf8</code> in
+                               the current font, without
+                               drawing it.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canvas::text_metrics</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p><code>ascent</code>, <code>descent</code> and <code>leading</code> belong to the font, not to the string:
+every string in the same font reports the same three. <code>size.x</code> is the
+advance, not the extent of the ink, so it counts trailing spaces, and a
+glyph may reach a little past it. The same metrics are drawn in the
+<a href="../foundation/font.html#_overview" class="xref page">Font</a> overview.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+<code>size.y</code> includes <code>leading</code> on some backends and not on others.
+For a line height that is the same everywhere, use
+<code>m.ascent + m.descent + m.leading</code>.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_operation"><a class="anchor" href="#_operation"></a>Operation</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_text(utf8, p)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fill <code>utf8</code> at <code>p</code> with the
+                                  fill style.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.fill_text(utf8, x, y)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fill <code>utf8</code> at <code>x</code>, <code>y</code> with
+                                  the fill style.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.stroke_text(utf8, p)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Outline <code>utf8</code> at <code>p</code> with the
+                                  stroke style, at the current
+                                  line width.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cnv.stroke_text(utf8, x, y)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Outline <code>utf8</code> at <code>x</code>, <code>y</code>
+                                  with the stroke style, at the
+                                  current line width.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/text_fill_stroke.png"><img src="../_images/canvas/text_fill_stroke.png" alt="The same word filled, stroked, and both" width="560px"></a>
+</div>
+<div class="title">Figure 2. The same word filled, stroked, and filled then stroked.</div>
+</div>
+<div class="paragraph">
+<p>With the default alignment, <code>p</code> is where the text&#8217;s baseline starts: the
+left end of the line the letters sit on. Text follows the transform like
+any other drawing, so after <code>cnv.scale(2)</code> it is drawn twice the size.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/text_styles.png"><img src="../_images/canvas/text_styles.png" alt="Text under a gradient fill, a gradient stroke and a shadow" width="560px"></a>
+</div>
+<div class="title">Figure 3. Text takes the same paint and shadow styles as a path.</div>
+</div>
+<div class="paragraph">
+<p>Both calls paint in one step and leave the current path alone, so text can
+be drawn while a path is still being built.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_example"><a class="anchor" href="#_example"></a>Example</h3>
+<div class="paragraph">
+<p>Draw a button sized to its label, with the label centred in it.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/canvas.hpp&gt;
+...
+using namespace cycfi::artist;
+extern canvas cnv;              // the canvas to draw on
+...
+   auto pos = point{40, 40};
+
+   cnv.font(font_descr{"Open Sans", 16}.bold());                       <i class="conum" data-value="1"></i><b>(1)</b>
+   auto m = cnv.measure_text("Cancel");                                <i class="conum" data-value="2"></i><b>(2)</b>
+
+   auto box = rect{pos, extent{m.size.x + 24, m.ascent + m.descent + 12}}; <i class="conum" data-value="3"></i><b>(3)</b>
+   cnv.fill_style(colors::gray[30]);
+   cnv.fill_round_rect(box, 6);
+
+   cnv.fill_style(colors::white);
+   cnv.text_align(canvas::center | canvas::middle);                    <i class="conum" data-value="4"></i><b>(4)</b>
+   cnv.fill_text("Cancel", center_point(box));                         <i class="conum" data-value="5"></i><b>(5)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Set the label&#8217;s font. <code>font_descr</code> converts to <code>font</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Measure the label before anything is drawn, so the button fits its
+label.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Size the box to the advance width and to <code>ascent + descent</code>, a height
+that is the same on every backend.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>Centre the text on the point given to <code>fill_text</code>, both ways.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>Fill the label at the centre of the box.</td>
+</tr>
+</table>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/canvas/text_example.png"><img src="../_images/canvas/text_example.png" alt="A rounded button with the word Cancel centred in it" width="560px"></a>
+</div>
+<div class="title">Figure 4. What the code above draws.</div>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+<script src="../../../_/js/vendor/lunr.js"></script>
+<script src="../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../.." data-snippet-length="100" data-stylesheet="../../../_/css/search.css"></script>
+<script async src="../../../search-index.js"></script>
+  </body>
+</html>

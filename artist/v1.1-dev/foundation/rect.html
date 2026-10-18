@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Rect :: Artist Docs</title>
+    <link rel="canonical" href="https://www.cycfi.com/artist/v1.0/foundation/rect.html">
+    <meta name="generator" content="Antora 3.1.15">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+<meta name="og:title" content="Artist Docs Artist 2D Canvas Library Documentation"/>
+<link rel="icon" type="image/png" sizes="16x16" href="https://cycfi.com/assets/icons/favicon-16x16.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="https://cycfi.com/assets/icons/favicon-32x32.png"/>
+<link rel="icon" type="image/png" sizes="96x96" href="https://cycfi.com/assets/icons/favicon-96x96.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="https://cycfi.com/assets/icons/android-chrome-192x192.png"/>
+<link rel="icon" type="image/png" sizes="256x256" href="https://cycfi.com/assets/icons/android-chrome-256x256.png"/>
+<link rel="apple-touch-icon" type="image/png" href="https://cycfi.com/assets/icons/apple-touch-icon.png"/>
+
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <!--  Cycfi Logo -->
+      <a class="m-nav__logo" href="https://www.cycfi.com">
+        <svg version="1.1" x="0px" y="0px" width="200" viewBox="0 0 600 100" style="padding-top: 15;" xmlns="http://www.w3.org/2000/svg">
+          <g transform="matrix(2.55, 0, 0, 2.62, -464.010406, -1042.918213)" fill="#202020">
+            <path d="M234.37,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.7-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-3.5-0.04-4.6,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.59,0.66-0.76,1.35c-0.14,0.84-0.18,1.03-0.19,1.43l-0.14,3.91 c-0.01,0.39,0.04,0.84,0.09,1.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h33.85 c0.8,0,1.45,0.67,1.42,1.47L234.37,431.65z"/>
+            <path d="M276.06,433.02H257.9c-0.8,0-1.45-0.67-1.42-1.47l0.15-4.18c0.03-0.76,0.65-1.37,1.42-1.37h14.16 c1.91,0,3.52,0,4.61-0.12c1.23-0.13,1.75-0.25,2.17-0.71c0.36-0.39,0.4-2.52,0.4-2.52h-27.92c-11.11,0-13.26-5.13-13.1-9.44 l0.12-3.38c0.03-0.76,0.65-1.37,1.42-1.37h8.43c0.8,0,1.45,0.67,1.42,1.47l-0.05,1.36c-0.02,0.46-0.01,2.03,0.11,2.51 c0.1,0.42,0.44,0.82,0.78,1.07c0.47,0.35,0.83,0.42,1.64,0.54c0.9,0.14,2.09,0.21,3.54,0.21h24.09l0.21-5.8 c0.03-0.76,0.65-1.37,1.42-1.37h8.46c0.8,0,1.45,0.67,1.42,1.47l-0.49,13.57c-0.06,1.58-0.46,3.96-1.12,5.07 c-0.68,1.15-1.71,2.08-3.04,2.76c-1.23,0.63-2.76,1.07-4.56,1.32C280.44,432.9,278.4,433.02,276.06,433.02L276.06,433.02z"/>
+            <path d="M401.95,431.55l0.78-21.72c0.03-0.76,0.65-1.37,1.42-1.37h8.59c0.8,0,1.45,0.67,1.42,1.47l-0.78,21.72 c-0.03,0.76-0.65,1.37-1.42,1.37h-8.59C402.56,433.02,401.92,432.35,401.95,431.55z"/>
+            <path d="M346.77,431.65c-0.03,0.76-0.65,1.37-1.42,1.37h-37.03c-2.34,0-4.38-0.12-6.06-0.36 c-1.78-0.25-3.29-0.7-4.47-1.32c-1.28-0.68-2.24-1.61-2.84-2.76c-0.58-1.11-0.85-2.48-0.79-4.07l0.27-7.53 c0.06-1.59,0.42-2.96,1.08-4.07c0.68-1.15,1.71-2.08,3.04-2.76c1.22-0.62,2.76-1.07,4.56-1.32c1.7-0.24,3.75-0.36,6.08-0.36h36.93 c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.19c-0.03,0.76-0.65,1.37-1.42,1.37h-33.96c-1.91,0-2.47-0.04-3.58,0.08 c-1.24,0.13-1.53,0.28-1.83,0.45c-0.47,0.26-0.58,0.66-0.76,1.35c-0.14,0.84-0.22,2.03-0.23,2.43l-0.07,1.91 c-0.01,0.39,0.01,1.84,0.06,2.43c0.02,0.02,0.01,0.72,0.61,1.18c0.7,0.54,1.08,0.41,1.91,0.5c1.1,0.12,2.62,0.18,4.53,0.18h32.83 c0.8,0,1.45,0.67,1.42,1.47L346.77,431.65z"/>
+            <path d="M386.2,425.88l-24.93-0.03l-0.21,5.8c-0.03,0.76-0.65,1.37-1.42,1.37h-8.46c-0.8,0-1.45-0.67-1.42-1.47 l0.49-13.57c0.06-1.58,0.46-3.96,1.12-5.07c0.68-1.15,1.71-2.08,3.04-2.76c1.23-0.63,2.76-1.07,4.56-1.32 c1.7-0.24,3.75-0.36,6.08-0.36l0,0h33.68c0.8,0,1.45,0.67,1.42,1.47l-0.15,4.18c-0.03,0.76-0.65,1.37-1.42,1.37H368.9 c-1.91,0-3.52,0-4.61,0.12c-1.23,0.13-1.75,0.25-2.17,0.71c-0.36,0.39-0.4,2.52-0.4,2.52h24.63c0.8,0,1.45,0.67,1.42,1.47 l-0.15,4.22C387.59,425.28,386.96,425.88,386.2,425.88z"/>
+          </g>
+        </svg>
+      </a>
+      <a class="navbar-item" href="https://www.cycfi.com">Artist Docs</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="artist" data-version="v1.1-dev">
+  <aside class="nav">
+    <div class="panels">
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs">
+        </div>
+      </div>
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">Artist 2D Canvas Library</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Artist 2D Canvas Library</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../setup.html">Setup and Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../backends.html">Backends</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../gallery.html">Gallery</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../foundation.html">Foundation</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="point.html">Point and Extent</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="rect.html">Rect</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="circle.html">Circle</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="affine_transform.html">Affine Transform</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="color.html">Color</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="font.html">Font</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="image.html">Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="canvas_layer.html">Canvas Layer</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="resources.html">Resources</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../path.html">Path</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../canvas.html">Canvas</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/transforms.html">Transforms</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/current_path.html">Current Path</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/styles.html">Styles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/gradients.html">Gradients</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/rectangles.html">Rectangles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/text.html">Text</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/images.html">Drawing Images</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/states.html">States</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../canvas/context.html">Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../text_run.html">Text Run</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../text_layout.html">Text Layout</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../recording.html">Recording</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Artist 2D Canvas Library</span>
+    <span class="version">v1.1-dev</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../../v1.0/index.html">Artist 2D Canvas Library</a></div>
+      <ul class="versions">
+        <li class="version is-current">
+          <a href="../index.html">v1.1-dev</a>
+        </li>
+        <li class="version is-latest">
+          <a href="../../v1.0/index.html">v1.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../v1.0/index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Artist 2D Canvas Library</a></li>
+    <li>Reference</li>
+    <li><a href="../foundation.html">Foundation</a></li>
+    <li><a href="rect.html">Rect</a></li>
+  </ul>
+</nav>
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">v1.1-dev</button>
+  <div class="version-menu">
+    <a class="version is-current" href="rect.html">v1.1-dev</a>
+    <a class="version" href="../../v1.0/foundation/rect.html">v1.0</a>
+  </div>
+</div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Rect</h1>
+<div class="sect1">
+<h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A <code>rect</code> is an axis aligned rectangle held as four <code>float</code> edge
+coordinates: <code>left</code>, <code>top</code>, <code>right</code> and <code>bottom</code>. It is not an origin and
+a size. <code>width()</code> and <code>height()</code> are computed from the edges, and the
+constructors that do take an <a href="point.html" class="xref page"><code>extent</code></a> convert
+to edges on the way in.</p>
+</div>
+<div class="paragraph">
+<p>Artist uses screen coordinates, so <code>y</code> increases <strong>downward</strong>: <code>top</code> is the
+smaller <code>y</code> and <code>bottom</code> the larger. A rectangle whose edges are in that
+order is <strong>valid</strong>, which <code>is_valid</code> tests. Nothing enforces it. <code>rect</code> is a
+value type with no invariant, and several operations can hand back a rect
+that fails <code>is_valid</code>; each is flagged below.</p>
+</div>
+<div class="paragraph">
+<p>Everything declared in the header is <code>constexpr</code> except the nine
+functions defined in <code>rect.cpp</code>: <code>intersects</code>, <code>union_</code>, <code>intersection</code>,
+and the <code>center</code> and <code>align</code> families. A rect can be built, measured,
+moved and inset at compile time, but not intersected or aligned there.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+<code>rect.hpp</code> includes <code>artist/point.hpp</code>, so <code>point</code>, <code>extent</code> and
+<code>axis</code> come with it.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+See <a href="../foundation.html" class="xref page">Foundation</a> for an overview of the foundation classes.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_include"><a class="anchor" href="#_include"></a>Include</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/rect.hpp&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_declaration"><a class="anchor" href="#_declaration"></a>Declaration</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">struct rect
+{
+   constexpr         rect();
+   constexpr         rect(float left, float top, float right, float bottom);
+   constexpr         rect(point origin, float right, float bottom);
+   constexpr         rect(point top_left, point bottom_right);
+   constexpr         rect(float left, float top, extent size);
+   constexpr         rect(point origin, extent size);
+
+   constexpr         rect(rect const&amp;) = default;
+   constexpr rect&amp;   operator=(rect const&amp;) = default;
+
+   constexpr bool    operator==(rect const&amp; other) const;
+   constexpr bool    operator!=(rect const&amp; other) const;
+
+   constexpr bool    is_empty() const;
+   constexpr bool    includes(point p) const;
+   constexpr bool    includes(rect const&amp; other) const;
+
+   constexpr float   width() const;
+   constexpr void    width(float width_);
+   constexpr float   height() const;
+   constexpr void    height(float height_);
+   constexpr extent  size() const;
+   constexpr void    size(extent size_);
+
+   constexpr point   top_left() const;
+   constexpr point   bottom_right() const;
+   constexpr point   top_right() const;
+   constexpr point   bottom_left() const;
+
+   constexpr rect    move(float dx, float dy) const;
+   constexpr rect    move_to(float x, float y) const;
+   constexpr rect    inset(float x_inset, float y_inset) const;
+   constexpr rect    inset(float xy_inset) const;
+
+   float             left;
+   float             top;
+   float             right;
+   float             bottom;
+};
+
+// Free Functions
+constexpr bool       is_valid(rect const&amp; r);
+constexpr bool       is_same_size(rect const&amp; a, rect const&amp; b);
+bool                 intersects(rect const&amp; a, rect const&amp; b);
+
+constexpr point      center_point(rect const&amp; r);
+constexpr float      area(rect const&amp; r);
+rect                 union_(rect const&amp; a, rect const&amp; b);
+rect                 intersection(rect const&amp; a, rect const&amp; b);
+
+constexpr void       clear(rect&amp; r);
+rect                 center(rect const&amp; r, rect const&amp; encl);
+rect                 center_h(rect const&amp; r, rect const&amp; encl);
+rect                 center_v(rect const&amp; r, rect const&amp; encl);
+rect                 align(rect const&amp; r, rect const&amp; encl, float x_align, float y_align);
+rect                 align_h(rect const&amp; r, rect const&amp; encl, float x_align);
+rect                 align_v(rect const&amp; r, rect const&amp; encl, float y_align);
+
+constexpr float      axis_extent(rect const&amp; r, axis a);
+constexpr float      axis_min(rect const&amp; r, axis a);
+constexpr float      axis_max(rect const&amp; r, axis a);
+constexpr float&amp;     axis_min(rect&amp; r, axis a);
+constexpr float&amp;     axis_max(rect&amp; r, axis a);
+
+constexpr rect       make_rect(
+                        axis a
+                      , float this_axis_min
+                      , float other_axis_min
+                      , float this_axis_max
+                      , float other_axis_max
+                     );</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_notation"><a class="anchor" href="#_notation"></a>Notation</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>r</code>, <code>a</code>, <code>b</code>     </dt>
+<dd>
+<p>Objects of type <code>rect</code>.</p>
+</dd>
+<dt class="hdlist1"><code>encl</code>            </dt>
+<dd>
+<p>Object of type <code>rect</code> that encloses <code>r</code>.</p>
+</dd>
+<dt class="hdlist1"><code>tl</code>, <code>br</code>        </dt>
+<dd>
+<p>Objects of type <code>point</code> for the top left and bottom
+right corners.</p>
+</dd>
+<dt class="hdlist1"><code>p</code>               </dt>
+<dd>
+<p>Object of type <code>point</code> to test.</p>
+</dd>
+<dt class="hdlist1"><code>e</code>               </dt>
+<dd>
+<p>Object of type <code>extent</code> for a size.</p>
+</dd>
+<dt class="hdlist1"><code>ax</code>              </dt>
+<dd>
+<p>Object of type <code>axis</code>.</p>
+</dd>
+<dt class="hdlist1"><code>left</code>, <code>top</code>, <code>right</code>, <code>bottom</code> </dt>
+<dd>
+<p>Floating point values for the edges.</p>
+</dd>
+<dt class="hdlist1"><code>x</code>, <code>y</code>          </dt>
+<dd>
+<p>Floating point values for the new top left corner.</p>
+</dd>
+<dt class="hdlist1"><code>w</code>, <code>h</code>          </dt>
+<dd>
+<p>Floating point values for the width and height.</p>
+</dd>
+<dt class="hdlist1"><code>dx</code>, <code>dy</code>        </dt>
+<dd>
+<p>Floating point values for an offset.</p>
+</dd>
+<dt class="hdlist1"><code>d</code>               </dt>
+<dd>
+<p>Floating point value for an inset distance on all
+four sides.</p>
+</dd>
+<dt class="hdlist1"><code>ix</code>, <code>iy</code>        </dt>
+<dd>
+<p>Floating point values for the horizontal and vertical
+inset distances.</p>
+</dd>
+<dt class="hdlist1"><code>fx</code>, <code>fy</code>        </dt>
+<dd>
+<p>Floating point values for the horizontal and vertical
+alignment fractions.</p>
+</dd>
+<dt class="hdlist1"><code>amin</code>, <code>amax</code>    </dt>
+<dd>
+<p>Floating point values for the edges along <code>ax</code>.</p>
+</dd>
+<dt class="hdlist1"><code>omin</code>, <code>omax</code>    </dt>
+<dd>
+<p>Floating point values for the edges along
+<code>other(ax)</code>.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_constructors_and_assignment"><a class="anchor" href="#_constructors_and_assignment"></a>Constructors and Assignment</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct an empty <code>rect</code> at the
+                                      origin, <code>{0, 0, 0, 0}</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect(left, top, right, bottom)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct a <code>rect</code> given <code>left</code>,
+                                      <code>top</code>, <code>right</code> and <code>bottom</code> (edges).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect(tl, right, bottom)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct a <code>rect</code> given <code>tl</code> (top
+                                      left corner) and the <strong>absolute</strong>
+                                      <code>right</code> and <code>bottom</code> edges.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect(tl, br)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct a <code>rect</code> given <code>tl</code> and
+                                      <code>br</code> (opposite corners).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect(left, top, e)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct a <code>rect</code> given <code>left</code>,
+                                      <code>top</code> (top left edges) and <code>e</code>
+                                      (size). The right edge is
+                                      <code>left + e.x</code>, the bottom <code>top + e.y</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect(tl, e)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construct a <code>rect</code> given <code>tl</code> (top
+                                      left corner) and <code>e</code> (size).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect(r)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Copy construct from <code>rect r</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>a = b</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Assign <code>b</code> to <code>a</code>.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+C++ brace initialization may also be used. <code>rect</code> is not an
+aggregate, so braces call the constructors above. As with
+<a href="point.html" class="xref page"><code>point</code></a>, brace initialization forbids
+narrowing, so <code>rect{n, top, right, bottom}</code> with an <code>int</code> <code>n</code> does not
+compile; write <code>rect(n, top, right, bottom)</code> with parentheses.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="⚠️  WARNING"></i>
+</td>
+<td class="content">
+<code>rect(tl, right, bottom)</code> takes <strong>absolute</strong> edges, while
+<code>rect(tl, e)</code> takes a size. The two have the same shape at the call
+site and different meanings: <code>rect{point(10, 10), 100, 100}</code> is 90 by 90,
+<code>rect{point(10, 10), extent(100, 100)}</code> is 100 by 100. Reach for the
+<code>extent</code> form whenever the second argument is a size.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_access"><a class="anchor" href="#_access"></a>Access</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.left</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access the left edge, the smaller <code>x</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.top</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access the top edge, the smaller <code>y</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.right</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access the right edge, the larger <code>x</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.bottom</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access the bottom edge, the larger <code>y</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_accessors"><a class="anchor" href="#_accessors"></a>Accessors</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.width()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the width, <code>right - left</code>,
+                        negative when <code>right &lt; left</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.height()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the height, <code>bottom - top</code>,
+                        negative when <code>bottom &lt; top</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.size()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the size, <code>{width(), height()}</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>extent</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.top_left()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the top left corner,
+                        <code>{left, top}</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.top_right()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the top right corner,
+                        <code>{right, top}</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.bottom_left()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the bottom left corner,
+                        <code>{left, bottom}</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.bottom_right()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the bottom right corner,
+                        <code>{right, bottom}</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.is_empty()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Test whether <strong>either</strong> dimension is
+                        zero, <code>left == right</code> or
+                        <code>top == bottom</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.includes(p)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Test whether <code>p</code> lies within <code>r</code>,
+                        borders included.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>a.includes(b)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Test whether all four edges of <code>b</code>
+                        lie within <code>a</code>, borders included, so
+                        a rect includes itself.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+One zero dimension is enough for <code>is_empty()</code>:
+<code>rect(0, 0, 100, 0)</code> is empty, and its <code>size()</code> is <code>{100, 0}</code>.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_mutators"><a class="anchor" href="#_mutators"></a>Mutators</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.width(w)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the width, moving the <strong>right</strong> edge to
+                   <code>left + w</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.height(h)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the height, moving the <strong>bottom</strong> edge
+                   to <code>top + h</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.size(e)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set the width and height from <code>e</code>, moving
+                   the right and bottom edges.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_operation"><a class="anchor" href="#_operation"></a>Operation</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.move(dx, dy)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get a copy of <code>r</code> moved by <code>dx</code> and
+                         <code>dy</code>, the size unchanged.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.move_to(x, y)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get a copy of <code>r</code> with its <strong>top left
+                         corner</strong> at <code>{x, y}</code>, the size
+                         unchanged.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.inset(ix, iy)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get a copy of <code>r</code> shrunk by <code>ix</code> on
+                         the left and right and by <code>iy</code> on
+                         the top and bottom.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>r.inset(d)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get a copy of <code>r</code> shrunk by <code>d</code> on
+                         all four sides.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="⚠️  WARNING"></i>
+</td>
+<td class="content">
+A negative inset grows the rect, and <code>inset</code> clamps hard. If the
+inset would leave an invalid rect, the result is <code>{0, 0, 0, 0}</code>: <code>inset</code>
+calls <code>clear</code> on it, which discards the position as well as the size.
+Over-insetting on one axis alone is enough, so
+<code>rect(0, 0, 100, 60).inset(40)</code> is <code>{0, 0, 0, 0}</code> rather than a rect
+20 wide. Check <code>width()</code> and <code>height()</code> against the inset first if the
+distance is not known to be small. This is the opposite of
+<a href="circle.html" class="xref page"><code>circle::inset</code></a>, which does not clamp at all
+and hands back a negative radius.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+<code>move_to</code> places the <strong>top left corner</strong>, where
+<a href="circle.html" class="xref page"><code>circle::move_to</code></a> places the centre.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_comparison"><a class="anchor" href="#_comparison"></a>Comparison</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>a == b</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Equality.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>a != b</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Non-Equality.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+The comparison of the four edges is exact, so two rects differing
+only by rounding are not equal.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_functions"><a class="anchor" href="#_functions"></a>Functions</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>is_valid(r)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Test whether <code>left &lt;= right</code>
+                                and <code>top &lt;= bottom</code>. An
+                                empty rect is valid.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>is_same_size(a, b)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Test whether <code>a</code> and <code>b</code> have
+                                the same width and height,
+                                wherever they are.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>intersects(a, b)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Test whether <code>a</code> and <code>b</code>
+                                overlap.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>center_point(r)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the centre of <code>r</code>,
+                                <code>{left + width()/2,
+                                top + height()/2}</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>point</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>area(r)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the area,
+                                <code>width() * height()</code>,
+                                negative when exactly one
+                                dimension is inverted.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>union_(a, b)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the smallest rect covering
+                                <code>a</code> and <code>b</code>: the min of the
+                                left and top edges, the max
+                                of the right and bottom.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>intersection(a, b)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the overlap of <code>a</code> and
+                                <code>b</code>: the max of the left and
+                                top edges, the min of the
+                                right and bottom.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>clear(r)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set all four edges of <code>r</code> to
+                                zero, an empty rect at the
+                                origin.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>void</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>center(r, encl)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get a copy of <code>r</code> centred in
+                                <code>encl</code>, the same as
+                                <code>align(r, encl, 0.5, 0.5)</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>center_h(r, encl)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get a copy of <code>r</code> centred
+                                horizontally in <code>encl</code>, with
+                                <code>r.top</code> kept.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>center_v(r, encl)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get a copy of <code>r</code> centred
+                                vertically in <code>encl</code>, with
+                                <code>r.left</code> kept.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>align(r, encl, fx, fy)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get a copy of <code>r</code> placed in
+                                <code>encl</code> at the fractions <code>fx</code>
+                                and <code>fy</code>: <code>0</code> against the
+                                left or top of <code>encl</code>, <code>1</code>
+                                against the right or bottom,
+                                <code>0.5</code> centred.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>align_h(r, encl, fx)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get a copy of <code>r</code> placed
+                                horizontally in <code>encl</code> at the
+                                fraction <code>fx</code>, with <code>r.top</code>
+                                kept.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>align_v(r, encl, fy)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get a copy of <code>r</code> placed
+                                vertically in <code>encl</code> at the
+                                fraction <code>fy</code>, with <code>r.left</code>
+                                kept.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axis_extent(r, ax)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Get the size of <code>r</code> along
+                                <code>ax</code>: <code>width()</code> for
+                                <code>axis::x</code>, <code>height()</code> for
+                                <code>axis::y</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axis_min(r, ax)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access the lower edge along
+                                <code>ax</code>: <code>left</code> for <code>axis::x</code>,
+                                <code>top</code> for <code>axis::y</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float&amp;</code>, or
+                                                               <code>float</code> if <code>r</code>
+                                                               is <code>const</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axis_max(r, ax)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Access the upper edge along
+                                <code>ax</code>: <code>right</code> for <code>axis::x</code>,
+                                <code>bottom</code> for <code>axis::y</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float&amp;</code>, or
+                                                               <code>float</code> if <code>r</code>
+                                                               is <code>const</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+<code>intersects</code> is <strong>strict</strong> where <code>includes</code> is inclusive. Two rects
+that share an edge do not intersect, yet each includes the points along
+that edge. <code>rect(0, 0, 10, 10)</code> and <code>rect(10, 0, 20, 10)</code> give
+<code>intersects</code> <code>false</code> and both give <code>includes(point(10, 5))</code> <code>true</code>.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="⚠️  WARNING"></i>
+</td>
+<td class="content">
+<code>intersection</code> does not test for overlap first. On rects that
+do not intersect it returns an inverted rect, for example
+<code>{100, 100, 10, 10}</code>. Guard it with <code>intersects</code>, or test the result with
+<code>is_valid</code>.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+<code>union_</code> takes no notice of emptiness, so <code>union_(rect{}, r)</code> always
+stretches the result back to the origin. Skip the empty operand rather
+than folding it in.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The placement functions, <code>center</code> to <code>align_v</code>, keep the size of <code>r</code> and
+never modify <code>encl</code>. The fractions are not clamped and nothing requires
+<code>r</code> to fit inside <code>encl</code>. A fraction outside <code>0</code> to <code>1</code> places <code>r</code> outside
+<code>encl</code>, and if <code>r</code> is the larger of the two the alignment runs the other
+way, which is occasionally what you want.</p>
+</div>
+<div class="paragraph">
+<p>The <code>axis</code> functions pick the edge or dimension that matches an
+<a href="point.html" class="xref page"><code>axis</code></a>, so a routine can be written once and
+run in either direction. They are the <code>rect</code> counterpart of
+<code>point::operator[]</code>.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="✏️  NOTE"></i>
+</td>
+<td class="content">
+The four <code>axis</code> helpers are defined in <code>rect.hpp</code> but do not appear
+in its Free Functions declaration block, so they are easy to miss when
+skimming the header.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_factory"><a class="anchor" href="#_factory"></a>Factory</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Expression</th>
+<th class="tableblock halign-left valign-top">Semantics</th>
+<th class="tableblock halign-left valign-top">Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>make_rect(ax, amin, omin,
+   amax, omax)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Make a <code>rect</code> given
+                                        <code>amin</code>, <code>amax</code> (the
+                                        edges along <code>ax</code>)
+                                        and <code>omin</code>, <code>omax</code>
+                                        (the edges along
+                                        <code>other(ax)</code>). For
+                                        <code>axis::x</code> the
+                                        arguments are <code>left,
+                                        top, right, bottom</code>;
+                                        for <code>axis::y</code> the
+                                        pairs swap.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rect</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_example"><a class="anchor" href="#_example"></a>Example</h3>
+<div class="paragraph">
+<p>Lay a fixed size badge into the top right of a card, with a margin, and
+paint only the part of it that is on screen.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/rect.hpp&gt;
+#include &lt;artist/canvas.hpp&gt;             // For canvas
+...
+using namespace cycfi::artist;
+extern canvas cnv;                       // the canvas to draw on
+...
+   auto bounds = rect{20, 20, 320, 140};
+   auto clip = rect{0, 0, 282, 160};
+
+   // The card.
+   cnv.fill_style(colors::gray[92]);
+   cnv.fill_round_rect(bounds, 6);
+   cnv.stroke_style(colors::gray[70]);
+   cnv.line_width(1);
+   cnv.stroke_round_rect(bounds, 6);
+
+   // A fixed size badge, hard right and hard top inside the margin.
+   auto slot = rect{0, 0, extent{64, 24}};                    <i class="conum" data-value="1"></i><b>(1)</b>
+   auto badge = align(slot, bounds.inset(10), 1.0f, 0.0f);    <i class="conum" data-value="2"></i><b>(2)</b>
+
+   // Only the part of it that is on screen gets painted.
+   if (intersects(badge, clip))                               <i class="conum" data-value="3"></i><b>(3)</b>
+   {
+      auto visible = intersection(badge, clip);               <i class="conum" data-value="4"></i><b>(4)</b>
+      cnv.fill_style(colors::medium_violet_red);
+      cnv.fill_round_rect(visible, 4);
+   }</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Construct a 64 by 24 slot from a size.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Inset the card by 10 for the margin, and align the slot in it, hard
+right (1.0) and hard top (0.0), without any arithmetic on the edges.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Test whether any of the badge is on screen.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>Cut the badge back to the part inside <code>clip</code>.</td>
+</tr>
+</table>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="../_images/foundation/rect_example.png"><img src="../_images/foundation/rect_example.png" alt="A card with a badge in its top right corner, cut off part way by a clip edge" width="560px"></a>
+</div>
+<div class="title">Figure 1. What the code above draws. The red line marks the right edge of clip; it is not drawn by the example.</div>
+</div>
+<div class="paragraph">
+<p>Write a layout step once for either axis: split a rect into two at a
+fraction along <code>ax</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-c++ hljs" data-lang="c++">#include &lt;artist/rect.hpp&gt;
+#include &lt;utility&gt;                       // For std::make_pair
+...
+using namespace cycfi::artist;
+...
+constexpr auto split(rect r, axis ax, float frac)
+{
+   auto at = axis_min(r, ax) + (axis_extent(r, ax) * frac);   <i class="conum" data-value="1"></i><b>(1)</b>
+   auto first = r, second = r;
+   axis_max(first, ax) = at;                                  <i class="conum" data-value="2"></i><b>(2)</b>
+   axis_min(second, ax) = at;
+   return std::make_pair(first, second);
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Find the split point along <code>ax</code>, from the lower edge and the size
+along <code>ax</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Move the upper edge of the first half and the lower edge of the
+second to the split point, through the references <code>axis_max</code> and
+<code>axis_min</code> return.</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+<script src="../../../_/js/vendor/lunr.js"></script>
+<script src="../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../.." data-snippet-length="100" data-stylesheet="../../../_/css/search.css"></script>
+<script async src="../../../search-index.js"></script>
+  </body>
+</html>
