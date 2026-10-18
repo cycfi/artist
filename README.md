@@ -18,7 +18,7 @@ dealing with text layout and mechanisms for text editing, fonts and font
 management, path creation and manipulation, and image capture and offscreen
 graphics.
 
-> **Status:** `master` tracks the latest stable release (currently v1.0.0). The next release, **v1.1**, is developed on `develop`, where the docs stay in sync as changes land. See [NEWS.md](NEWS.md) for what is new in each release.
+> **Status:** `master` tracks the latest stable release (currently v1.0.1). The next release, **v1.1**, is developed on `develop`, where the docs stay in sync as changes land. See [NEWS.md](NEWS.md) for what is new in each release.
 
 ## Backends
 

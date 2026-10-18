@@ -5,6 +5,25 @@ would otherwise have lived in commit bodies (commit messages are kept to a
 single subject line). Hashes are the post-rewrite short hashes on the branch
 named in the heading.
 
+## 2026-10-18 -- 1.0.1 hotfixes (master, tag v1.0.1)
+
+**TL;DR:** Two Quartz 2D gradient bugs, an unaligned NEON store in the Cairo
+shadow blur, and docs nav fixes, cut from `v1.0.0` on a scratch branch.
+
+- `0d0ab54` A Quartz 2D gradient with no stops built zero-length arrays;
+  it now makes no gradient, and the draw calls skip a missing one.
+- `b4f9869` The Quartz 2D state retained each gradient but never released
+  the one a new style replaced. A small RAII holder retains on copy and
+  releases on destruction or reset.
+- `df9d7a3` The NEON blur stored four bytes through a `uint32_t*` into an
+  unaligned byte buffer, caught by UBSan on Linux arm64 (CI tests only
+  x64). It copies the bytes, as the SSE2 path does.
+- `35f76fa`, `93e43e2` The docs get a Reference page, lose the nav's
+  duplicate top entry, and show Q's expand and collapse button.
+- `26428ea` The README and NEWS.md follow Q's layout.
+- The playbook builds `[master, develop]`, as develop's does, so a push to
+  master publishes the v1.0 pages instead of only develop's v1.1-dev.
+
 ## 2026-10-18 -- macOS x64 goldens, Quartz 2D minimum (develop)
 
 **TL;DR:** The Intel Mac clean room passes; its stale x64 `code_*` goldens are

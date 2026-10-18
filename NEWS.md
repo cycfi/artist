@@ -7,6 +7,18 @@ High-level, user-facing changes only. For the day-to-day detail, see
 
 Nothing yet.
 
+## v1.0.1 (2026-10-18)
+
+Fixes found by the sanitizer jobs and the other platforms right after 1.0.0:
+
+* Quartz 2D: a gradient with no color stops paints nothing instead of building
+  zero-length arrays, and a gradient the state replaces is released instead of
+  leaked.
+* Cairo: the shadow blur's NEON path no longer stores through an unaligned
+  pointer (undefined behavior, seen on Linux arm64).
+* Docs: a Reference overview page, no duplicate top entry in the nav, and the
+  nav's expand and collapse button.
+
 ## v1.0.0 (2026-10-18)
 
 **The first versioned release.** Five backends (Quartz 2D, Direct2D, Skia,
