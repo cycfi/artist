@@ -55,7 +55,10 @@ if(APPLE)
   endif()
 elseif(WIN32)
   if(_arch MATCHES "arm64|aarch64")
-    set(_triplet "arm64-windows")
+    # vcpkg's Skia has no OpenGL on Windows arm64, and the Windows Skia
+    # hosts draw through OpenGL.
+    message(FATAL_ERROR "Artist: Skia is not supported on Windows arm64. "
+      "Use Direct2D (the default) or Cairo.")
   else()
     # Static libraries on the static runtime (/MT), as Artist builds: linked
     # in, so a plugin, loaded by someone else's program, has no DLLs to find.
@@ -125,7 +128,7 @@ set(_ver "${ARTIST_SKIA_PREBUILT_VERSION}")
 # CMAKE_PREFIX_PATH directly (no PARENT_SCOPE needed).
 list(PREPEND CMAKE_PREFIX_PATH "${_dest}")
 
-# A Windows bundle of DLLs (arm64-windows) has Skia imported as an UNKNOWN
+# A Windows bundle of DLLs has Skia imported as an UNKNOWN
 # library, so they never show up in an executable's TARGET_RUNTIME_DLLS.
 # Record them (release or debug, by configuration) for the post-build copy
 # next to the executables. The static x64 bundle has none.

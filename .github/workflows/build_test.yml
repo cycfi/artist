@@ -439,8 +439,6 @@ jobs:
         # with a toolset at least as new as the one that built them.
         - os: windows-2022
           triplet: x64-windows-static
-        - os: windows-11-arm
-          triplet: arm64-windows
         - os: ubuntu-22.04
           triplet: x64-linux
           pkg_config_path: "/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig"

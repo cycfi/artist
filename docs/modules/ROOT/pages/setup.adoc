@@ -61,7 +61,7 @@ build, selected with a CMake option.
 
 | Quartz-2D | macOS                  | `ARTIST_QUARTZ_2D=ON`  | macOS
 | Direct2D  | Windows                | `ARTIST_DIRECT2D=ON`   | Windows
-| Skia      | macOS, Linux, Windows  | `ARTIST_SKIA=ON`       | off
+| Skia      | macOS, Linux, Windows x64 | `ARTIST_SKIA=ON`    | off
 | Cairo     | macOS, Linux, Windows  | `ARTIST_CAIRO=ON`      | Linux and others
 | Recording | macOS, Linux, Windows  | `ARTIST_RECORDING=ON`  | off
 |===
@@ -73,9 +73,10 @@ the first of recording, Direct2D, Cairo, Skia and Quartz-2D wins.
 
 == Building with Skia
 
-Skia is available on macOS, Linux and Windows, and is the default on none
-of them. The Skia binaries are large and slow to compile from source, so Artist
-ships with two CMake presets:
+Skia is available on macOS, Linux and Windows x64, and is the default on
+none of them. Windows on arm64 has no Skia, since vcpkg's Skia has no
+OpenGL there; use Direct2D or Cairo. The Skia binaries are large and slow
+to compile from source, so Artist ships with two CMake presets:
 
 [%header,cols="1,3"]
 |===
