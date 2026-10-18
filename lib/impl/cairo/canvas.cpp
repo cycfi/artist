@@ -349,8 +349,10 @@ namespace cycfi::artist
          for (int i = 0; i != 4; ++i)
             cairo_matrix_transform_point(&m, &xs[i], &ys[i]);
          x1 = *std::min_element(xs, xs + 4);
+         // cppcheck-suppress danglingLifetime ; copies the value out
          x2 = *std::max_element(xs, xs + 4);
          y1 = *std::min_element(ys, ys + 4);
+         // cppcheck-suppress danglingLifetime ; copies the value out
          y2 = *std::max_element(ys, ys + 4);
       }
 

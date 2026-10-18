@@ -1,0 +1,149 @@
+###############################################################################
+#  Copyright (c) 2016-2026 Joel de Guzman
+#
+#  Distributed under the MIT License (https://opensource.org/licenses/MIT)
+###############################################################################
+# Static analysis of the Artist library: the Clang Static Analyzer and
+# cppcheck, on Linux with the Cairo backend, the Linux default. Only Artist's
+# own sources are reported; infra, the bundled stb_image and fetched
+# dependencies are left out. The jobs
+# report and do not fail: each lists its findings in the job summary and
+# uploads the full report. CodeQL runs separately, through GitHub's default
+# code scanning setup. Weekly (GitHub schedules only the default branch,
+# which then analyzes develop), by hand, and when this file changes.
+
+name: Analyze
+
+on:
+  schedule:
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/analyze.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: analyze-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CONFIGURE_ARGS: >-
+    -G Ninja
+    -DCMAKE_BUILD_TYPE=Debug
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+    -DARTIST_CAIRO=ON
+    -DARTIST_BUILD_TESTS=OFF
+    -DARTIST_BUILD_EXAMPLES=OFF
+
+jobs:
+  clang-analyzer:
+    name: Clang Static Analyzer
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        # A scheduled run starts from the default branch; analyze develop.
+        ref: ${{ github.event_name == 'schedule' && 'develop' || '' }}
+        submodules: recursive
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang clang-tools \
+          libcairo2-dev libfontconfig1-dev libfreetype6-dev libharfbuzz-dev \
+          libwebp-dev pkg-config ninja-build
+
+    - name: Analyze
+      run: |
+        set -o pipefail
+        scan-build --use-cc=clang --use-c++=clang++ \
+          cmake -S . -B build $CONFIGURE_ARGS
+        scan-build --use-cc=clang --use-c++=clang++ -o report \
+          --exclude lib/external --exclude lib/infra --exclude build/_deps \
+          cmake --build build 2>&1 | tee scan.log
+
+    - name: Summary
+      if: always()
+      run: |
+        {
+          echo "## Clang Static Analyzer"
+          echo
+          grep -E "scan-build: .*bugs? found|No bugs found" scan.log || echo "No result line."
+          echo
+          echo '```'
+          grep -E "warning: .*\[[a-zA-Z]+\.[a-zA-Z.]+\]" scan.log \
+            | grep -v -E "lib/external/|lib/infra/|build/_deps/|stb_image" \
+            | sed "s#$GITHUB_WORKSPACE/##" | sort -u
+          echo '```'
+        } >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Upload report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: clang-analyzer-report
+        path: report
+        if-no-files-found: ignore
+
+  cppcheck:
+    name: cppcheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event_name == 'schedule' && 'develop' || '' }}
+        submodules: recursive
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cppcheck \
+          libcairo2-dev libfontconfig1-dev libfreetype6-dev libharfbuzz-dev \
+          libwebp-dev pkg-config ninja-build
+
+    - name: Configure
+      run: cmake -S . -B build $CONFIGURE_ARGS
+
+    - name: Analyze
+      run: |
+        cppcheck --version
+        cppcheck --project=build/compile_commands.json \
+          --enable=warning,performance,portability --std=c++20 \
+          --inline-suppr -j "$(nproc)" --quiet \
+          -i lib/external -i lib/infra -i build/_deps \
+          --suppress='*:lib/external/*' --suppress='*:*/lib/external/*' \
+          --suppress='*:lib/infra/*' --suppress='*:*/lib/infra/*' \
+          --suppress='*:*stb_image*' \
+          --suppress='*:*/_deps/*' --suppress=missingIncludeSystem \
+          --suppressions-list=.github/cppcheck-suppressions.txt \
+          --template='{file}:{line}: {severity}: {message} [{id}]' \
+          2> cppcheck_raw.txt
+        sed "s#$GITHUB_WORKSPACE/##" cppcheck_raw.txt | sort -u > cppcheck.txt
+
+    - name: Summary
+      if: always()
+      run: |
+        {
+          echo "## cppcheck"
+          echo
+          echo "$(wc -l < cppcheck.txt) findings, by check:"
+          echo
+          echo '```'
+          sed -E 's/.*\[([A-Za-z0-9_]+)\]$/\1/' cppcheck.txt | sort | uniq -c | sort -rn
+          echo '```'
+        } >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Upload report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: cppcheck-report
+        path: cppcheck.txt
+        if-no-files-found: ignore

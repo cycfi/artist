@@ -53,7 +53,9 @@ namespace cycfi::artist
                          : point(p)
                         {}
 
+      // cppcheck-suppress duplInheritedMember ; deleted on purpose: an extent does not move
       point             move(float dx, float dy) const = delete;
+      // cppcheck-suppress duplInheritedMember ; deleted on purpose: an extent does not move
       point             move_to(float x, float y) const = delete;
       point             reflect(point p) const = delete;
    };
