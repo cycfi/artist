@@ -43,11 +43,13 @@ and the Cairo backend's
 
 ## Documentation
 
-* [Artist 2D Canvas Library](https://cycfi.github.io/artist/artist/v1.0/index.html)
-  * [Gallery](https://cycfi.github.io/artist/artist/v1.0/gallery.html)
-  * [Setup and Installation](https://cycfi.github.io/artist/artist/v1.0/setup.html)
-  * [Backends](https://cycfi.github.io/artist/artist/v1.0/backends.html)
-  * [Reference](https://cycfi.github.io/artist/artist/v1.0/reference.html)
+<dl>
+  <dt><a href="https://cycfi.github.io/artist/artist/v1.0/index.html">Artist 2D Canvas Library</a></dt>
+  <dd><a href="https://cycfi.github.io/artist/artist/v1.0/gallery.html">Gallery</a></dd>
+  <dd><a href="https://cycfi.github.io/artist/artist/v1.0/setup.html">Setup and Installation</a></dd>
+  <dd><a href="https://cycfi.github.io/artist/artist/v1.0/backends.html">Backends</a></dd>
+  <dd><a href="https://cycfi.github.io/artist/artist/v1.0/reference.html">Reference</a></dd>
+</dl>
 
 ## <a name="jdeguzman"></a>The Author
 
