@@ -43,14 +43,11 @@ and the Cairo backend's
 
 ## Documentation
 
-The documentation is built with [Antora](https://antora.org/) (sources under
-[`docs/`](docs/)) and published at
-<https://cycfi.github.io/artist/>.
-
-* [Gallery](https://cycfi.github.io/artist/artist/v1.0/gallery.html)
-* [Setup and Installation](https://cycfi.github.io/artist/artist/v1.0/setup.html)
-* [Backends](https://cycfi.github.io/artist/artist/v1.0/backends.html)
-* [Reference](https://cycfi.github.io/artist/artist/v1.0/reference.html)
+* [Artist 2D Canvas Library](https://cycfi.github.io/artist/artist/v1.0/index.html)
+  * [Gallery](https://cycfi.github.io/artist/artist/v1.0/gallery.html)
+  * [Setup and Installation](https://cycfi.github.io/artist/artist/v1.0/setup.html)
+  * [Backends](https://cycfi.github.io/artist/artist/v1.0/backends.html)
+  * [Reference](https://cycfi.github.io/artist/artist/v1.0/reference.html)
 
 ## <a name="jdeguzman"></a>The Author
 
