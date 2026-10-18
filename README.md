@@ -33,7 +33,7 @@ Artist supports five rendering backends. Only one backend is active per build.
 With no backend option set, CMake uses the platform's native backend.
 Enabling one backend automatically disables the others. The recording
 backend draws nothing: it keeps a journal of the drawing calls, for tests.
-See [Setup and Installation](https://cycfi.github.io/artist/artist/v1.0-dev/setup.html)
+See [Setup and Installation](https://cycfi.github.io/artist/artist/v1.0/setup.html)
 for Direct2D and the recording backend.
 
 ### Building with Skia
@@ -147,11 +147,11 @@ The documentation is built with [Antora](https://antora.org/) (sources under
 [`docs/`](docs/)) and published at
 <https://cycfi.github.io/artist/>. It is a work in progress.
 
-1. [Setup and Installation](https://cycfi.github.io/artist/artist/v1.0-dev/setup.html)
-2. [Backends](https://cycfi.github.io/artist/artist/v1.0-dev/backends.html)
-3. [Gallery](https://cycfi.github.io/artist/artist/v1.0-dev/gallery.html)
-4. [Canvas](https://cycfi.github.io/artist/artist/v1.0-dev/canvas.html)
-5. [Foundation](https://cycfi.github.io/artist/artist/v1.0-dev/foundation.html)
+1. [Setup and Installation](https://cycfi.github.io/artist/artist/v1.0/setup.html)
+2. [Backends](https://cycfi.github.io/artist/artist/v1.0/backends.html)
+3. [Gallery](https://cycfi.github.io/artist/artist/v1.0/gallery.html)
+4. [Canvas](https://cycfi.github.io/artist/artist/v1.0/canvas.html)
+5. [Foundation](https://cycfi.github.io/artist/artist/v1.0/foundation.html)
 
 ## <a name="jdeguzman"></a>About the Author
 
