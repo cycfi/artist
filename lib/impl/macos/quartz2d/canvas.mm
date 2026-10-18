@@ -10,12 +10,63 @@
 #include <Accelerate/Accelerate.h>
 #include <cmath>
 #include <stack>
+#include <utility>
 #include <variant>
 #include "osx_utils.hpp"
 #include "image_impl.hpp"
 
 namespace cycfi::artist
 {
+   namespace
+   {
+      // Owns a CGGradientRef: a copy retains it and the last owner releases
+      // it, so a saved state and the current one can share a gradient, and
+      // replacing one does not leak it.
+      class gradient_ref
+      {
+      public:
+                              gradient_ref() = default;
+                              gradient_ref(gradient_ref const& rhs);
+                              ~gradient_ref();
+         gradient_ref&        operator=(gradient_ref const& rhs);
+
+         void                 reset(CGGradientRef ref);
+         CGGradientRef        get() const { return _ref; }
+
+      private:
+
+         CGGradientRef        _ref = nullptr;
+      };
+
+      inline gradient_ref::gradient_ref(gradient_ref const& rhs)
+       : _ref(rhs._ref)
+      {
+         if (_ref)
+            CGGradientRetain(_ref);
+      }
+
+      inline gradient_ref::~gradient_ref()
+      {
+         if (_ref)
+            CGGradientRelease(_ref);
+      }
+
+      inline gradient_ref& gradient_ref::operator=(gradient_ref const& rhs)
+      {
+         gradient_ref copy{rhs};
+         std::swap(_ref, copy._ref);
+         return *this;
+      }
+
+      // Takes over ref, which the caller created.
+      inline void gradient_ref::reset(CGGradientRef ref)
+      {
+         if (_ref)
+            CGGradientRelease(_ref);
+         _ref = ref;
+      }
+   }
+
    class canvas::canvas_state
    {
    public:
@@ -97,9 +148,9 @@ namespace cycfi::artist
       struct state_info
       {
          style          _fill_style       = colors::black;
-         CGGradientRef  _fill_gradient    = nullptr;
+         gradient_ref   _fill_gradient;
          style          _stroke_style     = colors::black;
-         CGGradientRef  _stroke_gradient  = nullptr;
+         gradient_ref   _stroke_gradient;
          class font     _font             = font_descr{"Helvetica Neue", 12};
          int            _text_align       = canvas::baseline;
          mode_enum      _mode             = source_over;
@@ -124,12 +175,12 @@ namespace cycfi::artist
    {
       // No stops makes no gradient, and drawing one paints nothing, as the
       // W3C API specifies.
-      void make_gradient(std::vector<canvas::color_stop> const& space, CGGradientRef& gradient)
+      void make_gradient(std::vector<canvas::color_stop> const& space, gradient_ref& gradient)
       {
          auto nspaces = space.size();
          if (nspaces == 0)
          {
-            gradient = nullptr;
+            gradient.reset(nullptr);
             return;
          }
          std::vector<CGFloat> locations(nspaces);
@@ -144,10 +195,10 @@ namespace cycfi::artist
             *cp   = space[i].color.alpha;
          }
          auto space_ = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
-         gradient =
+         gradient.reset(
             CGGradientCreateWithColorComponents(
                space_, components.data(), locations.data(), nspaces
-            );
+            ));
          CGColorSpaceRelease(space_);
       }
 
@@ -337,7 +388,7 @@ namespace cycfi::artist
 
    CGGradientRef canvas::canvas_state::fill_gradient() const
    {
-      return current()->_fill_gradient;
+      return current()->_fill_gradient.get();
    }
 
    canvas::canvas_state::style const& canvas::canvas_state::stroke_style() const
@@ -358,7 +409,7 @@ namespace cycfi::artist
 
    CGGradientRef canvas::canvas_state::stroke_gradient() const
    {
-      return current()->_stroke_gradient;
+      return current()->_stroke_gradient.get();
    }
 
    class font const& canvas::canvas_state::font() const
