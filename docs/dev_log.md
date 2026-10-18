@@ -5,6 +5,39 @@ would otherwise have lived in commit bodies (commit messages are kept to a
 single subject line). Hashes are the post-rewrite short hashes on the branch
 named in the heading.
 
+## 2026-10-18 -- golden matcher, Windows arm64 (develop)
+
+**TL;DR:** The golden comparison is now pixelmatch over white and black, which
+sees alpha; it found 53 stale goldens, now refreshed. Windows arm64 builds
+Direct2D, Cairo and recording; Skia is left out there.
+
+- `4f650ed` Each example copied the prebuilt bundle's DLLs into the shared
+  `examples/` directory, and parallel links collided (seen with the
+  arm64-windows Cairo bundle, the first DLL bundle in use). One target
+  copies them, and every example depends on it.
+- `637ee5f` vcpkg's Skia has no `gl` on Windows arm64, and the Windows Skia
+  hosts draw through OpenGL. The arm64-windows Skia bundle job is gone,
+  `SkiaPrebuilt.cmake` stops with a clear message, and the setup page says
+  Windows arm64 uses Direct2D or Cairo.
+- `c6c1af7` The CIEDE2000 comparison dropped alpha and judged tiles by
+  their mean, so a moved black shadow and a few wrong pixels passed, while
+  3/255 of blur rounding on arm64 failed a dark tile. The new comparison:
+  a pixel differs when its YIQ difference passes 0.05 over white or over
+  black and it is not an anti-aliased edge in either image; no differing
+  pixel is allowed. 0.05 is the tightest with no false failures across
+  every backend on macOS arm64, Linux x64 and arm64, and Windows x64 and
+  arm64 (0.03 fails text on Linux arm64). `golden_test.cpp` checks it
+  against deliberate changes, and fails if the threshold is loosened or
+  alpha ignored.
+- `e385dfa` Stale goldens the old comparison passed: `drop_shadow` for Skia
+  (macOS, Linux, Windows), Quartz 2D and Direct2D, whose shadows had moved
+  or changed width since, and the six `code_*` snapshots on every backend,
+  which now show the top of one more line at the bottom edge. Today's
+  renders agree across backends. The macOS x64 `code_*` goldens are not yet
+  rechecked.
+
+All suites pass, examples built, on the five platforms above.
+
 ## 2026-10-18 -- clean-room build fixes (develop)
 
 **TL;DR:** Clean-room builds of develop `cb048b3` from a fresh clone found two
