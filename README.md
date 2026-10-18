@@ -26,7 +26,7 @@ Artist supports five rendering backends. Only one backend is active per build.
 |------------|-----------------|-----------------------|---------|
 | Quartz-2D  | macOS           | `ARTIST_QUARTZ_2D=ON` | macOS   |
 | Direct2D   | Windows         | `ARTIST_DIRECT2D=ON`  | Windows |
-| Skia       | macOS, Linux, Windows | `ARTIST_SKIA=ON` | off     |
+| Skia       | macOS, Linux, Windows x64 | `ARTIST_SKIA=ON` | off |
 | Cairo      | macOS, Linux, Windows | `ARTIST_CAIRO=ON` | Linux and others |
 | Recording  | macOS, Linux, Windows | `ARTIST_RECORDING=ON` | off |
 
@@ -38,9 +38,10 @@ for Direct2D and the recording backend.
 
 ### Building with Skia
 
-Skia is available on macOS, Linux and Windows, and is the default on none of
-them. By default CMake downloads a prebuilt Skia bundle, so `-DARTIST_SKIA=ON`
-alone is enough. To build Skia from source instead, use
+Skia is available on macOS, Linux and Windows x64, and is the default on none
+of them. Windows on arm64 has no Skia, since vcpkg's Skia has no OpenGL there;
+use Direct2D or Cairo. By default CMake downloads a prebuilt Skia bundle, so
+`-DARTIST_SKIA=ON` alone is enough. To build Skia from source instead, use
 [vcpkg](https://vcpkg.io/), which is included as a git submodule at
 `lib/external/vcpkg/`. Check it out and bootstrap it once, then configure with
 its toolchain file:
@@ -136,16 +137,21 @@ directory.
 
 ## News
 
-* 1 Jun 2026: All 15/15 Skia tests pass — fixed a Porter-Duff composite ops regression introduced by the m148 upgrade (`offscreen_image` now uses `SkSurfaces::Raster` instead of `SkPictureRecorder`; `drawPicture` with blend-mode paint is broken for Porter-Duff ops in m148). CI vcpkg builds now use the GitHub Actions binary cache (`x-gha`) for fast warm runs.
-* 31 May 2026: Skia backend upgraded to m148 via vcpkg — replaces hand-managed prebuilt binaries; vcpkg added as a git submodule at `lib/external/vcpkg/`. Cairo Windows support wired up through the same vcpkg submodule. CI now runs the Cairo backend on Ubuntu, macOS, and Windows.
-* 31 May 2026: Cairo backend gains HarfBuzz text shaping — OpenType ligatures, kerning, and correct complex-text advances for `fill_text`, `stroke_text`, `measure_text`, and `text_layout`.
-* 30 May 2026: Cairo backend fully integrated — drop-shadow support, live window hosts on macOS, Linux, and Windows; visual test suite with CI on Ubuntu and Windows.
+* 18 Oct 2026: Artist 1.0.0 is released. Five backends (Quartz 2D, Direct2D,
+  Skia, Cairo and recording), each platform's native one by default, prebuilt
+  Skia and Cairo bundles, and the
+  [documentation](https://cycfi.github.io/artist/artist/v1.0/index.html) for
+  the whole API.
+* 1 Jun 2026: All 15/15 Skia tests pass: fixed a Porter-Duff composite ops regression introduced by the m148 upgrade (`offscreen_image` now uses `SkSurfaces::Raster` instead of `SkPictureRecorder`; `drawPicture` with blend-mode paint is broken for Porter-Duff ops in m148). CI vcpkg builds now use the GitHub Actions binary cache (`x-gha`) for fast warm runs.
+* 31 May 2026: Skia backend upgraded to m148 via vcpkg, replacing hand-managed prebuilt binaries; vcpkg added as a git submodule at `lib/external/vcpkg/`. Cairo Windows support wired up through the same vcpkg submodule. CI now runs the Cairo backend on Ubuntu, macOS, and Windows.
+* 31 May 2026: Cairo backend gains HarfBuzz text shaping: OpenType ligatures, kerning, and correct complex-text advances for `fill_text`, `stroke_text`, `measure_text`, and `text_layout`.
+* 30 May 2026: Cairo backend fully integrated: drop-shadow support, live window hosts on macOS, Linux, and Windows; visual test suite with CI on Ubuntu and Windows.
 
 ## Documentation
 
 The documentation is built with [Antora](https://antora.org/) (sources under
 [`docs/`](docs/)) and published at
-<https://cycfi.github.io/artist/>. It is a work in progress.
+<https://cycfi.github.io/artist/>.
 
 1. [Setup and Installation](https://cycfi.github.io/artist/artist/v1.0/setup.html)
 2. [Backends](https://cycfi.github.io/artist/artist/v1.0/backends.html)
