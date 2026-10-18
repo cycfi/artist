@@ -320,7 +320,7 @@ build, selected with a CMake option.</p>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Skia</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">macOS, Linux, Windows</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">macOS, Linux, Windows x64</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>ARTIST_SKIA=ON</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">off</p></td>
 </tr>
@@ -350,9 +350,10 @@ the first of recording, Direct2D, Cairo, Skia and Quartz-2D wins.</p>
 <h2 id="_building_with_skia"><a class="anchor" href="#_building_with_skia"></a>Building with Skia</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Skia is available on macOS, Linux and Windows, and is the default on none
-of them. The Skia binaries are large and slow to compile from source, so Artist
-ships with two CMake presets:</p>
+<p>Skia is available on macOS, Linux and Windows x64, and is the default on
+none of them. Windows on arm64 has no Skia, since vcpkg&#8217;s Skia has no
+OpenGL there; use Direct2D or Cairo. The Skia binaries are large and slow
+to compile from source, so Artist ships with two CMake presets:</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
