@@ -418,21 +418,34 @@ function(add_example name)
       )
    endif()
 
-   # A prebuilt bundle's DLLs are not in TARGET_RUNTIME_DLLS (see
-   # cmake/SkiaPrebuilt.cmake and cmake/CairoPrebuilt.cmake), so copy them too.
-   get_property(skia_dlls GLOBAL PROPERTY ARTIST_SKIA_RUNTIME_DLLS)
-   get_property(cairo_dlls GLOBAL PROPERTY ARTIST_CAIRO_RUNTIME_DLLS)
-   list(APPEND skia_dlls ${cairo_dlls})
-   if (skia_dlls)
-      add_custom_command(
-         TARGET ${name} POST_BUILD
-         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${skia_dlls} $<TARGET_FILE_DIR:${name}>
-         COMMAND_EXPAND_LISTS
-      )
+   # The prebuilt bundle's DLLs are copied once, by example_bundle_dlls
+   # below, not by each example: the examples share one directory, and
+   # parallel copies of the same DLL collide.
+   if (TARGET example_bundle_dlls)
+      add_dependencies(${name} example_bundle_dlls)
    endif()
 
 endfunction()
+
+# A prebuilt bundle's DLLs are not in TARGET_RUNTIME_DLLS (see
+# cmake/SkiaPrebuilt.cmake and cmake/CairoPrebuilt.cmake), so copy them
+# beside the examples.
+get_property(bundle_dlls GLOBAL PROPERTY ARTIST_SKIA_RUNTIME_DLLS)
+get_property(cairo_dlls GLOBAL PROPERTY ARTIST_CAIRO_RUNTIME_DLLS)
+list(APPEND bundle_dlls ${cairo_dlls})
+if (bundle_dlls)
+   get_property(multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+   if (multi_config)
+      set(example_dir "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
+   else()
+      set(example_dir "${CMAKE_CURRENT_BINARY_DIR}")
+   endif()
+   add_custom_target(example_bundle_dlls
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${example_dir}
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${bundle_dlls} ${example_dir}
+      COMMAND_EXPAND_LISTS
+   )
+endif()
 
 set(space_images
    ${CMAKE_CURRENT_LIST_DIR}/images/space.jpg
