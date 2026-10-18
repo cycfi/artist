@@ -5,6 +5,19 @@ would otherwise have lived in commit bodies (commit messages are kept to a
 single subject line). Hashes are the post-rewrite short hashes on the branch
 named in the heading.
 
+## 2026-10-18 -- 1.0.1 hotfixes (develop; released as tag v1.0.1)
+
+**TL;DR:** The 1.0.1 fixes landed here first and were cherry-picked onto a
+scratch branch from `v1.0.0`, tagged `v1.0.1` (`528ad5f`); master follows the tag.
+
+- `ff0da35`, `8dc97d4` Quartz 2D: a gradient with no stops makes no
+  gradient; a replaced gradient is released (RAII holder in the state).
+- `d352493` Cairo: the NEON blur copies its four bytes instead of storing
+  through an unaligned `uint32_t*` (UBSan, Linux arm64).
+- `8895fe3`, `6b00b7a` Docs: a Reference page, no duplicate nav entry, the
+  nav's expand and collapse button.
+- `531d327` README and NEWS.md in Q's layout.
+
 ## 2026-10-18 -- macOS x64 goldens, Quartz 2D minimum (develop)
 
 **TL;DR:** The Intel Mac clean room passes; its stale x64 `code_*` goldens are
