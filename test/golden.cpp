@@ -204,6 +204,43 @@ void snapshot_golden(image const& pm, std::string name)
 
 #else
 
+#if defined(ARTIST_QUARTZ_2D)
+# include <sys/sysctl.h>
+# include <cstdlib>
+#endif
+
+namespace
+{
+#if defined(ARTIST_QUARTZ_2D)
+   // Quartz 2D draws text through the system's CoreText, so its goldens
+   // hold only on the macOS they are made on, that of CI's macos-latest.
+   // On an older macOS the comparison is skipped.
+   constexpr int quartz_min_macos = 26;
+
+   int macos_major()
+   {
+      char version[32] = {};
+      std::size_t size = sizeof(version);
+      if (sysctlbyname("kern.osproductversion", version, &size, nullptr, 0) != 0)
+         return 0;
+      return std::atoi(version);
+   }
+
+   bool goldens_apply(std::string const& name)
+   {
+      static int const major = macos_major();
+      if (major == 0 || major >= quartz_min_macos)
+         return true;
+      std::cout << "golden comparison skipped: macOS " << major
+         << ", Quartz 2D goldens need " << quartz_min_macos
+         << " or newer  (" << name << ")\n";
+      return false;
+   }
+#else
+   bool goldens_apply(std::string const&) { return true; }
+#endif
+}
+
 int golden_differences(image const& a, image const& b)
 {
    auto size = a.bitmap_size();
@@ -213,6 +250,8 @@ int golden_differences(image const& a, image const& b)
 void compare_golden(image const& pm, std::string name)
 {
    pm.save_png(get_results_path() + name + ".png");
+   if (!goldens_apply(name))
+      return;
    auto golden = image(get_golden_path() + name + ".png");
    auto result = image(get_results_path() + name + ".png");
 
@@ -247,6 +286,8 @@ void snapshot_golden(image const& pm, std::string name)
    // (e.g. a tall caret-following editing window, not the 640x480 canvas).
    auto golden_path = get_golden_path() + name + ".png";
    pm.save_png(get_results_path() + name + ".png");
+   if (!goldens_apply(name))
+      return;
    if (!cycfi::fs::exists(golden_path))
    {
       pm.save_png(golden_path);
