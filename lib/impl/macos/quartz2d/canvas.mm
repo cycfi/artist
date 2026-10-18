@@ -120,15 +120,20 @@ namespace cycfi::artist
       CGAffineTransform _inv_affine;
    };
 
-#pragma clang diagnostic ignored "-Wvla-extension"
-
    namespace
    {
+      // No stops makes no gradient, and drawing one paints nothing, as the
+      // W3C API specifies.
       void make_gradient(std::vector<canvas::color_stop> const& space, CGGradientRef& gradient)
       {
          auto nspaces = space.size();
-         CGFloat locations[nspaces];
-         CGFloat components[nspaces * 4];
+         if (nspaces == 0)
+         {
+            gradient = nullptr;
+            return;
+         }
+         std::vector<CGFloat> locations(nspaces);
+         std::vector<CGFloat> components(nspaces * 4);
          for (size_t i = 0; i != nspaces; ++i)
          {
             locations[i] = space[i].offset;
@@ -141,7 +146,7 @@ namespace cycfi::artist
          auto space_ = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
          gradient =
             CGGradientCreateWithColorComponents(
-               space_, components, locations, nspaces
+               space_, components.data(), locations.data(), nspaces
             );
          CGColorSpaceRelease(space_);
       }
@@ -562,13 +567,14 @@ namespace cycfi::artist
             with_shadow_layer(ctx, _state->shadow(), [&]
             {
                clip();  // Set to clip current path
-               CGContextDrawLinearGradient(
-                  ctx, _state->fill_gradient(),
-                  CGPoint{style.start.x, style.start.y},
-                  CGPoint{style.end.x, style.end.y},
-                  kCGGradientDrawsAfterEndLocation
-                     | kCGGradientDrawsBeforeStartLocation
-               );
+               if (auto gradient = _state->fill_gradient())
+                  CGContextDrawLinearGradient(
+                     ctx, gradient,
+                     CGPoint{style.start.x, style.start.y},
+                     CGPoint{style.end.x, style.end.y},
+                     kCGGradientDrawsAfterEndLocation
+                        | kCGGradientDrawsBeforeStartLocation
+                  );
             });
             CGContextRestoreGState(ctx);
          }
@@ -579,13 +585,14 @@ namespace cycfi::artist
             with_shadow_layer(ctx, _state->shadow(), [&]
             {
                clip();  // Set to clip current path
-               CGContextDrawRadialGradient(
-                  ctx, _state->fill_gradient(),
-                  CGPoint{style.c1.x, style.c1.y}, style.c1_radius,
-                  CGPoint{style.c2.x, style.c2.y}, style.c2_radius,
-                  kCGGradientDrawsAfterEndLocation
-                     | kCGGradientDrawsBeforeStartLocation
-               );
+               if (auto gradient = _state->fill_gradient())
+                  CGContextDrawRadialGradient(
+                     ctx, gradient,
+                     CGPoint{style.c1.x, style.c1.y}, style.c1_radius,
+                     CGPoint{style.c2.x, style.c2.y}, style.c2_radius,
+                     kCGGradientDrawsAfterEndLocation
+                        | kCGGradientDrawsBeforeStartLocation
+                  );
             });
             CGContextRestoreGState(ctx);
          }
@@ -635,13 +642,14 @@ namespace cycfi::artist
             with_shadow_layer(ctx, _state->shadow(), [&]
             {
                clip();  // Set to clip current path
-               CGContextDrawLinearGradient(
-                  ctx, _state->stroke_gradient(),
-                  CGPoint{style.start.x, style.start.y},
-                  CGPoint{style.end.x, style.end.y},
-                  kCGGradientDrawsAfterEndLocation
-                     | kCGGradientDrawsBeforeStartLocation
-               );
+               if (auto gradient = _state->stroke_gradient())
+                  CGContextDrawLinearGradient(
+                     ctx, gradient,
+                     CGPoint{style.start.x, style.start.y},
+                     CGPoint{style.end.x, style.end.y},
+                     kCGGradientDrawsAfterEndLocation
+                        | kCGGradientDrawsBeforeStartLocation
+                  );
             });
             CGContextRestoreGState(ctx);
          }
@@ -653,13 +661,14 @@ namespace cycfi::artist
             with_shadow_layer(ctx, _state->shadow(), [&]
             {
                clip();  // Set to clip current path
-               CGContextDrawRadialGradient(
-                  ctx, _state->stroke_gradient(),
-                  CGPoint{style.c1.x, style.c1.y}, style.c1_radius,
-                  CGPoint{style.c2.x, style.c2.y}, style.c2_radius,
-                  kCGGradientDrawsAfterEndLocation
-                     | kCGGradientDrawsBeforeStartLocation
-               );
+               if (auto gradient = _state->stroke_gradient())
+                  CGContextDrawRadialGradient(
+                     ctx, gradient,
+                     CGPoint{style.c1.x, style.c1.y}, style.c1_radius,
+                     CGPoint{style.c2.x, style.c2.y}, style.c2_radius,
+                     kCGGradientDrawsAfterEndLocation
+                        | kCGGradientDrawsBeforeStartLocation
+                  );
             });
             CGContextRestoreGState(ctx);
          }
