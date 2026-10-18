@@ -18,6 +18,8 @@ dealing with text layout and mechanisms for text editing, fonts and font
 management, path creation and manipulation, and image capture and offscreen
 graphics.
 
+> **Status:** `master` tracks the latest stable release (currently v1.0.0). The next release, **v1.1**, is developed on `develop`, where the docs stay in sync as changes land. See [NEWS.md](NEWS.md) for what is new in each release.
+
 ## Backends
 
 Artist supports five rendering backends. Only one backend is active per build.
@@ -33,119 +35,11 @@ Artist supports five rendering backends. Only one backend is active per build.
 With no backend option set, CMake uses the platform's native backend.
 Enabling one backend automatically disables the others. The recording
 backend draws nothing: it keeps a journal of the drawing calls, for tests.
-See [Setup and Installation](https://cycfi.github.io/artist/artist/v1.0/setup.html)
-for Direct2D and the recording backend.
 
-### Building with Skia
-
-Skia is available on macOS, Linux and Windows x64, and is the default on none
-of them. Windows on arm64 has no Skia, since vcpkg's Skia has no OpenGL there;
-use Direct2D or Cairo. By default CMake downloads a prebuilt Skia bundle, so
-`-DARTIST_SKIA=ON` alone is enough. To build Skia from source instead, use
-[vcpkg](https://vcpkg.io/), which is included as a git submodule at
-`lib/external/vcpkg/`. Check it out and bootstrap it once, then configure with
-its toolchain file:
-
-```sh
-# One-time checkout and bootstrap (--recurse-submodules does not fetch vcpkg)
-git submodule update --init --checkout lib/external/vcpkg
-lib/external/vcpkg/bootstrap-vcpkg.sh -disableMetrics   # macOS/Linux
-lib\external\vcpkg\bootstrap-vcpkg.bat -disableMetrics  # Windows
-
-cmake -S . -B build-skia -DARTIST_SKIA=ON \
-  -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake \
-  -DARTIST_BUILD_EXAMPLES=ON -DARTIST_BUILD_TESTS=ON
-cmake --build build-skia
-```
-
-### Building with Cairo
-
-Cairo is the default backend on Linux, and on any platform other than macOS
-and Windows. On macOS and Windows, CMake downloads a prebuilt bundle of Cairo
-and its dependencies, so `-DARTIST_CAIRO=ON` is all it takes; configure with
-`-DARTIST_CAIRO_PREBUILT=OFF` to use your own libraries instead.
-
-#### Linux
-
-Install system packages, then configure:
-
-```sh
-sudo apt-get install -y \
-  libcairo2-dev \
-  libfontconfig1-dev \
-  libfreetype6-dev \
-  libharfbuzz-dev \
-  libwebp-dev \
-  pkg-config
-
-cmake -S . -B build-cairo -DARTIST_CAIRO=ON
-cmake --build build-cairo
-```
-
-#### macOS (Homebrew)
-
-```sh
-brew install cairo fontconfig freetype harfbuzz webp pkgconf ninja
-
-cmake -S . -B build-cairo -DARTIST_CAIRO=ON -DARTIST_CAIRO_PREBUILT=OFF
-cmake --build build-cairo
-```
-
-#### Windows
-
-The prebuilt bundle is the default. To build the dependencies from source
-instead, use the bundled vcpkg submodule (no separate installation needed).
-Check it out and bootstrap it once, then pass the toolchain file:
-
-```sh
-git submodule update --init --checkout lib/external/vcpkg
-lib\external\vcpkg\bootstrap-vcpkg.bat -disableMetrics
-
-cmake -S . -B build-cairo -DARTIST_CAIRO=ON ^
-  -DCMAKE_TOOLCHAIN_FILE=lib/external/vcpkg/scripts/buildsystems/vcpkg.cmake
-cmake --build build-cairo
-```
-
-vcpkg will build cairo, freetype, fontconfig, harfbuzz, libwebp, and pkgconf
-from source on the first run (~15–20 min). Subsequent builds reuse the cached `vcpkg_installed/`
-directory.
-
-### Cairo: supported platforms and known limitations
-
-**Supported:**
-- Offscreen image surfaces on macOS, Linux, and Windows.
-- Live window rendering on macOS (`cairo_app.mm`), Linux (GTK3, Wayland and
-  X11 hosts, `cairo_app.cpp`), and Windows/Win32 (`cairo_app.cpp`).
-- Visual test suite with goldens for macOS, Linux, and Windows.
-- CI build and visual tests on Ubuntu/GCC, macOS/Clang, and Windows/MSVC.
-
-**Known limitations:**
-
-- `shadow_style` is implemented via a software Gaussian blur (SIMD-accelerated
-  where available). There is no GPU-accelerated path; very large blur radii or
-  high-frequency redraws may be CPU-intensive.
-- `darker` composite op uses `CAIRO_OPERATOR_DARKEN` (channel-min) as a known
-  approximation of the W3C PlusDarker formula `max(0, Cs+Cd-1)`. No exact
-  Cairo equivalent exists. Every backend uses the same approximation.
-- Text rendering uses HarfBuzz for shaping (OpenType GSUB/GPOS), FreeType for
-  rasterization, and Fontconfig for font selection. Standard ligatures (`liga`)
-  and kerning are active. Deferred: font fallback, bidirectional text, complex
-  script segmentation (Arabic, Indic, etc.), explicit OpenType feature control.
-- `image::pixels()` returns backend-native premultiplied BGRA
-  (`CAIRO_FORMAT_ARGB32` on little-endian). See the `image.hpp` header for
-  the full per-backend pixel layout contract.
-
-## News
-
-* 18 Oct 2026: Artist 1.0.0 is released. Five backends (Quartz 2D, Direct2D,
-  Skia, Cairo and recording), each platform's native one by default, prebuilt
-  Skia and Cairo bundles, and the
-  [documentation](https://cycfi.github.io/artist/artist/v1.0/index.html) for
-  the whole API.
-* 1 Jun 2026: All 15/15 Skia tests pass: fixed a Porter-Duff composite ops regression introduced by the m148 upgrade (`offscreen_image` now uses `SkSurfaces::Raster` instead of `SkPictureRecorder`; `drawPicture` with blend-mode paint is broken for Porter-Duff ops in m148). CI vcpkg builds now use the GitHub Actions binary cache (`x-gha`) for fast warm runs.
-* 31 May 2026: Skia backend upgraded to m148 via vcpkg, replacing hand-managed prebuilt binaries; vcpkg added as a git submodule at `lib/external/vcpkg/`. Cairo Windows support wired up through the same vcpkg submodule. CI now runs the Cairo backend on Ubuntu, macOS, and Windows.
-* 31 May 2026: Cairo backend gains HarfBuzz text shaping: OpenType ligatures, kerning, and correct complex-text advances for `fill_text`, `stroke_text`, `measure_text`, and `text_layout`.
-* 30 May 2026: Cairo backend fully integrated: drop-shadow support, live window hosts on macOS, Linux, and Windows; visual test suite with CI on Ubuntu and Windows.
+[Setup and Installation](https://cycfi.github.io/artist/artist/v1.0/setup.html) covers building with each backend:
+the prebuilt Skia and Cairo bundles, building them from source with vcpkg,
+and the Cairo backend's
+[supported platforms and known limitations](https://cycfi.github.io/artist/artist/v1.0/setup.html#_cairo_supported_platforms_and_known_limitations).
 
 ## Documentation
 
@@ -158,7 +52,7 @@ The documentation is built with [Antora](https://antora.org/) (sources under
 * [Backends](https://cycfi.github.io/artist/artist/v1.0/backends.html)
 * [Reference](https://cycfi.github.io/artist/artist/v1.0/reference.html)
 
-## <a name="jdeguzman"></a>About the Author
+## <a name="jdeguzman"></a>The Author
 
 <img align="right" src="https://github.com/cycfi/elements/blob/assets/images/joel.jpg?raw=true" width="200">
 
@@ -177,6 +71,10 @@ highly successful Open Source projects such as
 [Boost.Fusion](http://tinyurl.com/ybn5oq9v). These libraries are all part of
 the [Boost Libraries](http://tinyurl.com/jubgged), a well respected,
 peer-reviewed, Open Source, collaborative development effort.
+
+## Discord
+
+Join the [Discord channel](https://discord.gg/NJkadSx) to discuss Artist and chat with the developers.
 
 -------------------------------------------------------------------------------
 
