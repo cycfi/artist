@@ -7,6 +7,7 @@
 #define ARTIST_ROPE_JUNE_5_2026
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <functional>
 #include <memory>
@@ -373,6 +374,7 @@ namespace cycfi::artist
             n = n->right.get();
          }
       }
+      assert(n);     // i < size(): the rope is not empty
       return n->chunk[i];
    }
 

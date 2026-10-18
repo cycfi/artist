@@ -160,7 +160,7 @@ namespace cycfi::artist
 
       void skip_to_next(char const*& s)
       {
-         for (char c = *s; (c = *s) != 0; ++s)
+         for (char c; (c = *s) != 0; ++s)
          {
             if (!std::isspace(c) && c != ',')
                break;
@@ -371,7 +371,9 @@ namespace cycfi::artist
       // just use Boost.Spirit!
       auto str = std::string{svg_def.data(), svg_def.size()};
       auto s = str.c_str();
-      bool abs; char cmd;
+      // No command yet: a path that starts without one is rejected.
+      bool abs = true;
+      char cmd = 0;
 
       path_builder builder{*this};
       while (*s)

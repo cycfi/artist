@@ -76,6 +76,15 @@ TEST_CASE("Coordinate Conversion with Base Transform")
       CHECK(u.y == Approx(70.0f).margin(0.001));
    }
 }
+TEST_CASE("SVG Path Syntax")
+{
+   // A path that does not start with a command is rejected
+   CHECK_THROWS_AS(path{"10 20"}, std::runtime_error);
+
+   // One that does is read
+   CHECK_NOTHROW(path{"M 10 20 L 30 40 Z"});
+}
+
 TEST_CASE("Path Equality")
 {
    // Identical paths are equal

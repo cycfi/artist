@@ -74,7 +74,7 @@ namespace
       ink_map m;
       m.w = int(img.bitmap_size().x);
       m.h = int(img.bitmap_size().y);
-      m.ink.resize(m.w * m.h);
+      m.ink.resize(std::size_t(m.w) * m.h);
       for (int i = 0; i != m.w * m.h; ++i)
          m.ink[i] = p[4*i] < 128 || p[4*i+1] < 128 || p[4*i+2] < 128;
       return m;
