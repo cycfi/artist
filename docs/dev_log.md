@@ -5,6 +5,26 @@ would otherwise have lived in commit bodies (commit messages are kept to a
 single subject line). Hashes are the post-rewrite short hashes on the branch
 named in the heading.
 
+## 2026-10-18 -- macOS x64 goldens, Quartz 2D minimum (develop)
+
+**TL;DR:** The Intel Mac clean room passes; its stale x64 `code_*` goldens are
+refreshed, and Quartz 2D goldens are compared only on macOS 26 or newer.
+
+- `54b0a95` The macOS x64 `code_*` snapshots were stale, as on the other
+  platforms. The new ones are rendered under Rosetta on the M2 (macOS
+  26), as the other x64 goldens are, and pass there and, for Skia and
+  Cairo, on the Intel Mac.
+- `bdb7c02` On the Intel Mac (macOS 12, the last it runs), Quartz 2D text
+  differs by 4 to 28 pixels: CoreText rasterizes glyphs a shade
+  differently. Quartz 2D goldens hold only on the macOS they are made on,
+  that of CI's macos-latest (26.6.2), so on an older macOS the comparison
+  is skipped with a message. Skia and Cairo, with their own font stack,
+  are compared everywhere. Verified on macOS 26 (all 23 goldens
+  compared); the skip itself is not yet run on an older macOS.
+
+The Intel Mac clean room of develop `8711a42`: every backend builds with
+examples, and the x64-osx Skia and Cairo bundles work on Intel hardware.
+
 ## 2026-10-18 -- golden matcher, Windows arm64 (develop)
 
 **TL;DR:** The golden comparison is now pixelmatch over white and black, which
