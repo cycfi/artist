@@ -20,6 +20,9 @@ on:
           - quartz2d
           - direct2d
           - linux-hosts
+permissions:
+  contents: read
+
 env:
   BUILD_TYPE: Release
 jobs:
