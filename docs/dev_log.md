@@ -5,6 +5,22 @@ would otherwise have lived in commit bodies (commit messages are kept to a
 single subject line). Hashes are the post-rewrite short hashes on the branch
 named in the heading.
 
+## 2026-10-27 -- 1.0.2 hotfix (develop; released as tag v1.0.2)
+
+**TL;DR:** The Direct2D shadow offscreen is sized to the shape, not the
+render target. Landed here as `7bcfa12` and was cherry-picked onto a
+scratch branch from `v1.0.1`, tagged `v1.0.2` (`d64fe84`); master follows
+the tag.
+
+- `7bcfa12` (PR #32, Christopher Cook) `apply_blur` now uses the bounds
+  `fill()` and `stroke()` pass in: the offscreen covers the shape's device
+  bounds, cut to what can reach the target, instead of a target-sized
+  texture per shadow, which Direct2D pools per size (hundreds of MB after
+  a few window resizes). Verified on Windows arm64 (Direct2D): 6 suites,
+  190 cases, 23 goldens with 0 differing pixels. GitHub could not merge
+  the PR, its branch being on master's separate 1.0.x history, so it was
+  cherry-picked with its author kept.
+
 ## 2026-10-18 -- 1.0.1 hotfixes (develop; released as tag v1.0.1)
 
 **TL;DR:** The 1.0.1 fixes landed here first and were cherry-picked onto a

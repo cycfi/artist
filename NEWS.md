@@ -7,6 +7,13 @@ High-level, user-facing changes only. For the day-to-day detail, see
 
 Nothing yet.
 
+## v1.0.2 (2026-10-27)
+
+* Direct2D: a shadow is rendered through an offscreen bitmap the size of the
+  shape it falls from, not of the whole window. Each shadowed draw used to
+  allocate a window-sized texture, which grew to hundreds of MB once a window
+  had been resized a few times. Contributed by Christopher Cook (#32).
+
 ## v1.0.1 (2026-10-18)
 
 Fixes found by the sanitizer jobs and the other platforms right after 1.0.0:
