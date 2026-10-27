@@ -648,7 +648,7 @@ namespace cycfi::artist
    }
 
    void canvas::canvas_state::apply_blur(
-      context& ctx, artist::rect /*bounds*/, render_function render
+      context& ctx, artist::rect bounds, render_function render
     , bool stroke)
    {
       ctx.resume();
@@ -661,16 +661,64 @@ namespace cycfi::artist
       if (FAILED(ctx.target()->QueryInterface(&dc)) || !dc)
          return;
 
-      // Render what is drawn, in its own paint, into a compatible offscreen
-      // bitmap positioned exactly like it (same transform): its alpha, point
-      // by point, is what casts the shadow.
+      // The blur is twice the Gaussian standard deviation, as in the W3C
+      // canvas API, and the transform in effect does not change it. With a
+      // blur style as well, the shadow is cast from what the blur leaves: the
+      // Gaussian of a Gaussian, whose deviations add in squares.
+      auto const sigma = std::hypot(cur.shadow_blur / 2, cur.blur);
+
+      // The offscreen covers only what casts the shadow: the primitive's
+      // device-space bounds (`bounds` is in user space), cut to the part whose
+      // shadow can reach the target. Empty bounds (text, images) mean the
+      // whole target. An offscreen as large as the target for every shadow
+      // made each shadowed draw allocate a target-sized texture, and Direct2D
+      // pools those per size: hundreds of MB once a window has been resized a
+      // few times.
       auto main = ctx.target();
+      auto const& offset = cur.shadow_offset;
+      auto const target_size = main->GetSize();
+      float const reach = 3 * sigma;
+      artist::rect area{
+         -offset.x - reach, -offset.y - reach
+       , target_size.width - offset.x + reach, target_size.height - offset.y + reach
+      };
+      if (bounds.right > bounds.left && bounds.bottom > bounds.top)
+      {
+         auto db = device_bounds(cur.matrix, bounds);
+         area = {
+            std::max(area.left, db.left), std::max(area.top, db.top)
+          , std::min(area.right, db.right), std::min(area.bottom, db.bottom)
+         };
+      }
+
+      // Whole device pixels, so the shadow is not resampled when it is placed.
+      FLOAT dpi_x = 96.0f, dpi_y = 96.0f;
+      main->GetDpi(&dpi_x, &dpi_y);
+      float const sx = dpi_x / 96.0f, sy = dpi_y / 96.0f;
+      float const x0 = std::floor(area.left * sx) / sx;
+      float const y0 = std::floor(area.top * sy) / sy;
+      float const x1 = std::ceil(area.right * sx) / sx;
+      float const y1 = std::ceil(area.bottom * sy) / sy;
+      if (x1 <= x0 || y1 <= y0)
+      {
+         release(dc);
+         return;
+      }
+
+      // Render what is drawn, in its own paint, into a compatible offscreen
+      // bitmap positioned exactly like it (same transform, less the area's
+      // origin): its alpha, point by point, is what casts the shadow.
       brush* paint = stroke? stroke_paint(*main) : fill_paint(*main);
-      offscreen_context offscreen{ctx};
+      offscreen_context offscreen{extent{x1 - x0, y1 - y0}, ctx};
       auto bm_target = offscreen.target();
+      if (!bm_target)
+      {
+         release(dc);
+         return;
+      }
       bm_target->BeginDraw();
       bm_target->Clear(D2D1::ColorF(0, 0, 0, 0));
-      bm_target->SetTransform(cur.matrix);
+      bm_target->SetTransform(cur.matrix * D2D1::Matrix3x2F::Translation(-x0, -y0));
       render(bm_target, paint, true);
       bm_target->EndDraw();
 
@@ -682,13 +730,7 @@ namespace cycfi::artist
       if (SUCCEEDED(dc->CreateEffect(CLSID_D2D1Shadow, &shadow)) && shadow &&
           SUCCEEDED(dc->CreateEffect(CLSID_D2D12DAffineTransform, &xform)) && xform)
       {
-         // The blur is twice the Gaussian standard deviation, as in the W3C
-         // canvas API, and the transform in effect does not change it. With
-         // a blur style as well, the shadow is cast from what the blur
-         // leaves: the Gaussian of a Gaussian, whose deviations add in
-         // squares.
          auto const& c = cur.shadow_color;
-         auto const sigma = std::hypot(cur.shadow_blur / 2, cur.blur);
          shadow->SetInput(0, offscreen.bitmap());
          shadow->SetValue(D2D1_SHADOW_PROP_BLUR_STANDARD_DEVIATION, sigma);
          shadow->SetValue(
@@ -698,10 +740,9 @@ namespace cycfi::artist
             D2D1_SHADOW_PROP_OPTIMIZATION, D2D1_SHADOW_OPTIMIZATION_BALANCED);
 
          xform->SetInputEffect(0, shadow);
-         auto const& offset = cur.shadow_offset;
          xform->SetValue(
             D2D1_2DAFFINETRANSFORM_PROP_TRANSFORM_MATRIX,
-            D2D1::Matrix3x2F::Translation(offset.x, offset.y));
+            D2D1::Matrix3x2F::Translation(x0 + offset.x, y0 + offset.y));
 
          dc->SetTransform(D2D1::Matrix3x2F::Identity());
          dc->DrawImage(xform, D2D1_INTERPOLATION_MODE_LINEAR);
