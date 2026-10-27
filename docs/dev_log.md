@@ -5,6 +5,21 @@ would otherwise have lived in commit bodies (commit messages are kept to a
 single subject line). Hashes are the post-rewrite short hashes on the branch
 named in the heading.
 
+## 2026-10-27 -- 1.0.2 hotfix (master, tag v1.0.2)
+
+**TL;DR:** The Direct2D shadow offscreen is sized to the shape, not the
+render target, cut from `v1.0.1` on a scratch branch.
+
+- `37185d8` (PR #32, Christopher Cook) `apply_blur` ignored the bounds
+  `fill()` and `stroke()` pass in, so every shadow rendered into a
+  target-sized offscreen, and Direct2D pools those textures per size: 530
+  to 610 MB in an Elements app after five window sizes, against 124 to 168
+  MB with the fix. The offscreen now covers the shape's device bounds, cut
+  to what can reach the target (offset plus 3 sigma), its origin snapped to
+  whole device pixels. Text, images and layers pass empty bounds and keep
+  the whole-target offscreen, cut the same way. Verified on Windows arm64
+  (Direct2D): 6 suites, 190 cases, 23 goldens with 0 differing pixels.
+
 ## 2026-10-18 -- 1.0.1 hotfixes (master, tag v1.0.1)
 
 **TL;DR:** Two Quartz 2D gradient bugs, an unaligned NEON store in the Cairo
