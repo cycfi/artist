@@ -373,6 +373,59 @@ TEST_CASE("Image: scale", "[image]")
    CHECK(make_image<pixel_format::gray8>(buf, {2, 2}).scale() == 1);
 }
 
+#if defined(ARTIST_SKIA)
+TEST_CASE("Image: a draw takes the pixels as they are now", "[image]")
+{
+   // Skia draws an image from one SkImage it keeps, with its mipmaps.
+   // Writing through pixels() or drawing through an offscreen_image must
+   // reach the next draw, as must drawing while the offscreen_image is
+   // still open. The image is drawn at a quarter of its size, so the
+   // mipmaps are used.
+   image src{64, 64};
+   auto drawn_small = [&]
+   {
+      image dst{16, 16};
+      {
+         offscreen_image ctx{dst};
+         canvas cnv{ctx.context()};
+         cnv.draw(src, rect{0, 0, 16, 16});
+      }
+      return pixel_at(dst, 8, 8);
+   };
+
+   fill(src, colors::red, {0, 0, 64, 64});
+   CHECK(near(drawn_small(), red));
+   CHECK(near(drawn_small(), red));
+
+   // Written through pixels(): premultiplied B, G, R, A.
+   auto p = reinterpret_cast<std::uint8_t*>(src.pixels());
+   REQUIRE(p != nullptr);
+   for (int i = 0; i != 64 * 64; ++i, p += 4)
+   {
+      p[0] = 255;
+      p[1] = 0;
+      p[2] = 0;
+      p[3] = 255;
+   }
+   CHECK(near(drawn_small(), blue));
+
+   // Drawn through an offscreen_image, and drawn while it is still open.
+   fill(src, colors::red, {0, 0, 64, 64});
+   CHECK(near(drawn_small(), red));
+   {
+      offscreen_image ctx{src};
+      canvas cnv{ctx.context()};
+      cnv.fill_style(colors::blue);
+      cnv.fill_rect(0, 0, 64, 64);
+      CHECK(near(drawn_small(), blue));
+      cnv.fill_style(colors::red);
+      cnv.fill_rect(0, 0, 64, 64);
+      CHECK(near(drawn_small(), red));
+   }
+   CHECK(near(drawn_small(), red));
+}
+#endif
+
 TEST_CASE("Image: draw works in units at any scale", "[image]")
 {
    // Page, Accessors: draw places the image at size() in user space, and the
