@@ -83,7 +83,7 @@ jobs:
     - name: Install gtk3 host dependencies
       if: matrix.host == 'gtk3'
       run: |
-        sudo apt-get install -y libgtk-3-dev libgtkglext1-dev libegl-dev
+        sudo apt-get install -y libgtk-3-dev libegl-dev
 
     - name: Install wayland host dependencies
       if: matrix.host == 'wayland'
@@ -256,7 +256,6 @@ jobs:
         sudo apt-get install -y \
           libharfbuzz-dev \
           fontconfig \
-          libgtkglext1-dev \
           libgtk-3-dev \
           libgl1-mesa-dev \
           libglu1-mesa-dev \
