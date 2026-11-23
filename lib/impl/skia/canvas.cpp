@@ -17,6 +17,7 @@
 #include <SkData.h>
 #include <SkImage.h>
 #include <SkPicture.h>
+#include <SkPixelRef.h>
 #include <SkSurface.h>
 #include <SkCanvas.h>
 #include <SkPath.h>
@@ -882,6 +883,32 @@ namespace cycfi::artist
          paint.setColor(SK_ColorBLACK);
          return shadowed(cnv, state, paint);
       }
+
+      // The image a bitmap is drawn from: the one kept with it (see
+      // image_impl::drawn), made on the first draw. It holds a reference to
+      // the bitmap's pixels until its last user, the GPU backend included,
+      // lets it go. Skia calls the release proc only for an image it made,
+      // so the reference is handed over only then. While an offscreen_image
+      // is drawing into the bitmap, the pixels are still changing: a copy.
+      sk_sp<SkImage> image_to_draw(image_impl& impl, SkBitmap const& bitmap)
+      {
+         if (impl.offscreens > 0)
+            return bitmap.asImage();
+         if (!impl.drawn && bitmap.pixelRef())
+         {
+            sk_sp<SkPixelRef> pixels{SkRef(bitmap.pixelRef())};
+            impl.drawn = SkImages::RasterFromPixmap(
+               bitmap.pixmap(),
+               [](void const*, SkImages::ReleaseContext pixels)
+               {
+                  static_cast<SkPixelRef*>(pixels)->unref();
+               },
+               pixels.get());
+            if (impl.drawn)
+               (void) pixels.release();
+         }
+         return impl.drawn;
+      }
    }
 
    void canvas::draw(image const& pic, rect const& src, rect const& dest)
@@ -920,10 +947,13 @@ namespace cycfi::artist
                // part of the bitmap.
                auto const whole = src_px.contains(
                   SkRect::MakeIWH(that.width(), that.height()));
+               auto const image = image_to_draw(*pic.impl(), that);
+               if (!image)
+                  return;
                with_blend(_context, paint, [&](SkPaint const& q)
                {
                   _context->drawImageRect(
-                     that.asImage(),
+                     image,
                      src_px,
                      SkRect{dest.left, dest.top, dest.right, dest.bottom},
                      // Smoothed, as Cairo and Quartz 2D scale; Skia's

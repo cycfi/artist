@@ -27,6 +27,23 @@ namespace cycfi::artist
       base_type const&  base() const { return *this; }
 
       float             scale = 1.0f;   // bitmap pixels per logical unit
+
+      // The bitmap as the SkImage canvas::draw draws, made once, sharing
+      // the bitmap's pixels. asImage copies a mutable bitmap's pixels, and
+      // each new SkImage is a new texture to the GPU backends, uploaded
+      // (and its mipmaps made) on every draw; one kept image is uploaded
+      // once. Dropped when the pixels may have changed: image::pixels() and
+      // offscreen_image. While an offscreen_image is drawing into the
+      // bitmap, canvas::draw takes a copy each time instead.
+      sk_sp<SkImage>    drawn;
+      int               offscreens = 0; // offscreen_images drawing into it
+
+      void pixels_changed()
+      {
+         if (auto* bitmap = std::get_if<SkBitmap>(&base()))
+            bitmap->notifyPixelsChanged();
+         drawn.reset();
+      }
    };
 
    class canvas_layer_impl

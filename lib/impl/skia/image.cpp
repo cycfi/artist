@@ -168,6 +168,8 @@ namespace cycfi::artist
    uint32_t* image::pixels()
    {
       if (!_impl) return nullptr;
+      // The caller may write them: draw from them afresh.
+      _impl->pixels_changed();
       return reinterpret_cast<uint32_t*>(std::get<SkBitmap>(_impl->base()).getPixels());
    }
 
@@ -208,11 +210,18 @@ namespace cycfi::artist
       _state->canvas = std::make_unique<SkCanvas>(bitmap);
       float s = img.scale();
       _state->canvas->scale(s, s);
+      ++img.impl()->offscreens;
    }
 
    offscreen_image::~offscreen_image()
    {
       delete _state;
+      // What was drawn into the bitmap is drawn from it afresh.
+      if (auto impl = _image.impl())
+      {
+         --impl->offscreens;
+         impl->pixels_changed();
+      }
    }
 
    canvas_impl* offscreen_image::context() const
