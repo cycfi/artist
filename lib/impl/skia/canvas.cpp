@@ -9,6 +9,7 @@
 #include <artist/detail/font_cache.hpp>
 #include <artist/detail/arc_sweep.hpp>
 #include <cmath>
+#include <optional>
 #include <stack>
 #include "opaque.hpp"
 
@@ -26,6 +27,8 @@
 #include <effects/SkGradient.h>
 #include <SkImageFilter.h>
 #include <SkImageFilters.h>
+#include <SkMaskFilter.h>
+#include <SkBlurTypes.h>
 #include <SkTextBlob.h>
 #include <SkTypeface.h>
 #include <SkFont.h>
@@ -191,19 +194,23 @@ namespace cycfi::artist
 
    namespace
    {
-      // The paint with the current blur and shadow, if any. Both are in the
-      // canvas's initial user space, so the transform in effect does not
-      // change them, as in the W3C canvas API. Skia applies an image
-      // filter's parameters in local space, so map them there. The blur
-      // comes first and the shadow is cast from what it leaves, the W3C
-      // order of a filter and a shadow.
-      SkPaint shadowed(
-         SkCanvas* cnv, canvas::canvas_state& state, SkPaint paint)
+      // The blur and the shadow are in the canvas's initial user space, so
+      // the transform in effect does not change them, as in the W3C canvas
+      // API. Skia applies them in local space: this maps them there. None
+      // for a transform that cannot be inverted.
+      struct local_space
       {
-         bool const blurred = state.blur() > 0;
-         if (!state.shadow_visible() && !blurred)
-            return paint;
+         double            base_scale;    // initial user space to device
+         double            sx, sy;        // local space to device, per axis
+         SkVector          shadow_offset;
 
+         SkScalar          sigma_x(double sigma) const { return sigma * base_scale / sx; }
+         SkScalar          sigma_y(double sigma) const { return sigma * base_scale / sy; }
+      };
+
+      std::optional<local_space> to_local(
+         SkCanvas* cnv, canvas::canvas_state& state)
+      {
          auto base = state.get_inv_affine().invert();
          double const base_scale =
             std::sqrt(std::abs(base.a * base.d - base.c * base.b));
@@ -212,29 +219,50 @@ namespace cycfi::artist
          (void) cnv->getTotalMatrix().asAffine(m);
          double det = m[0] * m[3] - m[2] * m[1];
          if (det == 0)
+            return std::nullopt;
+
+         auto const& sh = state.shadow();
+         double dx = base.a * sh._offset.x + base.c * sh._offset.y;
+         double dy = base.b * sh._offset.x + base.d * sh._offset.y;
+         double lx = (m[3] * dx - m[2] * dy) / det;
+         double ly = (m[0] * dy - m[1] * dx) / det;
+
+         return local_space{
+            base_scale
+          , std::hypot(m[0], m[1])
+          , std::hypot(m[2], m[3])
+          , {SkScalar(lx), SkScalar(ly)}
+         };
+      }
+
+      // The paint with the current blur and shadow, if any, as image
+      // filters. The blur comes first and the shadow is cast from what it
+      // leaves, the W3C order of a filter and a shadow.
+      SkPaint shadowed(
+         SkCanvas* cnv, canvas::canvas_state& state, SkPaint paint)
+      {
+         bool const blurred = state.blur() > 0;
+         if (!state.shadow_visible() && !blurred)
             return paint;
-         double sx = std::hypot(m[0], m[1]);
-         double sy = std::hypot(m[2], m[3]);
+
+         auto const local = to_local(cnv, state);
+         if (!local)
+            return paint;
 
          sk_sp<SkImageFilter> filter;
          if (blurred)
          {
-            double const sigma = state.blur() * base_scale;
-            filter = SkImageFilters::Blur(sigma / sx, sigma / sy, nullptr);
+            filter = SkImageFilters::Blur(
+               local->sigma_x(state.blur()), local->sigma_y(state.blur()), nullptr);
          }
 
          if (state.shadow_visible())
          {
             auto const& sh = state.shadow();
-            double dx = base.a * sh._offset.x + base.c * sh._offset.y;
-            double dy = base.b * sh._offset.x + base.d * sh._offset.y;
-            double sigma = sh._blur / 2 * base_scale;
-            double lx = (m[3] * dx - m[2] * dy) / det;
-            double ly = (m[0] * dy - m[1] * dx) / det;
-
             auto c = sh._color;
             filter = SkImageFilters::DropShadow(
-               lx, ly, sigma / sx, sigma / sy
+               local->shadow_offset.x(), local->shadow_offset.y()
+             , local->sigma_x(sh._blur / 2), local->sigma_y(sh._blur / 2)
              , SkColor4f{c.red, c.green, c.blue, c.alpha}.toSkColor()
              , filter
             );
@@ -273,10 +301,84 @@ namespace cycfi::artist
          cnv->restore();
       }
 
+      // A shadow under a filled rectangle, rounded rectangle or oval, drawn
+      // as the shape itself, offset and blurred by a mask filter, before the
+      // shape. Skia's GPU backends blur those shapes analytically, straight
+      // into the target, where the drop shadow image filter (shadowed) draws
+      // the shape into a layer, blurs the layer in passes and composites it,
+      // recording a layer and a filter for each on the CPU as well.
+      // It is the same picture when the fill has one alpha all over the
+      // shape (a solid color, or an opaque shader): the shadow takes the
+      // paint's alpha, as the filter would. Anything else (a stroke, a
+      // translucent shader, a blur, a blend mode other than source-over,
+      // uneven scales) returns false, and the filter does it.
+      bool draw_fast_shadow(
+         SkCanvas* cnv, canvas::canvas_state& state
+       , SkPath const& path, SkPaint const& paint)
+      {
+         if (!state.shadow_visible() || state.blur() > 0)
+            return false;
+         if (paint.getStyle() != SkPaint::kFill_Style
+            || paint.getPathEffect() || paint.getMaskFilter()
+            || paint.getColorFilter() || paint.getImageFilter())
+            return false;
+         if (paint.asBlendMode().value_or(SkBlendMode::kClear) != SkBlendMode::kSrcOver)
+            return false;
+         if (paint.getShader() && !paint.getShader()->isOpaque())
+            return false;
+         if (path.isInverseFillType())
+            return false;
+
+         SkRect rect;
+         SkRRect rrect;
+         enum { is_rect, is_rrect, is_oval } shape;
+         if (path.isRect(&rect))
+            shape = is_rect;
+         else if (path.isOval(&rect))
+            shape = is_oval;
+         else if (path.isRRect(&rrect))
+            shape = is_rrect;
+         else
+            return false;
+
+         // One sigma for both axes: the mask filter takes one.
+         auto const local = to_local(cnv, state);
+         if (!local || std::abs(local->sx - local->sy) > 1e-3 * std::max(local->sx, local->sy))
+            return false;
+
+         // Skia multiplies a shader by the paint's alpha, as it does a color.
+         auto const& sh = state.shadow();
+         auto c = sh._color;
+         auto const sigma = local->sigma_x(sh._blur / 2);
+         SkPaint sp;
+         sp.setAntiAlias(paint.isAntiAlias());
+         sp.setColor4f(SkColor4f{c.red, c.green, c.blue, c.alpha * paint.getAlphaf()});
+         if (sigma > 0)
+            sp.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, sigma, true));
+
+         auto draw = [&](SkPaint const& p)
+         {
+            switch (shape)
+            {
+               case is_rect:  cnv->drawRect(rect, p); break;
+               case is_oval:  cnv->drawOval(rect, p); break;
+               case is_rrect: cnv->drawRRect(rrect, p); break;
+            }
+         };
+         cnv->save();
+         cnv->translate(local->shadow_offset.x(), local->shadow_offset.y());
+         draw(sp);
+         cnv->restore();
+         draw(paint);   // the shape over it, as the filter would have drawn it
+         return true;
+      }
+
       void draw_path(
          SkCanvas* cnv, canvas::canvas_state& state
        , SkPath const& path, SkPaint const& paint)
       {
+         if (draw_fast_shadow(cnv, state, path, paint))
+            return;
          with_blend(cnv, shadowed(cnv, state, paint), [&](SkPaint const& p)
          {
             cnv->drawPath(path, p);
