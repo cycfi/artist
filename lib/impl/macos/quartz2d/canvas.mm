@@ -5,10 +5,13 @@
 =============================================================================*/
 #include <artist/canvas.hpp>
 #include <artist/canvas_layer.hpp>
+#include <artist/detail/analytic_shadow.hpp>
 #include <artist/detail/font_cache.hpp>
 #include <Quartz/Quartz.h>
 #include <Accelerate/Accelerate.h>
+#include <algorithm>
 #include <cmath>
+#include <optional>
 #include <stack>
 #include <utility>
 #include <variant>
@@ -71,6 +74,7 @@ namespace cycfi::artist
    {
    public:
 
+      using cg_affine = CGAffineTransform;
       using style = std::variant<
          color
        , canvas::linear_gradient
@@ -103,6 +107,49 @@ namespace cycfi::artist
       bool              shadow() const       { return current()->_shadow; }
       void              shadow(bool on)      { current()->_shadow = on; }
 
+      // The shadow as it was given to shadow_style.
+      struct shadow_info
+      {
+         point          offset;
+         float          blur              = 0;
+         color          c;
+      };
+
+      using shadow_info_ref = shadow_info const&;
+
+      shadow_info_ref   shadow_set() const
+                        { return current()->_shadow_set; }
+      void              shadow_set(shadow_info_ref s)
+                        { current()->_shadow_set = s; }
+
+      // The current path, while it is nothing but one rectangle, rounded
+      // rectangle or circle: what an analytic shadow is cast from. The
+      // path is not part of the saved state, so neither is this.
+      struct simple_path
+      {
+         enum kind_enum { empty, simple, other };
+
+         kind_enum      kind              = empty;
+         rect           bounds;           // in the space it was added in
+         float          radius            = 0;
+         cg_affine      to_pixels;        // from that space
+      };
+
+      using simple_path_ref = simple_path const&;
+
+      simple_path_ref   path() const         { return _path; }
+      void              path(simple_path_ref p)    { _path = p; }
+      void              path_cleared()       { _path.kind = _path.empty; }
+      void              path_changed()       { _path.kind = _path.other; }
+      void              path_add(
+                           CGContextRef ctx, rect const& r, float radius);
+      void              path_set_aside();
+      void              path_put_back();
+
+      // From user space to the canvas's first user space in pixels: y
+      // down, whichever way up the context's own device space is.
+      cg_affine         to_pixels(CGContextRef ctx) const;
+
       mode_enum         mode() const;
       void              mode(mode_enum mode_);
 
@@ -132,8 +179,6 @@ namespace cycfi::artist
       float             scale() const                    { return _scale; }
       void              scale(float sc)                  { _scale = sc; }
 
-      using cg_affine = CGAffineTransform;
-
       void              get_inv_affine(CGContextRef context);
       cg_affine const&  get_inv_affine() const;
 
@@ -155,6 +200,7 @@ namespace cycfi::artist
          int            _text_align       = canvas::baseline;
          mode_enum      _mode             = source_over;
          bool           _shadow           = false;
+         shadow_info    _shadow_set;
          fill_rule_enum _fill_rule        = fill_rule_enum::fill_winding;
          float          _blur             = 0;
          line_info      _line;
@@ -169,7 +215,51 @@ namespace cycfi::artist
       state_info_stack  _stack;
       float             _scale;
       CGAffineTransform _inv_affine;
+      simple_path       _path;
+      std::vector<simple_path> _paths_aside;
    };
+
+   // A rectangle (radius 0), rounded rectangle or circle joins the path.
+   // The path is simple only if that is all there is in it.
+   inline void canvas::canvas_state::path_add(
+      CGContextRef ctx, rect const& r, float radius)
+   {
+      bool const alone = _path.kind == _path.empty
+         && r.left < r.right && r.top < r.bottom;
+      if (alone)
+      {
+         _path.kind = _path.simple;
+         _path.bounds = r;
+         _path.radius = radius;
+         _path.to_pixels = to_pixels(ctx);
+      }
+      else
+      {
+         _path.kind = _path.other;
+      }
+   }
+
+   // For when the path is set aside to draw something else, and put back.
+   inline void canvas::canvas_state::path_set_aside()
+   {
+      _paths_aside.push_back(_path);
+      _path.kind = _path.empty;
+   }
+
+   inline void canvas::canvas_state::path_put_back()
+   {
+      _path = _paths_aside.back();
+      _paths_aside.pop_back();
+   }
+
+   inline CGAffineTransform
+   canvas::canvas_state::to_pixels(CGContextRef ctx) const
+   {
+      auto const to_first =
+         CGAffineTransformConcat(CGContextGetCTM(ctx), _inv_affine);
+      return CGAffineTransformConcat(
+         to_first, CGAffineTransformMakeScale(_scale, _scale));
+   }
 
    namespace
    {
@@ -236,6 +326,338 @@ namespace cycfi::artist
          draw();
          if (shadow)
             CGContextEndTransparencyLayer(ctx);
+      }
+
+      using detail::pixel_box;
+      using detail::shadow_layout;
+      using detail::shadow_mask;
+      using detail::shadow_piece;
+      using detail::shadow_shape;
+
+      CGRect cg_rect(pixel_box const& b)
+      {
+         return CGRectMake(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0);
+      }
+
+      // The current path in pixels (see to_pixels), where it is one
+      // rectangle, rounded rectangle or circle that its transform leaves
+      // upright or on its side, with round corners still round.
+      bool device_shape(
+         CGContextRef ctx, canvas::canvas_state const& state
+       , shadow_shape& s)
+      {
+         auto const& p = state.path();
+         if (p.kind != p.simple || CGContextIsPathEmpty(ctx))
+            return false;
+
+         auto const& m = p.to_pixels;
+         double const sx = std::hypot(m.a, m.b);
+         double const sy = std::hypot(m.c, m.d);
+         auto tiny = [limit = 1e-6 * std::max(sx, sy)](double v)
+         {
+            return std::abs(v) <= limit;
+         };
+         bool const upright = tiny(m.b) && tiny(m.c);
+         bool const sideways = tiny(m.a) && tiny(m.d);
+         bool const even = std::abs(sx - sy) <= 1e-3 * sx;
+         if (!(upright || sideways) || (p.radius > 0 && !even))
+            return false;
+
+         // The path the context holds must still be that shape.
+         auto const box = CGRectApplyAffineTransform(
+            CGRectMake(
+               p.bounds.left, p.bounds.top
+             , p.bounds.width(), p.bounds.height())
+          , m);
+         auto const held = CGRectApplyAffineTransform(
+            CGContextGetPathBoundingBox(ctx), state.to_pixels(ctx));
+         auto near = [](CGFloat a, CGFloat b)
+         {
+            return std::abs(a - b) < 0.01;
+         };
+         bool const same =
+            near(box.origin.x, held.origin.x)
+            && near(box.origin.y, held.origin.y)
+            && near(box.size.width, held.size.width)
+            && near(box.size.height, held.size.height);
+         if (!same || box.size.width <= 0 || box.size.height <= 0)
+            return false;
+
+         s = {
+            CGRectGetMinX(box), CGRectGetMinY(box)
+          , CGRectGetMaxX(box), CGRectGetMaxY(box)
+          , std::min({
+               p.radius * sx, box.size.width / 2, box.size.height / 2})
+         };
+         return true;
+      }
+
+      // The alpha of a fill that has one alpha all over: a solid color, or
+      // a gradient that covers the plane and has only opaque stops.
+      std::optional<double> uniform_alpha(
+         canvas::canvas_state::style const& style)
+      {
+         if (auto const* c = std::get_if<color>(&style))
+            return c->alpha;
+
+         auto opaque = [](std::vector<canvas::color_stop> const& stops)
+         {
+            auto solid = [](auto const& s) { return s.color.alpha >= 1; };
+            return !stops.empty()
+               && std::all_of(stops.begin(), stops.end(), solid);
+         };
+
+         using linear = canvas::linear_gradient;
+         using radial = canvas::radial_gradient;
+         bool covers = false;
+         if (auto const* g = std::get_if<linear>(&style))
+         {
+            covers = opaque(g->color_space);
+         }
+         else if (auto const* g = std::get_if<radial>(&style))
+         {
+            // A radial one covers the plane when one circle holds the other.
+            double const apart =
+               std::hypot(g->c2.x - g->c1.x, g->c2.y - g->c1.y);
+            covers = opaque(g->color_space)
+               && apart + std::min(g->c1_radius, g->c2_radius)
+                  < std::max(g->c1_radius, g->c2_radius);
+         }
+         return covers? std::optional<double>{1.0} : std::nullopt;
+      }
+
+      // What Quartz draws fastest by far is a bitmap in its own colors,
+      // pixel for pixel: several times faster than a color through a mask,
+      // a stretched image or a fill that is not opaque. So a mask is kept
+      // as an image of it in the shadow's color, and a line as a tile of
+      // that line, to be laid end to end.
+      struct mask_image
+      {
+                        ~mask_image()  { CGImageRelease(image); }
+
+         CGImageRef     image = nullptr;
+         color          c;                // the color it is in
+         shadow_piece   kind = shadow_piece::mask;
+         int            tile = 0;         // how far one goes along a line
+      };
+
+      // A line n pixels long is tiled in images of about 16000 pixels.
+      int tile_length(int n)
+      {
+         return std::clamp(16384 / std::max(n, 1), 16, 256);
+      }
+
+      // The image of a mask in the color c, kept with the mask. The rows
+      // go in from the bottom: Quartz draws an image the other way up
+      // where y is down.
+      mask_image const& image_of(
+         shadow_mask const& m, shadow_piece kind
+       , color c, CGColorSpaceRef space)
+      {
+         auto* kept = static_cast<mask_image*>(m.native.get());
+         bool const same = kept && kept->kind == kind
+            && kept->c.red == c.red && kept->c.green == c.green
+            && kept->c.blue == c.blue && kept->c.alpha == c.alpha;
+         if (same)
+            return *kept;
+
+         bool const down = kind == shadow_piece::line_down;
+         bool const across = kind == shadow_piece::line_across;
+         int const tile =
+            down? tile_length(m.height) : across? tile_length(m.width) : 0;
+         int const w = down? tile : m.width, h = across? tile : m.height;
+         std::vector<uint32_t> pixels(std::size_t(w) * h);
+         for (int y = 0; y != h; ++y)
+         {
+            auto* row = pixels.data() + std::size_t(h - 1 - y) * w;
+            auto const* in =
+               m.alpha.data() + std::size_t(across? 0 : y) * m.stride;
+            if (down)
+            {
+               detail::shadow_pixels(row, in, 1, 1, c);
+               std::fill(row + 1, row + w, row[0]);
+            }
+            else
+            {
+               detail::shadow_pixels(row, in, w, 1, c);
+            }
+         }
+
+         auto data = CFDataCreate(
+            nullptr, reinterpret_cast<UInt8 const*>(pixels.data())
+          , pixels.size() * 4);
+         auto provider = CGDataProviderCreateWithCFData(data);
+         auto made = std::make_shared<mask_image>();
+         made->image = CGImageCreate(
+            w, h, 8, 32, std::size_t(w) * 4, space
+          , CGBitmapInfo(kCGBitmapByteOrder32Little)
+               | CGBitmapInfo(kCGImageAlphaPremultipliedFirst)
+          , provider, nullptr, false, kCGRenderingIntentDefault);
+         CGDataProviderRelease(provider);
+         CFRelease(data);
+         made->c = c;
+         made->kind = kind;
+         made->tile = tile;
+         m.native = made;
+         return *made;
+      }
+
+      // A piece of a shadow that is one line all along: tiles of the
+      // line, end to end over b, but for what hide covers.
+      void draw_line(
+         CGContextRef ctx, mask_image const& img, pixel_box const& b
+       , pixel_box const& hide, CGRect clip)
+      {
+         pixel_box seen[4];
+         CGRect rects[4];
+         int const n = detail::visible_parts(b, hide, seen);
+         for (int i = 0; i != n; ++i)
+         {
+            rects[i] = cg_rect(seen[i]);
+            clip = i == 0? CGRectIntersection(clip, rects[i])
+               : CGRectUnion(clip, rects[i]);
+         }
+         if (n == 0 || CGRectIsEmpty(clip))
+            return;
+
+         CGContextSaveGState(ctx);
+         CGContextClipToRects(ctx, rects, n);
+         bool const down = img.kind == shadow_piece::line_down;
+         int const from = down? b.x0 : b.y0, to = down? b.x1 : b.y1;
+         for (int at = from; at < to; at += img.tile)
+         {
+            auto const tile = down
+               ? CGRectMake(at, b.y0, img.tile, b.y1 - b.y0)
+               : CGRectMake(b.x0, at, b.x1 - b.x0, img.tile);
+            if (CGRectIntersectsRect(tile, clip))
+               CGContextDrawImage(ctx, tile, img.image);
+         }
+         CGContextRestoreGState(ctx);
+      }
+
+      // The blurred shadow of s in the color c, in the pieces of l, but
+      // for what hide covers. The context's user space is the pixels they
+      // are in, and its fill color is c.
+      void draw_pieces(
+         CGContextRef ctx, shadow_shape const& s, double sigma
+       , shadow_layout const& l, pixel_box const& hide
+       , color c, CGColorSpaceRef space)
+      {
+         auto const clip = CGContextGetClipBoundingBox(ctx);
+         detail::for_each_piece(l, [&](shadow_piece kind, pixel_box const& b)
+         {
+            if (!CGRectIntersectsRect(clip, cg_rect(b)))
+               return;
+
+            int const w = b.x1 - b.x0, h = b.y1 - b.y0;
+            if (kind == shadow_piece::fill)
+            {
+               pixel_box seen[4];
+               CGRect rects[4];
+               int const n = detail::visible_parts(b, hide, seen);
+               for (int i = 0; i != n; ++i)
+                  rects[i] = cg_rect(seen[i]);
+               CGContextFillRects(ctx, rects, n);
+               return;
+            }
+
+            bool const down = kind == shadow_piece::line_down;
+            bool const across = kind == shadow_piece::line_across;
+            auto const& m = detail::shadow_mask_of(
+               s, sigma, b.x0, b.y0, down? 1 : w, across? 1 : h);
+            auto const& img = image_of(m, kind, c, space);
+            if (kind == shadow_piece::mask)
+               CGContextDrawImage(ctx, cg_rect(b), img.image);
+            else
+               draw_line(ctx, img, b, hide, clip);
+         });
+      }
+
+      // Draw the shadow of the current path, about to be filled, where it
+      // can be worked out from the shape instead of blurred from its
+      // pixels: a rectangle, rounded rectangle or circle on its own,
+      // upright, filled with one alpha all over. See
+      // artist/detail/analytic_shadow.hpp. True means it is drawn, and the
+      // shape is to be filled with no shadow of Quartz's own; false, that
+      // nothing is drawn.
+      bool shape_shadow(CGContextRef ctx, canvas::canvas_state const& state)
+      {
+         shadow_shape shape;
+         if (!device_shape(ctx, state, shape))
+            return false;
+         auto const alpha = uniform_alpha(state.fill_style());
+         if (!alpha)
+            return false;
+
+         // The shadow is given in the canvas's first units: scale() pixels.
+         auto const& set = state.shadow_set();
+         double const k = state.scale();
+         double const dx = set.offset.x * k, dy = set.offset.y * k;
+         double const sigma = set.blur / 2 * k;
+         CGFloat const strength = set.c.alpha * *alpha;
+         if (strength * 255 < 0.5)
+            return true;   // too faint to show
+
+         shadow_shape const shadow{
+            shape.x0 + dx, shape.y0 + dy, shape.x1 + dx, shape.y1 + dy
+          , shape.radius
+         };
+         bool const blurred = sigma >= 0.5;
+         shadow_layout l;
+         if (blurred)
+            l = detail::layout_shadow(shadow, sigma, strength);
+         if (blurred && l.nx == 0)
+            return false;
+
+         // The shadow's color, as shadow_style gives it to Quartz.
+         auto const cg_color =
+            [
+               [NSColor
+                  colorWithRed : set.c.red
+                         green : set.c.green
+                         blue  : set.c.blue
+                         alpha : strength
+               ]
+               CGColor
+            ];
+
+         auto saved = CGContextCopyPath(ctx);
+         auto const to_pixels = state.to_pixels(ctx);
+         CGContextSaveGState(ctx);
+         CGContextSetShadowWithColor(ctx, CGSizeZero, 0, nullptr);
+         CGContextSetFillColorWithColor(ctx, cg_color);
+         CGContextConcatCTM(ctx, CGAffineTransformInvert(to_pixels));
+         if (blurred)
+         {
+            pixel_box hide;
+            if (*alpha >= 1)
+               hide = detail::hidden_part(shape);
+            CGFloat const* v = CGColorGetComponents(cg_color);
+            color const c{
+               float(v[0]), float(v[1]), float(v[2]), float(v[3])};
+            CGContextSetInterpolationQuality(ctx, kCGInterpolationNone);
+            draw_pieces(
+               ctx, shadow, sigma, l, hide, c
+             , CGColorGetColorSpace(cg_color));
+         }
+         else
+         {
+            // With no blur, the shadow is the shape in the shadow's color.
+            CGContextTranslateCTM(ctx, dx, dy);
+            CGContextConcatCTM(ctx, to_pixels);
+            CGContextBeginPath(ctx);
+            CGContextAddPath(ctx, saved);
+            if (state.fill_rule() == path::fill_winding)
+               CGContextFillPath(ctx);
+            else
+               CGContextEOFillPath(ctx);
+         }
+         CGContextRestoreGState(ctx);
+
+         CGContextBeginPath(ctx);
+         CGContextAddPath(ctx, saved);
+         CGPathRelease(saved);
+         return true;
       }
 
       // Box blurs repeated this many times approximate a Gaussian. The box
@@ -478,6 +900,10 @@ namespace cycfi::artist
       _state->scale(device.x / user.x);
 
       _state->get_inv_affine(ctx);
+
+      // A path the context comes with is not one this canvas has seen.
+      if (!CGContextIsPathEmpty(ctx))
+         _state->path_changed();
    }
 
    canvas::~canvas()
@@ -572,6 +998,10 @@ namespace cycfi::artist
       CGContextSetAlpha(ctx, opacity);
       CGContextBeginTransparencyLayer(ctx, nullptr);
       CGContextSetAlpha(ctx, 1.0);      // the layer's content is drawn opaque
+
+      // Quartz casts the shadow from the layer as a whole, and none from
+      // what is drawn in it.
+      _state->shadow(false);
    }
 
    void canvas::end_group()
@@ -585,6 +1015,7 @@ namespace cycfi::artist
    void canvas::begin_path()
    {
       CGContextBeginPath(CGContextRef(_context));
+      _state->path_cleared();
    }
 
    void canvas::close_path()
@@ -649,6 +1080,14 @@ namespace cycfi::artist
          }
       };
 
+      // A shadow worked out from the shape is drawn here, and the shape
+      // then filled with Quartz's own shadow off.
+      auto shadowed = [this]
+      {
+         return _state->shadow() && _state->mode() == source_over
+            && shape_shadow(CGContextRef(_context), *_state);
+      };
+
       with_mode(CGContextRef(_context), _state->mode(), [&]
       {
          if (_state->blur() > 0)
@@ -659,19 +1098,32 @@ namespace cycfi::artist
                std::visit(apply_fill, _state->fill_style());
             });
          }
+         else if (shadowed())
+         {
+            auto ctx = CGContextRef(_context);
+            CGContextSaveGState(ctx);
+            CGContextSetShadowWithColor(ctx, CGSizeZero, 0, nullptr);
+            _state->shadow(false);
+            std::visit(apply_fill, _state->fill_style());
+            _state->shadow(true);
+            CGContextRestoreGState(ctx);
+         }
          else
          {
             std::visit(apply_fill, _state->fill_style());
          }
       });
+      _state->path_cleared();
    }
 
    void canvas::fill_preserve()
    {
       auto save = CGContextCopyPath(CGContextRef(_context));
+      auto const kept = _state->path();
       fill();
       CGContextAddPath(CGContextRef(_context), save);
       CGPathRelease(save);
+      _state->path(kept);
    }
 
    void canvas::stroke()
@@ -740,14 +1192,17 @@ namespace cycfi::artist
             std::visit(apply_stroke, _state->stroke_style());
          }
       });
+      _state->path_cleared();
    }
 
    void canvas::stroke_preserve()
    {
       auto save = CGContextCopyPath(CGContextRef(_context));
+      auto const kept = _state->path();
       stroke();
       CGContextAddPath(CGContextRef(_context), save);
       CGPathRelease(save);
+      _state->path(kept);
    }
 
    void canvas::clip()
@@ -756,6 +1211,7 @@ namespace cycfi::artist
          CGContextClip(CGContextRef(_context));
       else
          CGContextEOClip(CGContextRef(_context));
+      _state->path_cleared();
    }
 
    rect canvas::clip_extent() const
@@ -787,6 +1243,7 @@ namespace cycfi::artist
    {
       auto ctx = CGContextRef(_context);
       auto save = CGContextCopyPath(ctx);
+      _state->path_set_aside();
       begin_path();
       CGContextAddPath(ctx, p.impl());
 
@@ -798,6 +1255,7 @@ namespace cycfi::artist
       begin_path();
       CGContextAddPath(ctx, save);
       CGPathRelease(save);
+      _state->path_put_back();
    }
 
    bool canvas::point_in_path(point p) const
@@ -811,11 +1269,13 @@ namespace cycfi::artist
    void canvas::move_to(point p)
    {
       CGContextMoveToPoint(CGContextRef(_context), p.x, p.y);
+      _state->path_changed();
    }
 
    void canvas::line_to(point p)
    {
       CGContextAddLineToPoint(CGContextRef(_context), p.x, p.y);
+      _state->path_changed();
    }
 
    void canvas::arc_to(point p1, point p2, float radius)
@@ -824,6 +1284,7 @@ namespace cycfi::artist
          CGContextRef(_context),
          p1.x, p1.y, p2.x, p2.y, radius
       );
+      _state->path_changed();
    }
 
    void canvas::arc(
@@ -837,6 +1298,21 @@ namespace cycfi::artist
       // actual values because: "In a flipped coordinate system (the default
       // for UIView drawing methods in iOS), specifying a clockwise arc results
       // in a counterclockwise arc after the transformation is applied."
+
+      // One full turn, on its own, is a circle.
+      float const turn =
+         ccw? start_angle - end_angle : end_angle - start_angle;
+      if (radius > 0 && std::abs(turn - 2 * pi) < 1e-4)
+      {
+         rect const box{
+            p.x - radius, p.y - radius, p.x + radius, p.y + radius};
+         _state->path_add(CGContextRef(_context), box, radius);
+      }
+      else
+      {
+         _state->path_changed();
+      }
+
       CGContextAddArc(
          CGContextRef(_context),
          p.x, p.y, radius, start_angle, end_angle, ccw? 1 : 0
@@ -867,12 +1343,14 @@ namespace cycfi::artist
 
    void canvas::add_rect(const rect& r)
    {
+      _state->path_add(CGContextRef(_context), r, 0);
       CGContextAddRect(CGContextRef(_context), CGRectMake(r.left, r.top, r.width(), r.height()));
    }
 
    void canvas::add_path(path const& p)
    {
       CGContextAddPath(CGContextRef(_context), p.impl());
+      _state->path_changed();
    }
 
    void canvas::clear_rect(rect const& r)
@@ -883,11 +1361,13 @@ namespace cycfi::artist
    void canvas::quadratic_curve_to(point cp, point end)
    {
       CGContextAddQuadCurveToPoint(CGContextRef(_context), cp.x, cp.y, end.x, end.y);
+      _state->path_changed();
    }
 
    void canvas::bezier_curve_to(point cp1, point cp2, point end)
    {
       CGContextAddCurveToPoint(CGContextRef(_context), cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+      _state->path_changed();
    }
 
    void canvas::fill_style(color c)
@@ -952,6 +1432,7 @@ namespace cycfi::artist
       bool const visible =
          c.alpha > 0 && (blur > 0 || offset.x != 0 || offset.y != 0);
       _state->shadow(visible);
+      _state->shadow_set({offset, blur, c});
       if (!visible)
       {
          CGContextSetShadowWithColor(ctx, CGSizeZero, 0, nullptr);
@@ -1166,6 +1647,7 @@ namespace cycfi::artist
       {
          // The path is not graphics state: keep it past the clip.
          auto saved = CGContextCopyPath(ctx);
+         _state->path_set_aside();
          CGContextSaveGState(ctx);
          with_shadow_layer(ctx, _state->shadow(), [&]
          {
@@ -1182,6 +1664,7 @@ namespace cycfi::artist
             CGContextAddPath(ctx, saved);
             CGPathRelease(saved);
          }
+         _state->path_put_back();
       };
 
       auto apply_fill = [&](auto const& style)
@@ -1256,6 +1739,7 @@ namespace cycfi::artist
       {
          // The path is not graphics state: keep it past the clip.
          auto saved = CGContextCopyPath(ctx);
+         _state->path_set_aside();
          CGContextSaveGState(ctx);
          with_shadow_layer(ctx, _state->shadow(), [&]
          {
@@ -1273,6 +1757,7 @@ namespace cycfi::artist
             CGContextAddPath(ctx, saved);
             CGPathRelease(saved);
          }
+         _state->path_put_back();
       };
 
       auto apply_stroke = [&](auto const& style)
@@ -1483,6 +1968,7 @@ namespace cycfi::artist
       if (!CGContextIsPathEmpty(ctx))
          _saved = (void*) CGContextCopyPath(ctx);
       CGContextBeginPath(ctx);
+      cnv._state->path_set_aside();
    }
 
    canvas::path_holder::~path_holder()
@@ -1495,14 +1981,24 @@ namespace cycfi::artist
          CGContextAddPath(ctx, saved);
          CGPathRelease(saved);
       }
+      _cnv._state->path_put_back();
    }
 
    void canvas::add_round_rect_impl(const rect& r, float radius)
    {
       if (radius > 0.0f)
+      {
+         // The segments it is built from each mark the path as other
+         // than simple: it is one shape, if nothing was there before it.
+         auto const before = _state->path();
          detail::round_rect(*this, r, radius);
+         _state->path(before);
+         _state->path_add(CGContextRef(_context), r, radius);
+      }
       else
+      {
          add_rect(r);
+      }
    }
 
 }

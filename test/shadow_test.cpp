@@ -280,6 +280,33 @@ TEST_CASE("shadow: every shape in a path casts one", "[shadow]")
    }
 }
 
+TEST_CASE("shadow: a path kept past a paint", "[shadow]")
+{
+   // fill_preserve and stroke_preserve keep the path. A shape added
+   // after either joins what was kept, and both cast a shadow when the
+   // path is filled.
+   for (bool stroked : {false, true})
+   {
+      image img{100, 100, 1};
+      render(img, [stroked](canvas& cnv)
+      {
+         cnv.fill_style(red);
+         cnv.stroke_style(red);
+         cnv.add_rect(10, 10, 30, 30);
+         if (stroked)
+            cnv.stroke_preserve();
+         else
+            cnv.fill_preserve();
+         cnv.shadow_style({0, 40}, 0, blue);
+         cnv.add_rect(60, 10, 30, 30);
+         cnv.fill();
+      });
+      INFO((stroked? "stroke_preserve" : "fill_preserve"));
+      CHECK(near(pixel_at(img, 25, 65), blue8));
+      CHECK(near(pixel_at(img, 75, 65), blue8));
+   }
+}
+
 TEST_CASE("shadow: a path set aside keeps its shadow", "[shadow]")
 {
    // A one-step rectangle and text are drawn without touching the path

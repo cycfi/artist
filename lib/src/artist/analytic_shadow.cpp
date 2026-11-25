@@ -347,4 +347,65 @@ namespace cycfi::artist::detail
       render({key.x0, key.y0, key.x1, key.y1, key.radius}, sg, m);
       return m;
    }
+
+   pixel_box hidden_part(shadow_shape const& shape)
+   {
+      // In from the sides as far as the corners' arcs come in, and a pixel
+      // more for the edge.
+      double const in = shape.radius * 0.29289321881345248 + 1;
+      return {
+         int(std::ceil(shape.x0 + in)), int(std::ceil(shape.y0 + in))
+       , int(std::floor(shape.x1 - in)), int(std::floor(shape.y1 - in))
+      };
+   }
+
+   int visible_parts(
+      pixel_box const& b, pixel_box const& hide, pixel_box* out)
+   {
+      int n = 0;
+      auto add = [&](int x0, int y0, int x1, int y1)
+      {
+         if (x0 < x1 && y0 < y1)
+            out[n++] = {x0, y0, x1, y1};
+      };
+
+      bool const apart = hide.empty()
+         || hide.x0 >= b.x1 || hide.x1 <= b.x0
+         || hide.y0 >= b.y1 || hide.y1 <= b.y0;
+      if (apart)
+      {
+         add(b.x0, b.y0, b.x1, b.y1);
+         return n;
+      }
+
+      int const top = std::max(b.y0, hide.y0);
+      int const bottom = std::min(b.y1, hide.y1);
+      add(b.x0, b.y0, b.x1, top);
+      add(b.x0, bottom, b.x1, b.y1);
+      add(b.x0, top, std::min(b.x1, hide.x0), bottom);
+      add(std::max(b.x0, hide.x1), top, b.x1, bottom);
+      return n;
+   }
+
+   void shadow_pixels(
+      uint32_t* out, uint8_t const* alpha, int n, int step, color c)
+   {
+      auto byte = [](float v) { return unsigned(std::lround(v * 255)); };
+      unsigned const channels[] = {
+         byte(c.alpha), byte(c.red * c.alpha)
+       , byte(c.green * c.alpha), byte(c.blue * c.alpha)
+      };
+
+      for (int i = 0; i != n; ++i)
+      {
+         unsigned const m = alpha[std::size_t(i) * step];
+         uint32_t pixel = 0;
+         for (unsigned v : channels)
+         {
+            unsigned const t = v * m + 128;
+            pixel = (pixel << 8) | ((t + (t >> 8)) >> 8);
+         }
+         out[i] = pixel;
+      }
+   }
 }

@@ -822,86 +822,21 @@ namespace cycfi::artist
          cairo_close_path(cr);
       }
 
-      // Whole pixels, x0 to x1 by y0 to y1.
-      struct pixel_box
-      {
-         int   x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+      using detail::pixel_box;
 
-         bool  empty() const { return x0 >= x1 || y0 >= y1; }
-      };
-
-      // The pixels a shape covers outright when its fill is opaque: what
-      // of its shadow need not be drawn. None when the fill shows through.
-      pixel_box hidden_by(shadow_shape const& shape, double alpha)
-      {
-         if (alpha < 1)
-            return {};
-
-         // In from the sides as far as the corners' arcs come in, and a
-         // pixel more for the edge.
-         double const in = shape.radius * 0.29289321881345248 + 1;
-         return {
-            int(std::ceil(shape.x0 + in)), int(std::ceil(shape.y0 + in))
-          , int(std::floor(shape.x1 - in)), int(std::floor(shape.y1 - in))
-         };
-      }
-
-      // Add to the path what of b lies outside hide, as up to four
-      // rectangles. False if none of it does.
+      // Add to the path what of b lies outside hide. False if none of it
+      // does.
       bool add_visible(
          cairo_t* cr, pixel_box const& b, pixel_box const& hide)
       {
-         bool any = false;
-         auto add = [&](int x0, int y0, int x1, int y1)
-         {
-            if (x0 < x1 && y0 < y1)
-            {
-               cairo_rectangle(cr, x0, y0, x1 - x0, y1 - y0);
-               any = true;
-            }
-         };
-
-         bool const apart = hide.empty()
-            || hide.x0 >= b.x1 || hide.x1 <= b.x0
-            || hide.y0 >= b.y1 || hide.y1 <= b.y0;
-         if (apart)
-         {
-            add(b.x0, b.y0, b.x1, b.y1);
-            return any;
-         }
-
-         int const top = std::max(b.y0, hide.y0);
-         int const bottom = std::min(b.y1, hide.y1);
-         add(b.x0, b.y0, b.x1, top);
-         add(b.x0, bottom, b.x1, b.y1);
-         add(b.x0, top, std::min(b.x1, hide.x0), bottom);
-         add(std::max(b.x0, hide.x1), top, b.x1, bottom);
-         return any;
-      }
-
-      // Pixels of the color c at each coverage in alpha, n of them, step
-      // bytes apart: premultiplied, as Cairo makes them from a solid
-      // source and a mask.
-      void shade(
-         uint32_t* out, uint8_t const* alpha, int n, int step, color c)
-      {
-         auto byte = [](float v) { return unsigned(std::lround(v * 255)); };
-         unsigned const channels[] = {
-            byte(c.alpha), byte(c.red * c.alpha)
-          , byte(c.green * c.alpha), byte(c.blue * c.alpha)
-         };
-
+         pixel_box seen[4];
+         int const n = detail::visible_parts(b, hide, seen);
          for (int i = 0; i != n; ++i)
          {
-            unsigned const m = alpha[std::size_t(i) * step];
-            uint32_t pixel = 0;
-            for (unsigned v : channels)
-            {
-               unsigned const t = v * m + 128;
-               pixel = (pixel << 8) | ((t + (t >> 8)) >> 8);
-            }
-            out[i] = pixel;
+            auto const& v = seen[i];
+            cairo_rectangle(cr, v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
          }
+         return n != 0;
       }
 
       // A piece of a shadow that is the same all along one way: one line
@@ -925,7 +860,8 @@ namespace cycfi::artist
          // rounding at an end, is the same pixel.
          scratch.line.resize(std::size_t(n) * 3);
          uint32_t* px = scratch.line.data();
-         shade(px, m.alpha.data(), n, down? m.stride : 1, c);
+         detail::shadow_pixels(
+            px, m.alpha.data(), n, down? m.stride : 1, c);
          if (down)
          {
             for (int i = n; i-- != 0;)
@@ -984,7 +920,7 @@ namespace cycfi::artist
          scratch.line.resize(std::size_t(w) * h);
          for (int y = 0; y != h; ++y)
          {
-            shade(
+            detail::shadow_pixels(
                scratch.line.data() + std::size_t(y) * w
              , m.alpha.data() + std::size_t(y) * m.stride, w, 1, c);
          }
@@ -1004,40 +940,36 @@ namespace cycfi::artist
        , shadow_shape const& s, double sigma, shadow_layout const& l
        , color c, pixel_box const& hide)
       {
+         using detail::shadow_piece;
          double cx1, cy1, cx2, cy2;
          cairo_clip_extents(cr, &cx1, &cy1, &cx2, &cy2);
          bool const to_image =
             cairo_surface_get_type(cairo_get_group_target(cr))
                == CAIRO_SURFACE_TYPE_IMAGE;
 
-         for (int j = 0; j != l.ny; ++j)
+         detail::for_each_piece(l, [&](shadow_piece kind, pixel_box const& b)
          {
-            for (int i = 0; i != l.nx; ++i)
-            {
-               pixel_box const b{l.x[i], l.y[j], l.x[i + 1], l.y[j + 1]};
-               bool const mid_x = l.nx == 3 && i == 1;
-               bool const mid_y = l.ny == 3 && j == 1;
-               bool const seen = !b.empty()
-                  && b.x0 < cx2 && b.y0 < cy2 && b.x1 > cx1 && b.y1 > cy1;
-               if (!seen)
-                  continue;
+            bool const seen =
+               b.x0 < cx2 && b.y0 < cy2 && b.x1 > cx1 && b.y1 > cy1;
+            if (!seen)
+               return;
 
-               if (mid_x && mid_y)
-               {
-                  cairo_set_source_rgba(cr, c.red, c.green, c.blue, c.alpha);
-                  if (add_visible(cr, b, hide))
-                     cairo_fill(cr);
-               }
-               else if (mid_x || mid_y)
-               {
-                  stretched_piece(cr, scratch, s, sigma, c, b, hide, mid_x);
-               }
-               else
-               {
-                  mask_piece(cr, scratch, s, sigma, c, b, to_image);
-               }
+            if (kind == shadow_piece::fill)
+            {
+               cairo_set_source_rgba(cr, c.red, c.green, c.blue, c.alpha);
+               if (add_visible(cr, b, hide))
+                  cairo_fill(cr);
             }
-         }
+            else if (kind == shadow_piece::mask)
+            {
+               mask_piece(cr, scratch, s, sigma, c, b, to_image);
+            }
+            else
+            {
+               bool const down = kind == shadow_piece::line_down;
+               stretched_piece(cr, scratch, s, sigma, c, b, hide, down);
+            }
+         });
       }
 
       // The shadow of the shape s, given in device units, filled at
@@ -1077,9 +1009,11 @@ namespace cycfi::artist
          cairo_scale(cr, 1 / f.scale, 1 / f.scale);
          if (blurred)
          {
+            pixel_box hide;
+            if (alpha >= 1)
+               hide = detail::hidden_part(shape);
             draw_pieces(
-               cr, state.shadow_scratch, shadow, f.sigma, l
-             , c, hidden_by(shape, alpha));
+               cr, state.shadow_scratch, shadow, f.sigma, l, c, hide);
          }
          else
          {
