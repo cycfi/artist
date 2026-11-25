@@ -6,6 +6,7 @@
 #include <artist/canvas.hpp>
 #include <artist/image.hpp>
 #include <artist/canvas_layer.hpp>
+#include <artist/detail/analytic_shadow.hpp>
 #include <artist/detail/font_cache.hpp>
 #include "cairo_private.hpp"
 #include "cairo_text.hpp"
@@ -48,15 +49,37 @@ namespace cycfi::artist
          class font             font;       // current font, for HarfBuzz shaping
       };
 
+      // The current path, while it is nothing but one rectangle, rounded
+      // rectangle or circle: what an analytic shadow is cast from. The
+      // path is not part of the saved state, so neither is this.
+      struct simple_path
+      {
+         enum kind_enum { empty, simple, other };
+
+         kind_enum      kind = empty;
+         rect           bounds;     // in the user space it was added in
+         float          radius = 0;
+         cairo_matrix_t ctm;        // that user space
+      };
+
       void  apply_fill_style();
       void  apply_stroke_style();
       void  invalidate_pattern();
+
+      void  path_cleared();
+      void  path_changed();
+      void  path_add(cairo_t* cr, rect const& r, float radius);
+      void  path_set_aside();
+      void  path_put_back();
 
       using state_stack = std::stack<info>;
 
       info        _info;
       state_stack _stack;
       std::stack<float> _group_opacity;   // of the open groups
+
+      simple_path                _path;
+      std::vector<simple_path>   _paths_aside;
 
       // Inverse of the initial CTM captured at canvas construction.  The host
       // hands us a context whose CTM may already encode a base transform (e.g.
@@ -133,6 +156,49 @@ namespace cycfi::artist
       _info.pattern_set = _info.none_set;
    }
 
+   inline void canvas::canvas_state::path_cleared()
+   {
+      _path.kind = _path.empty;
+   }
+
+   inline void canvas::canvas_state::path_changed()
+   {
+      _path.kind = _path.other;
+   }
+
+   // A rectangle (radius 0), rounded rectangle or circle joins the path.
+   // The path is simple only if that is all there is in it.
+   inline void canvas::canvas_state::path_add(
+      cairo_t* cr, rect const& r, float radius)
+   {
+      bool const alone = _path.kind == _path.empty
+         && r.left < r.right && r.top < r.bottom;
+      if (alone)
+      {
+         _path.kind = _path.simple;
+         _path.bounds = r;
+         _path.radius = radius;
+         cairo_get_matrix(cr, &_path.ctm);
+      }
+      else
+      {
+         _path.kind = _path.other;
+      }
+   }
+
+   // For when the path is set aside to draw something else, and put back.
+   inline void canvas::canvas_state::path_set_aside()
+   {
+      _paths_aside.push_back(_path);
+      _path.kind = _path.empty;
+   }
+
+   inline void canvas::canvas_state::path_put_back()
+   {
+      _path = _paths_aside.back();
+      _paths_aside.pop_back();
+   }
+
    ////////////////////////////////////////////////////////////////////////////
    canvas::canvas(canvas_impl* context_)
     : _context{context_}
@@ -140,6 +206,10 @@ namespace cycfi::artist
    {
       cairo_get_matrix(_context, &_state->_inv_affine);
       cairo_matrix_invert(&_state->_inv_affine);
+
+      // A path the context comes with is not one this canvas has seen.
+      if (cairo_has_current_point(_context))
+         _state->path_changed();
 
       // The W3C defaults. Cairo's own default line width is 2.
       cairo_set_line_width(_context, 1);
@@ -287,6 +357,7 @@ namespace cycfi::artist
    void canvas::begin_path()
    {
       cairo_new_path(_context);
+      _state->path_cleared();
    }
 
    void canvas::close_path()
@@ -301,6 +372,43 @@ namespace cycfi::artist
       using shadow_cache_entry = canvas::canvas_state::shadow_cache_entry;
       using shadow_info        = canvas::canvas_state::shadow_info;
       using shadow_render      = std::function<void(cairo_t*)>;
+
+      // Sets the current path aside for its lifetime and puts it back on
+      // destruction, so what is drawn meanwhile leaves the path being
+      // built alone.
+      class path_keeper
+      {
+      public:
+
+         path_keeper(cairo_t* cr, canvas::canvas_state& state)
+          : _cr{cr}
+          , _state{state}
+          , _saved{cairo_copy_path(cr)}
+         {
+            cairo_new_path(cr);
+            _state.path_set_aside();
+         }
+
+         ~path_keeper()
+         {
+            cairo_new_path(_cr);
+            if (_saved->status == CAIRO_STATUS_SUCCESS)
+               cairo_append_path(_cr, _saved);
+            cairo_path_destroy(_saved);
+            _state.path_put_back();
+         }
+
+         path_keeper(path_keeper const&) = delete;
+         path_keeper& operator=(path_keeper const&) = delete;
+
+      private:
+
+         using canvas_state = canvas::canvas_state;
+
+         cairo_t*       _cr;
+         canvas_state&  _state;
+         cairo_path_t*  _saved;
+      };
 
       std::size_t hash_path(cairo_path_t* path) noexcept
       {
@@ -630,6 +738,255 @@ namespace cycfi::artist
          cairo_path_destroy(path);
       }
 
+      using detail::shadow_shape;
+      using detail::shadow_layout;
+
+      // The alpha of a source that has one alpha all over: a solid color,
+      // or a gradient that covers the plane and has only opaque stops.
+      std::optional<double> uniform_alpha(cairo_pattern_t* src)
+      {
+         constexpr auto ok = CAIRO_STATUS_SUCCESS;
+         double r, g, b, a;
+         if (cairo_pattern_get_rgba(src, &r, &g, &b, &a) == ok)
+            return a;
+
+         int n = 0;
+         bool const gradient =
+            cairo_pattern_get_color_stop_count(src, &n) == ok && n > 0
+            && cairo_pattern_get_extend(src) == CAIRO_EXTEND_PAD;
+         if (!gradient)
+            return {};
+         for (int i = 0; i != n; ++i)
+         {
+            double at;
+            cairo_pattern_get_color_stop_rgba(src, i, &at, &r, &g, &b, &a);
+            if (a < 1)
+               return {};
+         }
+
+         // A radial one covers the plane when one circle holds the other.
+         double x0, y0, r0, x1, y1, r1;
+         bool const radial = cairo_pattern_get_radial_circles(
+            src, &x0, &y0, &r0, &x1, &y1, &r1) == ok;
+         double const apart = radial? std::hypot(x1 - x0, y1 - y0) : 0;
+         bool const covers =
+            !radial || apart + std::min(r0, r1) < std::max(r0, r1);
+         return covers? std::optional<double>{1.0} : std::nullopt;
+      }
+
+      // The current path in device space, where it is one rectangle,
+      // rounded rectangle or circle that its transform leaves upright or
+      // on its side, with round corners still round.
+      bool device_shape(canvas::canvas_state const& state, shadow_shape& s)
+      {
+         auto const& p = state._path;
+         if (p.kind != p.simple)
+            return false;
+
+         auto const& m = p.ctm;
+         double const sx = std::hypot(m.xx, m.yx);
+         double const sy = std::hypot(m.xy, m.yy);
+         auto tiny = [limit = 1e-6 * std::max(sx, sy)](double v)
+         {
+            return std::abs(v) <= limit;
+         };
+         bool const upright = tiny(m.xy) && tiny(m.yx);
+         bool const sideways = tiny(m.xx) && tiny(m.yy);
+         bool const even = std::abs(sx - sy) <= 1e-3 * sx;
+         if (!(upright || sideways) || (p.radius > 0 && !even))
+            return false;
+
+         double x1 = p.bounds.left, y1 = p.bounds.top;
+         double x2 = p.bounds.right, y2 = p.bounds.bottom;
+         device_box(m, x1, y1, x2, y2);
+         s = {x1, y1, x2, y2
+          , std::min({p.radius * sx, (x2 - x1) / 2, (y2 - y1) / 2})};
+         return x1 < x2 && y1 < y2;
+      }
+
+      void add_shape(cairo_t* cr, shadow_shape const& s)
+      {
+         constexpr double quarter = 1.57079632679489661923;
+         double const r = s.radius;
+         if (r <= 0)
+         {
+            cairo_rectangle(cr, s.x0, s.y0, s.x1 - s.x0, s.y1 - s.y0);
+            return;
+         }
+         cairo_new_sub_path(cr);
+         cairo_arc(cr, s.x1 - r, s.y0 + r, r, -quarter, 0);
+         cairo_arc(cr, s.x1 - r, s.y1 - r, r, 0, quarter);
+         cairo_arc(cr, s.x0 + r, s.y1 - r, r, quarter, 2 * quarter);
+         cairo_arc(cr, s.x0 + r, s.y0 + r, r, 2 * quarter, 3 * quarter);
+         cairo_close_path(cr);
+      }
+
+      // A piece of a shadow that is a gradient, down the rows or across
+      // the columns.
+      void gradient_piece(
+         cairo_t* cr, shadow_shape const& s, double sigma, color c
+       , bool down, int x, int y, int w, int h)
+      {
+         detail::shadow_stop stops[detail::max_shadow_stops];
+         int const from = down? y : x, to = down? y + h : x + w;
+         int const n = down
+            ? detail::shadow_stops(s.y0, s.y1, sigma, from, to, stops)
+            : detail::shadow_stops(s.x0, s.x1, sigma, from, to, stops);
+
+         auto* pat = down
+            ? cairo_pattern_create_linear(0, from, 0, to)
+            : cairo_pattern_create_linear(from, 0, to, 0);
+         for (int i = 0; i != n; ++i)
+         {
+            cairo_pattern_add_color_stop_rgba(
+               pat, stops[i].offset
+             , c.red, c.green, c.blue, c.alpha * stops[i].alpha);
+         }
+         cairo_set_source(cr, pat);
+         cairo_pattern_destroy(pat);
+         cairo_rectangle(cr, x, y, w, h);
+         cairo_fill(cr);
+      }
+
+      // A piece of a shadow that is a mask, painted as a bitmap in the
+      // color c. Not every surface can draw through a mask as it is: a
+      // Quartz window can't.
+      void mask_piece(
+         cairo_t* cr, shadow_scratch& scratch
+       , shadow_shape const& s, double sigma, color c
+       , int x, int y, int w, int h)
+      {
+         auto const& m = detail::shadow_mask_of(s, sigma, x, y, w, h);
+         constexpr auto format = CAIRO_FORMAT_ARGB32;
+         int const stride = cairo_format_stride_for_width(format, w);
+         auto const size = std::size_t(stride) * h;
+         if (scratch.surf_buf.size() < size)
+            scratch.surf_buf.resize(size);
+
+         auto* pixels = scratch.surf_buf.data();
+         auto byte = [](float v) { return uint8_t(std::lround(v * 255)); };
+         shadow_reconstruct(
+            pixels, stride, m.alpha.data(), w, h
+          , byte(c.red), byte(c.green), byte(c.blue));
+
+         auto* surf = cairo_image_surface_create_for_data(
+            pixels, format, w, h, stride);
+         cairo_set_source_surface(cr, surf, x, y);
+         cairo_paint_with_alpha(cr, c.alpha);
+         cairo_surface_destroy(surf);
+      }
+
+      // The blurred shadow of s in the color c, in the pieces of l. The
+      // pieces meet on whole pixels and none overlaps another, so each
+      // pixel is painted once.
+      void draw_pieces(
+         cairo_t* cr, shadow_scratch& scratch
+       , shadow_shape const& s, double sigma
+       , shadow_layout const& l, color c)
+      {
+         double cx1, cy1, cx2, cy2;
+         cairo_clip_extents(cr, &cx1, &cy1, &cx2, &cy2);
+
+         for (int j = 0; j != l.ny; ++j)
+         {
+            for (int i = 0; i != l.nx; ++i)
+            {
+               int const x = l.x[i], y = l.y[j];
+               int const w = l.x[i + 1] - x, h = l.y[j + 1] - y;
+               bool const mid_x = l.nx == 3 && i == 1;
+               bool const mid_y = l.ny == 3 && j == 1;
+               bool const seen = w > 0 && h > 0
+                  && x < cx2 && y < cy2 && x + w > cx1 && y + h > cy1;
+
+               if (!seen)
+                  continue;
+
+               if (mid_x && mid_y)
+               {
+                  cairo_set_source_rgba(cr, c.red, c.green, c.blue, c.alpha);
+                  cairo_rectangle(cr, x, y, w, h);
+                  cairo_fill(cr);
+               }
+               else if (mid_x || mid_y)
+               {
+                  gradient_piece(cr, s, sigma, c, mid_x, x, y, w, h);
+               }
+               else
+               {
+                  mask_piece(cr, scratch, s, sigma, c, x, y, w, h);
+               }
+            }
+         }
+      }
+
+      // The shadow of the current path, filled, where it can be worked out
+      // from the shape instead of blurred from its pixels: a rectangle,
+      // rounded rectangle or circle on its own, upright, filled with one
+      // alpha all over and drawn source-over with no blur of its own. See
+      // artist/detail/analytic_shadow.hpp. False means it can't be, and
+      // nothing is drawn.
+      bool shape_shadow(cairo_t* cr, canvas::canvas_state& state)
+      {
+         shadow_shape s;
+         bool const plain = state._info.blur <= 0
+            && cairo_get_operator(cr) == CAIRO_OPERATOR_OVER
+            && device_shape(state, s);
+         if (!plain)
+            return false;
+         auto const alpha = uniform_alpha(cairo_get_source(cr));
+         if (!alpha)
+            return false;
+
+         double x1, y1, x2, y2;
+         cairo_path_extents(cr, &x1, &y1, &x2, &y2);
+         shadow_frame f;
+         bool const seen =
+            *alpha > 0 && make_shadow_frame(cr, state, x1, y1, x2, y2, f);
+         if (!seen)
+            return true;   // a clear fill, or it lands outside the clip
+
+         // To surface pixels, at the shadow's offset.
+         s.x0 = (s.x0 + f.off_x) * f.scale;
+         s.y0 = (s.y0 + f.off_y) * f.scale;
+         s.x1 = (s.x1 + f.off_x) * f.scale;
+         s.y1 = (s.y1 + f.off_y) * f.scale;
+         s.radius *= f.scale;
+
+         bool const blurred = f.sigma >= 0.5f;
+         shadow_layout l;
+         if (blurred)
+            l = detail::layout_shadow(s, f.sigma);
+         if (blurred && l.nx == 0)
+            return false;
+
+         color c = state._info.shadow.c;
+         c.alpha *= float(*alpha);
+         path_keeper keep{cr, state};
+         cairo_save(cr);
+         cairo_identity_matrix(cr);
+         cairo_scale(cr, 1 / f.scale, 1 / f.scale);
+         if (blurred)
+         {
+            draw_pieces(cr, state.shadow_scratch, s, f.sigma, l, c);
+         }
+         else
+         {
+            // With no blur, the shadow is the shape in the shadow's color.
+            cairo_set_source_rgba(cr, c.red, c.green, c.blue, c.alpha);
+            add_shape(cr, s);
+            cairo_fill(cr);
+         }
+         cairo_restore(cr);
+         return true;
+      }
+
+      // The shadow of the current path, filled.
+      void fill_shadow(cairo_t* cr, canvas::canvas_state& state)
+      {
+         if (!shape_shadow(cr, state))
+            path_shadow(cr, state, true);
+      }
+
       // Draw what render draws inside the user-space box, blurred in its
       // own colors, with the current operator and clip.
       void draw_blurred(
@@ -748,7 +1105,7 @@ namespace cycfi::artist
       with_operator(_context, *_state, [this]
       {
          if (_state->_info.shadow.active)
-            path_shadow(_context, *_state, true);
+            fill_shadow(_context, *_state);
          if (_state->_info.blur > 0)
          {
             path_blurred(_context, *_state, true);
@@ -759,6 +1116,7 @@ namespace cycfi::artist
             cairo_fill(_context);
          }
       });
+      _state->path_cleared();
    }
 
    void canvas::fill_preserve()
@@ -767,7 +1125,7 @@ namespace cycfi::artist
       with_operator(_context, *_state, [this]
       {
          if (_state->_info.shadow.active)
-            path_shadow(_context, *_state, true);
+            fill_shadow(_context, *_state);
          if (_state->_info.blur > 0)
          {
             path_blurred(_context, *_state, true);
@@ -796,6 +1154,7 @@ namespace cycfi::artist
             cairo_stroke(_context);
          }
       });
+      _state->path_cleared();
    }
 
    void canvas::stroke_preserve()
@@ -819,6 +1178,7 @@ namespace cycfi::artist
    void canvas::clip()
    {
       cairo_clip(_context);
+      _state->path_cleared();
    }
 
    void canvas::clip(path const& p)
@@ -839,6 +1199,7 @@ namespace cycfi::artist
             ? CAIRO_FILL_RULE_EVEN_ODD : CAIRO_FILL_RULE_WINDING);
       cairo_clip(_context);
       cairo_set_fill_rule(_context, saved);
+      _state->path_cleared();
    }
 
    rect canvas::clip_extent() const
@@ -863,11 +1224,13 @@ namespace cycfi::artist
    void canvas::move_to(point p)
    {
       cairo_move_to(_context, p.x, p.y);
+      _state->path_changed();
    }
 
    void canvas::line_to(point p)
    {
       cairo_line_to(_context, p.x, p.y);
+      _state->path_changed();
    }
 
    void canvas::arc_to(point p1, point p2, float radius)
@@ -922,6 +1285,21 @@ namespace cycfi::artist
    )
    {
       radius = std::max(radius, 0.0f);
+
+      // One full turn, on its own, is a circle.
+      float const turn =
+         ccw? start_angle - end_angle : end_angle - start_angle;
+      if (radius > 0 && std::abs(turn - 2 * pi) < 1e-4)
+      {
+         rect const box{
+            p.x - radius, p.y - radius, p.x + radius, p.y + radius};
+         _state->path_add(_context, box, radius);
+      }
+      else
+      {
+         _state->path_changed();
+      }
+
       if (ccw)
          cairo_arc_negative(_context, p.x, p.y, radius, start_angle, end_angle);
       else
@@ -930,6 +1308,7 @@ namespace cycfi::artist
 
    void canvas::add_rect(rect const& r)
    {
+      _state->path_add(_context, r, 0);
       cairo_rectangle(_context, r.left, r.top, r.width(), r.height());
    }
 
@@ -942,6 +1321,7 @@ namespace cycfi::artist
          cairo_append_path(_context, cp);
          cairo_path_destroy(cp);
       }
+      _state->path_changed();
    }
 
    void canvas::clear_rect(rect const& r)
@@ -950,6 +1330,7 @@ namespace cycfi::artist
       cairo_set_operator(_context, CAIRO_OPERATOR_CLEAR);
       cairo_rectangle(_context, r.left, r.top, r.width(), r.height());
       cairo_fill(_context);
+      _state->path_cleared();
    }
 
    void canvas::quadratic_curve_to(point cp, point end)
@@ -963,11 +1344,13 @@ namespace cycfi::artist
          2.0/3.0 * cp.y + 1.0/3.0 * end.y,
          end.x, end.y
       );
+      _state->path_changed();
    }
 
    void canvas::bezier_curve_to(point cp1, point cp2, point end)
    {
       cairo_curve_to(_context, cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+      _state->path_changed();
    }
 
    canvas::path_holder::path_holder(canvas& cnv)
@@ -975,6 +1358,7 @@ namespace cycfi::artist
     , _saved(cairo_copy_path(cnv._context))
    {
       cairo_new_path(cnv._context);
+      cnv._state->path_set_aside();
    }
 
    canvas::path_holder::~path_holder()
@@ -984,12 +1368,14 @@ namespace cycfi::artist
       if (saved->status == CAIRO_STATUS_SUCCESS && saved->num_data > 0)
          cairo_append_path(_cnv._context, saved);
       cairo_path_destroy(saved);
+      _cnv._state->path_put_back();
    }
 
    void canvas::add_round_rect_impl(rect const& r, float radius)
    {
       auto x = r.left, y = r.top, w = r.right, b = r.bottom;
       constexpr auto a = 3.14159265358979323846 / 180.0;
+      _state->path_add(_context, r, radius);
       cairo_new_sub_path(_context);
       cairo_arc(_context, w-radius, y+radius, radius, -90*a,   0*a);
       cairo_arc(_context, w-radius, b-radius, radius,   0*a,  90*a);
@@ -1299,36 +1685,6 @@ namespace cycfi::artist
          }
          return out;
       }
-
-      // Sets the current path aside for its lifetime and puts it back on
-      // destruction, so drawing text leaves the path being built alone.
-      class path_keeper
-      {
-      public:
-
-         explicit path_keeper(cairo_t* cr)
-          : _cr{cr}
-          , _saved{cairo_copy_path(cr)}
-         {
-            cairo_new_path(cr);
-         }
-
-         ~path_keeper()
-         {
-            cairo_new_path(_cr);
-            if (_saved->status == CAIRO_STATUS_SUCCESS)
-               cairo_append_path(_cr, _saved);
-            cairo_path_destroy(_saved);
-         }
-
-         path_keeper(path_keeper const&) = delete;
-         path_keeper& operator=(path_keeper const&) = delete;
-
-      private:
-
-         cairo_t*       _cr;
-         cairo_path_t*  _saved;
-      };
    }
 
    void canvas::fill_text(std::string_view utf8, point p)
@@ -1342,7 +1698,7 @@ namespace cycfi::artist
          if (glyphs.empty())
             return;
 
-         path_keeper keep{_context};
+         path_keeper keep{_context, *_state};
          _state->apply_fill_style();
          with_operator(_context, *_state, [&]
          {
@@ -1379,7 +1735,7 @@ namespace cycfi::artist
          p = get_text_start(
             _context, p, _state->_info.align, float(ext.x_advance));
 
-         path_keeper keep{_context};
+         path_keeper keep{_context, *_state};
          _state->apply_fill_style();
          with_operator(_context, *_state, [&]
          {
@@ -1416,7 +1772,7 @@ namespace cycfi::artist
          p = get_text_start(_context, p, _state->_info.align, run.advance_x);
          auto glyphs = make_cairo_glyphs(run, p.x, p.y);
          if (glyphs.empty()) return;
-         path_keeper keep{_context};
+         path_keeper keep{_context, *_state};
          _state->apply_stroke_style();
          cairo_glyph_path(_context, glyphs.data(), int(glyphs.size()));
          stroke();
@@ -1429,7 +1785,7 @@ namespace cycfi::artist
          cairo_text_extents(_context, str.c_str(), &ext);
          _state->apply_stroke_style();
          p = get_text_start(_context, p, _state->_info.align, float(ext.x_advance));
-         path_keeper keep{_context};
+         path_keeper keep{_context, *_state};
          cairo_move_to(_context, p.x, p.y);
          cairo_text_path(_context, str.c_str());
          stroke();

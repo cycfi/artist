@@ -220,6 +220,7 @@ endif()
 # Sources (and Resources)
 
 set(ARTIST_SOURCES
+   src/artist/analytic_shadow.cpp
    src/artist/rect.cpp
    src/artist/resources.cpp
    src/artist/svg_path.cpp

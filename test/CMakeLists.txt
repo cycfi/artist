@@ -28,6 +28,7 @@ set(artist_test_sources
    canvas_images_page_test.cpp
    canvas_states_page_test.cpp
    canvas_group_test.cpp
+   shadow_test.cpp
    canvas_page_test.cpp
    canvas_context_page_test.cpp
    page_examples_test.cpp
@@ -269,6 +270,15 @@ target_include_directories(resources_test PRIVATE
    ${CMAKE_CURRENT_LIST_DIR}/../lib/infra/include
 )
 add_test(NAME resources_test COMMAND resources_test)
+
+# Analytic shadows: the blurred coverage of a rectangle, rounded rectangle or
+# circle, against a brute-force blur. Links analytic_shadow.cpp directly.
+add_executable(analytic_shadow_test analytic_shadow_test.cpp
+   ${CMAKE_CURRENT_LIST_DIR}/../lib/src/artist/analytic_shadow.cpp)
+target_include_directories(analytic_shadow_test PRIVATE
+   ${CMAKE_CURRENT_LIST_DIR}/../lib/include
+)
+add_test(NAME analytic_shadow_test COMMAND analytic_shadow_test)
 
 add_executable(rope_test rope_test.cpp)
 target_include_directories(rope_test PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../lib/include)
