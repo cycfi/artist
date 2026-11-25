@@ -96,6 +96,7 @@ namespace cycfi::artist
          std::vector<uint8_t>  alpha;     // single-channel alpha (w*h bytes)
          std::vector<uint8_t>  tmp;       // blur ping-pong / transpose scratch
          std::vector<int32_t>  cum;       // prefix-sum scratch (max(w,h)+1 elements)
+         std::vector<uint32_t> line;      // pixels of a shape's shadow
          int                   stride = 0;
       } shadow_scratch;
 
@@ -821,102 +822,274 @@ namespace cycfi::artist
          cairo_close_path(cr);
       }
 
-      // A piece of a shadow that is a gradient, down the rows or across
-      // the columns.
-      void gradient_piece(
-         cairo_t* cr, shadow_shape const& s, double sigma, color c
-       , bool down, int x, int y, int w, int h)
+      // Whole pixels, x0 to x1 by y0 to y1.
+      struct pixel_box
       {
-         detail::shadow_stop stops[detail::max_shadow_stops];
-         int const from = down? y : x, to = down? y + h : x + w;
-         int const n = down
-            ? detail::shadow_stops(s.y0, s.y1, sigma, from, to, stops)
-            : detail::shadow_stops(s.x0, s.x1, sigma, from, to, stops);
+         int   x0 = 0, y0 = 0, x1 = 0, y1 = 0;
 
-         auto* pat = down
-            ? cairo_pattern_create_linear(0, from, 0, to)
-            : cairo_pattern_create_linear(from, 0, to, 0);
-         for (int i = 0; i != n; ++i)
-         {
-            cairo_pattern_add_color_stop_rgba(
-               pat, stops[i].offset
-             , c.red, c.green, c.blue, c.alpha * stops[i].alpha);
-         }
-         cairo_set_source(cr, pat);
-         cairo_pattern_destroy(pat);
-         cairo_rectangle(cr, x, y, w, h);
-         cairo_fill(cr);
+         bool  empty() const { return x0 >= x1 || y0 >= y1; }
+      };
+
+      // The pixels a shape covers outright when its fill is opaque: what
+      // of its shadow need not be drawn. None when the fill shows through.
+      pixel_box hidden_by(shadow_shape const& shape, double alpha)
+      {
+         if (alpha < 1)
+            return {};
+
+         // In from the sides as far as the corners' arcs come in, and a
+         // pixel more for the edge.
+         double const in = shape.radius * 0.29289321881345248 + 1;
+         return {
+            int(std::ceil(shape.x0 + in)), int(std::ceil(shape.y0 + in))
+          , int(std::floor(shape.x1 - in)), int(std::floor(shape.y1 - in))
+         };
       }
 
-      // A piece of a shadow that is a mask, painted as a bitmap in the
-      // color c. Not every surface can draw through a mask as it is: a
-      // Quartz window can't.
-      void mask_piece(
+      // Add to the path what of b lies outside hide, as up to four
+      // rectangles. False if none of it does.
+      bool add_visible(
+         cairo_t* cr, pixel_box const& b, pixel_box const& hide)
+      {
+         bool any = false;
+         auto add = [&](int x0, int y0, int x1, int y1)
+         {
+            if (x0 < x1 && y0 < y1)
+            {
+               cairo_rectangle(cr, x0, y0, x1 - x0, y1 - y0);
+               any = true;
+            }
+         };
+
+         bool const apart = hide.empty()
+            || hide.x0 >= b.x1 || hide.x1 <= b.x0
+            || hide.y0 >= b.y1 || hide.y1 <= b.y0;
+         if (apart)
+         {
+            add(b.x0, b.y0, b.x1, b.y1);
+            return any;
+         }
+
+         int const top = std::max(b.y0, hide.y0);
+         int const bottom = std::min(b.y1, hide.y1);
+         add(b.x0, b.y0, b.x1, top);
+         add(b.x0, bottom, b.x1, b.y1);
+         add(b.x0, top, std::min(b.x1, hide.x0), bottom);
+         add(std::max(b.x0, hide.x1), top, b.x1, bottom);
+         return any;
+      }
+
+      // Pixels of the color c at each coverage in alpha, n of them, step
+      // bytes apart: premultiplied, as Cairo makes them from a solid
+      // source and a mask.
+      void shade(
+         uint32_t* out, uint8_t const* alpha, int n, int step, color c)
+      {
+         auto byte = [](float v) { return unsigned(std::lround(v * 255)); };
+         unsigned const channels[] = {
+            byte(c.alpha), byte(c.red * c.alpha)
+          , byte(c.green * c.alpha), byte(c.blue * c.alpha)
+         };
+
+         for (int i = 0; i != n; ++i)
+         {
+            unsigned const m = alpha[std::size_t(i) * step];
+            uint32_t pixel = 0;
+            for (unsigned v : channels)
+            {
+               unsigned const t = v * m + 128;
+               pixel = (pixel << 8) | ((t + (t >> 8)) >> 8);
+            }
+            out[i] = pixel;
+         }
+      }
+
+      // A piece of a shadow that is the same all along one way: one line
+      // of its pixels, running down or across, stretched over it.
+      void stretched_piece(
          cairo_t* cr, shadow_scratch& scratch
        , shadow_shape const& s, double sigma, color c
-       , int x, int y, int w, int h)
+       , pixel_box const& b, pixel_box const& hide, bool down)
       {
-         auto const& m = detail::shadow_mask_of(s, sigma, x, y, w, h);
-         constexpr auto format = CAIRO_FORMAT_ARGB32;
-         int const stride = cairo_format_stride_for_width(format, w);
-         auto const size = std::size_t(stride) * h;
-         if (scratch.surf_buf.size() < size)
-            scratch.surf_buf.resize(size);
+         if (!add_visible(cr, b, hide))
+            return;
 
-         auto* pixels = scratch.surf_buf.data();
-         auto byte = [](float v) { return uint8_t(std::lround(v * 255)); };
-         shadow_reconstruct(
-            pixels, stride, m.alpha.data(), w, h
-          , byte(c.red), byte(c.green), byte(c.blue));
+         int const w = b.x1 - b.x0, h = b.y1 - b.y0;
+         int const n = down? h : w;
+         auto const& m = down
+            ? detail::shadow_mask_of(s, sigma, b.x0, b.y0, 1, h)
+            : detail::shadow_mask_of(s, sigma, b.x0, b.y0, w, 1);
+
+         // The line three times over, side by side, and the middle one
+         // stretched: a pixel taken from a neighbor instead, by a
+         // rounding at an end, is the same pixel.
+         scratch.line.resize(std::size_t(n) * 3);
+         uint32_t* px = scratch.line.data();
+         shade(px, m.alpha.data(), n, down? m.stride : 1, c);
+         if (down)
+         {
+            for (int i = n; i-- != 0;)
+               px[3 * i] = px[3 * i + 1] = px[3 * i + 2] = px[i];
+         }
+         else
+         {
+            std::copy(px, px + n, px + n);
+            std::copy(px, px + n, px + 2 * n);
+         }
 
          auto* surf = cairo_image_surface_create_for_data(
-            pixels, format, w, h, stride);
-         cairo_set_source_surface(cr, surf, x, y);
-         cairo_paint_with_alpha(cr, c.alpha);
+            reinterpret_cast<unsigned char*>(px), CAIRO_FORMAT_ARGB32
+          , down? 3 : n, down? n : 3, down? 12 : 4 * n);
+         auto* pattern = cairo_pattern_create_for_surface(surf);
+         cairo_matrix_t to_line;
+         if (down)
+         {
+            cairo_matrix_init(
+               &to_line, 1.0 / w, 0, 0, 1, 1 - double(b.x0) / w, -b.y0);
+         }
+         else
+         {
+            cairo_matrix_init(
+               &to_line, 1, 0, 0, 1.0 / h, -b.x0, 1 - double(b.y0) / h);
+         }
+         cairo_pattern_set_matrix(pattern, &to_line);
+         cairo_pattern_set_filter(pattern, CAIRO_FILTER_NEAREST);
+         cairo_set_source(cr, pattern);
+         cairo_fill(cr);
+         cairo_pattern_destroy(pattern);
          cairo_surface_destroy(surf);
       }
 
-      // The blurred shadow of s in the color c, in the pieces of l. The
-      // pieces meet on whole pixels and none overlaps another, so each
-      // pixel is painted once.
+      // A piece of a shadow that is a mask. An image surface draws the
+      // color through it. Not every surface can (a Quartz window can't),
+      // so the others get it as a bitmap in the color.
+      void mask_piece(
+         cairo_t* cr, shadow_scratch& scratch
+       , shadow_shape const& s, double sigma, color c
+       , pixel_box const& b, bool to_image)
+      {
+         int const w = b.x1 - b.x0, h = b.y1 - b.y0;
+         auto const& m = detail::shadow_mask_of(s, sigma, b.x0, b.y0, w, h);
+         if (to_image)
+         {
+            auto* surf = cairo_image_surface_create_for_data(
+               const_cast<unsigned char*>(m.alpha.data())
+             , CAIRO_FORMAT_A8, w, h, m.stride);
+            cairo_set_source_rgba(cr, c.red, c.green, c.blue, c.alpha);
+            cairo_mask_surface(cr, surf, b.x0, b.y0);
+            cairo_surface_destroy(surf);
+            return;
+         }
+
+         scratch.line.resize(std::size_t(w) * h);
+         for (int y = 0; y != h; ++y)
+         {
+            shade(
+               scratch.line.data() + std::size_t(y) * w
+             , m.alpha.data() + std::size_t(y) * m.stride, w, 1, c);
+         }
+         auto* surf = cairo_image_surface_create_for_data(
+            reinterpret_cast<unsigned char*>(scratch.line.data())
+          , CAIRO_FORMAT_ARGB32, w, h, 4 * w);
+         cairo_set_source_surface(cr, surf, b.x0, b.y0);
+         cairo_paint(cr);
+         cairo_surface_destroy(surf);
+      }
+
+      // The blurred shadow of s in the color c, in the pieces of l, but
+      // for what hide covers. The pieces meet on whole pixels and none
+      // overlaps another, so each pixel is painted once.
       void draw_pieces(
          cairo_t* cr, shadow_scratch& scratch
-       , shadow_shape const& s, double sigma
-       , shadow_layout const& l, color c)
+       , shadow_shape const& s, double sigma, shadow_layout const& l
+       , color c, pixel_box const& hide)
       {
          double cx1, cy1, cx2, cy2;
          cairo_clip_extents(cr, &cx1, &cy1, &cx2, &cy2);
+         bool const to_image =
+            cairo_surface_get_type(cairo_get_group_target(cr))
+               == CAIRO_SURFACE_TYPE_IMAGE;
 
          for (int j = 0; j != l.ny; ++j)
          {
             for (int i = 0; i != l.nx; ++i)
             {
-               int const x = l.x[i], y = l.y[j];
-               int const w = l.x[i + 1] - x, h = l.y[j + 1] - y;
+               pixel_box const b{l.x[i], l.y[j], l.x[i + 1], l.y[j + 1]};
                bool const mid_x = l.nx == 3 && i == 1;
                bool const mid_y = l.ny == 3 && j == 1;
-               bool const seen = w > 0 && h > 0
-                  && x < cx2 && y < cy2 && x + w > cx1 && y + h > cy1;
-
+               bool const seen = !b.empty()
+                  && b.x0 < cx2 && b.y0 < cy2 && b.x1 > cx1 && b.y1 > cy1;
                if (!seen)
                   continue;
 
                if (mid_x && mid_y)
                {
                   cairo_set_source_rgba(cr, c.red, c.green, c.blue, c.alpha);
-                  cairo_rectangle(cr, x, y, w, h);
-                  cairo_fill(cr);
+                  if (add_visible(cr, b, hide))
+                     cairo_fill(cr);
                }
                else if (mid_x || mid_y)
                {
-                  gradient_piece(cr, s, sigma, c, mid_x, x, y, w, h);
+                  stretched_piece(cr, scratch, s, sigma, c, b, hide, mid_x);
                }
                else
                {
-                  mask_piece(cr, scratch, s, sigma, c, x, y, w, h);
+                  mask_piece(cr, scratch, s, sigma, c, b, to_image);
                }
             }
          }
+      }
+
+      // The shadow of the shape s, given in device units, filled at
+      // alpha, in the frame f. False means its masks would be too large,
+      // and nothing is drawn.
+      bool draw_shape_shadow(
+         cairo_t* cr, canvas::canvas_state& state
+       , shadow_shape const& s, shadow_frame const& f, double alpha)
+      {
+         color c = state._info.shadow.c;
+         c.alpha *= float(alpha);
+         if (c.alpha * 255 < 0.5f)
+            return true;   // too faint to show
+
+         // To surface pixels: the shape, and its shadow at the offset.
+         auto pixels = [&f](shadow_shape const& d, double dx, double dy)
+         {
+            return shadow_shape{
+               (d.x0 + dx) * f.scale, (d.y0 + dy) * f.scale
+             , (d.x1 + dx) * f.scale, (d.y1 + dy) * f.scale
+             , d.radius * f.scale
+            };
+         };
+         auto const shape = pixels(s, 0, 0);
+         auto const shadow = pixels(s, f.off_x, f.off_y);
+
+         bool const blurred = f.sigma >= 0.5f;
+         shadow_layout l;
+         if (blurred)
+            l = detail::layout_shadow(shadow, f.sigma, c.alpha);
+         if (blurred && l.nx == 0)
+            return false;
+
+         path_keeper keep{cr, state};
+         cairo_save(cr);
+         cairo_identity_matrix(cr);
+         cairo_scale(cr, 1 / f.scale, 1 / f.scale);
+         if (blurred)
+         {
+            draw_pieces(
+               cr, state.shadow_scratch, shadow, f.sigma, l
+             , c, hidden_by(shape, alpha));
+         }
+         else
+         {
+            // With no blur, the shadow is the shape in the shadow's color.
+            cairo_set_source_rgba(cr, c.red, c.green, c.blue, c.alpha);
+            add_shape(cr, shadow);
+            cairo_fill(cr);
+         }
+         cairo_restore(cr);
+         return true;
       }
 
       // The shadow of the current path, filled, where it can be worked out
@@ -940,44 +1113,9 @@ namespace cycfi::artist
          double x1, y1, x2, y2;
          cairo_path_extents(cr, &x1, &y1, &x2, &y2);
          shadow_frame f;
-         bool const seen =
-            *alpha > 0 && make_shadow_frame(cr, state, x1, y1, x2, y2, f);
-         if (!seen)
-            return true;   // a clear fill, or it lands outside the clip
-
-         // To surface pixels, at the shadow's offset.
-         s.x0 = (s.x0 + f.off_x) * f.scale;
-         s.y0 = (s.y0 + f.off_y) * f.scale;
-         s.x1 = (s.x1 + f.off_x) * f.scale;
-         s.y1 = (s.y1 + f.off_y) * f.scale;
-         s.radius *= f.scale;
-
-         bool const blurred = f.sigma >= 0.5f;
-         shadow_layout l;
-         if (blurred)
-            l = detail::layout_shadow(s, f.sigma);
-         if (blurred && l.nx == 0)
-            return false;
-
-         color c = state._info.shadow.c;
-         c.alpha *= float(*alpha);
-         path_keeper keep{cr, state};
-         cairo_save(cr);
-         cairo_identity_matrix(cr);
-         cairo_scale(cr, 1 / f.scale, 1 / f.scale);
-         if (blurred)
-         {
-            draw_pieces(cr, state.shadow_scratch, s, f.sigma, l, c);
-         }
-         else
-         {
-            // With no blur, the shadow is the shape in the shadow's color.
-            cairo_set_source_rgba(cr, c.red, c.green, c.blue, c.alpha);
-            add_shape(cr, s);
-            cairo_fill(cr);
-         }
-         cairo_restore(cr);
-         return true;
+         if (!make_shadow_frame(cr, state, x1, y1, x2, y2, f))
+            return true;   // it would land outside the clip
+         return draw_shape_shadow(cr, state, s, f, *alpha);
       }
 
       // The shadow of the current path, filled.

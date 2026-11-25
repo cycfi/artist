@@ -16,9 +16,10 @@ namespace cycfi::artist::detail
    // out from the shape instead of by blurring its pixels. The blurred
    // coverage of such a shape is flat in the middle, varies only across
    // each side along it, and varies both ways only near the corners. So a
-   // backend draws it in pieces: an alpha mask at each corner, a gradient
-   // along each side and a plain fill in the middle. Where the blur leaves
-   // no middle along an axis, the pieces along it join into one.
+   // backend draws it in pieces: an alpha mask at each corner, one line of
+   // a side stretched along it, and a plain fill in the middle. Where the
+   // blur leaves no middle along an axis, the pieces along it join into
+   // one.
    //
    // All measures are device pixels, with pixel centers at half integers.
    // sigma is the standard deviation of the Gaussian blur.
@@ -38,31 +39,27 @@ namespace cycfi::artist::detail
    // is that axis's middle) or 1 (no middle), or 0 when the masks would be
    // too large and the shadow is not to be drawn this way. A piece in the
    // middle column and the middle row is a plain fill. One in the middle
-   // column only is a gradient down it, one in the middle row only is a
-   // gradient across it, and any other is a mask.
+   // column only is the same all the way across: its first column of
+   // pixels, as a mask, stretched over it. One in the middle row only is
+   // its first row stretched down it. Any other is a mask.
    struct shadow_layout
    {
       int                  nx = 0, ny = 0;
       int                  x[4] = {}, y[4] = {};
-      int                  reach = 0;     // how far the blur spreads
    };
 
    struct shadow_mask
    {
       int                  width = 0, height = 0;
-      std::vector<uint8_t> alpha;         // width bytes a row, from the top
+      int                  stride = 0;    // bytes per row, a multiple of 4
+      std::vector<uint8_t> alpha;         // rows from the top
    };
 
-   struct shadow_stop
-   {
-      float                offset;        // 0 to 1 along the gradient
-      float                alpha;
-   };
-
-   constexpr int max_shadow_stops = 68;
-
+   // strength is the alpha the shadow is drawn at: a fainter one is laid
+   // out closer to the shape, as far as it shows.
    shadow_layout           layout_shadow(
                               shadow_shape const& s, double sigma
+                            , double strength = 1
                            );
 
    // The blurred coverage of s over the pixels from (x, y), w by h. The
@@ -70,14 +67,6 @@ namespace cycfi::artist::detail
    shadow_mask const&      shadow_mask_of(
                               shadow_shape const& s, double sigma
                             , int x, int y, int w, int h
-                           );
-
-   // The stops of a gradient between the pixels from and to along an axis
-   // on which the shape lies between a and b: the blurred coverage there.
-   // Writes up to max_shadow_stops and returns how many.
-   int                     shadow_stops(
-                              double a, double b, double sigma
-                            , int from, int to, shadow_stop* stops
                            );
 }
 

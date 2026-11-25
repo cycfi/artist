@@ -116,26 +116,9 @@ namespace
       for (int y = 0; y != h; ++y)
          for (int x = 0; x != w; ++x)
             worst = std::max(worst, std::abs(
-               m.alpha[std::size_t(y) * w + x]
+               m.alpha[std::size_t(y) * m.stride + x]
                - 255 * ref[std::size_t(y) * w + x]));
       return worst;
-   }
-
-   // A gradient's alpha at t along it, between its stops.
-   double stop_alpha(shadow_stop const* stops, int n, double t)
-   {
-      for (int i = 1; i != n; ++i)
-      {
-         if (t <= stops[i].offset)
-         {
-            auto const& a = stops[i - 1];
-            auto const& b = stops[i];
-            double const span = b.offset - a.offset;
-            double const f = span > 0? (t - a.offset) / span : 1;
-            return a.alpha + f * (b.alpha - a.alpha);
-         }
-      }
-      return stops[n - 1].alpha;
    }
 
    // The shadow of s as a backend puts it together from the pieces of
@@ -146,7 +129,6 @@ namespace
       int const x0 = l.x[0], y0 = l.y[0];
       int const w = l.x[l.nx] - x0, h = l.y[l.ny] - y0;
       std::vector<double> out(std::size_t(w) * h, -1.0);
-      shadow_stop stops[max_shadow_stops];
 
       for (int j = 0; j != l.ny; ++j)
       {
@@ -159,14 +141,12 @@ namespace
             if (pw <= 0 || ph <= 0)
                continue;
 
+            // A piece in a middle is one line of pixels, stretched; one
+            // in both middles is full.
+            int const mw = mid_x? 1 : pw, mh = mid_y? 1 : ph;
             shadow_mask const* m = nullptr;
-            int n = 0;
-            if (mid_x && !mid_y)
-               n = shadow_stops(s.y0, s.y1, sigma, py, py + ph, stops);
-            else if (mid_y && !mid_x)
-               n = shadow_stops(s.x0, s.x1, sigma, px, px + pw, stops);
-            else if (!mid_x && !mid_y)
-               m = &shadow_mask_of(s, sigma, px, py, pw, ph);
+            if (!(mid_x && mid_y))
+               m = &shadow_mask_of(s, sigma, px, py, mw, mh);
 
             for (int y = 0; y != ph; ++y)
             {
@@ -174,10 +154,10 @@ namespace
                {
                   double a = 255;
                   if (m)
-                     a = m->alpha[std::size_t(y) * pw + x];
-                  else if (n)
-                     a = 255 * stop_alpha(
-                        stops, n, mid_x? (y + 0.5) / ph : (x + 0.5) / pw);
+                  {
+                     int const mx = mid_x? 0 : x, my = mid_y? 0 : y;
+                     a = m->alpha[std::size_t(my) * m->stride + mx];
+                  }
                   out[std::size_t(py - y0 + y) * w + (px - x0 + x)] = a;
                }
             }
@@ -186,21 +166,36 @@ namespace
       return out;
    }
 
-   // The largest difference, in levels, between the pieces put together
-   // and the oracle.
+   // The largest difference, in levels of a shadow drawn at strength,
+   // between the pieces put together and the oracle. The oracle goes a
+   // margin past the layout, where the pieces draw nothing: what the
+   // layout leaves out must not have shown.
    double pieces_error(
-      shadow_shape const& s, double sigma, shadow_layout const& l)
+      shadow_shape const& s, double sigma, shadow_layout const& l
+    , double strength = 1)
    {
-      int const x0 = l.x[0], y0 = l.y[0];
-      int const w = l.x[l.nx] - x0, h = l.y[l.ny] - y0;
+      constexpr int margin = 8;
+      int const x0 = l.x[0] - margin, y0 = l.y[0] - margin;
+      int const lw = l.x[l.nx] - l.x[0], lh = l.y[l.ny] - l.y[0];
+      int const w = lw + 2 * margin, h = lh + 2 * margin;
       auto const got = assemble(s, sigma, l);
       shadow_shape const moved{
          s.x0 - x0, s.y0 - y0, s.x1 - x0, s.y1 - y0, s.radius};
       auto const ref = oracle(moved, sigma, w, h);
+
       double worst = 0;
-      for (std::size_t i = 0; i != got.size(); ++i)
-         worst = std::max(worst, std::abs(got[i] - 255 * ref[i]));
-      return worst;
+      for (int y = 0; y != h; ++y)
+      {
+         for (int x = 0; x != w; ++x)
+         {
+            int const gx = x - margin, gy = y - margin;
+            bool const inside = gx >= 0 && gx < lw && gy >= 0 && gy < lh;
+            double const a = inside? got[std::size_t(gy) * lw + gx] : 0;
+            worst = std::max(
+               worst, std::abs(a - 255 * ref[std::size_t(y) * w + x]));
+         }
+      }
+      return strength * worst;
    }
 }
 
@@ -217,17 +212,24 @@ int main()
 
    // A shape with room for its blur is cut in three each way. Its pieces
    // tile the shadow, and put together they are that same blur: the
-   // corner masks, the gradients along the sides and the plain middle
-   // meet without a seam.
+   // corner masks, the sides stretched from one line of pixels each and
+   // the plain middle meet without a seam, and nothing that shows is
+   // left out.
    {
       shadow_shape const s{20.25, 30.5, 130.5, 110.75, 10};
       auto const l = layout_shadow(s, 3);
       CHECK(l.nx == 3 && l.ny == 3);
       CHECK(l.x[0] < l.x[1] && l.x[1] <= l.x[2] && l.x[2] < l.x[3]);
       CHECK(l.y[0] < l.y[1] && l.y[1] <= l.y[2] && l.y[2] < l.y[3]);
-      CHECK(l.x[0] <= s.x0 - l.reach && l.x[3] >= s.x1 + l.reach);
-      CHECK(l.reach >= 9);
+      CHECK(l.x[0] < s.x0 && l.x[3] > s.x1);
       CHECK(pieces_error(s, 3, l) < 1.5);
+
+      // A fainter shadow is laid out closer to the shape, and still
+      // nothing that shows is left out.
+      auto const faint = layout_shadow(s, 3, 0.25);
+      CHECK(faint.nx == 3 && faint.ny == 3);
+      CHECK(faint.x[0] > l.x[0] && faint.x[3] < l.x[3]);
+      CHECK(pieces_error(s, 3, faint, 0.25) < 1.0);
    }
 
    // A plain rectangle the same.
@@ -239,7 +241,7 @@ int main()
    }
 
    // A pill has no middle down its short side: the ends are masks, with
-   // one gradient down between them.
+   // one line stretched between them.
    {
       shadow_shape const s{20, 20, 140, 40, 10};
       auto const l = layout_shadow(s, 3);

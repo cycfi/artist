@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstddef>
 #include <limits>
+#include <unordered_map>
 
 namespace cycfi::artist::detail
 {
@@ -17,9 +18,9 @@ namespace cycfi::artist::detail
       constexpr double     half_pi = 1.57079632679489661923;
       constexpr double     root_two_pi = 2.50662827463100050242;
 
-      // The blur spreads this many standard deviations past an edge.
-      // Beyond it the coverage is within a sixth of a level of 0 or 1.
-      constexpr double     spread = 3.25;
+      // A side this many standard deviations from a mask, past its
+      // rounded ends, has no part in it.
+      constexpr double     far_spread = 3.25;
 
       // A mask larger than this is not made: blurring pixels is no slower.
       constexpr std::int64_t  max_mask_pixels = 1 << 18;
@@ -145,10 +146,12 @@ namespace cycfi::artist::detail
          if (s.radius > 0)
             add_arcs(s, sg, w, h, col.data(), acc.data());
 
-         for (std::size_t i = 0; i != acc.size(); ++i)
+         for (int y = 0; y != h; ++y)
          {
-            float const a = std::clamp(acc[i], 0.0f, 1.0f);
-            m.alpha[i] = uint8_t(a * 255 + 0.5f);
+            float const* in = acc.data() + std::size_t(y) * w;
+            auto* out = m.alpha.data() + std::size_t(y) * m.stride;
+            for (int x = 0; x != w; ++x)
+               out[x] = uint8_t(std::clamp(in[x], 0.0f, 1.0f) * 255 + 0.5f);
          }
       }
 
@@ -160,39 +163,48 @@ namespace cycfi::artist::detail
          bool              operator==(mask_key const&) const = default;
       };
 
-      // The masks already made, most of them corners that many shapes
-      // share. The least recently used make way for new ones.
+      struct key_hash
+      {
+         std::size_t operator()(mask_key const& k) const noexcept
+         {
+            std::size_t h = 14695981039346656037ull;
+            for (double v : {k.x0, k.y0, k.x1, k.y1, k.radius, k.sigma
+               , double(k.w), double(k.h)})
+               h = (h ^ std::hash<double>{}(v)) * 1099511628211ull;
+            return h;
+         }
+      };
+
+      // The masks already made, most of them corners and sides that many
+      // shapes share. The least recently used make way for new ones.
       struct mask_cache
       {
          struct entry
          {
-            mask_key       key;
             shadow_mask    mask;
-            std::uint64_t  used;
+            std::uint64_t  used = 0;
          };
 
-         static constexpr std::size_t  max_entries = 64;
+         using map_type = std::unordered_map<mask_key, entry, key_hash>;
+
+         static constexpr std::size_t  max_entries = 256;
          static constexpr std::size_t  max_bytes = 4 << 20;
 
          shadow_mask*      find(mask_key const& key);
          shadow_mask&      make(mask_key const& key, std::size_t size);
 
-         std::vector<entry> entries;
+         map_type          map;
          std::size_t       bytes = 0;
          std::uint64_t     clock = 0;
       };
 
       shadow_mask* mask_cache::find(mask_key const& key)
       {
-         for (auto& e : entries)
-         {
-            if (e.key == key)
-            {
-               e.used = ++clock;
-               return &e.mask;
-            }
-         }
-         return nullptr;
+         auto const i = map.find(key);
+         if (i == map.end())
+            return nullptr;
+         i->second.used = ++clock;
+         return &i->second.mask;
       }
 
       // A new mask of size bytes, for the caller to fill.
@@ -200,27 +212,25 @@ namespace cycfi::artist::detail
       {
          auto full = [&]
          {
-            return entries.size() == max_entries || bytes + size > max_bytes;
+            return map.size() >= max_entries || bytes + size > max_bytes;
          };
-         auto older = [](entry const& a, entry const& b)
+         auto older = [](auto const& a, auto const& b)
          {
-            return a.used < b.used;
+            return a.second.used < b.second.used;
          };
 
-         while (!entries.empty() && full())
+         while (!map.empty() && full())
          {
-            auto i = std::min_element(entries.begin(), entries.end(), older);
-            bytes -= i->mask.alpha.size();
-            if (i != entries.end() - 1)
-               *i = std::move(entries.back());
-            entries.pop_back();
+            auto const i = std::min_element(map.begin(), map.end(), older);
+            bytes -= i->second.mask.alpha.size();
+            map.erase(i);
          }
 
          bytes += size;
-         entries.push_back({key, {}, ++clock});
-         auto& m = entries.back().mask;
-         m.alpha.assign(size, 0);
-         return m;
+         auto& e = map[key];
+         e.used = ++clock;
+         e.mask.alpha.assign(size, 0);
+         return e.mask;
       }
 
       // A position on a grid of 1/256 pixel, so that the same shape a
@@ -230,14 +240,27 @@ namespace cycfi::artist::detail
          return std::round(v * 256) / 256;
       }
 
-      // Cut the axis a..b into an end, a middle and an end, or leave it
-      // in one piece where the ends would meet. Returns how many.
-      int cut(double a, double b, double r, int reach, int* at)
+      // How many standard deviations from an edge its blur is down to a
+      // coverage of p: the inverse of the normal distribution function,
+      // to 0.0005 (Abramowitz and Stegun 26.2.23).
+      double spread_to(double p)
       {
-         int const a0 = int(std::floor(a - reach));
-         int const a1 = int(std::ceil(a + r + reach));
-         int const b0 = int(std::floor(b - r - reach));
-         int const b1 = int(std::ceil(b + reach));
+         if (p >= 0.5)
+            return 0;
+         double const t = std::sqrt(-2 * std::log(p));
+         return t - (2.515517 + t * (0.802853 + t * 0.010328))
+            / (1 + t * (1.432788 + t * (0.189269 + t * 0.001308)));
+      }
+
+      // Cut the axis a..b into an end, a middle and an end, or leave it
+      // in one piece where the ends would meet. The blur shows as far as
+      // out past the shape and in into it. Returns how many pieces.
+      int cut(double a, double b, double r, int out, int in, int* at)
+      {
+         int const a0 = int(std::floor(a - out));
+         int const a1 = int(std::ceil(a + r + in));
+         int const b0 = int(std::floor(b - r - in));
+         int const b1 = int(std::ceil(b + out));
 
          if (a1 > b0)
          {
@@ -253,7 +276,8 @@ namespace cycfi::artist::detail
       }
    }
 
-   shadow_layout layout_shadow(shadow_shape const& s, double sigma)
+   shadow_layout layout_shadow(
+      shadow_shape const& s, double sigma, double strength)
    {
       shadow_layout l;
       constexpr double limit = 1 << 24;   // of what int arithmetic takes
@@ -265,9 +289,15 @@ namespace cycfi::artist::detail
       if (!ok)
          return l;
 
-      l.reach = int(std::ceil(spread * pixel_sigma(sigma)));
-      int const nx = cut(s.x0, s.x1, s.radius, l.reach, l.x);
-      int const ny = cut(s.y0, s.y1, s.radius, l.reach, l.y);
+      // The shadow is laid out as far as it shows: out to where it would
+      // round to nothing at its strength, and in to where a corner, with
+      // two edges to fall short by, would round to its full strength.
+      double const sg = pixel_sigma(sigma);
+      double const level = 1 / (255 * std::clamp(strength, 1.0 / 255, 1.0));
+      int const out = int(std::ceil(spread_to(0.5 * level) * sg));
+      int const in = int(std::ceil(spread_to(0.25 * level) * sg));
+      int const nx = cut(s.x0, s.x1, s.radius, out, in, l.x);
+      int const ny = cut(s.y0, s.y1, s.radius, out, in, l.y);
 
       // The masks are the ends of one axis by the ends of the other.
       auto end = [](int n, int const* at)
@@ -296,7 +326,7 @@ namespace cycfi::artist::detail
          snap(s.x0 - x), snap(s.y0 - y), snap(s.x1 - x), snap(s.y1 - y)
        , snap(s.radius), sigma, w, h
       };
-      double const far = key.radius + spread * sg;
+      double const far = key.radius + far_spread * sg;
       if (key.x0 + far <= 0)
          key.x0 = -inf;
       if (key.x1 - far >= w)
@@ -309,50 +339,12 @@ namespace cycfi::artist::detail
       if (auto* m = cache.find(key))
          return *m;
 
-      auto& m = cache.make(key, std::size_t(w) * h);
+      int const stride = (w + 3) & ~3;
+      auto& m = cache.make(key, std::size_t(stride) * h);
       m.width = w;
       m.height = h;
+      m.stride = stride;
       render({key.x0, key.y0, key.x1, key.y1, key.radius}, sg, m);
       return m;
-   }
-
-   int shadow_stops(
-      double a, double b, double sigma
-    , int from, int to, shadow_stop* stops)
-   {
-      double const sg = pixel_sigma(sigma);
-      double const reach = std::ceil(spread * sg);
-      double pos[max_shadow_stops];
-      int n = 0;
-      pos[n++] = from;
-      pos[n++] = to;
-
-      // About each edge the coverage changes: a stop at each pixel center
-      // there, or 33 evenly spaced where the blur is wider than that.
-      for (double edge : {a, b})
-      {
-         double const lo = std::max(double(from), std::floor(edge - reach));
-         double const hi = std::min(double(to), std::ceil(edge + reach));
-         int const pixels = lo < hi? int(hi - lo) : 0;
-         if (pixels > 32)
-         {
-            for (int i = 0; i <= 32; ++i)
-               pos[n++] = lo + pixels * (i / 32.0);
-         }
-         else
-         {
-            for (int i = 0; i != pixels; ++i)
-               pos[n++] = lo + i + 0.5;
-         }
-      }
-
-      std::sort(pos, pos + n);
-      for (int i = 0; i != n; ++i)
-      {
-         stops[i].offset = float((pos[i] - from) / (to - from));
-         stops[i].alpha =
-            float(phi((pos[i] - a) / sg) - phi((pos[i] - b) / sg));
-      }
-      return n;
    }
 }
