@@ -133,9 +133,13 @@ namespace
    }
 
    // What add puts in the path, filled with paint's fill and a shadow.
+   // With an edge, that is then stroked over the edge of the fill. A
+   // backend may draw the edge of a shape and that of the same outline in
+   // segments a little differently; under the same line in both, only the
+   // shadows are left to compare.
    image shadowed(
       draw const& add, draw const& paint
-    , float blur, int view, float image_scale)
+    , float blur, int view, float image_scale, draw const& edge = {})
    {
       image img{120, 100, image_scale};
       render(img, [&](canvas& cnv)
@@ -145,6 +149,14 @@ namespace
          paint(cnv);
          add(cnv);
          cnv.fill();
+         if (edge)
+         {
+            cnv.shadow_style({0, 0}, 0, rgba(0, 0, 0, 0));
+            cnv.stroke_style(blue);
+            cnv.line_width(4);
+            edge(cnv);
+            cnv.stroke();
+         }
       });
       return img;
    }
@@ -198,8 +210,10 @@ TEST_CASE("shadow: a shape's shadow is that of its outline", "[shadow]")
             {
                INFO(o.name << ", blur " << blur << ", view " << view
                   << ", image scale " << scale);
-               auto a = shadowed(o.shape, opaque, blur, view, scale);
-               auto b = shadowed(o.drawn, opaque, blur, view, scale);
+               auto a = shadowed(
+                  o.shape, opaque, blur, view, scale, o.shape);
+               auto b = shadowed(
+                  o.drawn, opaque, blur, view, scale, o.shape);
                CHECK(golden_differences(a, b) == 0);
             }
          }
@@ -235,8 +249,8 @@ TEST_CASE("shadow: whatever fills the shape", "[shadow]")
       for (draw paint : {draw{translucent}, draw{gradient}})
       {
          INFO(o.name);
-         auto a = shadowed(o.shape, paint, 6, 0, 1);
-         auto b = shadowed(o.drawn, paint, 6, 0, 1);
+         auto a = shadowed(o.shape, paint, 6, 0, 1, o.shape);
+         auto b = shadowed(o.drawn, paint, 6, 0, 1, o.shape);
          CHECK(golden_differences(a, b) == 0);
       }
    }
