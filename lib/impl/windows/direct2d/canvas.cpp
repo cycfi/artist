@@ -13,6 +13,7 @@
 #include <infra/utf8_utils.hpp>
 #include <artist/canvas.hpp>
 #include <artist/canvas_layer.hpp>
+#include <artist/detail/analytic_shadow.hpp>
 #include <artist/detail/font_cache.hpp>
 #include "context.hpp"
 #include "path_impl.hpp"
@@ -22,6 +23,8 @@
 #include <vector>
 #include <algorithm>
 #include <cmath>
+#include <memory>
+#include <optional>
 
 namespace cycfi::artist
 {
@@ -192,6 +195,11 @@ namespace cycfi::artist
                            context& ctx, artist::rect bounds
                          , render_function render, bool stroke);
       void              adjust_for_blur(artist::rect& bounds);
+
+      // The shadow of the current path, about to be filled, drawn from its
+      // shape where that can be done. False means nothing is drawn.
+      bool              shape_shadow(context& ctx);
+      brush*            shadow_paint(render_target& target, color c);
 
       // A shadow is drawn only if it can be seen: a color that is not fully
       // transparent, and an offset or a blur.
@@ -408,6 +416,7 @@ namespace cycfi::artist
 
       brush*            _fill_paint = nullptr;     // lazy, derived from fill_info
       brush*            _stroke_paint = nullptr;   // lazy, derived from stroke_info
+      brush*            _shadow_paint = nullptr;   // lazy, a solid brush
       bool              _fill_solid = false;       // _fill_paint is a solid brush
       bool              _stroke_solid = false;     // _stroke_paint is a solid brush
       bool              _fill_stale = false;       // info changed under the brush (restore)
@@ -445,6 +454,7 @@ namespace cycfi::artist
       pop_clips_to(0);   // balance any outstanding PushLayer before EndDraw
       release(_fill_paint);
       release(_stroke_paint);
+      release(_shadow_paint);
       release(_stroke_style);
       clear_gradients();
    }
@@ -533,6 +543,7 @@ namespace cycfi::artist
    {
       release(_fill_paint);
       release(_stroke_paint);
+      release(_shadow_paint);
       release(_stroke_style);
       clear_gradients();
    }
@@ -755,6 +766,297 @@ namespace cycfi::artist
 
    namespace
    {
+      using detail::pixel_box;
+      using detail::shadow_layout;
+      using detail::shadow_mask;
+      using detail::shadow_piece;
+      using detail::shadow_shape;
+
+      // The alpha of a fill that has one alpha all over: a solid color, or
+      // a gradient that covers the plane and has only opaque stops.
+      std::optional<double> uniform_alpha(
+         canvas::canvas_state::paint_info const& paint)
+      {
+         if (auto const* c = std::get_if<color>(&paint))
+            return c->alpha;
+
+         auto opaque = [](std::vector<canvas::color_stop> const& stops)
+         {
+            auto solid = [](auto const& s) { return s.color.alpha >= 1; };
+            return !stops.empty()
+               && std::all_of(stops.begin(), stops.end(), solid);
+         };
+
+         using linear = canvas::linear_gradient;
+         using radial = canvas::radial_gradient;
+         bool covers = false;
+         if (auto const* lg = std::get_if<linear>(&paint))
+         {
+            covers = opaque(lg->color_space);
+         }
+         else if (auto const* rg = std::get_if<radial>(&paint))
+         {
+            // A radial one covers the plane when one circle holds the other.
+            double const apart =
+               std::hypot(rg->c2.x - rg->c1.x, rg->c2.y - rg->c1.y);
+            covers = opaque(rg->color_space)
+               && apart + std::min(rg->c1_radius, rg->c2_radius)
+                  < std::max(rg->c1_radius, rg->c2_radius);
+         }
+         return covers? std::optional<double>{1.0} : std::nullopt;
+      }
+
+      // The path in the target's pixels, px of them to the transform's
+      // unit, where it is one rectangle, rounded rectangle or circle that
+      // the transform leaves upright or on its side, with round corners
+      // still round.
+      bool device_shape(
+         path_impl const& path, matrix2x2f const& m, double px
+       , shadow_shape& s)
+      {
+         artist::rect r;
+         float radius = 0;
+         bool const shape = path.shape_primitive(r, radius)
+            && r.left < r.right && r.top < r.bottom;
+         if (!shape)
+            return false;
+
+         double const sx = std::hypot(m._11, m._12);
+         double const sy = std::hypot(m._21, m._22);
+         auto tiny = [limit = 1e-6 * std::max(sx, sy)](double v)
+         {
+            return std::abs(v) <= limit;
+         };
+         bool const upright = tiny(m._12) && tiny(m._21);
+         bool const sideways = tiny(m._11) && tiny(m._22);
+         bool const even = std::abs(sx - sy) <= 1e-3 * sx;
+         if (!(upright || sideways) || (radius > 0 && !even))
+            return false;
+
+         auto const b = device_bounds(m, r);
+         double const x0 = b.left * px, y0 = b.top * px;
+         double const x1 = b.right * px, y1 = b.bottom * px;
+         s = {x0, y0, x1, y1
+          , std::min({radius * sx * px, (x1 - x0) / 2, (y1 - y0) / 2})};
+         return x0 < x1 && y0 < y1;
+      }
+
+      // A mask as a bitmap of alpha only, kept with the mask. A bitmap
+      // can be drawn on any target of the device it was made on. The
+      // device is held, so that no other can take its address.
+      struct mask_bitmap
+      {
+                        ~mask_bitmap()
+                        {
+                           release(image);
+                           release(owner);
+                        }
+
+         bitmap*        image = nullptr;
+         ID2D1Device*   owner = nullptr;
+      };
+
+      bitmap* bitmap_of(
+         shadow_mask const& m, render_target& target, ID2D1Device* device)
+      {
+         auto* kept = static_cast<mask_bitmap*>(m.native.get());
+         if (kept && kept->owner == device)
+            return kept->image;
+
+         auto made = std::make_shared<mask_bitmap>();
+         auto const props = D2D1::BitmapProperties(
+            D2D1::PixelFormat(
+               DXGI_FORMAT_A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED));
+         auto const hr = target.CreateBitmap(
+            D2D1::SizeU(UINT32(m.width), UINT32(m.height))
+          , m.alpha.data(), UINT32(m.stride), &props, &made->image);
+         if (FAILED(hr) || !made->image)
+            return nullptr;
+         made->owner = device;
+         device->AddRef();
+         m.native = made;
+         return made->image;
+      }
+
+      bool overlap(pixel_box const& a, pixel_box const& b)
+      {
+         return a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
+      }
+
+      // The blurred shadow of s through the brush, in the pieces of l, but
+      // for what hide covers or clip leaves out. The target's units are
+      // pixels and it is not antialiasing, as an opacity mask requires.
+      void draw_pieces(
+         render_target& target, ID2D1Device* device, brush* paint
+       , shadow_shape const& s, double sigma, shadow_layout const& l
+       , pixel_box const& hide, pixel_box const& clip)
+      {
+         detail::for_each_piece(l, [&](shadow_piece kind, pixel_box const& b)
+         {
+            if (!overlap(b, clip))
+               return;
+
+            // A mask is drawn whole. A line or a fill is the same all
+            // along, so only what shows of it is drawn.
+            pixel_box seen[4] = {b};
+            int const n = kind == shadow_piece::mask
+               ? 1 : detail::visible_parts(b, hide, seen);
+            if (n == 0)
+               return;
+
+            bool const down = kind == shadow_piece::line_down;
+            bool const across = kind == shadow_piece::line_across;
+            bitmap* image = nullptr;
+            if (kind != shadow_piece::fill)
+            {
+               auto const& m = detail::shadow_mask_of(
+                  s, sigma, b.x0, b.y0
+                , down? 1 : b.x1 - b.x0, across? 1 : b.y1 - b.y0);
+               image = bitmap_of(m, target, device);
+               if (!image)
+                  return;
+            }
+
+            for (int i = 0; i != n; ++i)
+            {
+               auto const& v = seen[i];
+               auto const dest = D2D1::RectF(
+                  FLOAT(v.x0), FLOAT(v.y0), FLOAT(v.x1), FLOAT(v.y1));
+               if (!image)
+               {
+                  target.FillRectangle(dest, paint);
+                  continue;
+               }
+               // The one pixel across a line is stretched along it.
+               auto const src = D2D1::RectF(
+                  FLOAT(down? 0 : v.x0 - b.x0)
+                , FLOAT(across? 0 : v.y0 - b.y0)
+                , FLOAT(down? 1 : v.x1 - b.x0)
+                , FLOAT(across? 1 : v.y1 - b.y0));
+               target.FillOpacityMask(
+                  image, paint, D2D1_OPACITY_MASK_CONTENT_GRAPHICS
+                , &dest, &src);
+            }
+         });
+      }
+
+      // The pixels of a target that a clip in its units leaves, if any.
+      pixel_box clip_pixels(
+         render_target& target, artist::rect const* clip, double px)
+      {
+         auto const size = target.GetPixelSize();
+         int const w = int(size.width), h = int(size.height);
+         if (!clip)
+            return {0, 0, w, h};
+
+         auto within = [](double v, int most)
+         {
+            return int(std::clamp(v, 0.0, double(most)));
+         };
+         return {
+            within(std::floor(clip->left * px), w)
+          , within(std::floor(clip->top * px), h)
+          , within(std::ceil(clip->right * px), w)
+          , within(std::ceil(clip->bottom * px), h)
+         };
+      }
+
+      // How many pixels a target has to its unit: 0 if not as many down
+      // as across.
+      double pixel_scale(render_target& target)
+      {
+         FLOAT dpi_x = 96.0f, dpi_y = 96.0f;
+         target.GetDpi(&dpi_x, &dpi_y);
+         return dpi_x == dpi_y? dpi_x / 96.0 : 0;
+      }
+
+      // The device behind a target, if it has one, for the caller to
+      // release.
+      ID2D1Device* device_of(render_target& target)
+      {
+         device_context* dc = nullptr;
+         ID2D1Device* device = nullptr;
+         if (SUCCEEDED(target.QueryInterface(&dc)) && dc)
+            dc->GetDevice(&device);
+         release(dc);
+         return device;
+      }
+   }
+
+   brush* canvas::canvas_state::shadow_paint(render_target& target, color c)
+   {
+      if (!recolor(_shadow_paint, true, &c))
+         _shadow_paint = make_paint(c, target);
+      return _shadow_paint;
+   }
+
+   // Draw the shadow of the current path, about to be filled, where it can
+   // be worked out from the shape instead of blurred from its pixels: a
+   // rectangle, rounded rectangle or circle on its own, upright, filled
+   // with one alpha all over and drawn source-over with no blur of its
+   // own. See artist/detail/analytic_shadow.hpp. False means it can't be,
+   // and nothing is drawn.
+   bool canvas::canvas_state::shape_shadow(context& ctx)
+   {
+      auto const& cur = current();
+      if (cur.composite != canvas::source_over || cur.blur > 0)
+         return false;
+      auto const alpha = uniform_alpha(cur.fill_info);
+      if (!alpha)
+         return false;
+
+      ctx.resume();
+      auto main = ctx.target();
+      double const px = pixel_scale(*main);
+      shadow_shape shape;
+      if (px <= 0 || !device_shape(*_path.impl(), cur.matrix, px, shape))
+         return false;
+
+      // The shadow's offset and blur are in the target's units.
+      auto const& offset = cur.shadow_offset;
+      double const dx = offset.x * px, dy = offset.y * px;
+      double const sigma = cur.shadow_blur / 2 * px;
+      double const strength = cur.shadow_color.alpha * *alpha;
+      if (strength * 255 < 0.5)
+         return true;   // too faint to show
+
+      auto c = cur.shadow_color;
+      c.alpha = float(strength);
+      if (sigma < 0.5)
+      {
+         // With no blur, the shadow is the shape in the shadow's color.
+         main->SetTransform(
+            cur.matrix * D2D1::Matrix3x2F::Translation(offset.x, offset.y));
+         _path.impl()->fill(*main, shadow_paint(*main, c), true);
+         return true;
+      }
+
+      shadow_shape const shadow{
+         shape.x0 + dx, shape.y0 + dy, shape.x1 + dx, shape.y1 + dy
+       , shape.radius
+      };
+      auto const l = detail::layout_shadow(shadow, sigma, strength);
+      auto* device = l.nx != 0? device_of(*main) : nullptr;
+      if (!device)
+         return false;
+
+      pixel_box hide;
+      if (*alpha >= 1)
+         hide = detail::hidden_part(shape);
+      auto const aa = main->GetAntialiasMode();
+      main->SetTransform(
+         D2D1::Matrix3x2F::Scale(FLOAT(1 / px), FLOAT(1 / px)));
+      main->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+      draw_pieces(
+         *main, device, shadow_paint(*main, c), shadow, sigma, l, hide
+       , clip_pixels(*main, device_clip(), px));
+      main->SetAntialiasMode(aa);
+      release(device);
+      return true;
+   }
+
+   namespace
+   {
       bool is_unbounded(canvas::composite_op_enum m)
       {
          return m == canvas::source_in || m == canvas::source_out
@@ -924,7 +1226,7 @@ namespace cycfi::artist
 
    void canvas::canvas_state::fill(context& ctx, bool preserve)
    {
-      if (shadow_visible())
+      if (shadow_visible() && !shape_shadow(ctx))
       {
          auto render =
             [this](render_target* target, brush* b, bool preserve)

@@ -114,6 +114,9 @@ namespace cycfi::artist::d2d
       void                 flatten()           { build_path(); }
       // True, with `r` set, when the path is exactly one rectangle.
       bool                 rect_primitive(rect& r) const;
+      // True when the path is exactly one rectangle, rounded rectangle or
+      // circle, with `r` set to its bounds and `radius` to its corners'.
+      bool                 shape_primitive(rect& r, float& radius) const;
       // Append another path's geometry generators (used by canvas::add_path).
       void                 absorb(path_impl const& other);
 
@@ -253,6 +256,27 @@ namespace cycfi::artist::d2d
          || _geometry_gens.size() != 1 || !_path_gens.empty())
          return false;
       r = _prim.r;
+      return true;
+   }
+
+   inline bool path_impl::shape_primitive(rect& r, float& radius) const
+   {
+      if (!single_primitive())
+         return false;
+      auto const& p = _prim;
+      if (p.kind == primitive::circle_kind)
+      {
+         r = {
+            p.c.cx - p.c.radius, p.c.cy - p.c.radius
+          , p.c.cx + p.c.radius, p.c.cy + p.c.radius
+         };
+         radius = p.c.radius;
+      }
+      else
+      {
+         r = p.r;
+         radius = p.kind == primitive::round_rect_kind? p.radius : 0;
+      }
       return true;
    }
 
